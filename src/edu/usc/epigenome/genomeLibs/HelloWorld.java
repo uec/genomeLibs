@@ -1,4 +1,4 @@
-package edu.usc.epigenome.epigenomeLibs;
+package edu.usc.epigenome.genomeLibs;
 
 public class HelloWorld {
 
