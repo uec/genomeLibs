@@ -1,5 +1,7 @@
 package edu.usc.epigenome.genomeLibs;
 
+import org.biojava.bio.program.gff.*;
+
 public class HelloWorld {
 
 	/**
@@ -7,8 +9,9 @@ public class HelloWorld {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		System.out.println("heya you");
-
-	}
+		
+		SimpleGFFRecord rec = new SimpleGFFRecord();
+		System.out.println("heya you\n" + rec);
+		}
 
 }
