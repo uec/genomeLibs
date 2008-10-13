@@ -113,12 +113,12 @@ public class LocUtils {
 		
 		// Iterate through each
 		int min_dist = Integer.MAX_VALUE;
-		Iterator l1i = l1.blockIterator();
+		Iterator<Location> l1i = (Iterator<Location>)l1.blockIterator();
 		L1: while (l1i.hasNext())
 		{
 			Location l1_r = (Location)l1i.next();
-			Iterator l2i = l2.blockIterator();
-			L2: while (l2i.hasNext())
+			Iterator<Location> l2i = (Iterator<Location>)l2.blockIterator();
+			while (l2i.hasNext())
 			{
 				Location l2_r = (Location)l2i.next();
 				int this_dist = dist_from_closest_points_shadow(l1_r,l2_r);
@@ -188,18 +188,18 @@ public class LocUtils {
 	// a list of new GFFRecord objects.  If the result is contiguous,
 	// it returns a single record, otherwise it returns multiple 
 	// records representing the disjointed parts
-	public static List record_subtract(GFFRecord rec, Location loc)
+	public static List<GFFRecord> record_subtract(GFFRecord rec, Location loc)
 	{
-		List outl = new ArrayList();
+		List<GFFRecord> outl = new ArrayList<GFFRecord>();
 		
 		
 		return outl;
 	}
 	
-	public static List entry_set_loc_list(GFFEntrySet es)
+	public static List<Location> entry_set_loc_list(GFFEntrySet es)
 	{
-		List outl = new ArrayList(es.size());
-		Iterator record_it = es.lineIterator();
+		List<Location> outl = new ArrayList<Location>(es.size());
+		Iterator<GFFRecord> record_it = es.lineIterator();
 		while (record_it.hasNext())
 		{
 			GFFRecord rec = (GFFRecord)record_it.next();
@@ -215,7 +215,7 @@ public class LocUtils {
 	public static Location entry_set_merged_loc(GFFEntrySet es)
 	{
 		
-		List all_locs = entry_set_loc_list(es);
+		List<Location> all_locs = entry_set_loc_list(es);
 		Location merge = LocationTools.union(all_locs);
 		
 		return merge;
@@ -224,10 +224,10 @@ public class LocUtils {
 	public static GFFEntrySet loc_to_entry_set(Location loc)
 	{
 		GFFEntrySet es = new GFFEntrySet();
-		Iterator block_it = loc.blockIterator();
+		Iterator<Location> block_it = loc.blockIterator();
 		while (block_it.hasNext())
 		{
-			Location block = (Location)block_it.next();
+			Location block = block_it.next();
 			es.add(new SimpleGFFRecord("anon","anon","anon",
 					block.getMin(), block.getMax(), 0, null, 0, null, new SmallMap()));
 		}

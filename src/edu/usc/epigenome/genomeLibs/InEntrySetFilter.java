@@ -2,20 +2,19 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.*;
 
-import org.biojava.bio.symbol.*;
 import org.biojava.bio.program.gff.*;
 
 public class InEntrySetFilter implements GFFRecordFilter {
 	
-	Set f_set = null;
+	Set<GFFRecord> f_set = null;
 	boolean f_negative = false;
 	
 	public InEntrySetFilter(GFFEntrySet other, boolean negative)
 	{ 
 		f_negative = negative;
 		
-		f_set = new HashSet();
-		Iterator it = other.lineIterator();
+		f_set = new HashSet<GFFRecord>();
+		Iterator<GFFRecord> it = other.lineIterator();
 		while (it.hasNext())
 		{
 			f_set.add((GFFRecord)it.next());

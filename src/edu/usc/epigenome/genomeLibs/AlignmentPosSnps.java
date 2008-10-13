@@ -1,10 +1,6 @@
 package edu.usc.epigenome.genomeLibs;
 
-import java.io.*;
 import java.util.*;
-
-import org.biojava.bio.program.gff.*;
-import org.biojava.bio.seq.StrandedFeature;
 
 public class AlignmentPosSnps extends AlignmentPos {
 
@@ -13,13 +9,13 @@ public class AlignmentPosSnps extends AlignmentPos {
 
 	/* Obj vars */
 	public int[] f_consensus_readpos =  {0,0}; // If -1 , no consensus.  If 0, no reads yet
-	public Map f_counts = new TreeMap();// new int[4][2]; // 0=T, 1=C, 2=G, 3=A .   0=fw, 1=rev
+	public Map<Integer,int[][]> f_counts = new TreeMap<Integer,int[][]>();// new int[4][2]; // 0=T, 1=C, 2=G, 3=A .   0=fw, 1=rev
 
-	private static Map c_char_map = null;
+	private static Map<String,Integer> c_char_map = null;
 	private static char[] c_char_map_rev = null;
 	private static int[] c_char_map_revcomp_inds = null;
 	
-	private static Vector c_alph_vect = null;
+	private static Vector<String> c_alph_vect = null;
 	private static int c_alph_len = -1;
 
 	static
@@ -62,7 +58,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 	{
 		if (c_char_map == null);
 		{	
-			c_char_map = new HashMap();
+			c_char_map = new HashMap<String,Integer>();
 			c_char_map.put("A", new Integer(0));
 			c_char_map.put("a", new Integer(0));
 			c_char_map.put("C", new Integer(1));
@@ -113,11 +109,11 @@ public class AlignmentPosSnps extends AlignmentPos {
 		return out;
 	}
 
-	public static Iterator alphIterator()
+	public static Iterator<String> alphIterator()
 	{
 		if (c_alph_vect == null)
 		{
-			c_alph_vect = new Vector();
+			c_alph_vect = new Vector<String>();
 			c_alph_vect.add("A");
 			c_alph_vect.add("C");
 			c_alph_vect.add("G");
@@ -130,7 +126,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 	{
 		if (c_alph_len < 0)
 		{
-			Iterator it = alphIterator();
+			Iterator<String> it = alphIterator();
 			c_alph_len = 0;
 			while (it.hasNext())
 			{
@@ -150,7 +146,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 	 * 
 	 */
 
-	public Iterator readPositions()
+	public Iterator<Integer> readPositions()
 	{
 		return f_counts.keySet().iterator();
 	}
@@ -313,7 +309,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 		}
 		else
 		{
-			Iterator it = f_counts.values().iterator();
+			Iterator<int[][]> it = f_counts.values().iterator();
 			while (it.hasNext())
 			{
 
@@ -347,11 +343,11 @@ public class AlignmentPosSnps extends AlignmentPos {
 			ap.f_depth[1] = this.f_depth[0];
 		}
 
-		Map new_counts = new TreeMap();// new int[4][2]; // 0=T, 1=C, 2=G, 3=A .   0=fw, 1=rev
-		Iterator it = this.f_counts.keySet().iterator();
+		Map<Integer,int[][]> new_counts = new TreeMap<Integer,int[][]>();// new int[4][2]; // 0=T, 1=C, 2=G, 3=A .   0=fw, 1=rev
+		Iterator<Integer> it = this.f_counts.keySet().iterator();
 		while (it.hasNext())
 		{
-			Object key = (Object)it.next();
+			Integer key = it.next();
 			int [][]mat = (int [][])this.f_counts.get(key);
 			//System.err.println("Key=" + key);
 			
@@ -467,7 +463,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 	public void resetCounts()
 	{
 		this.f_depth = new int[] {0,0};
-		this.f_counts = new TreeMap();
+		this.f_counts = new TreeMap<Integer,int[][]>();
 	}
 	
 	

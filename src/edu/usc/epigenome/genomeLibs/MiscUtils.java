@@ -1,8 +1,5 @@
 package edu.usc.epigenome.genomeLibs;
 
-import java.io.File;
-import java.util.*;
-
 public class MiscUtils {
 
 

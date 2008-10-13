@@ -1,6 +1,5 @@
 package edu.usc.epigenome.genomeLibs;
 
-import java.util.*;
 import java.io.*;
 
 import org.apache.commons.math.stat.StatUtils;
@@ -171,7 +170,7 @@ public class MatUtils {
 		
 		double factor = n_in / n_out;
 
-		int next_in_pos = 0;
+//		int next_in_pos = 0;
 		for (int out_pos = 0; out_pos < n_out; out_pos++)
 		{
 			int out_ind = out_start_ind + out_pos;
@@ -278,7 +277,6 @@ public class MatUtils {
 		}
 		
 
-		double[][] out = new double[nrow][ncol];
 		for (int i = 0; i < nrow; i++)
 		{
 			for (int j = 0; j < ncol; j++)
@@ -361,7 +359,6 @@ public class MatUtils {
 		}
 		
 
-		double[][] out = new double[nrow][ncol];
 		for (int i = 0; i < nrow; i++)
 		{
 			for (int j = 0; j < ncol; j++)

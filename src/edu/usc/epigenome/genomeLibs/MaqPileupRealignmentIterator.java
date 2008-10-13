@@ -27,7 +27,7 @@ public class MaqPileupRealignmentIterator extends RealignmentIterator {
 		char line_ref = line_items[2].charAt(0);
 		int line_count = Integer.parseInt(line_items[3]);
 		String base_pileup_string = line_items[4];
-		String base_quals = line_items[5];
+//		String base_quals = line_items[5];
 		String read_positions = line_items[7];
 		
 		f_total_bases_read += line_count;

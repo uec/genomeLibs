@@ -1,8 +1,5 @@
 package edu.usc.epigenome.genomeLibs;
 
-import java.io.*;
-import java.util.*;
-
 import org.biojava.bio.program.gff.*;
 import org.biojava.bio.seq.StrandedFeature;
 

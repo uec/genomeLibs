@@ -205,10 +205,10 @@ public class GFFUtils {
 	
 	public static GFFRecord entry_set_merged (GFFEntrySet es, String id_fld, String id, MergeGffParams params)
 	{
-		List l = new ArrayList();
+		List<String> l = new ArrayList<String>();
 		l.add(id);
 		
-		Map m = new SmallMap();
+		Map<String,List<String>> m = (Map<String,List<String>>)new SmallMap();
 		m.put(id_fld, l);
 		params.f_combine_atts = false;
 		return entry_set_merged(es, m, params);
@@ -220,7 +220,7 @@ public class GFFUtils {
 		return entry_set_merged(es, null, params);
 	}
 	
-	public static GFFRecord entry_set_merged (GFFEntrySet es, Map map, MergeGffParams params)
+	public static GFFRecord entry_set_merged (GFFEntrySet es, Map<String,List<String>> map, MergeGffParams params)
 	{
 		Location loc = null;
 		try
@@ -238,7 +238,7 @@ public class GFFUtils {
 		int num_feats = es.size();
 		
 		// Get info from the first record
-		Iterator it = es.lineIterator();
+		Iterator<GFFRecord> it = (Iterator<GFFRecord>)es.lineIterator();
 		if (!it.hasNext()) return null;
 		GFFRecord first_rec = (GFFRecord)it.next();
 		
@@ -253,7 +253,7 @@ public class GFFUtils {
 			scores[0] = first_rec.getScore();
 			
 			SimpleGFFRecord best_rec = new_rec;
-			Set sources = new HashSet();
+			Set<String> sources = new HashSet<String>();
 			sources.add(best_rec.getSource());
 			SimpleGFFRecord all_atts_rec = new SimpleGFFRecord(best_rec);
 			int on_rec = 1;

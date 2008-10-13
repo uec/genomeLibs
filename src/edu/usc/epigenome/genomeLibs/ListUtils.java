@@ -19,7 +19,7 @@ public class ListUtils {
 		char[] ar = in.toCharArray();
 		int len = ar.length;
 		
-		Vector vec = new Vector(1000);
+		Vector<String> vec = new Vector<String>(1000);
 		char[] buf = new char[len];
 		int buf_pos = 0;
 		for (int i = 0; i < len; i++)
@@ -91,9 +91,9 @@ public class ListUtils {
 		return out;
 	}
 	
-	public static String excelLine(List l)
+	public static String excelLine(List<Object> l)
 	{
-		ListIterator li = l.listIterator();
+		ListIterator<Object> li = l.listIterator();
 		String out = "";
 		while (li.hasNext())
 		{
@@ -106,12 +106,12 @@ public class ListUtils {
 		return out;
 	}
 	
-	public static Vector parseExcelFile(String fn)
+	public static Vector<String[]> parseExcelFile(String fn)
 	throws Exception
 	{
 		BufferedReader in = new BufferedReader(new FileReader(fn));
 		
-		Vector out = new Vector();
+		Vector<String[]> out = new Vector<String[]>();
 		String line;
 		while ((line=in.readLine()) != null)
 		{
@@ -121,19 +121,19 @@ public class ListUtils {
 		return out;
 	}
 	
-	public static Vector parseSingleColumnFile(String fn, boolean header)
+	public static Vector<String> parseSingleColumnFile(String fn, boolean header)
 	throws Exception
 	{
 		return parseExcelFileColumn(fn, 1, header);
 	}
 	
 	
-	public static Vector parseExcelFileColumn(String fn, int col, boolean header)
+	public static Vector<String> parseExcelFileColumn(String fn, int col, boolean header)
 	throws Exception
 	{
-		Vector lines = parseExcelFile(fn);
+		Vector<String[]> lines = parseExcelFile(fn);
 		
-		Vector out = new Vector();
+		Vector<String> out = new Vector<String>();
 		int i = (header) ? 1 : 0;
 		while (i < lines.size())
 		{
@@ -155,9 +155,9 @@ public class ListUtils {
 		return result;
 	}
 
-	public static String tabbedLine(List l)
+	public static String tabbedLine(List<Object> l)
 	{
-		ListIterator li = l.listIterator();
+		ListIterator<Object> li = l.listIterator();
 		String out = "";
 		while (li.hasNext())
 		{
