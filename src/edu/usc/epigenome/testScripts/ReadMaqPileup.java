@@ -14,12 +14,17 @@ public class ReadMaqPileup {
 		String fn = args[0];
 		
 		AlignmentPosOptions apos = new AlignmentPosOptions();
-		Iterator<AlignmentPos> it = new MaqPileupRealignmentIterator(fn, apos);
+		Iterator<AlignmentPos> ap_it = new MaqPileupAlignmentPosIterator(fn, apos);
 		
-		while (it.hasNext())
+		ChromScoresIteratorAlignmentPos cs_it = new ChromScoresIteratorAlignmentPos(ap_it, apos.f_genome);
+		
+		while (cs_it.hasNext())
 		{
-			AlignmentPos ap = it.next();
-			System.err.println(ap.toString());
+			ChromScoresFast cs = cs_it.next();
+			System.err.println("New chromScores iterator:" + cs);
+			cs = cs.smooth(500, 36);
+			cs.wigOutput("name_hiya", 0.0, "test.wig", true, 1, 500);
+			
 		}
 	}
 

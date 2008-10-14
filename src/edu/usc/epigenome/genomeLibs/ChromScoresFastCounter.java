@@ -5,8 +5,8 @@ public class ChromScoresFastCounter extends ChromScoresArray {
 
 	protected int f_ranges_added = 0;
 	
-	public ChromScoresFastCounter() {
-		init();
+	public ChromScoresFastCounter(String genome) {
+		super(genome);
 	}
 
 	

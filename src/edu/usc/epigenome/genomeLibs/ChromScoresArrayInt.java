@@ -3,7 +3,8 @@ package edu.usc.epigenome.genomeLibs;
 
 public class ChromScoresArrayInt extends ChromScoresFast {
 
-	public ChromScoresArrayInt() {
+	public ChromScoresArrayInt(String genome) {
+		super(genome);
 		init();
 	}
 

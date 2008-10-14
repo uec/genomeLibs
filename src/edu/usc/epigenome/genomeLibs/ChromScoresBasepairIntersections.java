@@ -11,8 +11,8 @@ public class ChromScoresBasepairIntersections extends ChromScoresArrayInt {
 	private Map<String,Integer> f_idmap = new HashMap<String,Integer>();
 	private Map<Integer,String> f_digitmap = new HashMap<Integer,String>();
 	
-	public ChromScoresBasepairIntersections() {
-		init();
+	public ChromScoresBasepairIntersections(String genome) {
+		super(genome);
 	}
 
 	protected int[] getVector(String chr, int pos)

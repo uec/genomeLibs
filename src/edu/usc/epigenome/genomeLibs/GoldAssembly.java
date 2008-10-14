@@ -19,16 +19,20 @@ public class GoldAssembly {
 	{
 		int len = 0;
 		
-		String key = genome + "_" + chr;
+		String key = genome + "__" + chr;
 		Integer len_int = c_chr_map.get(key);
-		if	(len_int != null)
+		if	(len_int == null)
+		{
+			System.err.println("Number of keys in c_chr_map = " + c_chr_map.size());
+			throw new Exception("Can not identify chrom lenth for " + key);
+		}
+		else
 		{
 			len = len_int.intValue();
 		}
 
-		
 		System.err.println("Finding length of chrom " + chr + 
-				" from " + genome + ", len=" + len);
+				" from " + key + ", len=" + len);
 		
 		return len;
 	}
@@ -175,7 +179,6 @@ public class GoldAssembly {
 		c_chr_map.put("hg18__chrm", new Integer(16571));
 		
 		// mm8
-		c_chr_map = new HashMap<String,Integer>();
 		c_chr_map.put("mm8__chr1", new Integer(197069962));
 		c_chr_map.put("mm8__chr1_random", new Integer(172274));
 		c_chr_map.put("mm8__chr2", new Integer(181976762));

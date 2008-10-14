@@ -4,17 +4,11 @@ import org.biojava.bio.seq.Sequence;
 
 public class ChromScoresCpGDensity extends ChromScoresArray {
 
-	public ChromScoresCpGDensity() 
-	throws Exception
-	{
-		// TODO Auto-generated constructor stub
-	}
-
 	public ChromScoresCpGDensity(String genome) 
 	throws Exception
 	{
+		super(genome);
 		System.err.println("Initing CpGDensities with genome=" + genome);
-		init(genome);
 	}
 
 	

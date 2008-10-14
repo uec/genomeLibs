@@ -5,13 +5,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Iterator;
 
-public abstract class RealignmentIterator implements Iterator<AlignmentPos> {
+public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 
 	protected BufferedReader f_open_stream = null;
 	protected String f_open_file = null;
 	protected AlignmentPosOptions f_options = null;
 	
-	public RealignmentIterator(String fn, AlignmentPosOptions apos)
+	public AlignmentPosIterator(String fn, AlignmentPosOptions apos)
 	throws IOException
 	{
 		f_open_stream = new BufferedReader(new FileReader(fn));

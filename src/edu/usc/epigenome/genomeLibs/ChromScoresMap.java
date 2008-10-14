@@ -4,8 +4,8 @@ import java.util.*;
 
 public class ChromScoresMap extends ChromScoresFast {
 
-	public ChromScoresMap() {
-		init();
+	public ChromScoresMap(String genome) {
+		super(genome);
 	}
 
 	

@@ -38,11 +38,11 @@ abstract public class ChromScoresFast {
 	protected int f_ranges_added = 0;
 	
 	/* Constructors */
-	public ChromScoresFast() 
-	{
-		System.err.println("Initializing ChromScoresFast");
-		init();
-	}
+//	public ChromScoresFast() 
+//	{
+//		System.err.println("Initializing ChromScoresFast");
+//		init();
+//	}
 	
 	public ChromScoresFast(String genome) 
 	{
@@ -104,6 +104,11 @@ abstract public class ChromScoresFast {
 	private void initChrom(String chr)
 	throws Exception
 	{
+		if (f_genome == null)
+		{
+			throw new Exception("Called ChromScoresFast::initChrom without specifying genome");
+		}
+		
 		System.err.println("Initializing chrom " + chr + " with genome " + f_genome);
 		
 		// Get the length of the chrom
@@ -308,7 +313,7 @@ abstract public class ChromScoresFast {
 		if (smooth_window <= 0) return this;
 		
 		// Make the output the same type as the input
-		ChromScoresFast out = new ChromScoresArray();
+		ChromScoresFast out = new ChromScoresArray(f_genome);
 		String[] active_chroms = this.activeChroms();
 		
 		for (int i = 0; i < active_chroms.length; i++)
@@ -622,8 +627,9 @@ abstract public class ChromScoresFast {
 		int chr_start = minPos(array);
 		int chr_end = maxPos(array);
 		
-		out.println("fixedStep\tchrom=" + chr + "\tstart=" + chr_start + "\tstep=" + step +
-				"\tspan=500");
+		out.print("fixedStep\tchrom=" + chr + "\tstart=" + chr_start + "\tstep=" + step);
+//		out.print("\tspan=500");
+		out.println();
 		
 		NumberFormat format = new DecimalFormat("0.00");
 		

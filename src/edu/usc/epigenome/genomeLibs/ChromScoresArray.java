@@ -2,15 +2,15 @@ package edu.usc.epigenome.genomeLibs;
 
 public class ChromScoresArray extends ChromScoresFast {
 
-	public ChromScoresArray() 
-	{
-		System.err.println("Initializing ChromScoresArray");
-		init();
-	}
+//	public ChromScoresArray() 
+//	{
+//		System.err.println("Initializing ChromScoresArray");
+//		init();
+//	}
 
 	public ChromScoresArray(String genome) 
 	{
-		init(genome);
+		super(genome);
 	}
 
 	protected Object newChromArray(int chr_len)

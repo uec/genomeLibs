@@ -4,17 +4,11 @@ import org.biojava.bio.seq.Sequence;
 
 public class ChromScoresGCContent extends ChromScoresArray {
 
-	public ChromScoresGCContent() 
-	throws Exception
-	{
-		// TODO Auto-generated constructor stub
-	}
-
 	public ChromScoresGCContent(String genome) 
 	throws Exception
 	{
+		super(genome);
 		System.err.println("Initing GCConent with genome=" + genome);
-		init(genome);
 	}
 
 	
