@@ -2,15 +2,15 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.Iterator;
 
-public class ChromScoresIteratorAlignmentPos extends ChromScoresIterator {
+public class ChromScoresIteratorAlignmentPosFwRev extends ChromScoresMultiIterator {
 
 	protected Iterator<AlignmentPos> f_ap_iter = null;
 	protected String f_last_chr = null;
 	protected int f_last_pos = -1;
-	protected ChromScoresFast f_chrom_scores = null;
+	protected ChromScoresFast[] f_chrom_scores = null;
 	String f_genome = null;
 	
-	public ChromScoresIteratorAlignmentPos(Iterator<AlignmentPos> ap_iter,
+	public ChromScoresIteratorAlignmentPosFwRev(Iterator<AlignmentPos> ap_iter,
 			String genome)
 	{
 		// Default method goes through chromosome by chromosome
@@ -27,9 +27,9 @@ public class ChromScoresIteratorAlignmentPos extends ChromScoresIterator {
 	}
 
 	@Override
-	public ChromScoresFast next() {
+	public ChromScoresFast[] next() {
 
-		ChromScoresFast out = f_chrom_scores;
+		ChromScoresFast[] out = f_chrom_scores;
 		
 		// We go until we have no more APs or until we reach
 		// one with a new chromosome.
@@ -55,7 +55,8 @@ public class ChromScoresIteratorAlignmentPos extends ChromScoresIterator {
 	
 	protected void addAlignmentPos(AlignmentPos ap)
 	{
-		f_chrom_scores.addScore(ap.f_chr, ap.f_pos, ap.getTotalDepth());
+		f_chrom_scores[0].addScore(ap.f_chr, ap.f_pos, ap.getDepth(true));
+		f_chrom_scores[1].addScore(ap.f_chr, ap.f_pos, ap.getDepth(false));
 	}
 	
 	
@@ -70,7 +71,9 @@ public class ChromScoresIteratorAlignmentPos extends ChromScoresIterator {
 	protected void startNewChromScores()
 	{
 		System.err.println("Starting new ChromScoresFast for chrom");
-		f_chrom_scores = new ChromScoresArray(f_genome);
+		f_chrom_scores = new ChromScoresFast[2];
+		f_chrom_scores[0] = new ChromScoresArray(f_genome);
+		f_chrom_scores[1] = new ChromScoresArray(f_genome);
 	}
 
 
