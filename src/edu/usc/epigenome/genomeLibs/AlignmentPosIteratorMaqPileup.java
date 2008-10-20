@@ -3,11 +3,11 @@ package edu.usc.epigenome.genomeLibs;
 import java.io.IOException;
 import java.util.TreeMap;
 
-public class MaqPileupAlignmentPosIterator extends AlignmentPosIterator {
+public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 
 	private int f_total_bases_read = 0;
 	
-	public MaqPileupAlignmentPosIterator(String fn, AlignmentPosOptions apos) 
+	public AlignmentPosIteratorMaqPileup(String fn, AlignmentPosOptions apos) 
 	throws IOException {
 		super(fn, apos);
 		// TODO Auto-generated constructor stub

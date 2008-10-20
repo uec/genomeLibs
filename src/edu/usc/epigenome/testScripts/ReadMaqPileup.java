@@ -39,7 +39,7 @@ public class ReadMaqPileup {
 		
 		
 		AlignmentPosOptions apos = new AlignmentPosOptions();
-		Iterator<AlignmentPos> ap_it = new MaqPileupAlignmentPosIterator(fn, apos);
+		Iterator<AlignmentPos> ap_it = new AlignmentPosIteratorMaqPileup(fn, apos);
 		
 		ChromScoresIteratorAlignmentPosFwRev cs_it = new ChromScoresIteratorAlignmentPosFwRev(ap_it, apos.f_genome);
 		
