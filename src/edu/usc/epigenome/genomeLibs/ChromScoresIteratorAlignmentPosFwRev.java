@@ -46,8 +46,8 @@ public class ChromScoresIteratorAlignmentPosFwRev extends ChromScoresMultiIterat
 //			System.err.println("New ap: " + ap.f_chr + ": " + ap.f_pos);
 			
 			addAlignmentPos(ap);
-			f_last_chr = ap.f_chr;
-			f_last_pos = ap.f_pos;
+			f_last_chr = ap.getChr();
+			f_last_pos = ap.getPos();
 		}
 		
 		return out;
@@ -55,8 +55,8 @@ public class ChromScoresIteratorAlignmentPosFwRev extends ChromScoresMultiIterat
 	
 	protected void addAlignmentPos(AlignmentPos ap)
 	{
-		f_chrom_scores[0].addScore(ap.f_chr, ap.f_pos, ap.getDepth(true));
-		f_chrom_scores[1].addScore(ap.f_chr, ap.f_pos, ap.getDepth(false));
+		f_chrom_scores[0].addScore(ap.getChr(), ap.getPos(), ap.getDepth(true));
+		f_chrom_scores[1].addScore(ap.getChr(), ap.getPos(), ap.getDepth(false));
 	}
 	
 	
@@ -65,7 +65,7 @@ public class ChromScoresIteratorAlignmentPosFwRev extends ChromScoresMultiIterat
 	{
 //		System.err.println("Start new ChromScoresFast for chrom (" + ap.f_chr + "!=" + f_last_chr +")?");
 		
-		return (!((f_last_chr == null) || ap.f_chr.equals(f_last_chr)));
+		return (!((f_last_chr == null) || ap.getChr().equals(f_last_chr)));
 	}
 	
 	protected void startNewChromScores()

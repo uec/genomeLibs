@@ -34,6 +34,7 @@ public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 		catch (Exception e)
 		{
 			System.err.println("Could not read file " + f_open_file + "\n" + e.toString());
+			System.exit(0);
 		}
 		
 		return out;
@@ -49,6 +50,9 @@ public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 		}
 		catch (Exception e)
 		{
+			System.err.println("Could not get next AlignmentPos:\n");
+			e.printStackTrace();
+			System.exit(0);
 		}
 		
 		return ap;
@@ -64,6 +68,6 @@ public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 	 * Unimplemented functions
 	 */
 
-	abstract protected AlignmentPos nextAlignment() throws IOException;
+	abstract protected AlignmentPos nextAlignment() throws Exception;
 	
 }

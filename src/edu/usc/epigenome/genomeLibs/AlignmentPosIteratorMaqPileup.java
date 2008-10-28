@@ -1,11 +1,14 @@
 package edu.usc.epigenome.genomeLibs;
 
 import java.io.IOException;
-import java.util.TreeMap;
+
+import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.symbol.IllegalSymbolException;
+import org.biojava.bio.symbol.Symbol;
 
 public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 
-	private int f_total_bases_read = 0;
+	//private int totalBasesRead = 0;
 	
 	public AlignmentPosIteratorMaqPileup(String fn, AlignmentPosOptions apos) 
 	throws IOException {
@@ -15,111 +18,93 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 
 	@Override
 	protected AlignmentPos nextAlignment()
-	throws IOException 
+	throws IOException, IllegalSymbolException
 	{
 		// TODO Auto-generated method stub
 		String line = this.f_open_stream.readLine();
 		String[] line_items = line.split("\t");
 
-	
 		String line_chr = line_items[0];
 		int line_pos = Integer.parseInt(line_items[1]);
 		char line_ref = line_items[2].charAt(0);
-		int line_count = Integer.parseInt(line_items[3]);
-		String base_pileup_string = line_items[4];
-//		String base_quals = line_items[5];
+//		int line_count = Integer.parseInt(line_items[3]);
+		String snps_str = line_items[4];
+		char[] snps = snps_str.toCharArray();
+		String base_quals = line_items[5];
+//		String mapping_quals = line_items[6];
 		String read_positions = line_items[7];
 		
-		f_total_bases_read += line_count;
 		
-		// Make the output object
-		AlignmentPos ap = null;
-		if (f_options.f_track_positions)
+		// Make the output object.  Just make one with SNPs, and then reduce if necessary
+		AlignmentPos ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.f_options);
+//		System.err.println("ap=" + ap);
+		this.addMaqPositions((AlignmentPosSnps)ap, snps, base_quals, read_positions);
+
+		if (!f_options.trackSnps)
 		{
-//			ap = new AlignmentPosSnpsPositions(line_ref, line_chr, line_pos);
-			ap = new AlignmentPosSnps(line_ref, line_chr, line_pos);
+			AlignmentPosDepthOnly newAp = new AlignmentPosDepthOnly(ap);
+			newAp.setDepth(ap.getDepth());
+			ap = newAp;
+//			System.err.println("ap=" + ap);
 		}
-		else if (f_options.f_track_snps)
-		{
-			ap = new AlignmentPosSnps(line_ref, line_chr, line_pos);
-		}
-		else
-		{
-			ap = new AlignmentPos(line_ref, line_chr, line_pos);
-			ap.addDepth(maqPileupDepth(base_pileup_string,read_positions));
-		}
-	
+		
 		return ap;
 	}
 	
 	
 	
-	
-	// Takes the list of read positions (12,12,17,18,...) and determines
-	// a depth count.  Reads starting at identical positions are counted
-	// a maximum of max_identical times.  The input positions are not always in 
-	// order in the input file.
-	// 
-	// Set max_identical to 0 for a faster implementation
-	protected int[] maqPileupDepth(String snps_in, String positions)
+	protected void addMaqPositions(AlignmentPosSnps ap, char[] snps, String baseQualsStr, String readPositionsStr)
+	throws IllegalSymbolException
 	{
-		// snps string
-		char[] in_ar = snps_in.toCharArray();
-		int[] out = new int[2];
-		int len = in_ar.length;
+		String[] readPositionsStrs = readPositionsStr.split(",");
+		char[] baseQualChars = baseQualsStr.toCharArray();
 		
-		// positions string
-		TreeMap<String,Integer> counts = null;
-		String[] pos_strings = null;
-		if ((positions != null) && (f_options.f_max_identical > 0))
+		for (int i=0; i < (snps.length-1); i++)
 		{
-			counts = new TreeMap<String,Integer>();
-			pos_strings = positions.split(",");
-		}
-		
-		for (int i = 1; i < len; i++) // First char is an "@" character
-		{
-			char c = in_ar[i];
-
-			// Get the strand (0=fwd, 1=rev)
-			int strand = -1;
-			switch (c)
-			{
-			case ',':	strand=0; break;
-			case 'A':	strand=0; break;
-			case 'C':	strand=0; break;
-			case 'T':	strand=0; break;
-			case 'G':	strand=0; break;
-			case 'N':	strand=0; break;
-			case '.':	strand=1; break;
-			case 'a':	strand=1; break;
-			case 'c':	strand=1; break;
-			case 't':	strand=1; break;
-			case 'g':	strand=1; break;
-			case 'n':	strand=1; break;
-			default:	System.err.println("Illegal maq char: "+c); break;
-			}
+			int qual = fastqQualCodeToInt(baseQualChars[i+1]); // First one is a "@" char
 			
-			if (strand>=0) // Make sure it's a valid position
+			if (qual >= f_options.minQualityScore)
 			{
-				boolean add = true;
-				if ((pos_strings != null) && f_options.f_max_identical > 0)
+				char snpChar = snps[i+1]; // First one is a "@" char
+				ReadPos rp = maqPileupCharToReadPos(snpChar, ap.ref);
+
+				if (f_options.trackPositionsQuals)
 				{
-					// Check if we've reached the maximum
-					String key = strand + "__" + pos_strings[i-1]; // This list has no "@" leading character, index is one behind the SNP list
-					int val = (counts.get(key) == null) ? 0 : ((Integer)counts.get(key)).intValue();
-					val++; // The current one
-					add = (val <= f_options.f_max_identical);
-					counts.put(key, new Integer(val));
+					int readPos = Integer.parseInt(readPositionsStrs[i]);
+					rp = new ReadPosRich(rp, readPos, qual);
 				}
 				
-				if (add) out[strand]++;
+				ap.add(rp);
 			}
+			
 		}
 		
-//		System.err.println("[" + out[0] +"," +out[1] + "] = depthFromReadPositions(" + 
-//				snps_in + ", " + max_identical + ", " + positions + ")");
-		return out;
 	}
+	
+	protected static ReadPos maqPileupCharToReadPos(char c, Symbol ref)
+	throws IllegalSymbolException
+	{
+		// Check for maq special characters
+		Symbol readstrandC;
+		Boolean readstrandForwardStrand;
+		
+		switch(c)
+		{
+		case ',': readstrandC = ref; readstrandForwardStrand = true; break;
+		case '.': readstrandC = ref; readstrandForwardStrand = false; break;
+		default: readstrandC = DNATools.forSymbol(c); readstrandForwardStrand = Character.isUpperCase(c); break;
+		}
+
+		return new ReadPos(readstrandC,readstrandForwardStrand);
+	}
+	
+	
+	public static int fastqQualCodeToInt(char c)
+	{
+		//int v = Character.getNumericValue(c) - 33;
+		int v = (int)c - 33;
+		return v;
+	}
+	
 
 }

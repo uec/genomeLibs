@@ -2,70 +2,156 @@ package edu.usc.epigenome.genomeLibs;
 
 import org.biojava.bio.program.gff.*;
 import org.biojava.bio.seq.StrandedFeature;
+import org.biojava.bio.symbol.*;
+import org.biojava.bio.seq.DNATools;
 
-public class AlignmentPos {
+public abstract class AlignmentPos implements Cloneable {
 
 	/* Class vars */
 	public static final double NO_COVERAGE = -1.0;
+	public static final AlignmentPosOptions DEFAULT_AP_OPTIONS = new AlignmentPosOptions();
 
 	/* Obj vars */
-	public char f_ref;
-	public String f_chr;
-	public int f_pos;
-	public int[] f_depth = null;
-
+	protected Symbol ref;
+	protected String chr;
+	protected int pos;
+	protected AlignmentPosOptions apOptions = null;
+	
 
 
 	/*****************
 	 *  Constructors
 	 */
-	public AlignmentPos()
-	{
-	}
 	
-	public AlignmentPos(char ref, String chr, int pos)
+	public AlignmentPos(char inRef, String inChr, int inPos, AlignmentPosOptions inApOptions)
 	{
-		f_ref = ref;
-		f_chr = chr;
-		f_pos = pos;
-		f_depth = new int[] {0,0};
+		try
+		{
+			ref = DNATools.forSymbol(inRef);
+		}
+		catch (IllegalSymbolException e)
+		{
+			System.err.println(e);
+		}
+		
+		chr = inChr;
+		pos = inPos;
+		apOptions = inApOptions;
 	}
 
-	public AlignmentPos(char ref, String chr, int pos, int[] depth)
+	public AlignmentPos(Symbol inRef, String inChr, int inPos, AlignmentPosOptions inApOptions)
 	{
-		f_ref = ref;
-		f_chr = chr;
-		f_pos = pos;
-		f_depth = depth;
+		ref = inRef;
+		chr = inChr;
+		pos = inPos;
+		apOptions = inApOptions;
 	}
-	
-	
+
+
+	public AlignmentPos(AlignmentPos ap)
+	{
+		ref = ap.ref;
+		chr = ap.chr;
+		pos = ap.pos;
+		apOptions = ap.apOptions;
+	}
+
+
 	/**
 	 * 
-	 * Getters
+	 * Accessors
 	 * 
 	 */
 
+	/**
+	 * @return the chr
+	 */
+	public String getChr() {
+		return chr;
+	}
+
+	/**
+	 * @param chr the chr to set
+	 */
+	public void setChr(String chr) {
+		this.chr = chr;
+	}
+
+	/**
+	 * @return the pos
+	 */
+	public int getPos() {
+		return pos;
+	}
+
+	/**
+	 * @param pos the pos to set
+	 */
+	public void setPos(int pos) {
+		this.pos = pos;
+	}
 
 
-	public char getRef(boolean reference_forward_strand)
+	public char getRefToken()
 	{
-		char c = this.f_ref;
-		if (!reference_forward_strand) c = MiscUtils.revCompNuc(c);
-		return c;
+		return this.getRefToken(true);
 	}
 	
+	public char getRefToken(boolean reference_forward_strand)
+	{
+		Symbol ref = this.getRef(reference_forward_strand);
+		char c = '0';
+		try
+		{
+			c = DNATools.dnaToken(ref);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			System.exit(0);
+		}
+		return c;
+	}
+
+	public Symbol getRef(boolean reference_forward_strand)
+	{
+		Symbol c = this.ref;
+		try
+		{
+			if (!reference_forward_strand) c = DNATools.complement(c);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			System.exit(0);
+		}
+		return c;
+	}
+
+	public Symbol getRef()
+	{
+		return this.getRef(true);
+	}
+
+	protected Symbol getRefFlipped()
+	{
+		Symbol newRef = null;
+		try
+		{
+			newRef = DNATools.complement(this.ref); 
+		}
+		catch (IllegalSymbolException e)
+		{
+			System.err.println(e);
+			System.exit(0);
+		}
+		return newRef;
+	}
 	
 	public int getTotalDepth()
 	{
 		int[] d = getDepth();
 		return d[0] + d[1];
-	}
-	
-	
-	public int[] getDepth()
-	{
-		return f_depth;
 	}
 	
 	public int getDepth(boolean fw)
@@ -79,25 +165,23 @@ public class AlignmentPos {
 		return d[ (reference_forward_strand == read_same_strand) ? 0 : 1 ];
 	}
 	
-	public  AlignmentPos flipped ()
+	abstract public int[] getDepth();
+	
+	
+	public  AlignmentPos flipped()
 	{
 		return this.clone(true);
 	}
 	
-	public  AlignmentPos clone(boolean flip_strand)
+	public AlignmentPos clone()
 	{
-		char ref = (flip_strand) ? MiscUtils.revCompNuc(this.f_ref) : this.f_ref;
-		AlignmentPos ap = new AlignmentPos(ref, this.f_chr, this.f_pos);
-
-		if (f_depth != null)
-		{
-			ap.f_depth = new int[2];
-			ap.f_depth[0] = this.f_depth[1];
-			ap.f_depth[1] = this.f_depth[0];
-		}
-		
-		return ap;
+		return clone(false);
 	}
+	
+	abstract public AlignmentPos clone(boolean flip_strand);
+
+
+	
 	
 
 	/*****************
@@ -107,52 +191,7 @@ public class AlignmentPos {
 	 */
 	
 	
-	public void add(char c, boolean read_forward_strand)
-	throws Exception
-	{
-		add(read_forward_strand);
-	}
-	
-	public void add(boolean read_forward_strand)
-	throws Exception
-	{
-		int[] addition = new int[] {0,0};
-		addition[ (read_forward_strand?0:1)]++;
-		addDepth(addition);
-	}
-
-	public void addDepth(int[] depth)
-	{
-		f_depth[0] += depth[0];
-		f_depth[1] += depth[1];
-	}
-	
-
-
-	// Returns the actual nucleotide added
-	public char addMaqPileupChar(char c)
-	throws Exception
-	{
-		// Check for maq special characters
-		char readstrand_c;
-		boolean readstrand_forward_strand;
-		
-		switch(c)
-		{
-		case ',': readstrand_c = f_ref; readstrand_forward_strand = true; break;
-		case '.': readstrand_c = f_ref; readstrand_forward_strand = false; break;
-		default: readstrand_c = c; readstrand_forward_strand = Character.isUpperCase(c); break;
-		}
-
-		add(readstrand_forward_strand);
-		return readstrand_c;
-	}
-
-	
-	public void resetCounts()
-	{
-		this.f_depth = new int[] {0,0};
-	}
+	abstract public void reset();
 	
 	/** GFF **/
 	
@@ -175,7 +214,7 @@ public class AlignmentPos {
 	{
 		String out = null;
 
-		out = f_chr + ":" + f_pos + "(" + f_ref + ") depth= " +
+		out = this.chr + ":" + this.pos + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
 		this.getDepth(true) + ", " + this.getDepth(false); 
 		
 		return out;
