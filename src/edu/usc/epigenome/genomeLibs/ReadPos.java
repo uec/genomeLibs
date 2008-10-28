@@ -31,10 +31,32 @@ public class ReadPos implements Cloneable {
 	/* Getters/Setters */
 
 	/**
-	 * @return the sym
+	 * @return the symbol relative to the orientation of the genome
 	 */
 	public Symbol getSym() {
 		return sym;
+	}
+	
+	/**
+	 * @return the symbol relative the orientation of the read
+	 */
+	public Symbol getSymReaddir()
+	{
+		
+		Symbol out = null;
+		
+		try 
+		{
+			out = DNATools.complement(sym);
+		}
+		catch (IllegalSymbolException e)
+		{
+			System.err.println("Can not complement symbol " + sym.getName());
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		return out;
 	}
 	
 	public char getSymToken()

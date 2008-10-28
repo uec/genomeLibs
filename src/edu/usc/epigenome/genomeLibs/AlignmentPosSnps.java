@@ -37,7 +37,10 @@ public class AlignmentPosSnps extends AlignmentPos {
 	 * 
 	 */
 
-
+	public Vector<ReadPos> getReadPositions()
+	{
+		return readPosList;
+	}
 	
 	public int[] getDepth()
 	{
