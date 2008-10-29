@@ -21,7 +21,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 	throws IOException, IllegalSymbolException
 	{
 		// TODO Auto-generated method stub
-		String line = this.f_open_stream.readLine();
+		String line = this.openStream.readLine();
 		String[] line_items = line.split("\t");
 
 		String line_chr = line_items[0];
@@ -36,11 +36,11 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		
 		
 		// Make the output object.  Just make one with SNPs, and then reduce if necessary
-		AlignmentPos ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.f_options);
+		AlignmentPos ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
 //		System.err.println("ap=" + ap);
 		this.addMaqPositions((AlignmentPosSnps)ap, snps, base_quals, read_positions);
 
-		if (!f_options.trackSnps)
+		if (!apOptions.trackSnps)
 		{
 			AlignmentPosDepthOnly newAp = new AlignmentPosDepthOnly(ap);
 			newAp.setDepth(ap.getDepth());
@@ -63,12 +63,12 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		{
 			int qual = fastqQualCodeToInt(baseQualChars[i+1]); // First one is a "@" char
 			
-			if (qual >= f_options.minQualityScore)
+			if (qual >= apOptions.minQualityScore)
 			{
 				char snpChar = snps[i+1]; // First one is a "@" char
 				ReadPos rp = maqPileupCharToReadPos(snpChar, ap.ref);
 
-				if (f_options.trackPositionsQuals)
+				if (apOptions.trackPositionsQuals)
 				{
 					int readPos = Integer.parseInt(readPositionsStrs[i]);
 					rp = new ReadPosRich(rp, readPos, qual);

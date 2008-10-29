@@ -7,16 +7,18 @@ import java.util.Iterator;
 
 public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 
-	protected BufferedReader f_open_stream = null;
-	protected String f_open_file = null;
-	protected AlignmentPosOptions f_options = null;
+	protected BufferedReader openStream = null;
+	protected String openFile = null;
+	protected AlignmentPosOptions apOptions = null;
+	protected int numRead = 0;
+	
 	
 	public AlignmentPosIterator(String fn, AlignmentPosOptions apos)
 	throws IOException
 	{
-		f_open_stream = new BufferedReader(new FileReader(fn));
-		f_open_file = fn;
-		f_options = apos;
+		openStream = new BufferedReader(new FileReader(fn));
+		openFile = fn;
+		apOptions = apos;
 	}
 	
 	/***********
@@ -29,11 +31,11 @@ public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 		
 		try
 		{
-			out = (f_open_stream != null) && (f_open_stream.ready());
+			out = (openStream != null) && (openStream.ready());
 		}
 		catch (Exception e)
 		{
-			System.err.println("Could not read file " + f_open_file + "\n" + e.toString());
+			System.err.println("Could not read file " + openFile + "\n" + e.toString());
 			System.exit(0);
 		}
 		
@@ -47,6 +49,8 @@ public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 		try
 		{
 			ap = nextAlignment();
+			this.numRead++;
+			if ((this.numRead % 1000000) == 0) System.err.println(this.numRead + " APs processed");
 		}
 		catch (Exception e)
 		{
