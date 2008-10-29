@@ -59,6 +59,16 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler>{
 		}
 	}
 	
+	
+	protected void finishHandlers()
+	{
+		Iterator<AlignmentPosStreamHandler> handlerIt = this.iterator();
+		while (handlerIt.hasNext())
+		{
+			handlerIt.next().finish();
+		}
+	}
+	
 	protected void iterateAps()
 	{
 		// The "next" AP is actually the end of the post window.  We must do window
@@ -72,6 +82,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler>{
 		
 			// Are we on a new chrom?  If so, 
 			
+			this.processAp(null, curAp, null);
 		}
 		
 		// Finish up the current windows
@@ -90,14 +101,6 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler>{
 		
 		return passes;
 	}
-	
-	protected void finishHandlers()
-	{
-		Iterator<AlignmentPosStreamHandler> handlerIt = this.iterator();
-		while (handlerIt.hasNext())
-		{
-			handlerIt.next().finish();
-		}
-	}
+
 	
 }

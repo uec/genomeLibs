@@ -2,6 +2,7 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.*;
 
+import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
 
 public class AlignmentPosSnps extends AlignmentPos {
@@ -37,20 +38,64 @@ public class AlignmentPosSnps extends AlignmentPos {
 	 * 
 	 */
 
+	
+	
+	/**
+	 * @return a list of read positions , with identical ones removed
+	 * according to apOptions.maxIdentical
+	 */
 	public Vector<ReadPos> getReadPositions()
 	{
-		return readPosList;
+		
+		TreeMap<String,Integer> counts = new TreeMap<String,Integer>();
+		Iterator<ReadPos> it = readPosList.iterator();
+		Vector<ReadPos> out = new Vector<ReadPos>(readPosList.size());
+		while (it.hasNext())
+		{
+			ReadPos rp = it.next();
+			boolean add = true;
+			
+			if (this.apOptions.maxIdentical > 0)
+			{
+				
+				int cycle = rp.getCycle();
+				if (pos != ReadPos.UNKNOWN) // If it's unknown , can't eliminate
+				{
+					String key = rp.getStrand() + "__" + cycle;
+					//System.err.println("Looking for key: " + key);
+					int val = (counts.get(key) == null) ? 0 : ((Integer)counts.get(key)).intValue();
+					val++; // The current one
+					add = (val <= this.apOptions.maxIdentical);
+					counts.put(key, new Integer(val));
+				}
+			}
+			
+			
+			if (add)
+			{
+				out.add(rp);
+			}
+		}
+			
+		return out;
 	}
+	
+	
+	
+	
 	
 	public int[] getDepth()
 	{
 		int [] out = new int[] {0,0};
 		
-		// Use the correct version of getDepth
-		if (this.readPosList.size() > 0)
+		Iterator<ReadPos> rpIt = this.getReadPositions().iterator();
+		while (rpIt.hasNext())
 		{
-			out = this.readPosList.get(0).getDepth(readPosList, this.apOptions);
+			ReadPos rp = rpIt.next();
+			int index = (rp.getStrand() == StrandedFeature.NEGATIVE) ? 1 : 0;
+			out[index]++;
 		}
+
 		return out;
 	}
 

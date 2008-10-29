@@ -5,7 +5,7 @@ import edu.usc.epigenome.genomeLibs.*;
 
 public class StreamMaqPileup {
 
-	private static final String C_USAGE = "Usage: ReadMaqPileup max_identical file1.pileup";
+	private static final String C_USAGE = "Usage: StreamMaqPileup max_identical file1.pileup";
 	
 	/**
 	 * @param args
@@ -46,7 +46,7 @@ public class StreamMaqPileup {
 		apStreamer.run();
 		
 		// Now output 
-		System.out.println(baseCounter.excelOutput());
+		System.out.print(baseCounter.excelOutput());
 
 	}
 		

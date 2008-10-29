@@ -17,7 +17,7 @@ import org.biojava.bio.symbol.Symbol;
 public class ReadPosRich extends ReadPos {
 
 	/* Obj vars */
-	protected int pos = UNKNOWN;
+	protected int cycle = UNKNOWN;
 	protected int qual = UNKNOWN;
 	
 	/** Constructors **/
@@ -27,7 +27,7 @@ public class ReadPosRich extends ReadPos {
 		this.sym = inSym;
 		this.strand = (inForwardStrand) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
 		this.qual = inQual;
-		this.pos = inPos;
+		this.cycle = inPos;
 	}
 
 	public ReadPosRich(ReadPos inRp, int inPos, int inQual)
@@ -35,7 +35,7 @@ public class ReadPosRich extends ReadPos {
 		this.sym = inRp.getSym();
 		this.strand = inRp.getStrand();
 		this.qual = inQual;
-		this.pos = inPos;
+		this.cycle = inPos;
 	}
 	
 	
@@ -44,8 +44,8 @@ public class ReadPosRich extends ReadPos {
 	/**
 	 * @return the readPos
 	 */
-	public int getReadPos() {
-		return pos;
+	public int getCycle() {
+		return cycle;
 	}
 
 
@@ -53,7 +53,7 @@ public class ReadPosRich extends ReadPos {
 	 * @param readPos the readPos to set
 	 */
 	public void setReadPos(int pos) {
-		this.pos = pos;
+		this.cycle = pos;
 	}
 
 
@@ -75,47 +75,6 @@ public class ReadPosRich extends ReadPos {
 	
 	
 	
-	
-	
-	/**
-	 * @param a list of ReadPos objs
-	 * @return int[0]=fw_depth , int[1]=rev_depth
-	 */
-
-	public int[] getDepth(Collection<ReadPos> posList, ReadPosOptions ro)
-	{
-		int[] depth = new int[] {0,0};
-
-		TreeMap<String,Integer> counts = new TreeMap<String,Integer>();
-		
-		Iterator<ReadPos> it = posList.iterator();
-		while (it.hasNext())
-		{
-			ReadPosRich rp = (ReadPosRich)it.next();
-			boolean add = true;
-			
-			if (ro.maxIdentical > 0)
-			{
-				String key = rp.getStrand() + "__" + rp.getReadPos();
-				//System.err.println("Looking for key: " + key);
-				int val = (counts.get(key) == null) ? 0 : ((Integer)counts.get(key)).intValue();
-				val++; // The current one
-				add = (val <= ro.maxIdentical);
-				counts.put(key, new Integer(val));
-			}
-			
-			
-			if (add)
-			{
-				int index = (rp.getStrand()==StrandedFeature.NEGATIVE) ? 1 : 0;
-				depth[index]++;
-			}
-		}
-		
-		return depth;
-	}
-	
-
 	
 	
 	

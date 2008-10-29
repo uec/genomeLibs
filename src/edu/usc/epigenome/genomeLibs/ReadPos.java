@@ -43,17 +43,20 @@ public class ReadPos implements Cloneable {
 	public Symbol getSymReaddir()
 	{
 		
-		Symbol out = null;
+		Symbol out = sym;
 		
-		try 
+		if (this.getStrand() == StrandedFeature.NEGATIVE)
 		{
-			out = DNATools.complement(sym);
-		}
-		catch (IllegalSymbolException e)
-		{
-			System.err.println("Can not complement symbol " + sym.getName());
-			e.printStackTrace();
-			System.exit(0);
+			try 
+			{
+				out = DNATools.complement(sym);
+			}
+			catch (IllegalSymbolException e)
+			{
+				System.err.println("Can not complement symbol " + sym.getName());
+				e.printStackTrace();
+				System.exit(0);
+			}
 		}
 		
 		return out;
@@ -72,6 +75,7 @@ public class ReadPos implements Cloneable {
 			e.printStackTrace();
 			System.exit(0);
 		}
+		
 		return c;
 	}
 
@@ -103,7 +107,7 @@ public class ReadPos implements Cloneable {
 	/**
 	 * @return the readPos
 	 */
-	public int getReadPos() {
+	public int getCycle() {
 		return UNKNOWN;
 	}
 
@@ -118,28 +122,6 @@ public class ReadPos implements Cloneable {
 	
 	/* Static util functions */
 	
-	/**
-	 * @param a list of ReadPos objs
-	 * @return int[0]=fw_depth , int[1]=rev_depth
-	 * 
-	 * We only make it non-static so that it can be overridden
-	 */
-
-	public int[] getDepth(Collection<ReadPos> posList, ReadPosOptions ro)
-	{
-		int[] depth = new int[] {0,0};
-
-		Iterator<ReadPos> it = posList.iterator();
-		while (it.hasNext())
-		{
-			ReadPos rp = it.next();
-			int index = (rp.getStrand()==StrandedFeature.NEGATIVE) ? 1 : 0;
-			depth[index]++;
-		}
-		
-		return depth;
-	}
-
 	
 	
 	/** Cloneable **/
@@ -158,7 +140,56 @@ public class ReadPos implements Cloneable {
 		
 		return newInst;
 	}
+
+	/** 
+	 * If symbol and strand are equivalent, the two are equal
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		
+		if (obj instanceof ReadPos)
+		{
+			ReadPos anotherReadPos = (ReadPos)obj;
+			String thisKey = this.equalsKey();
+			String thatKey = anotherReadPos.equalsKey();
+			//System.err.println("Comparing key " + thisKey + " to " + thatKey);
+			return thisKey.equals(thatKey);
+		}
+		else
+		{	
+			return false;
+		}
+	}
+
+	/**
+	 * If symbol and strand are equivalent, the two are equal
+	 */
+	@Override
+	public int hashCode() {
+		return this.equalsKey().hashCode();
+	}
 	
+	protected String equalsKey()
+	{
+		return commaSeparatedLine();
+	}
+		
+	public String commaSeparatedLine()
+	{
+		String key = "";
+		String delim = ",";
+		
+		key += this.getSymReaddir().getName();
+		key += delim;
+		key += this.getStrand();
+		key += delim;
+		key += this.getCycle();
+		key += delim;
+		key += this.getQual();
+
+		return key;
+	}
 	
 
 }

@@ -16,7 +16,7 @@ public class APHandlerBaseCounts extends AlignmentPosStreamHandler {
 
 	public int MAX_CYCLES = 100;
 	
-	protected HashMap<Symbol,Integer>[] cycleCounts = ((HashMap<Symbol,Integer>[])new HashMap[MAX_CYCLES]);
+	protected HashMap<ReadPos,Integer> cycleCounts;
 	
 	/**
 	 * 
@@ -40,10 +40,7 @@ public class APHandlerBaseCounts extends AlignmentPosStreamHandler {
 	public void init() {
 		// Initialize maps
 		System.err.println("Initializing APHandlerBaseCounts");
-		for (int i = 0; i < MAX_CYCLES; i++)
-		{
-			cycleCounts[i] = new HashMap<Symbol,Integer>();
-		}
+		cycleCounts = new HashMap<ReadPos,Integer>();
 	}
 
 	/* (non-Javadoc)
@@ -70,15 +67,12 @@ public class APHandlerBaseCounts extends AlignmentPosStreamHandler {
 		Iterator<ReadPos> rpIt = currentApSnps.getReadPositions().iterator();
 		while (rpIt.hasNext())
 		{
+			// ReadPos has equals re-implemented so that identical ones are equal
 			ReadPos rp = rpIt.next();
-			Symbol sym = rp.getSymReaddir();
-			int cycle = rp.getReadPos();
-			Integer count = cycleCounts[cycle].get(sym);
-			if (count == null)
-			{
-				count = new Integer(0);
-			}
-			count++; // Does this actually modify the stored object?
+			Integer count = cycleCounts.get(rp);
+			if (count == null) count = new Integer(0);
+			count++;
+			cycleCounts.put(rp, count);
 		}
 		
 		return passes;
@@ -90,46 +84,20 @@ public class APHandlerBaseCounts extends AlignmentPosStreamHandler {
 	
 	/******  OUTPUT ********/
 	
-	public int[][] countMatrix()
-	{
-		int[][] out = new int[MAX_CYCLES][DNATools.getDNA().size()];
-		for (int i = 0; i < MAX_CYCLES; i++)
-		{
-			HashMap<Symbol,Integer> map = cycleCounts[i];
-
-			Iterator<Symbol> it = ((Iterator<Symbol>)DNATools.getDNA().iterator());
-			int symInd = 0;
-			while(it.hasNext())
-			{
-				Integer count = map.get(it.next());
-				if (count == null) count = new Integer(0);
-				out[i][symInd] = count.intValue();
-				symInd++;
-			}
-		}
-		
-		// Trim to max cycle and max symbol size
-		
-		return out;
-	}
 	
 	public String excelOutput()
 	throws IllegalSymbolException
 	{
 		String out = "";
 		
-		// Header
-		List<Object> l = new Vector<Object>();
-		Iterator<Symbol> it = (Iterator<Symbol>)DNATools.getDNA().iterator();
-		while (it.hasNext())
+		Iterator<ReadPos> rpIt = this.cycleCounts.keySet().iterator();
+		while (rpIt.hasNext())
 		{
-			l.add(new Character(DNATools.dnaToken(it.next())));
+			ReadPos rp = rpIt.next();
+			out += rp.commaSeparatedLine();
+			out += "," + this.cycleCounts.get(rp);
+			out += "\n";
 		}
-		out += ListUtils.tabbedLine(l) + "\n";
-		
-		// And the counts
-		int[][] mat = this.countMatrix();
-		out += MatUtils.matString(mat);
 		
 		return out;
 	}
