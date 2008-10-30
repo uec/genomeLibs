@@ -15,6 +15,8 @@ public class ReadPos implements Cloneable {
 	/* Obj vars */
 	protected Symbol sym = DNATools.n();
 	protected StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
+	protected static final int STRINGBUFLEN = 10000;
+	protected static StringBuffer STRINGBUF = new StringBuffer(STRINGBUFLEN);
 	
 	
 	/* Constructors */
@@ -175,20 +177,40 @@ public class ReadPos implements Cloneable {
 		return commaSeparatedLine();
 	}
 		
+	//TODO Not threadsafe because of static buffer STRINGBUF
 	public String commaSeparatedLine()
 	{
-		String key = "";
-		String delim = ",";
+		char delim = ',';		
 		
-		key += this.getSymReaddir().getName();
-		key += delim;
-		key += this.getStrand();
-		key += delim;
-		key += this.getCycle();
-		key += delim;
-		key += this.getQual();
+		if (true)
+		{
+//			System.err.println("New method");
+			// New, this takes about 35% of total execution time
 
-		return key;
+			STRINGBUF.delete(0, STRINGBUFLEN);
+			STRINGBUF.append(this.getSymReaddir().getName());
+			STRINGBUF.append(delim);
+			STRINGBUF.append(this.getStrand());
+			STRINGBUF.append(delim);
+			STRINGBUF.append(this.getCycle());
+			STRINGBUF.append(delim);
+			STRINGBUF.append(this.getQual());
+			return STRINGBUF.toString();
+		}
+		else
+		{
+//			System.err.println("Old method");
+			// old.  67% of total execution time was spend in string concatenation
+			String key = "";
+			key += this.getSymReaddir().getName();
+			key += delim;
+			key += this.getStrand();
+			key += delim;
+			key += this.getCycle();
+			key += delim;
+			key += this.getQual();
+			return key;
+		}
 	}
 	
 

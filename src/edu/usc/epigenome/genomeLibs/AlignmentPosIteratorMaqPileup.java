@@ -13,17 +13,17 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 	public AlignmentPosIteratorMaqPileup(String fn, AlignmentPosOptions apos) 
 	throws IOException {
 		super(fn, apos);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	protected AlignmentPos nextAlignment()
 	throws IOException, IllegalSymbolException
 	{
-		// TODO Auto-generated method stub
-		String line = this.openStream.readLine();
-		String[] line_items = line.split("\t");
+//		String line = this.openStream.readLine();
+//		String[] line_items = line.split("\t");  //TODO VERY SLOW, 25% of execution time
 
+		String[] line_items = ListUtils.readLineSplitByChar(this.openStream, '\t', 20);
+		
 		String line_chr = line_items[0];
 		int line_pos = Integer.parseInt(line_items[1]);
 		char line_ref = line_items[2].charAt(0);
@@ -56,7 +56,10 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 	protected void addMaqPositions(AlignmentPosSnps ap, char[] snps, String baseQualsStr, String readPositionsStr)
 	throws IllegalSymbolException
 	{
-		String[] readPositionsStrs = readPositionsStr.split(",");
+		//String[] readPositionsStrs = readPositionsStr.split(","); //TODO VERY SLOW, 25% of execution time, but it's probably the best we can do with a string
+		String[] readPositionsStrs = ListUtils.splitByChar(readPositionsStr, ','); 
+
+		
 		char[] baseQualChars = baseQualsStr.toCharArray();
 		
 		for (int i=0; i < (snps.length-1); i++)

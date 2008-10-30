@@ -32,7 +32,6 @@ public class StreamMaqPileup {
 			System.exit(0);
 		}
 			
-		
 		// Create iterator, streamer
 		Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
 		AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, 2, 2);

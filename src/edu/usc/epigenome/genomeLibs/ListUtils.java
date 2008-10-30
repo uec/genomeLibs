@@ -2,16 +2,56 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.*;
 import java.io.*;
+import java.nio.*;
 
 public class ListUtils {
 
 	protected static String delim = ",";
+
+	//TODO Not thread safe
+	protected static final int STRINGBUFLEN = 10000;
+	protected static StringBuffer STRINGBUF = new StringBuffer(STRINGBUFLEN);
 
 	public static void setDelim(String d)
 	{
 		delim = d;
 	}
 
+	
+	//TODO Not threadsafe because of static buffer STRINGBUF
+	public static String[] readLineSplitByChar(Reader r, char delim, int countEstimate)
+	throws IOException
+	{
+		Vector<String> v = new Vector<String>(countEstimate);
+
+		STRINGBUF.delete(0, STRINGBUFLEN);
+		int c;
+
+		charLoop:
+		while ((c = r.read()) >= 0)
+		{
+			if (c == delim)
+			{
+				v.add(new String(STRINGBUF));
+				STRINGBUF.delete(0, STRINGBUFLEN);
+			}
+			else if ((c == '\n') || (c == '\r')) 
+			{
+				break charLoop;
+			}
+			else
+			{
+				STRINGBUF.append((char)c);
+			}
+		}
+		
+		// Add the last one (if there is one)
+		if (STRINGBUF.length()>0) v.add(new String(STRINGBUF));
+		
+		return (String[])v.toArray( new String[v.size()] );
+	}
+	
+	
 	
 	// Is Java split inefficient??
 	public static String[] splitByChar(String in, char delim)
