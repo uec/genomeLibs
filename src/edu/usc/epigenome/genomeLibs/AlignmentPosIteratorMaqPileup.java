@@ -17,12 +17,16 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 
 	@Override
 	protected AlignmentPos nextAlignment()
-	throws IOException, IllegalSymbolException
+	throws IOException, IllegalSymbolException, Exception
 	{
 //		String line = this.openStream.readLine();
 //		String[] line_items = line.split("\t");  //TODO VERY SLOW, 25% of execution time
 
 		String[] line_items = ListUtils.readLineSplitByChar(this.openStream, '\t', 20);
+		if (line_items.length != 8)
+		{
+			throw new Exception("Illegal Maq pileup line: " + ListUtils.excelLine(line_items));
+		}
 		
 		String line_chr = line_items[0];
 		int line_pos = Integer.parseInt(line_items[1]);
