@@ -10,43 +10,21 @@ import org.biojava.bio.symbol.*;
 
 /**
  * @author benb
+ * 
  *
  */
-public class APHandlerBaseCounts extends AlignmentPosStreamHandler {
+public class APHandlerSymbolCounts extends SymbolCounts implements AlignmentPosStreamHandler {
 
-	public int MAX_CYCLES = 100;
-	
-	protected HashMap<ReadPos,Integer> cycleCounts;
-	
 	/**
 	 * 
 	 */
-	public APHandlerBaseCounts() {
+	public APHandlerSymbolCounts() {
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#finish()
-	 */
-	@Override
-	public void finish() {
-		// Nothing to do
-		System.err.println("Finishing APHandlerBaseCounts");
-	}
-
-	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#init()
-	 */
-	@Override
-	public void init() {
-		// Initialize maps
-		System.err.println("Initializing APHandlerBaseCounts");
-		cycleCounts = new HashMap<ReadPos,Integer>();
-	}
 
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	@Override
 	public boolean streamElement(LinkedList<AlignmentPos> priorAps,
 			AlignmentPos currentAp, LinkedList<AlignmentPos> nextAps) 
 	{
@@ -81,25 +59,5 @@ public class APHandlerBaseCounts extends AlignmentPosStreamHandler {
 	
 	
 	
-	
-	/******  OUTPUT ********/
-	
-	
-	public String excelOutput()
-	throws IllegalSymbolException
-	{
-		String out = "";
-		
-		Iterator<ReadPos> rpIt = this.cycleCounts.keySet().iterator();
-		while (rpIt.hasNext())
-		{
-			ReadPos rp = rpIt.next();
-			out += rp.commaSeparatedLine();
-			out += "," + this.cycleCounts.get(rp);
-			out += "\n";
-		}
-		
-		return out;
-	}
 
 }

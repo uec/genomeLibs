@@ -38,7 +38,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		// Make the output object.  Just make one with SNPs, and then reduce if necessary
 		AlignmentPos ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
 //		System.err.println("ap=" + ap);
-		this.addMaqPositions((AlignmentPosSnps)ap, snps, base_quals, read_positions);
+		addMaqPositions(this.apOptions, (AlignmentPosSnps)ap, snps, base_quals, read_positions);
 
 		if (!apOptions.trackSnps)
 		{
@@ -53,7 +53,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 	
 	
 	
-	protected void addMaqPositions(AlignmentPosSnps ap, char[] snps, String baseQualsStr, String readPositionsStr)
+	protected static void addMaqPositions(AlignmentPosOptions inApOptions, AlignmentPosSnps ap, char[] snps, String baseQualsStr, String readPositionsStr)
 	throws IllegalSymbolException
 	{
 		//String[] readPositionsStrs = readPositionsStr.split(","); //TODO VERY SLOW, 25% of execution time, but it's probably the best we can do with a string
@@ -64,14 +64,14 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		
 		for (int i=0; i < (snps.length-1); i++)
 		{
-			int qual = fastqQualCodeToInt(baseQualChars[i+1]); // First one is a "@" char
+			int qual = MiscUtils.fastqQualCodeToInt(baseQualChars[i+1], false); // First one is a "@" char
 			
-			if (qual >= apOptions.minQualityScore)
+			if (qual >= inApOptions.minQualityScore)
 			{
 				char snpChar = snps[i+1]; // First one is a "@" char
 				ReadPos rp = maqPileupCharToReadPos(snpChar, ap.ref);
 
-				if (apOptions.trackPositionsQuals)
+				if (inApOptions.trackPositionsQuals)
 				{
 					int readPos = Integer.parseInt(readPositionsStrs[i]);
 					rp = new ReadPosRich(rp, readPos, qual);
@@ -101,13 +101,6 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		return new ReadPos(readstrandC,readstrandForwardStrand);
 	}
 	
-	
-	public static int fastqQualCodeToInt(char c)
-	{
-		//int v = Character.getNumericValue(c) - 33;
-		int v = (int)c - 33;
-		return v;
-	}
 	
 
 }

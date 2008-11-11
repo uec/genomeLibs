@@ -37,8 +37,7 @@ public class StreamMaqPileup {
 		AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, 2, 2);
 		
 		// Add handlers, filters
-		APHandlerBaseCounts baseCounter = new APHandlerBaseCounts();
-		baseCounter.MAX_CYCLES = 36;
+		APHandlerSymbolCounts baseCounter = new APHandlerSymbolCounts();
 		apStreamer.add(baseCounter);
 		
 		// Run

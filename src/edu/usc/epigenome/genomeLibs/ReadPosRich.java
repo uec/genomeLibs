@@ -3,9 +3,7 @@
  */
 package edu.usc.epigenome.genomeLibs;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.TreeMap;
+
 
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.Symbol;
@@ -17,8 +15,8 @@ import org.biojava.bio.symbol.Symbol;
 public class ReadPosRich extends ReadPos {
 
 	/* Obj vars */
-	protected int cycle = UNKNOWN;
-	protected int qual = UNKNOWN;
+	protected int cycle = UNKNOWN_CYCLE;
+	protected int qual = UNKNOWN_QUAL;
 	
 	/** Constructors **/
 	

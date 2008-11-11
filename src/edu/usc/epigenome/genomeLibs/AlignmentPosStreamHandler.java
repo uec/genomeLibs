@@ -9,21 +9,9 @@ import java.util.*;
  * @author benb
  *
  */
-/**
- * @author benb
- *
- */
-public abstract class AlignmentPosStreamHandler {
+public interface AlignmentPosStreamHandler {
 
 	/** Constructors **/
-	
-	/**
-	 * 
-	 */
-	public AlignmentPosStreamHandler()
-	{
-	}
-	
 	
 	
 	/**

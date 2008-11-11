@@ -1,6 +1,5 @@
 package edu.usc.epigenome.genomeLibs;
 
-import java.util.*;
 
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.StrandedFeature;
@@ -9,7 +8,8 @@ import org.biojava.bio.symbol.*;
 public class ReadPos implements Cloneable {
 	
 	/* Class vars */
-	public static final int UNKNOWN = -1; 
+	public static final int UNKNOWN_CYCLE = -1; 
+	public static final int UNKNOWN_QUAL = -1; 
 	
 	
 	/* Obj vars */
@@ -110,7 +110,7 @@ public class ReadPos implements Cloneable {
 	 * @return the readPos
 	 */
 	public int getCycle() {
-		return UNKNOWN;
+		return UNKNOWN_CYCLE;
 	}
 
 
@@ -118,7 +118,7 @@ public class ReadPos implements Cloneable {
 	 * @return the qual
 	 */
 	public int getQual() {
-		return UNKNOWN;
+		return UNKNOWN_QUAL;
 	}
 	
 	
@@ -182,35 +182,49 @@ public class ReadPos implements Cloneable {
 	{
 		char delim = ',';		
 		
-		if (true)
-		{
 //			System.err.println("New method");
 			// New, this takes about 35% of total execution time
 
 			STRINGBUF.delete(0, STRINGBUFLEN);
 			STRINGBUF.append(this.getSymReaddir().getName());
+
 			STRINGBUF.append(delim);
 			STRINGBUF.append(this.getStrand());
-			STRINGBUF.append(delim);
-			STRINGBUF.append(this.getCycle());
-			STRINGBUF.append(delim);
-			STRINGBUF.append(this.getQual());
+
+			if (this.getCycle() != ReadPos.UNKNOWN_CYCLE)
+			{
+				STRINGBUF.append(delim);
+				STRINGBUF.append(this.getCycle());
+			}
+			
+			
+			if (this.getQual() != ReadPos.UNKNOWN_QUAL)
+			{
+				STRINGBUF.append(delim);
+				STRINGBUF.append(this.getQual());
+			}
+			
 			return STRINGBUF.toString();
-		}
-		else
-		{
-//			System.err.println("Old method");
-			// old.  67% of total execution time was spend in string concatenation
-			String key = "";
-			key += this.getSymReaddir().getName();
-			key += delim;
-			key += this.getStrand();
-			key += delim;
-			key += this.getCycle();
-			key += delim;
-			key += this.getQual();
-			return key;
-		}
+
+			////			System.err.println("Old method");
+//			// old.  67% of total execution time was spend in string concatenation
+//			String key = "";
+//			key += this.getSymReaddir().getName();
+//			key += delim;
+//			key += this.getStrand();
+//			if (this.getCycle() != ReadPos.UNKNOWN)
+//			{
+//				key += delim;
+//				key += this.getCycle();
+//			}
+//			if (this.getQual() != ReadPos.UNKNOWN)
+//			{
+//				key += delim;
+//				key += this.getQual();
+//			}
+//			
+//			return key;
+		
 	}
 	
 

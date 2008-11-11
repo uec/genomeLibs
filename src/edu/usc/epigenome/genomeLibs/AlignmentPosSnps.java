@@ -59,7 +59,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 			{
 				
 				int cycle = rp.getCycle();
-				if (pos != ReadPos.UNKNOWN) // If it's unknown , can't eliminate
+				if (cycle != ReadPos.UNKNOWN_CYCLE) // If it's unknown , can't eliminate
 				{
 					String key = rp.getStrand() + "__" + cycle;
 					//System.err.println("Looking for key: " + key);
