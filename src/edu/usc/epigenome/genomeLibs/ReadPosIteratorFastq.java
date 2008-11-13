@@ -85,11 +85,7 @@ public class ReadPosIteratorFastq extends ReadPosIterator {
 			// We'll check if we have already started one sequence read.  If not,
 			// we will go fetch the next one.
 			outRp = fetchNextReadPosStored(rollback);
-			if (outRp!=null)
-			{
-				return outRp;
-			}
-			else
+			if (outRp==null)
 			{
 				// If we don't have a stored one, go until we fetch the next one
 				this.initStoredNucs();
@@ -139,11 +135,11 @@ public class ReadPosIteratorFastq extends ReadPosIterator {
 						}
 					}
 					
-					// System.err.println("outRp = " + outRp + "\tstate="+ state);
 				}
 			}
 		}
 		
+//		System.err.println("outRp = " + ((outRp==null) ? "null" : outRp.commaSeparatedLine()) + "\tstate="+ state + "\trollback=" + rollback);
 		return outRp;
 	}
 	
@@ -179,16 +175,18 @@ public class ReadPosIteratorFastq extends ReadPosIterator {
 				{
 					Symbol sym = DNATools.forSymbol(currentNucs.charAt(currentNucsCycle));
 					int qual = MiscUtils.fastqQualCodeToInt(currentQuals.charAt(currentNucsCycle),this.rpOptions.positionQualsSolexaEncoding);
-					//System.err.println(sym + "\t" + qual);
+//					System.err.println("\t" + currentNucs.charAt(currentNucsCycle) + "\t" + qual + " >= " + rpOptions.minQualityScore);
 					if (qual >= rpOptions.minQualityScore)
 					{
 						outRp = new ReadPos(sym,true);
-						if (rpOptions.trackPositionsQuals)
+						if (rpOptions.trackPositions || rpOptions.trackQuals)
 						{
 							// add 1 to currentNucsCycle to go from 0-based to 1-based
-							outRp = new ReadPosRich(outRp, currentNucsCycle+1, qual);
-							if (rollback) currentNucsCycle--;
+							int rpCycle = (rpOptions.trackPositions) ? (currentNucsCycle+1) : ReadPos.UNKNOWN_CYCLE;
+							int rpQual = (rpOptions.trackQuals) ? qual : ReadPos.UNKNOWN_QUAL;
+							outRp = new ReadPosRich(outRp, rpCycle, rpQual);
 						}
+						if (rollback) currentNucsCycle--;
 					}
 					done = (outRp != null);
 
