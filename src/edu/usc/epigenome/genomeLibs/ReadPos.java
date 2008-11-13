@@ -186,45 +186,26 @@ public class ReadPos implements Cloneable {
 			// New, this takes about 35% of total execution time
 
 			STRINGBUF.delete(0, STRINGBUFLEN);
-			STRINGBUF.append(this.getSymReaddir().getName());
+			STRINGBUF.append(this.getSymToken());
 
 			STRINGBUF.append(delim);
 			STRINGBUF.append(this.getStrand());
 
-			if (this.getCycle() != ReadPos.UNKNOWN_CYCLE)
-			{
+//			if (this.getCycle() != ReadPos.UNKNOWN_CYCLE)
+//			{
 				STRINGBUF.append(delim);
 				STRINGBUF.append(this.getCycle());
-			}
+//			}
 			
 			
-			if (this.getQual() != ReadPos.UNKNOWN_QUAL)
-			{
+//			if (this.getQual() != ReadPos.UNKNOWN_QUAL)
+//			{
 				STRINGBUF.append(delim);
 				STRINGBUF.append(this.getQual());
-			}
+//			}
 			
 			return STRINGBUF.toString();
 
-			////			System.err.println("Old method");
-//			// old.  67% of total execution time was spend in string concatenation
-//			String key = "";
-//			key += this.getSymReaddir().getName();
-//			key += delim;
-//			key += this.getStrand();
-//			if (this.getCycle() != ReadPos.UNKNOWN)
-//			{
-//				key += delim;
-//				key += this.getCycle();
-//			}
-//			if (this.getQual() != ReadPos.UNKNOWN)
-//			{
-//				key += delim;
-//				key += this.getQual();
-//			}
-//			
-//			return key;
-		
 	}
 	
 

@@ -4,7 +4,8 @@ public class ReadPosOptions {
 	
 	public int minQualityScore = 0;
 	public boolean trackSnps = true;
-	public boolean trackPositionsQuals = true;
-	public boolean positionQualsSolexaEncoding = true;
+	public boolean trackPositions = false;
+	public boolean trackQuals = false;
+	public boolean positionQualsSolexaEncoding = false;
 	
 }

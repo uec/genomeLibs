@@ -34,7 +34,7 @@ public class SymbolCounts  {
 	
 	public void finish() {
 		// Nothing to do
-		System.err.println("Finishing SymbolCounts");
+		// System.err.println("Finishing SymbolCounts");
 	}
 
 
@@ -43,7 +43,7 @@ public class SymbolCounts  {
 	 */
 	public void init() {
 		// Initialize maps
-		System.err.println("Initializing SymbolCounts");
+		//System.err.println("Initializing SymbolCounts");
 		cycleCounts = new HashMap<ReadPos,Integer>();
 	}
 
@@ -62,7 +62,10 @@ public class SymbolCounts  {
 		while (rpIt.hasNext())
 		{
 			ReadPos rp = rpIt.next();
+			if (rp!=null)
+			{
 			out += rp.commaSeparatedLine();
+			}
 			out += "," + this.cycleCounts.get(rp);
 			out += "\n";
 		}
