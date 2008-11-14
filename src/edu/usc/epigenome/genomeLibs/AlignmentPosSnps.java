@@ -123,9 +123,9 @@ public class AlignmentPosSnps extends AlignmentPos {
 	 */
 	
 	
-	public void add(Symbol inC, boolean inReadForwardStrand)
+	public void add(Symbol inC, StrandedFeature.Strand inStrand)
 	{ 
-		ReadPos rp = new ReadPos(inC, inReadForwardStrand);
+		ReadPos rp = new ReadPos(inC, inStrand);
 		this.add(rp);
 	}
 	

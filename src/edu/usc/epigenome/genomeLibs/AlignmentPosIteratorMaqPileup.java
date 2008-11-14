@@ -3,6 +3,7 @@ package edu.usc.epigenome.genomeLibs;
 import java.io.IOException;
 
 import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.IllegalSymbolException;
 import org.biojava.bio.symbol.Symbol;
 
@@ -103,7 +104,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		default: readstrandC = DNATools.forSymbol(c); readstrandForwardStrand = Character.isUpperCase(c); break;
 		}
 
-		return new ReadPos(readstrandC,readstrandForwardStrand);
+		return new ReadPos(readstrandC,readstrandForwardStrand ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE);
 	}
 	
 	

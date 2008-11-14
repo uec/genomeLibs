@@ -178,7 +178,7 @@ public class ReadPosIteratorFastq extends ReadPosIterator {
 //					System.err.println("\t" + currentNucs.charAt(currentNucsCycle) + "\t" + qual + " >= " + rpOptions.minQualityScore);
 					if (qual >= rpOptions.minQualityScore)
 					{
-						outRp = new ReadPos(sym,true);
+						outRp = new ReadPos(sym,StrandedFeature.UNKNOWN);
 						if (rpOptions.trackPositions || rpOptions.trackQuals)
 						{
 							// add 1 to currentNucsCycle to go from 0-based to 1-based

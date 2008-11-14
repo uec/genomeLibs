@@ -24,10 +24,11 @@ public class ReadPos implements Cloneable {
 	{
 	}
 
-	public ReadPos(Symbol inSym, boolean inForwardStrand)
+	public ReadPos(Symbol inSym, StrandedFeature.Strand inStrand)
 	{
 		this.sym = inSym;
-		this.strand = (inForwardStrand) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
+		this.strand = inStrand;
+		//this.strand = (inForwardStrand) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
 	}
 
 	/* Getters/Setters */
@@ -97,6 +98,13 @@ public class ReadPos implements Cloneable {
 		return strand;
 	}
 
+
+	/**
+	 * @return the strand
+	 */
+	public char getStrandChar() {
+		return strand.getToken();
+	}
 
 	/**
 	 * @param strand the strand to set
@@ -189,7 +197,7 @@ public class ReadPos implements Cloneable {
 			STRINGBUF.append(this.getSymToken());
 
 			STRINGBUF.append(delim);
-			STRINGBUF.append(this.getStrand());
+			STRINGBUF.append(this.getStrandChar());
 
 //			if (this.getCycle() != ReadPos.UNKNOWN_CYCLE)
 //			{
