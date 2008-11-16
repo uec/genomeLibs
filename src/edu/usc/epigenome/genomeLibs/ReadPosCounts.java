@@ -13,17 +13,17 @@ import org.biojava.bio.symbol.*;
  * 
  *
  */
-public class SymbolCounts  {
+public class ReadPosCounts  {
 
 	protected HashMap<ReadPos,Integer> cycleCounts;
 	
 	/**
 	 * 
 	 */
-	public SymbolCounts() {
+	public ReadPosCounts() {
 	}
 	
-	public SymbolCounts(SymbolCounts inSc)
+	public ReadPosCounts(ReadPosCounts inSc)
 	{
 		cycleCounts = (HashMap<ReadPos,Integer>)inSc.cycleCounts.clone();
 	}

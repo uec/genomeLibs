@@ -13,12 +13,12 @@ import org.biojava.bio.symbol.*;
  * 
  *
  */
-public class APHandlerSymbolCounts extends SymbolCounts implements AlignmentPosStreamHandler {
+public class APHandlerReadPosCounts extends ReadPosCounts implements AlignmentPosStreamHandler {
 
 	/**
 	 * 
 	 */
-	public APHandlerSymbolCounts() {
+	public APHandlerReadPosCounts() {
 	}
 
 

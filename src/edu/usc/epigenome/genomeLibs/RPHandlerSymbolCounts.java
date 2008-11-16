@@ -13,7 +13,7 @@ import org.biojava.bio.symbol.*;
  * 
  *
  */
-public class RPHandlerSymbolCounts extends SymbolCounts implements ReadPosStreamHandler {
+public class RPHandlerSymbolCounts extends ReadPosCounts implements ReadPosStreamHandler {
 
 	/**
 	 * 

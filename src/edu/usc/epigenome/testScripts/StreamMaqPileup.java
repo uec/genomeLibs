@@ -40,7 +40,7 @@ public class StreamMaqPileup {
 		AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, pre, post);
 		
 		// Add handlers, filters
-		APHandlerSymbolCounts baseCounter = new APHandlerSymbolCounts();
+		APHandlerReadPosCounts baseCounter = new APHandlerReadPosCounts();
 		apStreamer.add(baseCounter);
 		
 		// Run
