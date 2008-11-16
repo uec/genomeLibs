@@ -30,9 +30,12 @@ public interface AlignmentPosStreamHandler {
 	 * @param currentAp is the current AP
 	 * @param nextAps is a list APs following current one (length determined by streamer)
 	 * @return true if AP should be passed to next handler
+	 * 
+	 * priorAps and nextAps are guaranteed to contain APs which are adjacent to each other 
+	 * on the chromosome.
 	 */
-	public abstract boolean streamElement(LinkedList<AlignmentPos> priorAps, 
-			AlignmentPos currentAp, LinkedList<AlignmentPos> nextAps);
+	public abstract boolean streamElement(AlignmentPos[] priorAps, 
+			AlignmentPos currentAp, AlignmentPos[] nextAps);
 	
 	
 }

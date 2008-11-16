@@ -25,8 +25,8 @@ public class APHandlerSymbolCounts extends SymbolCounts implements AlignmentPosS
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	public boolean streamElement(LinkedList<AlignmentPos> priorAps,
-			AlignmentPos currentAp, LinkedList<AlignmentPos> nextAps) 
+	public boolean streamElement(AlignmentPos[] priorAps,
+			AlignmentPos currentAp, AlignmentPos[] nextAps) 
 	{
 		boolean passes = true;
 		

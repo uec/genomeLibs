@@ -98,6 +98,10 @@ public class ReadPosIteratorFastq extends ReadPosIterator {
 					{
 						state = END_OF_FILE;
 					}
+					else if (line.length() == 0)
+					{
+						// do nothing
+					}
 					else
 					{
 						char firstChar = line.charAt(0);

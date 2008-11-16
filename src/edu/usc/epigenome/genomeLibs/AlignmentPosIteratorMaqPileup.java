@@ -11,48 +11,111 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 
 	//private int totalBasesRead = 0;
 	
+	private AlignmentPos hasNextCache = null;
+	
 	public AlignmentPosIteratorMaqPileup(String fn, AlignmentPosOptions apos) 
 	throws IOException {
 		super(fn, apos);
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosIterator#hasNext()
+	 */
+	@Override
+	public boolean hasNext() {
+		
+		if (hasNextCache != null) return true;
+		
+		boolean out = false;
+		try
+		{
+			AlignmentPos nextAp = this.nextAlignment(false);
+			hasNextCache = nextAp;
+			out = (nextAp != null);
+//			AlignmentPos nextAp = this.nextAlignment(true);
+//			out =  (nextAp != null);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Could not process file " + openFile + "\n" + e.toString());
+			System.exit(0);
+		}
+		return out;
 	}
 
 	@Override
 	protected AlignmentPos nextAlignment()
 	throws IOException, IllegalSymbolException, Exception
 	{
-//		String line = this.openStream.readLine();
-//		String[] line_items = line.split("\t");  //TODO VERY SLOW, 25% of execution time
+		return nextAlignment(false);
+	}
 
-		String[] line_items = ListUtils.readLineSplitByChar(this.openStream, '\t', 20);
-		if (line_items.length != 8)
+	protected AlignmentPos nextAlignment(boolean rollback)
+	throws IOException, IllegalSymbolException
+	{
+		if (hasNextCache != null)
 		{
-			throw new Exception("Illegal Maq pileup line: " + ListUtils.excelLine(line_items));
+			AlignmentPos ap = hasNextCache;
+			hasNextCache = null;  // Reset the cache 
+			return ap;
+		}
+	
+		
+		//		String line = this.openStream.readLine();
+		//		String[] line_items = line.split("\t");  //TODO VERY SLOW, 25% of execution time
+
+		if (rollback) this.openStream.mark(10000);
+		
+		AlignmentPos ap = null;
+		boolean done = false;
+
+		while (!done && (ap == null))
+		{
+			String[] line_items = ListUtils.readLineSplitByChar(this.openStream, '\t', 20);
+			
+			if (line_items == null)
+			{
+				done = true;
+			}
+			else if (line_items.length == 0)
+			{
+				// Blank line, keep trying (unless we hit the end of file)
+				done = !this.openStream.ready();
+			}
+			else if (line_items.length == 8)
+			{
+				String line_chr = line_items[0];
+				int line_pos = Integer.parseInt(line_items[1]);
+				char line_ref = line_items[2].charAt(0);
+				//		int line_count = Integer.parseInt(line_items[3]);
+				String snps_str = line_items[4];
+				char[] snps = snps_str.toCharArray();
+				String base_quals = line_items[5];
+				//		String mapping_quals = line_items[6];
+				String read_positions = line_items[7];
+
+
+				// Make the output object.  Just make one with SNPs, and then reduce if necessary
+				ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
+				//		System.err.println("ap=" + ap);
+				addMaqPositions(this.apOptions, (AlignmentPosSnps)ap, snps, base_quals, read_positions);
+
+				if (!apOptions.trackSnps)
+				{
+					AlignmentPosDepthOnly newAp = new AlignmentPosDepthOnly(ap);
+					newAp.setDepth(ap.getDepth());
+					ap = newAp;
+					//			System.err.println("ap=" + ap);
+				}
+			}
+			else
+			{
+				System.err.println("Illegal Maq pileup line: " + ListUtils.excelLine(line_items));
+				//throw new Exception("Illegal Maq pileup line: " + ListUtils.excelLine(line_items));
+			}
 		}
 		
-		String line_chr = line_items[0];
-		int line_pos = Integer.parseInt(line_items[1]);
-		char line_ref = line_items[2].charAt(0);
-//		int line_count = Integer.parseInt(line_items[3]);
-		String snps_str = line_items[4];
-		char[] snps = snps_str.toCharArray();
-		String base_quals = line_items[5];
-//		String mapping_quals = line_items[6];
-		String read_positions = line_items[7];
-		
-		
-		// Make the output object.  Just make one with SNPs, and then reduce if necessary
-		AlignmentPos ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
-//		System.err.println("ap=" + ap);
-		addMaqPositions(this.apOptions, (AlignmentPosSnps)ap, snps, base_quals, read_positions);
-
-		if (!apOptions.trackSnps)
-		{
-			AlignmentPosDepthOnly newAp = new AlignmentPosDepthOnly(ap);
-			newAp.setDepth(ap.getDepth());
-			ap = newAp;
-//			System.err.println("ap=" + ap);
-		}
-		
+		if (rollback) this.openStream.reset();
 		return ap;
 	}
 	

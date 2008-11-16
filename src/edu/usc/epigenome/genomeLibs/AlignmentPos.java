@@ -1,5 +1,7 @@
 package edu.usc.epigenome.genomeLibs;
 
+import java.util.Collection;
+
 import org.biojava.bio.program.gff.*;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
@@ -9,6 +11,7 @@ public abstract class AlignmentPos implements Cloneable {
 
 	/* Class vars */
 	public static final double NO_COVERAGE = -1.0;
+	public static final String NULL_CHROM = "NULLCHROM";
 	public static final AlignmentPosOptions DEFAULT_AP_OPTIONS = new AlignmentPosOptions();
 
 	/* Obj vars */
@@ -22,18 +25,9 @@ public abstract class AlignmentPos implements Cloneable {
 	/*****************
 	 *  Constructors
 	 */
-	
 	public AlignmentPos(char inRef, String inChr, int inPos, AlignmentPosOptions inApOptions)
 	{
-		try
-		{
-			ref = DNATools.forSymbol(inRef);
-		}
-		catch (IllegalSymbolException e)
-		{
-			System.err.println(e);
-		}
-		
+		this.setRef(inRef);
 		chr = inChr;
 		pos = inPos;
 		apOptions = inApOptions;
@@ -78,6 +72,41 @@ public abstract class AlignmentPos implements Cloneable {
 	}
 
 	/**
+	 * @return the apOptions
+	 */
+	public AlignmentPosOptions getApOptions() {
+		return apOptions;
+	}
+
+	/**
+	 * @param apOptions the apOptions to set
+	 */
+	public void setApOptions(AlignmentPosOptions inApOptions) {
+		this.apOptions = inApOptions;
+	}
+
+	/**
+	 * @param ref the ref to set
+	 */
+	public void setRef(Symbol inRef) {
+		this.ref = inRef;
+	}
+
+	/**
+	 * @param ref the ref to set
+	 */
+	public void setRef(char inRef) {
+		try
+		{
+			this.ref = DNATools.forSymbol(inRef);
+		}
+		catch (IllegalSymbolException e)
+		{
+			System.err.println(e);
+		}
+	}
+	
+	/**
 	 * @return the pos
 	 */
 	public int getPos() {
@@ -91,6 +120,30 @@ public abstract class AlignmentPos implements Cloneable {
 		this.pos = pos;
 	}
 
+	static String getRefTokens(Collection<AlignmentPos> aps)
+	{
+		int len = aps.size();
+		String out = "";
+		if (len > 0)
+		{
+			AlignmentPos[] ar = new AlignmentPos[len];
+			aps.toArray(ar);
+			out = getRefTokens(ar); 
+		}
+		
+		return out; 
+	}
+		
+	static String getRefTokens(AlignmentPos[] aps)
+	{
+		StringBuffer buf = new StringBuffer(aps.length);
+		for (int i = 0; i < aps.length; i++)
+		{
+			buf.append(aps[i].getRefToken());
+		}
+		
+		return buf.toString();
+	}
 
 	public char getRefToken()
 	{
