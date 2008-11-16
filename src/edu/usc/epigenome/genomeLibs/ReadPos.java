@@ -5,7 +5,7 @@ import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
 
-public class ReadPos implements Cloneable {
+public class ReadPos implements Cloneable, Comparable<ReadPos> {
 	
 	/* Class vars */
 	public static final int UNKNOWN_CYCLE = -1; 
@@ -185,6 +185,26 @@ public class ReadPos implements Cloneable {
 		return commaSeparatedLine();
 	}
 		
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	public int compareTo(ReadPos o) {
+		
+		if (this.getSymToken() > o.getSymToken()) return 1; 
+		if (this.getSymToken() < o.getSymToken()) return -1;
+		
+		if (this.getStrandChar() > o.getStrandChar()) return 1; 
+		if (this.getStrandChar() < o.getStrandChar()) return -1;
+		
+		if (this.getCycle() > o.getCycle()) return 1; 
+		if (this.getCycle() < o.getCycle()) return -1;
+		
+		if (this.getQual() > o.getQual()) return 1; 
+		if (this.getQual() < o.getQual()) return -1;
+		
+		return 0;
+	}
+
 	//TODO Not threadsafe because of static buffer STRINGBUF
 	public String commaSeparatedLine()
 	{
@@ -199,18 +219,11 @@ public class ReadPos implements Cloneable {
 			STRINGBUF.append(delim);
 			STRINGBUF.append(this.getStrandChar());
 
-//			if (this.getCycle() != ReadPos.UNKNOWN_CYCLE)
-//			{
-				STRINGBUF.append(delim);
-				STRINGBUF.append(this.getCycle());
-//			}
-			
-			
-//			if (this.getQual() != ReadPos.UNKNOWN_QUAL)
-//			{
-				STRINGBUF.append(delim);
-				STRINGBUF.append(this.getQual());
-//			}
+			STRINGBUF.append(delim);
+			STRINGBUF.append(this.getCycle());
+
+			STRINGBUF.append(delim);
+			STRINGBUF.append(this.getQual());
 			
 			return STRINGBUF.toString();
 

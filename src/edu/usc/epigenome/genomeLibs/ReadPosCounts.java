@@ -5,7 +5,6 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.*;
 
-import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.*;
 
 /**
@@ -15,7 +14,7 @@ import org.biojava.bio.symbol.*;
  */
 public class ReadPosCounts  {
 
-	protected HashMap<ReadPos,Integer> cycleCounts;
+	protected TreeMap<ReadPos,Integer> cycleCounts;
 	
 	/**
 	 * 
@@ -25,7 +24,7 @@ public class ReadPosCounts  {
 	
 	public ReadPosCounts(ReadPosCounts inSc)
 	{
-		cycleCounts = (HashMap<ReadPos,Integer>)inSc.cycleCounts.clone();
+		cycleCounts = (TreeMap<ReadPos,Integer>)inSc.cycleCounts.clone();
 	}
 
 	/* (non-Javadoc)
@@ -44,7 +43,7 @@ public class ReadPosCounts  {
 	public void init() {
 		// Initialize maps
 		//System.err.println("Initializing SymbolCounts");
-		cycleCounts = new HashMap<ReadPos,Integer>();
+		cycleCounts = new TreeMap<ReadPos,Integer>();
 	}
 
 	
