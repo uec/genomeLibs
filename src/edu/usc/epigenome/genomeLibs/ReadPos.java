@@ -160,11 +160,7 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 		
 		if (obj instanceof ReadPos)
 		{
-			ReadPos anotherReadPos = (ReadPos)obj;
-			String thisKey = this.equalsKey();
-			String thatKey = anotherReadPos.equalsKey();
-			//System.err.println("Comparing key " + thisKey + " to " + thatKey);
-			return thisKey.equals(thatKey);
+			return (this.compareTo((ReadPos)obj) == 0);
 		}
 		else
 		{	
