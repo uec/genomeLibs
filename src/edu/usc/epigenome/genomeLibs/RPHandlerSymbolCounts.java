@@ -13,7 +13,7 @@ import org.biojava.bio.symbol.*;
  * 
  *
  */
-public class RPHandlerSymbolCounts extends ReadPosCounts implements ReadPosStreamHandler {
+public class RPHandlerSymbolCounts extends ReadPosCounter implements ReadPosStreamHandler {
 
 	/**
 	 * 
@@ -29,14 +29,19 @@ public class RPHandlerSymbolCounts extends ReadPosCounts implements ReadPosStrea
 	public boolean streamElement(ReadPos currentRp) 
 	{
 		boolean passes = true;
-
-		//System.err.println("Streaming element: " + currentRp.commaSeparatedLine());
-			Integer count = cycleCounts.get(currentRp);
-			if (count == null) count = new Integer(0);
-			count++;
-			cycleCounts.put(currentRp, count);
-		
+		this.increment(currentRp);
 		return passes;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.TreeMapCounter#excelOutput()
+	 */
+	@Override
+	public String excelOutput() {
+		// TODO Auto-generated method stub
+		return super.excelOutput();
 	}
 
 	

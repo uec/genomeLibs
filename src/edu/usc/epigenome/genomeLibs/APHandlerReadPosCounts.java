@@ -13,7 +13,7 @@ import org.biojava.bio.symbol.*;
  * 
  *
  */
-public class APHandlerReadPosCounts extends StringCounts implements AlignmentPosStreamHandler {
+public class APHandlerReadPosCounts extends StringCounter implements AlignmentPosStreamHandler {
 
 	/**
 	 * 
@@ -55,11 +55,7 @@ public class APHandlerReadPosCounts extends StringCounts implements AlignmentPos
 			" -> " +
 			rp.getSymToken() + rp.getStrandChar();
 			
-			
-			Integer count = counts.get(key);
-			if (count == null) count = new Integer(0);
-			count++;
-			counts.put(key, count);
+			this.increment(key);
 		}
 		
 		return passes;

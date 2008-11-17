@@ -228,6 +228,16 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 			return STRINGBUF.toString();
 
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.commaSeparatedLine();
+	}
 	
 
+	
+	
 }
