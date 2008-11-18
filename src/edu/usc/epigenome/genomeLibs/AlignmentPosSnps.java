@@ -46,6 +46,11 @@ public class AlignmentPosSnps extends AlignmentPos {
 	 */
 	public Vector<ReadPos> getReadPositions()
 	{
+		return getReadPositions(false);
+	}
+
+	public Vector<ReadPos> getReadPositions(boolean fwOnly)
+	{
 		
 		TreeMap<String,Integer> counts = new TreeMap<String,Integer>();
 		Iterator<ReadPos> it = readPosList.iterator();
@@ -54,26 +59,34 @@ public class AlignmentPosSnps extends AlignmentPos {
 		{
 			ReadPos rp = it.next();
 			boolean add = true;
-			
-			if (this.apOptions.maxIdentical > 0)
+
+			if (fwOnly && (rp.strand == StrandedFeature.NEGATIVE))
 			{
-				
-				int cycle = rp.getCycle();
-				if (cycle != ReadPos.UNKNOWN_CYCLE) // If it's unknown , can't eliminate
-				{
-					String key = rp.getStrand() + "__" + cycle;
-					//System.err.println("Looking for key: " + key);
-					int val = (counts.get(key) == null) ? 0 : ((Integer)counts.get(key)).intValue();
-					val++; // The current one
-					add = (val <= this.apOptions.maxIdentical);
-					counts.put(key, new Integer(val));
-				}
+
 			}
-			
-			
-			if (add)
+			else
 			{
-				out.add(rp);
+
+				if (this.apOptions.maxIdentical > 0)
+				{
+
+					int cycle = rp.getCycle();
+					if (cycle != ReadPos.UNKNOWN_CYCLE) // If it's unknown , can't eliminate
+					{
+						String key = rp.getStrand() + "__" + cycle;
+						//System.err.println("Looking for key: " + key);
+						int val = (counts.get(key) == null) ? 0 : ((Integer)counts.get(key)).intValue();
+						val++; // The current one
+						add = (val <= this.apOptions.maxIdentical);
+						counts.put(key, new Integer(val));
+					}
+				}
+
+
+				if (add)
+				{
+					out.add(rp);
+				}
 			}
 		}
 			
@@ -100,15 +113,17 @@ public class AlignmentPosSnps extends AlignmentPos {
 	}
 
 	
-	public  AlignmentPosSnps clone(boolean flip_strand)
+	public  AlignmentPosSnps clone(boolean flipStrand)
 	{
-		AlignmentPosSnps ap = new AlignmentPosSnps(this.getRefFlipped(), this.chr, this.pos, this.apOptions);
+		AlignmentPosSnps ap = new AlignmentPosSnps(this.getRef(!flipStrand), this.chr, this.pos, this.apOptions);
 
 		Vector<ReadPos> newReadPosList = new Vector<ReadPos>(this.readPosList.size());
 		Iterator<ReadPos> it = this.readPosList.iterator();
 		while (it.hasNext())
 		{
-			newReadPosList.add(it.next().clone());
+			ReadPos rp = it.next();
+			if (flipStrand) rp = rp.reverseComplement();
+			newReadPosList.add(rp);
 		}
 		ap.readPosList = newReadPosList;
 		
@@ -146,6 +161,11 @@ public class AlignmentPosSnps extends AlignmentPos {
 	}
 
 
+	public void removeRevStrandReads()
+	{
+		Vector<ReadPos> newRp = this.getReadPositions(true);
+		this.readPosList = newRp;
+	}
 	
 	public void reset()
 	{

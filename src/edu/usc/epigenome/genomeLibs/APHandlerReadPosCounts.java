@@ -55,6 +55,8 @@ public class APHandlerReadPosCounts extends StringCounter implements AlignmentPo
 			" -> " +
 			rp.getSymToken() + rp.getStrandChar();
 			
+//			System.err.println("\t" + key);
+			
 			this.increment(key);
 		}
 		

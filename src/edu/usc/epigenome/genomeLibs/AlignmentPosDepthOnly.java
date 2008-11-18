@@ -1,6 +1,8 @@
 package edu.usc.epigenome.genomeLibs;
 
 
+import java.util.Vector;
+
 import org.biojava.bio.symbol.*;
 
 public class AlignmentPosDepthOnly extends AlignmentPos {
@@ -34,8 +36,6 @@ public class AlignmentPosDepthOnly extends AlignmentPos {
 	 * Getters
 	 * 
 	 */
-
-
 	
 	public int[] getDepth()
 	{
@@ -46,7 +46,8 @@ public class AlignmentPosDepthOnly extends AlignmentPos {
 	public  AlignmentPosDepthOnly clone(boolean flip_strand)
 	{
 		AlignmentPosDepthOnly ap = new AlignmentPosDepthOnly(this.getRefFlipped(), this.chr, this.pos, this.apOptions);
-		ap.setDepth(this.getDepth());
+		ap.depths[0] = this.depths[1];
+		ap.depths[1] = this.depths[0];
 		return ap;
 	}
 
@@ -69,7 +70,11 @@ public class AlignmentPosDepthOnly extends AlignmentPos {
 		this.depths[0] += inDepth[0];
 		this.depths[1] += inDepth[1];
 	}
-
+	
+	public void removeRevStrandReads()
+	{
+		this.depths[1] = 0;
+	}
 	
 	public void reset()
 	{

@@ -15,9 +15,6 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 	/* Obj vars */
 	protected Symbol sym = DNATools.n();
 	protected StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
-	protected static final int STRINGBUFLEN = 10000;
-	protected static StringBuffer STRINGBUF = new StringBuffer(STRINGBUFLEN);
-	
 	
 	/* Constructors */
 	public ReadPos()
@@ -130,6 +127,24 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 	}
 	
 	
+	public ReadPos reverseComplement()
+	{
+		ReadPos out = this.clone();
+		try
+		{
+			out.setSym(DNATools.complement(this.getSym()));
+		}
+		catch (IllegalSymbolException e)
+		{
+			// Should never get here.
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		out.setStrand(this.getStrand().flip());
+		return out;
+	}
+	
 	/* Static util functions */
 	
 	
@@ -146,6 +161,8 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 		catch (CloneNotSupportedException e)
 		{
 			// Should never get here
+			e.printStackTrace();
+			System.exit(0);
 		}
 		
 		return newInst;
@@ -201,28 +218,10 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 		return 0;
 	}
 
-	//TODO Not threadsafe because of static buffer STRINGBUF
 	public String commaSeparatedLine()
 	{
-		char delim = ',';		
-		
-//			System.err.println("New method");
-			// New, this takes about 35% of total execution time
-
-			STRINGBUF.delete(0, STRINGBUFLEN);
-			STRINGBUF.append(this.getSymToken());
-
-			STRINGBUF.append(delim);
-			STRINGBUF.append(this.getStrandChar());
-
-			STRINGBUF.append(delim);
-			STRINGBUF.append(this.getCycle());
-
-			STRINGBUF.append(delim);
-			STRINGBUF.append(this.getQual());
-			
-			return STRINGBUF.toString();
-
+		return String.format("%c,%c,%d,%d",getSymToken(), getStrandChar(),
+				getCycle(), getQual());
 	}
 
 	/* (non-Javadoc)

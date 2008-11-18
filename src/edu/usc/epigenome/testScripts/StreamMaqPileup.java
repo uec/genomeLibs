@@ -37,9 +37,10 @@ public class StreamMaqPileup {
 			
 		// Create iterator, streamer
 		Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
-		AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, pre, post);
+		AlignmentPosStreamer apStreamer = new AlignmentPosStreamerWatsonThenCrick(apIt, pre, post);
 		
 		// Add handlers, filters
+		apStreamer.add(new APFilterCytosines());
 		APHandlerReadPosCounts baseCounter = new APHandlerReadPosCounts();
 		apStreamer.add(baseCounter);
 		

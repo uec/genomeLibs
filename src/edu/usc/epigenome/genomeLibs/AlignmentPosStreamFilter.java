@@ -3,13 +3,11 @@
  */
 package edu.usc.epigenome.genomeLibs;
 
-import java.util.*;
-
 /**
  * @author benb
  *
  */
-public interface AlignmentPosStreamFilter extends
+public abstract class AlignmentPosStreamFilter implements
 		AlignmentPosStreamHandler {
 
 	/**
@@ -19,7 +17,30 @@ public interface AlignmentPosStreamFilter extends
 	 * @return true if AP should be passed
 	 */
 
-	public abstract boolean elementPasses(LinkedList<AlignmentPos> priorAps, 
-			AlignmentPos currentAp, LinkedList<AlignmentPos> nextAps);
+	public abstract boolean elementPasses(AlignmentPos[] priorAps, 
+			AlignmentPos currentAp, AlignmentPos[] nextAps);
+
+	
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#finish()
+	 */
+	public void finish() {
+	}
+
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#init()
+	 */
+	public void init() {
+	}
+
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(edu.usc.epigenome.genomeLibs.AlignmentPos[], edu.usc.epigenome.genomeLibs.AlignmentPos, edu.usc.epigenome.genomeLibs.AlignmentPos[])
+	 */
+	public boolean streamElement(AlignmentPos[] priorAps,
+			AlignmentPos currentAp, AlignmentPos[] nextAps) {
+		return this.elementPasses(priorAps, currentAp, nextAps); 
+	}
 
 }

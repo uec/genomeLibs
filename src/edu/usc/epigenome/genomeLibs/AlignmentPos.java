@@ -243,7 +243,7 @@ public abstract class AlignmentPos implements Cloneable {
 	 * 
 	 */
 	
-	
+	abstract public void removeRevStrandReads();
 	abstract public void reset();
 	
 	/** GFF **/
@@ -261,6 +261,8 @@ public abstract class AlignmentPos implements Cloneable {
 		GFFUtils.add_gffrecord_map_entry(gff, "rev_depth", "" + this.getDepth(false));
 		return gff;
 	}
+	
+	
 	
 	/*** Other output ***/
 	@Override public String toString()

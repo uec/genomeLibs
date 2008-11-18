@@ -63,4 +63,11 @@ public class AlignmentPosNull extends AlignmentPos {
 		System.exit(0);
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos#removeRevStrandReads()
+	 */
+	@Override
+	public void removeRevStrandReads() {}
+
+
 }
