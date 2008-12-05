@@ -1,6 +1,6 @@
 package edu.usc.epigenome.genomeLibs;
 
-import java.util.Collection;
+import java.util.*;
 
 import org.biojava.bio.program.gff.*;
 import org.biojava.bio.seq.StrandedFeature;
@@ -18,6 +18,7 @@ public abstract class AlignmentPos implements Cloneable {
 	protected Symbol ref;
 	protected String chr;
 	protected int pos;
+	protected StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
 	protected AlignmentPosOptions apOptions = null;
 	
 
@@ -120,6 +121,20 @@ public abstract class AlignmentPos implements Cloneable {
 		this.pos = pos;
 	}
 
+	/**
+	 * @return the strand
+	 */
+	public StrandedFeature.Strand getStrand() {
+		return strand;
+	}
+
+	/**
+	 * @param strand the strand to set
+	 */
+	public void setStrand(StrandedFeature.Strand strand) {
+		this.strand = strand;
+	}
+
 	static String getRefTokens(Collection<AlignmentPos> aps)
 	{
 		int len = aps.size();
@@ -145,6 +160,32 @@ public abstract class AlignmentPos implements Cloneable {
 		return buf.toString();
 	}
 
+	static String getPosString(Collection<AlignmentPos> aps)
+	{
+		int len = aps.size();
+		String out = "";
+		if (len > 0)
+		{
+			AlignmentPos[] ar = new AlignmentPos[len];
+			aps.toArray(ar);
+			out = getPosString(ar); 
+		}
+		
+		return out; 
+	}
+
+	static String getPosString(AlignmentPos[] aps)
+	{
+		StringBuffer buf = new StringBuffer(aps.length*3);
+		for (int i = 0; i < aps.length; i++)
+		{
+			buf.append( aps[i].getPos() + ",");
+		}
+		
+		return buf.toString();
+	}
+
+	
 	public char getRefToken()
 	{
 		return this.getRefToken(true);
@@ -226,6 +267,26 @@ public abstract class AlignmentPos implements Cloneable {
 		return this.clone(true);
 	}
 	
+	
+	
+	public Vector<ReadPos> getReadPositions()
+	{
+		return getReadPositions(false);
+	}
+
+	public Vector<ReadPos> getReadPositions(boolean fwOnly)
+	{
+		System.err.println("Base class AlignmentPos can not execute getReadPositions(fwOnly).  Use AlignmentPosSnps instead");
+		(new Exception()).printStackTrace();
+		return new Vector<ReadPos>();
+	}
+
+	
+	
+	
+	
+	
+	
 	public AlignmentPos clone()
 	{
 		return clone(false);
@@ -245,6 +306,32 @@ public abstract class AlignmentPos implements Cloneable {
 	
 	abstract public void removeRevStrandReads();
 	abstract public void reset();
+	
+
+	
+	/**
+	 * @param coll
+	 * @param fw
+	 * @return
+	 * 
+	 * This function is destructive, so clone the collection first if you need
+	 * a copy!
+	 */
+	static void	removeApsByStrand(Collection<? extends AlignmentPos> coll, boolean fw)
+	{
+		Iterator<? extends AlignmentPos> it = coll.iterator(); 
+		while (it.hasNext())
+		{
+			AlignmentPos ap = it.next();
+			if ((fw && (ap.getStrand() == StrandedFeature.POSITIVE)) ||
+					(!fw && (ap.getStrand() == StrandedFeature.NEGATIVE)))
+			{
+				it.remove();
+			}
+		}
+		
+	}
+	
 	
 	/** GFF **/
 	
@@ -269,7 +356,7 @@ public abstract class AlignmentPos implements Cloneable {
 	{
 		String out = null;
 
-		out = this.chr + ":" + this.pos + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
+		out = this.chr + ":" + this.pos + this.strand.getToken() + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
 		this.getDepth(true) + ", " + this.getDepth(false); 
 		
 		return out;

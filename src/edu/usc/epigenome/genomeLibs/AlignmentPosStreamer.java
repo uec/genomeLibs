@@ -9,7 +9,7 @@ import java.util.*;
  * @author benb
  *
  */
-public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler>{
+public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> {
 
 	/** Obj vars **/
 	protected Iterator<AlignmentPos> apIt;

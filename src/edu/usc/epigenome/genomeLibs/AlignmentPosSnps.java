@@ -44,10 +44,6 @@ public class AlignmentPosSnps extends AlignmentPos {
 	 * @return a list of read positions , with identical ones removed
 	 * according to apOptions.maxIdentical
 	 */
-	public Vector<ReadPos> getReadPositions()
-	{
-		return getReadPositions(false);
-	}
 
 	public Vector<ReadPos> getReadPositions(boolean fwOnly)
 	{

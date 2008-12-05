@@ -40,15 +40,12 @@ public class StreamMaqPileup {
 		AlignmentPosStreamer apStreamer = new AlignmentPosStreamerWatsonThenCrick(apIt, pre, post);
 		
 		// Add handlers, filters
-		apStreamer.add(new APFilterCytosines());
-		APHandlerReadPosCounts baseCounter = new APHandlerReadPosCounts();
+		apStreamer.add(new APFilterCphs());
+		APHandlerWindowStatsCpGConcordance baseCounter = new APHandlerWindowStatsCpGConcordance(100);
 		apStreamer.add(baseCounter);
 		
 		// Run
 		apStreamer.run();
-		
-		// Now output 
-		System.out.print(baseCounter.excelOutput());
 
 	}
 		

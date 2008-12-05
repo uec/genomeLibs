@@ -87,4 +87,18 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 		return out;
 	}
 
+	public String excelOutput(String firstCol)
+	{
+		String out = "";
+		
+		Iterator<T> strIt = this.keySet().iterator();
+		while (strIt.hasNext())
+		{
+			T key = strIt.next();
+			out += firstCol + "," + key.toString() + "," + this.get(key);
+			out += "\n";
+		}
+		
+		return out;
+	}
 }

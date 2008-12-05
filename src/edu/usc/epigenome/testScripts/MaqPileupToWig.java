@@ -6,7 +6,7 @@ import edu.usc.epigenome.genomeLibs.*;
 
 public class MaqPileupToWig {
 
-	private static final String C_USAGE = "Usage: ReadMaqPileup file1.pileup name " + 
+	private static final String C_USAGE = "Usage: MaqPileupToWig file1.pileup name " + 
 	" span step [view_limit_lower view_limit_upper]";
 	
 	/**

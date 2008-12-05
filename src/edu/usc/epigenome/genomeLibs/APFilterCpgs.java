@@ -12,9 +12,9 @@ public class APFilterCpgs extends AlignmentPosStreamFilter {
 	public boolean elementPasses(AlignmentPos[] priorAps,
 			AlignmentPos currentAp, AlignmentPos[] nextAps) {
 
-		if (nextAps.length < 1)
+		if ((nextAps.length < 1) || (priorAps.length < 1))
 		{
-			System.err.println("APFilterCpgs can not be used with 0 bp of sequence context");
+			System.err.println("APFilterCpgs must have at least bp of sequence context on either side");
 		//	(new Exception()).printStackTrace();
 			System.exit(0);
 		}

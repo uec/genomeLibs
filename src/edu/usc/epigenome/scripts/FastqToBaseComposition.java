@@ -10,12 +10,12 @@ import org.kohsuke.args4j.spi.*;
 
 import edu.usc.epigenome.genomeLibs.*;
 
-public class StreamFastq {
+public class FastqToBaseComposition {
 
 	// -c track cycles
 	// -q track qual scores
 	// -s use solexa qual
-	private static final String USAGE = "Usage: StreamFastq -minQual 30 -c(ycles) -q(uals) -s(olexa) file1.fastq file2.fastq ...";
+	private static final String USAGE = "Usage: FastqToBaseComposition -minQual 30 -cycles -quals -solexa file1.fastq file2.fastq ...";
 	
 	
     @Option(name="-minQual",usage="minimum quality score (default 0)")
@@ -36,7 +36,7 @@ public class StreamFastq {
     public static void main(String[] args)
     throws Exception
     {
-    	new StreamFastq().doMain(args);
+    	new FastqToBaseComposition().doMain(args);
     }
     
 	public void doMain(String[] args)
@@ -76,22 +76,24 @@ public class StreamFastq {
 		rpos.trackQuals = this.quals;
 		rpos.positionQualsSolexaEncoding = this.solexa;
 	    
-		String fn = (String)this.arguments.get(0);
-
-			
-		// Create iterator, streamer
-		Iterator<ReadPos> rpIt = new ReadPosIteratorFastq(fn, rpos);
-		ReadPosStreamer rpStreamer = new ReadPosStreamer(rpIt);
-		
-		// Add handlers, filters
 		RPHandlerSymbolCounts baseCounter = new RPHandlerSymbolCounts();
-		rpStreamer.add(baseCounter);
-		
-		// Run
-		rpStreamer.run();
+		for (int i = 0; i < this.arguments.size(); i++)
+		{
+			String fn = (String)this.arguments.get(i);
+
+			// Create iterator, streamer
+			Iterator<ReadPos> rpIt = new ReadPosIteratorFastq(fn, rpos);
+			ReadPosStreamer rpStreamer = new ReadPosStreamer(rpIt);
+
+			// Add handlers, filters
+			rpStreamer.add(baseCounter);
+
+			// Run
+			rpStreamer.run();
+		}
 		
 		// Now output 
-		System.out.print(baseCounter.excelOutput());
+		System.out.print(baseCounter.excelOutput("preAlignment"));
 
 	}
 	
