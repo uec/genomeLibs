@@ -2,6 +2,8 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.Iterator;
 
+import org.biojava.bio.seq.StrandedFeature;
+
 public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 
 	
@@ -51,10 +53,12 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 				if (fw) 
 				{
 					preAps[j] = fivePrimeAps[(fivePrimeAps.length - realPreWindSize) + j].clone(); 
+					preAps[j].setStrand(StrandedFeature.POSITIVE);
 				}
 				else
 				{
 					preAps[j] = threePrimeAps[realPreWindSize - j - 1].flipped(); 
+					preAps[j].setStrand(StrandedFeature.NEGATIVE);
 				}
 				preAps[j].removeRevStrandReads();
 			}
@@ -65,16 +69,19 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 				if (fw) 
 				{
 					postAps[j] = threePrimeAps[j].clone(); 
+					postAps[j].setStrand(StrandedFeature.POSITIVE);
 				}
 				else
 				{
 					postAps[j] = fivePrimeAps[fivePrimeAps.length - j - 1].flipped(); 
+					postAps[j].setStrand(StrandedFeature.NEGATIVE);
 				}
 				postAps[j].removeRevStrandReads();
 			}		
 
 			// Flip the current one if necessary
 			AlignmentPos currentApDirectional = (fw) ? currentAp.clone() : currentAp.flipped();
+			currentApDirectional.setStrand((fw) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE);
 			currentApDirectional.removeRevStrandReads();
 			
 //			System.err.print("Streaming " + realPreWindSize + ", " + realPostWindSize + ":\t"); 
