@@ -9,6 +9,7 @@ import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.Symbol;
 
 /**
+ * Counted objects, contains symbol, strand, cycle and quality info
  * @author benb
  *
  */

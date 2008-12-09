@@ -5,6 +5,11 @@ import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
 
+/**
+ * Counted objects, contains symbol, strand info
+ * @author benb
+ *
+ */
 public class ReadPos implements Cloneable, Comparable<ReadPos> {
 	
 	/* Class vars */

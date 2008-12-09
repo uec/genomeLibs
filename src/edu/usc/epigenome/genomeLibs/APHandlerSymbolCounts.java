@@ -18,6 +18,13 @@ public class APHandlerSymbolCounts extends ReadPosCounter implements AlignmentPo
 	/**
 	 * 
 	 */
+	private static final long serialVersionUID = -3266222243481309526L;
+
+
+
+	/**
+	 * 
+	 */
 	public APHandlerSymbolCounts() {
 	}
 
@@ -48,9 +55,4 @@ public class APHandlerSymbolCounts extends ReadPosCounter implements AlignmentPo
 		// TODO Auto-generated method stub
 		return super.excelOutput();
 	}
-
-	
-	
-	
-
 }
