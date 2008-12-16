@@ -176,7 +176,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	
 	
 	/**
-	 * subset of this that only pertains to the given cycle
+	 * subset of this collection that only pertains to the given cycle
 	 * @param cycle only keys for this cycle value will be returned
 	 * @return the new ReadPosCounter filtered
 	 */
@@ -193,16 +193,15 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	}	
 	
 	/**
-	 * subset of this that is only for the given symbol
+	 * subset of this collection that only pertains to the given symbol
 	 * @param a symbol that will be used to filter all entries
 	 * @return the new ReadPosCounter filtered
 	 */
 	ReadPosCounter getKeysBySymbol(Symbol symbol)
 	{
 		ReadPosCounter ret = new ReadPosCounter();
-		for(ReadPos tkey : this.keySet())
+		for(ReadPos key : this.keySet())
 		{
-			ReadPosRich key = (ReadPosRich) tkey;
 			if(key.getSym() == symbol)
 				ret.put(key, this.get(key));
 		}
@@ -211,7 +210,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	
 	 
 	/**
-	 * //subset of this that has quality greater then
+	 * //get subset of this collection that has quality greater then specified
 	 * @param quality value for the cutoff
 	 * @return the new ReadPosCounter filtered
 	 */
@@ -229,7 +228,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	
 	 
 	/**
-	 * subset of this that has quality less then
+	 * get subset of this collection that has quality less then specified
 	 * @param quality value for the cutoff
 	 * @return the new ReadPosCounter filtered
 	 */
