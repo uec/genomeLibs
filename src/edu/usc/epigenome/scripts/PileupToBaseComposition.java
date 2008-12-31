@@ -102,7 +102,7 @@ public class PileupToBaseComposition {
 		// Now output
 		String description = "postAlignment";
 		if (chonly) description += ".CpH";
-		if (cgonly) description += ".CpH";
+		if (cgonly) description += ".CpG";
 		
 		System.out.print(counter.excelOutput(description));
 
