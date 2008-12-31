@@ -139,14 +139,18 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				char snpChar = snps[i+1]; // First one is a "@" char
 				ReadPos rp = maqPileupCharToReadPos(snpChar, ap.ref);
 
-				if (inApOptions.trackPositions || inApOptions.trackQuals)
+				int cycle = Integer.parseInt(readPositionsStrs[i]);
+
+				if (!inApOptions.onlyFirstCycle || (cycle==1))
 				{
-					int apCycle = (inApOptions.trackPositions) ? Integer.parseInt(readPositionsStrs[i]) : ReadPos.UNKNOWN_CYCLE;
-					int apQual = (inApOptions.trackQuals) ? qual : ReadPos.UNKNOWN_QUAL;
-					rp = new ReadPosRich(rp, apCycle, apQual);
+					if (inApOptions.trackPositions || inApOptions.trackQuals)
+					{
+						int apCycle = (inApOptions.trackPositions) ? cycle : ReadPos.UNKNOWN_CYCLE;
+						int apQual = (inApOptions.trackQuals) ? qual : ReadPos.UNKNOWN_QUAL;
+						rp = new ReadPosRich(rp, apCycle, apQual);
+					}
+					ap.add(rp);
 				}
-				
-				ap.add(rp);
 			}
 			
 		}
