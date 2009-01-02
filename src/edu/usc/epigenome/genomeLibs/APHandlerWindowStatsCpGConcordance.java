@@ -31,19 +31,19 @@ public class APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
 		apWindCopy.addAll(apWind);
 		AlignmentPos.removeApsByStrand(apWindCopy, !currentFw);
 		
-		System.err.println(
-				currentAp + 
-				"\t" + 
-				AlignmentPos.getRefTokens(priorAps) + 
-				"/" + 
-				currentAp.getRefToken() + 
-				"/" +
-				AlignmentPos.getRefTokens(nextAps) + 
-				"\t" + 
-				AlignmentPos.getRefTokens(apWindCopy) +
-				"\t" + 
-				AlignmentPos.getPosString(apWindCopy)
-				);
+//		System.err.println(
+//				currentAp + 
+//				"\t" + 
+//				AlignmentPos.getRefTokens(priorAps) + 
+//				"/" + 
+//				currentAp.getRefToken() + 
+//				"/" +
+//				AlignmentPos.getRefTokens(nextAps) + 
+//				"\t" + 
+//				AlignmentPos.getRefTokens(apWindCopy) +
+//				"\t" + 
+//				AlignmentPos.getPosString(apWindCopy)
+//				);
 		
 		return true;
 	}

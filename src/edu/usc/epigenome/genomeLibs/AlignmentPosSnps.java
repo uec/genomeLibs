@@ -2,6 +2,7 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.*;
 
+import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
 
@@ -16,6 +17,9 @@ public class AlignmentPosSnps extends AlignmentPos {
 	 *  Constructors
 	 */
 
+	public AlignmentPosSnps() {
+		super();
+	}
 
 	
 	public AlignmentPosSnps(char inRef, String inChr, int inPos, AlignmentPosOptions inApOptions) {
@@ -109,10 +113,25 @@ public class AlignmentPosSnps extends AlignmentPos {
 	}
 
 	
-	public  AlignmentPosSnps clone(boolean flipStrand)
+	public AlignmentPos clone(boolean flipStrand)
 	{
-		AlignmentPosSnps ap = new AlignmentPosSnps(this.getRef(!flipStrand), this.chr, this.pos, this.apOptions);
-
+		// AlignmentPosSnps ap = new AlignmentPosSnps(this.getRef(!flipStrand), this.chr, this.pos, this.apOptions);
+		
+		// Create a new instance of the correct type
+		AlignmentPosSnps ap;
+		try {
+			Class<? extends AlignmentPosSnps> c = this.getClass();
+			ap = c.newInstance();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} 
+		ap.setRef(this.getRef(!flipStrand));
+		ap.setChr(this.getChr());
+		ap.setPos(this.getPos());
+		ap.setApOptions(this.getApOptions());
+		
+		// Add the RPs
 		Vector<ReadPos> newReadPosList = new Vector<ReadPos>(this.readPosList.size());
 		Iterator<ReadPos> it = this.readPosList.iterator();
 		while (it.hasNext())
@@ -123,9 +142,17 @@ public class AlignmentPosSnps extends AlignmentPos {
 		}
 		ap.readPosList = newReadPosList;
 		
+		// And change the strand if necessary
+		StrandedFeature.Strand strand = (flipStrand) ? this.getStrand().flip() : this.getStrand();
+		ap.setStrand(strand);
+//		System.err.println("Cloning. old strand=" + this.getStrand() + "\tnew=" + strand);
+//		System.err.println(this.toString());
+//		System.err.println(ap.toString());
+		
 		return ap;
 	}
 	
+
 
 	/*****************
 	 * 
@@ -167,7 +194,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 	{
 		this.readPosList = new Vector<ReadPos>();
 	}
-	
+
 
 
 }

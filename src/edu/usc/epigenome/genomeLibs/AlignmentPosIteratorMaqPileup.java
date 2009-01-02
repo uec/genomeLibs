@@ -96,8 +96,16 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 
 
 				// Make the output object.  Just make one with SNPs, and then reduce if necessary
-				ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
-				//		System.err.println("ap=" + ap);
+				if (this.apOptions.trackBisulfiteConversion)
+				{
+					ap = new AlignmentPosSnpsBisulfiteConverted(line_ref, line_chr, line_pos, this.apOptions);
+				}
+				else
+				{
+					ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
+				}
+				ap.setStrand(StrandedFeature.POSITIVE); // Positive by default
+				//	System.err.println("ap=" + ap);
 				addMaqPositions(this.apOptions, (AlignmentPosSnps)ap, snps, base_quals, read_positions);
 
 				if (!apOptions.trackSnps)

@@ -3,6 +3,7 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.Vector;
 
+import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
 
 public class AlignmentPosDepthOnly extends AlignmentPos {
@@ -43,11 +44,15 @@ public class AlignmentPosDepthOnly extends AlignmentPos {
 	}
 
 	
-	public  AlignmentPosDepthOnly clone(boolean flip_strand)
+	public  AlignmentPosDepthOnly clone(boolean flipStrand)
 	{
 		AlignmentPosDepthOnly ap = new AlignmentPosDepthOnly(this.getRefFlipped(), this.chr, this.pos, this.apOptions);
 		ap.depths[0] = this.depths[1];
 		ap.depths[1] = this.depths[0];
+		
+		StrandedFeature.Strand strand = (flipStrand) ? this.getStrand().flip() : this.getStrand();
+		ap.setStrand(strand);
+
 		return ap;
 	}
 

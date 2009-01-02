@@ -42,53 +42,57 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 		{
 			boolean fw = (i==0);
 			
-			
-			AlignmentPos[] preAps = new AlignmentPos[realPreWindSize];
-			AlignmentPos[] postAps = new AlignmentPos[realPostWindSize];
-			
-			// First fill up the preAps.  Make sure to clone because we use
-			// removeRevStrandReads , which is destructive
-			for (int j = 0; j < realPreWindSize; j++)
-			{
-				if (fw) 
-				{
-					preAps[j] = fivePrimeAps[(fivePrimeAps.length - realPreWindSize) + j].clone(); 
-					preAps[j].setStrand(StrandedFeature.POSITIVE);
-				}
-				else
-				{
-					preAps[j] = threePrimeAps[realPreWindSize - j - 1].flipped(); 
-					preAps[j].setStrand(StrandedFeature.NEGATIVE);
-				}
-				preAps[j].removeRevStrandReads();
-			}
-			
-			// Now the postAps
-			for (int j = 0; j < realPostWindSize; j++)
-			{
-				if (fw) 
-				{
-					postAps[j] = threePrimeAps[j].clone(); 
-					postAps[j].setStrand(StrandedFeature.POSITIVE);
-				}
-				else
-				{
-					postAps[j] = fivePrimeAps[fivePrimeAps.length - j - 1].flipped(); 
-					postAps[j].setStrand(StrandedFeature.NEGATIVE);
-				}
-				postAps[j].removeRevStrandReads();
-			}		
-
 			// Flip the current one if necessary
 			AlignmentPos currentApDirectional = (fw) ? currentAp.clone() : currentAp.flipped();
-			currentApDirectional.setStrand((fw) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE);
 			currentApDirectional.removeRevStrandReads();
-			
-//			System.err.print("Streaming " + realPreWindSize + ", " + realPostWindSize + ":\t"); 
-//			System.err.println(AlignmentPos.getRefTokens(preAps) + 
-//					"," + currentApDirectional.getRefToken() + "," + AlignmentPos.getRefTokens(postAps));
-			out &= super.processAp(preAps, currentApDirectional, postAps);
-		}
+
+//			// Only process if we have a non-zero depth after removing.
+//			if (currentApDirectional.getTotalDepth() > 0)
+//			{
+
+				AlignmentPos[] preAps = new AlignmentPos[realPreWindSize];
+				AlignmentPos[] postAps = new AlignmentPos[realPostWindSize];
+
+				// First fill up the preAps.  Make sure to clone because we use
+				// removeRevStrandReads , which is destructive
+				for (int j = 0; j < realPreWindSize; j++)
+				{
+					if (fw) 
+					{
+						preAps[j] = fivePrimeAps[(fivePrimeAps.length - realPreWindSize) + j].clone(); 
+						preAps[j].setStrand(StrandedFeature.POSITIVE);
+					}
+					else
+					{
+						preAps[j] = threePrimeAps[realPreWindSize - j - 1].flipped(); 
+						preAps[j].setStrand(StrandedFeature.NEGATIVE);
+					}
+					preAps[j].removeRevStrandReads();
+				}
+
+				// Now the postAps
+				for (int j = 0; j < realPostWindSize; j++)
+				{
+					if (fw) 
+					{
+						postAps[j] = threePrimeAps[j].clone(); 
+						postAps[j].setStrand(StrandedFeature.POSITIVE);
+					}
+					else
+					{
+						postAps[j] = fivePrimeAps[fivePrimeAps.length - j - 1].flipped(); 
+						postAps[j].setStrand(StrandedFeature.NEGATIVE);
+					}
+					postAps[j].removeRevStrandReads();
+				}		
+
+
+				//			System.err.print("Streaming " + realPreWindSize + ", " + realPostWindSize + ":\t"); 
+				//			System.err.println(AlignmentPos.getRefTokens(preAps) + 
+				//					"," + currentApDirectional.getRefToken() + "," + AlignmentPos.getRefTokens(postAps));
+				out &= super.processAp(preAps, currentApDirectional, postAps);
+			}
+//		}
 
 		return out;
 	}

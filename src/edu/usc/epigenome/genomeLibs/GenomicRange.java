@@ -3,11 +3,19 @@ package edu.usc.epigenome.genomeLibs;
 
 public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	
-
+    
+	//TODO Use org.biojavax.bio.seq.SimplePosition for position info
+	
+	/* Class vars */
+	static final String NO_CHROM = "NO_CHROM";
+	static final double NO_SCORE = Double.NEGATIVE_INFINITY;
+	
+	
 	/* Obj vars */
-	protected String chrom = null;
+	protected String chrom = NO_CHROM;
 	protected int start = 0;
 	protected int end = 0;
+	protected double score = NO_SCORE;
 	
 	/* Constructors */
 	public GenomicRange(String inChrom, int inStart, int inEnd)
@@ -70,6 +78,24 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	public void setEnd(int end) {
 		this.end = end;
 	}
+
+
+	/**
+	 * @return the score
+	 */
+	public double getScore() {
+		return score;
+	}
+
+
+
+	/**
+	 * @param score the score to set
+	 */
+	public void setScore(double score) {
+		this.score = score;
+	}
+
 
 
 	/** Static util functions **/

@@ -26,6 +26,10 @@ public abstract class AlignmentPos implements Cloneable {
 	/*****************
 	 *  Constructors
 	 */
+	public AlignmentPos()
+	{
+	}
+		
 	public AlignmentPos(char inRef, String inChr, int inPos, AlignmentPosOptions inApOptions)
 	{
 		this.setRef(inRef);
@@ -49,6 +53,7 @@ public abstract class AlignmentPos implements Cloneable {
 		chr = ap.chr;
 		pos = ap.pos;
 		apOptions = ap.apOptions;
+		strand = ap.strand;
 	}
 
 
@@ -229,17 +234,7 @@ public abstract class AlignmentPos implements Cloneable {
 
 	protected Symbol getRefFlipped()
 	{
-		Symbol newRef = null;
-		try
-		{
-			newRef = DNATools.complement(this.ref); 
-		}
-		catch (IllegalSymbolException e)
-		{
-			System.err.println(e);
-			System.exit(0);
-		}
-		return newRef;
+		return getRef(false);
 	}
 	
 	public int getTotalDepth()
@@ -335,21 +330,38 @@ public abstract class AlignmentPos implements Cloneable {
 	
 	/** GFF **/
 	
-	public SimpleGFFRecord toGff(String chrom, boolean ref_fw_strand, int pos)
+	public SimpleGFFRecord toGff(boolean flip)
 	{
+		AlignmentPos ap = this;
+		if (flip)
+		{
+			ap = ap.flipped();
+		}
+		
 		SimpleGFFRecord gff = new SimpleGFFRecord();
-		gff.setStrand((ref_fw_strand)? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE);
+		gff.setStrand(ap.getStrand());
 		gff.setFeature("exon");
-		gff.setStart(pos);
-		gff.setEnd(pos);
-		gff.setSeqName(chrom);
+		gff.setStart(ap.getPos());
+		gff.setEnd(ap.getPos());
+		gff.setSeqName(ap.getChr());
 		gff.setSource("AlignmentPos");
-		GFFUtils.add_gffrecord_map_entry(gff, "fw_depth", "" + this.getDepth(true));
-		GFFUtils.add_gffrecord_map_entry(gff, "rev_depth", "" + this.getDepth(false));
+		GFFUtils.add_gffrecord_map_entry(gff, "fw_depth", "" + ap.getDepth(true));
+		GFFUtils.add_gffrecord_map_entry(gff, "rev_depth", "" + ap.getDepth(false));
 		return gff;
 	}
 	
 	
+	public String gffLine()
+	{
+		return gffLine(false);
+	}
+
+	public String gffLine(boolean flip)
+	{
+		GFFRecord rec = this.toGff(flip);
+		String out = GFFUtils.gffLine(rec);
+		return out;
+	}
 	
 	/*** Other output ***/
 	@Override public String toString()

@@ -1,16 +1,19 @@
 package edu.usc.epigenome.genomeLibs;
 
 import java.util.*;
+import java.io.*;
 
 import org.biojava.utils.SmallMap;
-import org.biojava.bio.program.gff.GFFEntrySet;
-import org.biojava.bio.program.gff.GFFRecord;
-import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
+import org.biojava.bio.program.gff.*;
 
 import org.apache.commons.math.stat.StatUtils;
 
+
+/*
+ * LEGACY CODE FROM PREVIOUS PROJECT.  SOME FUNCTIONS MAY NOT BE RELEVANT
+ */
 
 public class GFFUtils {
 
@@ -37,7 +40,7 @@ public class GFFUtils {
 	
 	public static String gffCsvLineHeader()
 	{
-		return "name,chrom,score,start,end,source";
+		return "name,chrom,score,start,end,source,strand";
 	}
 	
 	public static String gffCsvLine(GFFRecord rec)
@@ -55,6 +58,8 @@ public class GFFUtils {
 		out += rec.getEnd();
 		out += ",";
 		out += rec.getSource();
+		out += ",";
+		out += rec.getStrand();
 		
 		return out;
 	}
@@ -169,6 +174,14 @@ public class GFFUtils {
 	{
 		int len = rec.getEnd() - rec.getStart() + 1;
 		return len;
+	}
+	
+	public static String gffLine(GFFRecord rec)
+	{
+		StringWriter strw = new StringWriter(500);
+		GFFWriter gffw = new GFFWriter(new PrintWriter(strw));
+		gffw.recordLine(rec);
+		return strw.toString();
 	}
 	
 	public static String gffBetterString(GFFRecord rec)
