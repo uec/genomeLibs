@@ -43,6 +43,7 @@ public class ReadPosRich extends ReadPos {
 	/**
 	 * @return the readPos
 	 */
+	@Override
 	public int getCycle() {
 		return cycle;
 	}
@@ -59,6 +60,7 @@ public class ReadPosRich extends ReadPos {
 	/**
 	 * @return the qual
 	 */
+	@Override
 	public int getQual() {
 		return qual;
 	}

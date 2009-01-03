@@ -42,47 +42,38 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 		return sym;
 	}
 	
-	/**
-	 * @return the symbol relative the orientation of the read
-	 */
-	public Symbol getSymReaddir()
-	{
-		
-		Symbol out = sym;
-		
-		if (this.getStrand() == StrandedFeature.NEGATIVE)
-		{
-			try 
-			{
-				out = DNATools.complement(sym);
-			}
-			catch (IllegalSymbolException e)
-			{
-				System.err.println("Can not complement symbol " + sym.getName());
-				e.printStackTrace();
-				System.exit(0);
-			}
-		}
-		
-		return out;
-	}
+//	/**
+//	 * @return the symbol relative the orientation of the read
+//	 */
+//	public Symbol getSymReaddir()
+//	{
+//		
+//		Symbol out = sym;
+//		
+//		if (this.getStrand() == StrandedFeature.NEGATIVE)
+//		{
+//			try 
+//			{
+//				out = DNATools.complement(sym);
+//			}
+//			catch (IllegalSymbolException e)
+//			{
+//				System.err.println("Can not complement symbol " + sym.getName());
+//				e.printStackTrace();
+//				System.exit(0);
+//			}
+//		}
+//		
+//		return out;
+//	}
 	
 	public char getSymToken()
 	{
 		Symbol sym = this.getSym();
-		char c = '0';
-		try
-		{
-			c = DNATools.dnaToken(sym);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			System.exit(0);
-		}
-		
-		return c;
+		return BiojavaUtils.dnaTokenNoException(sym);
 	}
+	
+
 
 
 	/**

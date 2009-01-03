@@ -76,7 +76,7 @@ public class FastqToBaseComposition {
 		rpos.trackQuals = this.quals;
 		rpos.positionQualsSolexaEncoding = this.solexa;
 	    
-		RPHandlerSymbolCounts baseCounter = new RPHandlerSymbolCounts();
+		RPHandlerReadPosCounts baseCounter = new RPHandlerReadPosCounts();
 		for (int i = 0; i < this.arguments.size(); i++)
 		{
 			String fn = (String)this.arguments.get(i);

@@ -8,16 +8,16 @@ package edu.usc.epigenome.genomeLibs;
  * 
  *
  */
-public class RPHandlerSymbolCounts extends SymbolCounter implements ReadPosStreamHandler {
+public class RPHandlerReadPosCounts extends ReadPosCounter implements ReadPosStreamHandler {
 
-	private static final long serialVersionUID = 2793815144706813135L;
+	private static final long serialVersionUID = -8766957148385079068L;
 
 
 
 	/**
 	 * 
 	 */
-	public RPHandlerSymbolCounts() {
+	public RPHandlerReadPosCounts() {
 	}
 
 	
@@ -28,7 +28,7 @@ public class RPHandlerSymbolCounts extends SymbolCounter implements ReadPosStrea
 	public boolean streamElement(ReadPos currentRp) 
 	{
 		boolean passes = true;
-		this.increment(currentRp.getSym());
+		this.increment(currentRp);
 		return passes;
 	}
 
@@ -39,6 +39,7 @@ public class RPHandlerSymbolCounts extends SymbolCounter implements ReadPosStrea
 	 */
 	@Override
 	public String excelOutput() {
+		// TODO Auto-generated method stub
 		return super.excelOutput();
 	}
 

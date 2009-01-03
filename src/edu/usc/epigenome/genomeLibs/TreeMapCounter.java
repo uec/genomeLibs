@@ -51,6 +51,23 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 		return intObj.intValue();
 	}
 	
+	public int getTotalCount()
+	{
+		int total = 0;
+		for(Integer val : this.values())
+		{
+			total += val.intValue();
+		}
+		return total;
+	}
+	
+	public double getFrac(T key)
+	{
+		double keyCount = (double)getCount(key);
+		double total = (double)getTotalCount();
+		return (keyCount/total);
+	}
+
 	public void increment(T key)
 	{
 		increment(key,1);

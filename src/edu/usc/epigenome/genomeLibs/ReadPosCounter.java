@@ -180,7 +180,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	 * @param cycle only keys for this cycle value will be returned
 	 * @return the new ReadPosCounter filtered
 	 */
-	ReadPosCounter getKeysByCycle(int cycle)
+	protected ReadPosCounter getKeysByCycle(int cycle)
 	{
 		ReadPosCounter ret = new ReadPosCounter();
 		for(ReadPos tkey : this.keySet())
@@ -197,7 +197,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	 * @param a symbol that will be used to filter all entries
 	 * @return the new ReadPosCounter filtered
 	 */
-	ReadPosCounter getKeysBySymbol(Symbol symbol)
+	protected ReadPosCounter getKeysBySymbol(Symbol symbol)
 	{
 		ReadPosCounter ret = new ReadPosCounter();
 		for(ReadPos key : this.keySet())
@@ -214,7 +214,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	 * @param quality value for the cutoff
 	 * @return the new ReadPosCounter filtered
 	 */
-	ReadPosCounter getKeysGreaterThenQuality(int quality)
+	protected ReadPosCounter getKeysGreaterThenQuality(int quality)
 	{
 		ReadPosCounter ret = new ReadPosCounter();
 		for(ReadPos tkey : this.keySet())
@@ -232,7 +232,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	 * @param quality value for the cutoff
 	 * @return the new ReadPosCounter filtered
 	 */
-	ReadPosCounter getKeysLessThenQuality(int quality)
+	protected ReadPosCounter getKeysLessThenQuality(int quality)
 	{
 		ReadPosCounter ret = new ReadPosCounter();
 		for(ReadPos tkey : this.keySet())
@@ -243,4 +243,24 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 		}
 		return ret;
 	}
+	
+	
+	/**
+	 * Reduce and remove all cycle quality strand information and jusrt
+	 * return raw symbol counts
+	 * @return
+	 */
+	public SymbolCounter getSymbolCounts()
+	{
+		SymbolCounter out = new SymbolCounter();
+		for(ReadPos tkey : this.keySet())
+		{
+			Symbol sym = tkey.getSym();
+		}
+
+		return out;
+	}
+
+	
+	
 }

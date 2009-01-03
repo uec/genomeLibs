@@ -73,8 +73,10 @@ public class AlignmentPosSnps extends AlignmentPos {
 					int cycle = rp.getCycle();
 					if (cycle != ReadPos.UNKNOWN_CYCLE) // If it's unknown , can't eliminate
 					{
-						String key = rp.getStrand() + "__" + cycle;
-						//System.err.println("Looking for key: " + key);
+						// Keep ones that have different cycles or different snps
+						String key = rp.getStrand() + "__" + cycle + "__" + rp.getSymToken();
+						System.err.println("Looking for key: " + key);
+						
 						int val = (counts.get(key) == null) ? 0 : ((Integer)counts.get(key)).intValue();
 						val++; // The current one
 						add = (val <= this.apOptions.maxIdentical);
@@ -93,9 +95,25 @@ public class AlignmentPosSnps extends AlignmentPos {
 		return out;
 	}
 	
+	public SymbolCounter getSnpCounter(boolean fwOnly)
+	{
+		// Set up the counter
+		RPHandlerSymbolCounts counter = new RPHandlerSymbolCounts();
+
+		// Now stream the read pos list across counter
+		Iterator<ReadPos> rpIt = this.getReadPositions(fwOnly).iterator();
+		ReadPosStreamer rpStreamer = new ReadPosStreamer(rpIt);
+		rpStreamer.add(counter);
+		rpStreamer.run();
+		
+		return counter;
+	}
 	
 	
-	
+	/*** 
+	 * Overridden functions
+	 */
+		
 	
 	public int[] getDepth()
 	{
@@ -112,7 +130,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 		return out;
 	}
 
-	
+
 	public AlignmentPos clone(boolean flipStrand)
 	{
 		// AlignmentPosSnps ap = new AlignmentPosSnps(this.getRef(!flipStrand), this.chr, this.pos, this.apOptions);
