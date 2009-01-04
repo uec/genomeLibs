@@ -75,7 +75,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 					{
 						// Keep ones that have different cycles or different snps
 						String key = rp.getStrand() + "__" + cycle + "__" + rp.getSymToken();
-						System.err.println("Looking for key: " + key);
+						//System.err.println("Looking for key: " + key);
 						
 						int val = (counts.get(key) == null) ? 0 : ((Integer)counts.get(key)).intValue();
 						val++; // The current one
@@ -95,6 +95,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 		return out;
 	}
 	
+	@Override
 	public SymbolCounter getSnpCounter(boolean fwOnly)
 	{
 		// Set up the counter
@@ -109,6 +110,20 @@ public class AlignmentPosSnps extends AlignmentPos {
 		return counter;
 	}
 	
+	@Override
+	public SymbolCounterStratified getSnpCounterStratifiedByCycle(boolean fwOnly)
+	{
+		// Set up the counter
+		RPHandlerSymbolCountsStratifyByCycle counter = new RPHandlerSymbolCountsStratifyByCycle();
+
+		// Now stream the read pos list across counter
+		Iterator<ReadPos> rpIt = this.getReadPositions(fwOnly).iterator();
+		ReadPosStreamer rpStreamer = new ReadPosStreamer(rpIt);
+		rpStreamer.add(counter);
+		rpStreamer.run();
+		
+		return counter;
+	}
 	
 	/*** 
 	 * Overridden functions

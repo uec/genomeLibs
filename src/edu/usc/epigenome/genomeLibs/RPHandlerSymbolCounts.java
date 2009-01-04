@@ -15,12 +15,20 @@ public class RPHandlerSymbolCounts extends SymbolCounter implements ReadPosStrea
 
 
 	/**
-	 * 
+	 * Constructor
 	 */
 	public RPHandlerSymbolCounts() {
 	}
 
+	/*
+	 * Overridden StreamHandler functions(non-Javadoc)
+	 */
 	
+	public void init() {
+	}
+
+	public void finish() {
+	}
 
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)

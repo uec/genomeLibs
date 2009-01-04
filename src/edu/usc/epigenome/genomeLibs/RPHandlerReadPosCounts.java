@@ -15,12 +15,21 @@ public class RPHandlerReadPosCounts extends ReadPosCounter implements ReadPosStr
 
 
 	/**
-	 * 
+	 * Constructor
 	 */
 	public RPHandlerReadPosCounts() {
 	}
 
 	
+	/*
+	 * Overridden StreamHandler functions(non-Javadoc)
+	 */
+	
+	public void init() {
+	}
+
+	public void finish() {
+	}
 
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)

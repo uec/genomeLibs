@@ -9,15 +9,16 @@ package edu.usc.epigenome.genomeLibs;
  * 
  *
  */
-public class APHandlerWindowCounts extends GenomicWindCounter implements AlignmentPosStreamHandler {
+public class APHandlerDepthCounts extends TreeMapCounter<Integer> implements AlignmentPosStreamHandler {
 
-	private static final long serialVersionUID = 8989385550284144139L;
+
+	private static final long serialVersionUID = 9000604824830397400L;
 
 	/**
 	 * Constructor
 	 */
-	public APHandlerWindowCounts(int inWindSize) {
-		super(inWindSize);
+	public APHandlerDepthCounts() {
+		super();
 	}
 
 	/*
@@ -35,20 +36,23 @@ public class APHandlerWindowCounts extends GenomicWindCounter implements Alignme
 	 */
 	public boolean streamElement(AlignmentPos[] pre, AlignmentPos currentAp, AlignmentPos[] post) 
 	{
-		this.increment(currentAp.getChr(), currentAp.getPos(), currentAp.getTotalDepth());
+		// Check how many reads overlap this position, do forward and reverse separately.
+		int fw = currentAp.getDepth(true);
+		int rev = currentAp.getDepth(false);
+		
+		if (fw>0)
+		{
+			this.increment(new Integer(fw));
+		}
+		
+		if (rev>0)
+		{
+			// Make reverse negative
+			this.increment(new Integer(-rev));
+		}
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.TreeMapCounter#excelOutput()
-	 */
-	@Override
-	public String excelOutput() {
-		// TODO Auto-generated method stub
-		return super.excelOutput();
-	}
-
-	
 	
 	
 

@@ -23,22 +23,6 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 	{
 	}
 	
-
-	/**
-	 * Initialization and termination
-	 */
-
-	public void init() {
-		// Initialize maps
-		//System.err.println("Initializing SymbolCounts");
-	}
-
-
-	public void finish() {
-		// Nothing to do
-		// System.err.println("Finishing SymbolCounts");
-	}
-
 	
 	/**
 	 * Accessors
@@ -87,10 +71,42 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 		this.put(key, new Integer(newCount));
 	}
 	
+	/**
+	 * Adds all key counts from another counter into this one
+	 * @param other The tree map to add to this one
+	 */
+	public void addCounts(TreeMapCounter<T> other)
+	{
+		for(T tkey : other.keySet())
+		{
+			this.increment(tkey, other.getCount(tkey));
+		}
+	}
 	
+	/**
+	 * Adds all key counts from a set of counters into this one
+	 * @param maps The tree maps to add to this one
+	 */
+	public void addCounts(Vector<TreeMapCounter<T>> maps)
+	{
+		for(TreeMapCounter<T> map : maps)
+		{
+			addCounts(map);
+		}
+	}
 	
 	/******  OUTPUT ********/
 	
+
+	public String oneLineOutput()
+	{
+		String out = "";
+		for (T key : this.keySet())
+		{
+			out += key + "=" + this.getCount(key) + ", ";
+		}
+		return out;
+	}
 	
 	public String excelOutput()
 	{

@@ -11,13 +11,13 @@ public class APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
 	}
 
 	@Override
-	public void init() {
-		super.init();
+	public void finish() {
+		super.finish();
 	}
 
 	@Override
-	public void finish() {
-		super.finish();
+	public void init() {
+		super.init();
 	}
 
 
@@ -26,12 +26,23 @@ public class APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
 			AlignmentPos currentAp, AlignmentPos[] nextAps,
 			Queue<AlignmentPos> apWind) {
 
-		boolean currentFw = (currentAp.getStrand() == StrandedFeature.POSITIVE);
-		LinkedList<AlignmentPos> apWindCopy = new LinkedList<AlignmentPos>(); // Clone
-		apWindCopy.addAll(apWind);
-		AlignmentPos.removeApsByStrand(apWindCopy, !currentFw);
 		
-//		System.err.println(
+		SymbolCounterStratified windCounts = new SymbolCounterStratified();
+		// Add our own counts
+		windCounts.addCounts(currentAp.getSnpCounterStratifiedByCycle(true));
+		// And out neighbors
+		for(AlignmentPos ap : apWind)
+		{
+			windCounts.addCounts( ap.getSnpCounterStratifiedByCycle(true) );
+		}
+		
+		double lowConversion = windCounts.getConvertedFrac(RPHandlerSymbolCountsStratifyByCycle.getLowStratString());
+		double highConversion = windCounts.getConvertedFrac(RPHandlerSymbolCountsStratifyByCycle.getMediumStratString());
+		
+//		
+//		Queue<AlignmentPos> apWindCopy = apWind;
+//			
+//			System.err.println(
 //				currentAp + 
 //				"\t" + 
 //				AlignmentPos.getRefTokens(priorAps) + 
@@ -42,8 +53,24 @@ public class APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
 //				"\t" + 
 //				AlignmentPos.getRefTokens(apWindCopy) +
 //				"\t" + 
-//				AlignmentPos.getPosString(apWindCopy)
+//				AlignmentPos.getPosString(apWindCopy) +
+//				"\t" +
+//				String.format("%.2f/%.2f", lowConversion, highConversion)
+////				"\t" + 
+////				windCounts.oneLineOutput()
 //				);
+//			
+			
+//			if ( (lowConversion != Double.NaN) && (highConversion != Double.NaN) )
+			if ( (lowConversion >= 0.0) && (highConversion >= 0.0) )
+			{
+				double diff = highConversion - lowConversion;
+				if ((diff!=0.0) && (diff > -1.0) && (diff < 1.0))
+				{
+//				System.out.println(String.format("%.2f,%.2f", lowConversion, highConversion));
+				System.out.println(String.format("%.2f", diff));
+				}
+			}
 		
 		return true;
 	}

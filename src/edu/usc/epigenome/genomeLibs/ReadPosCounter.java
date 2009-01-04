@@ -246,7 +246,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	
 	
 	/**
-	 * Reduce and remove all cycle quality strand information and jusrt
+	 * Reduce and remove all cycle quality strand information and just
 	 * return raw symbol counts
 	 * @return
 	 */
@@ -256,6 +256,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 		for(ReadPos tkey : this.keySet())
 		{
 			Symbol sym = tkey.getSym();
+			out.increment(sym);
 		}
 
 		return out;

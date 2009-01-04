@@ -10,24 +10,14 @@ import org.kohsuke.args4j.spi.*;
 
 import edu.usc.epigenome.genomeLibs.*;
 
-public class PileupToCpgConcordance {
+public class PileupToDuplicateReport {
 
 	// -c track cycles
 	// -q track qual scores
-	private static final String USAGE = "Usage: PileupToReadDepthWindows -maxIdentical 1 -minQual 30 -windSize 500 -countEachBase file1.pileup file2.pileup ...";
+	private static final String USAGE = "Usage: PileupToDuplicateReport file1.pileup file2.pileup ...";
 	
 	
-    @Option(name="-minQual",usage="minimum quality score (default 0)")
-    private int minQual = 0;
-    @Option(name="-windSize",usage="genomic window size (default 500)")
-    private int windSize = 500;
-    @Option(name="-maxIdentical",usage="Maximum reads with identical alignment positions (default infinite)")
-    private int maxIdentical = 0;
-    @Option(name="-cgonly", usage="Store quality scores (default false)")
-    private boolean cgonly = false;
-    @Option(name="-chonly", usage="Store quality scores (default false)")
-    private boolean chonly = false;
-   
+  
     // receives other command line parameters than options
     @Argument
     private List<String> arguments = new ArrayList<String>();
@@ -38,7 +28,7 @@ public class PileupToCpgConcordance {
     public static void main(String[] args)
     throws Exception
     {
-    	new PileupToCpgConcordance().doMain(args);
+    	new PileupToDuplicateReport().doMain(args);
     }
     
 	public void doMain(String[] args)
@@ -73,13 +63,13 @@ public class PileupToCpgConcordance {
 
 	
 		AlignmentPosOptions apos = new AlignmentPosOptions();
-		apos.minQualityScore = this.minQual;
+		apos.minQualityScore = 0;
 		apos.trackPositions = true;
 		apos.trackQuals = false;
-		apos.maxIdentical = maxIdentical;
-		apos.trackBisulfiteConversion = true;
+		apos.maxIdentical = 0;
+		apos.onlyFirstCycle = true; // Track at the read level
 
-		APHandlerWindowStats counter = new APHandlerWindowStatsCpGConcordance(windSize);
+		APHandlerDepthCounts counter = new APHandlerDepthCounts();
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{
@@ -87,36 +77,17 @@ public class PileupToCpgConcordance {
 
 			// Create iterator, streamer
 			Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
-//			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, 1, 1);
-			AlignmentPosStreamer apStreamer = new AlignmentPosStreamerWatsonThenCrick(apIt, 1, 1);
-			
-			// What kind of cytosines?
-			if (chonly)
-			{
-				apStreamer.add(new APFilterCphs());
-			}
-			else if (cgonly)
-			{
-				apStreamer.add(new APFilterCpgs());
-			}
-			else
-			{
-				apStreamer.add(new APFilterCytosines());
-			}
-				
-			// Only non-zero depth cytosines
-			apStreamer.add(new APFilterMinDepth(1));
-			
-
+			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, 0, 0);
 			apStreamer.add(counter);
-	//		apStreamer.add(new APHandlerGffEmitter());
 
 			// Run
 			apStreamer.run();
 		}	
 
 		// Now output
-		String description = "readDepthWind";
+		String description = "identicalReadCounts";
+		
+		System.out.print(counter.excelOutput(description));
 
 	}
 	

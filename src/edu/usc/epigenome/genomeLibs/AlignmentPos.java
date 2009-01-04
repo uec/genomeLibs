@@ -264,6 +264,8 @@ public abstract class AlignmentPos implements Cloneable {
 	
 	
 	
+	/** These really only apply to SNPs */
+
 	public Vector<ReadPos> getReadPositions()
 	{
 		return getReadPositions(false);
@@ -274,6 +276,20 @@ public abstract class AlignmentPos implements Cloneable {
 		System.err.println("Base class AlignmentPos can not execute getReadPositions(fwOnly).  Use AlignmentPosSnps instead");
 		(new Exception()).printStackTrace();
 		return new Vector<ReadPos>();
+	}
+	
+	public SymbolCounter getSnpCounter(boolean fwOnly)
+	{
+		System.err.println("Base class AlignmentPos can not execute getSnpCounter().  Use AlignmentPosSnps instead");
+		(new Exception()).printStackTrace();
+		return new SymbolCounter();
+	}
+	
+	public SymbolCounterStratified getSnpCounterStratifiedByCycle(boolean fwOnly)
+	{
+		System.err.println("Base class AlignmentPos can not execute getSnpCounterStratified().  Use AlignmentPosSnps instead");
+		(new Exception()).printStackTrace();
+		return new SymbolCounterStratified();
 	}
 
 	

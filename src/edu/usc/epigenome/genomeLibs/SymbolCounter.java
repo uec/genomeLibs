@@ -3,14 +3,17 @@ package edu.usc.epigenome.genomeLibs;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.Symbol;
 
-// Use Character because underlying Symbol is not Comparable
+//Use String name of Symbol as hash key, because Symbol is not iself Comparable
 public class SymbolCounter extends TreeMapCounter<String> {
 
-	private static final long serialVersionUID = 8275939009040141042L;
+
+	private static final long serialVersionUID = 3083285853454025453L;
 
 	public SymbolCounter() {
 	}
 
+	/*** GETTERS ***/
+	
 	public int getCytosineCount()
 	{
 		return getCount(DNATools.c());
@@ -33,8 +36,7 @@ public class SymbolCounter extends TreeMapCounter<String> {
 	
 	/***
 	 * Special function for bisulfite converted DNA.  Returns
-	 * #T/(#C+#T)
-	 * @return
+	 * @return count(T)/[count(T)+count(C)]
 	 */
 	public double getConvertedFrac()
 	{
@@ -49,6 +51,8 @@ public class SymbolCounter extends TreeMapCounter<String> {
 		return super.getCount(key);
 	}
 
+	/*** SETTERS ***/
+	
 	public void increment(Symbol sym, int numToAdd) {
 		String key = keyFromSym(sym);
 		super.increment(key, numToAdd);
@@ -70,10 +74,5 @@ public class SymbolCounter extends TreeMapCounter<String> {
 		return key;
 	}
 	
-//	protected static Character keyFromSym(Symbol sym)
-//	{
-//		Character key = new Character(BiojavaUtils.dnaTokenNoException(sym));
-//		return key;
-//	}
 
 }
