@@ -51,7 +51,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 	}
 
 	protected AlignmentPos nextAlignment(boolean rollback)
-	throws IOException, IllegalSymbolException
+	throws IOException, IllegalSymbolException, Exception
 	{
 		if (hasNextCache != null)
 		{

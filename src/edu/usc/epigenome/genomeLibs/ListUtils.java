@@ -9,7 +9,7 @@ public class ListUtils {
 	protected static String delim = ",";
 
 	//TODO Not thread safe
-	protected static final int STRINGBUFLEN = 10000;
+	protected static final int STRINGBUFLEN = 1000000;
 	protected static StringBuffer STRINGBUF = new StringBuffer(STRINGBUFLEN);
 
 	public static void setDelim(String d)
@@ -20,13 +20,15 @@ public class ListUtils {
 	
 	//TODO Not threadsafe because of static buffer STRINGBUF
 	public static String[] readLineSplitByChar(Reader r, char delim, int countEstimate)
-	throws IOException
+	throws Exception
 	{
 		Vector<String> v = new Vector<String>(countEstimate);
 
 		STRINGBUF.delete(0, STRINGBUFLEN);
 		int c;
 
+		int onC = 0;
+		
 		charLoop:
 		while ((c = r.read()) >= 0)
 		{
@@ -34,6 +36,7 @@ public class ListUtils {
 			{
 				v.add(new String(STRINGBUF));
 				STRINGBUF.delete(0, STRINGBUFLEN);
+				onC=0;
 			}
 			else if ((c == '\n') || (c == '\r')) 
 			{
@@ -43,6 +46,9 @@ public class ListUtils {
 			{
 				STRINGBUF.append((char)c);
 			}
+			onC++;
+			if (onC>=STRINGBUFLEN)
+				throw new Exception("Can not process lines with fields more than " + STRINGBUFLEN + " lines");
 		}
 		
 		// Add the last one (if there is one)
