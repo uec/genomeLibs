@@ -48,14 +48,14 @@ public class SymbolCounterStratified extends TreeMapCounter<String> {
 
 	/***
 	 * Special function for bisulfite converted DNA.  Returns
-	 * @return count(T)/[count(T)+count(C)]
+	 * @return count(C)/[count(T)+count(C)]
 	 */
-	public double getConvertedFrac(String strat)
+	public double getRetainedFrac(String strat)
 	{
 		int c = getCytosineCount(strat);
 		int t = getThymineCount(strat);
 			
-		return ((double)t / ( (double)c + (double)t )); 
+		return ((double)c / ( (double)c + (double)t )); 
 	}
 	
 	/*** SETTERS ***/

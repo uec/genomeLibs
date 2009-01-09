@@ -38,12 +38,12 @@ public class SymbolCounter extends TreeMapCounter<String> {
 	 * Special function for bisulfite converted DNA.  Returns
 	 * @return count(T)/[count(T)+count(C)]
 	 */
-	public double getConvertedFrac()
+	public double getRetainedFrac()
 	{
 		int c = getCytosineCount();
 		int t = getThymineCount();
 			
-		return ((double)t / ( (double)c + (double)t )); 
+		return ((double)c / ( (double)c + (double)t )); 
 	}
 	
 	public int getCount(Symbol sym) {

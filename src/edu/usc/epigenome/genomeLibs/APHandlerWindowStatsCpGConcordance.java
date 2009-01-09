@@ -36,8 +36,8 @@ public class APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
 			windCounts.addCounts( ap.getSnpCounterStratifiedByCycle(true) );
 		}
 		
-		double lowConversion = windCounts.getConvertedFrac(RPHandlerSymbolCountsStratifyByCycle.getLowStratString());
-		double highConversion = windCounts.getConvertedFrac(RPHandlerSymbolCountsStratifyByCycle.getMediumStratString());
+		double lowConversion = windCounts.getRetainedFrac(RPHandlerSymbolCountsStratifyByCycle.getLowStratString());
+		double highConversion = windCounts.getRetainedFrac(RPHandlerSymbolCountsStratifyByCycle.getMediumStratString());
 		
 //		
 //		Queue<AlignmentPos> apWindCopy = apWind;

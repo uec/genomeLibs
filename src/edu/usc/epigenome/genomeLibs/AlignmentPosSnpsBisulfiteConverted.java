@@ -32,10 +32,10 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 	 * conversion counting (fw strand only)
 	 */
 	
-	public double convertedFrac()
+	public double retainedFrac()
 	{
 		SymbolCounter snpCounts = this.getSnpCounter(true);
-		double conv = snpCounts.getConvertedFrac();
+		double conv = snpCounts.getRetainedFrac();
 		return conv;
 	}
 	
@@ -48,12 +48,12 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 	public SimpleGFFRecord toGff(boolean ref_fw_strand) {
 		
 		SimpleGFFRecord rec = super.toGff(ref_fw_strand);
-		GFFUtils.add_gffrecord_map_entry(rec, "conversion", "" + this.convertedFrac());
+		GFFUtils.add_gffrecord_map_entry(rec, "conversion", "" + this.retainedFrac());
 		return rec;
 	}
 	
 	
-	static String getConvertedFracString(Collection<AlignmentPos> aps)
+	static String getRetainedFracString(Collection<AlignmentPos> aps)
 	{
 		int len = aps.size();
 		StringBuffer buf = new StringBuffer(len*5);
@@ -62,7 +62,7 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 		{
 			AlignmentPos ap = it.next();
 			AlignmentPosSnpsBisulfiteConverted apCast = (AlignmentPosSnpsBisulfiteConverted)ap;
-			buf.append(String.format("%.2f,",apCast.convertedFrac()));
+			buf.append(String.format("%.2f,",apCast.retainedFrac()));
 		}
 		return buf.toString();
 	}

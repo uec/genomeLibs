@@ -5,6 +5,7 @@ package edu.usc.epigenome.genomeLibs;
 
 import java.util.HashMap;
 
+import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.Symbol;
 
 
@@ -15,7 +16,7 @@ import org.biojava.bio.symbol.Symbol;
  *
  */
 
-
+//TODO methods to get keysets based upon a specified criterea ie, symbol or cycle. 
 public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 
 
@@ -57,7 +58,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 				min = counts.get(Skey);
 		}
 		
-		String retVal = "http://chart.apis.google.com/chart?chs=530x520&chco=ff0000|00ff00|0000ff|ff00ff|00ffff&chxt=y&cht=bvs&chxr=0," + min +"," + max + "&chds=" + min +"," + max + dataString.substring(0, dataString.length() - 1) + labelString; 
+		String retVal = "http://chart.apis.google.com/chart?chs=450x300&chco=ff0000|00ff00|0000ff|ff00ff|00ffff&chxt=y&cht=bvs&chxr=0," + min +"," + max + "&chds=" + min +"," + max + dataString.substring(0, dataString.length() - 1) + labelString; 
 		return retVal;
 	}
 	
@@ -113,7 +114,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 		labelString = labelString.substring(0,labelString.length() - 1);
 		scalingString = scalingString.substring(0,scalingString.length() -1);
 		lineStyleString = lineStyleString.substring(0,lineStyleString.length() -1);
-		String retVal = "http://chart.apis.google.com/chart?&cht=lxy&chs=530x530&chco=ff0000,00dd00,0000ff,dd00dd,00dddd,dddd00&chg=" + gridLine +",0.0,2.0,1&chxt=x,y&chxr=0," + 0 +"," + cyclesMax + "|1," + min +"," + max + lineStyleString + scalingString + dataString + labelString;
+		String retVal = "http://chart.apis.google.com/chart?&cht=lxy&chs=600x400&chco=ff0000,00dd00,0000ff,dd00dd,00dddd,dddd00&chg=" + gridLine +",0.0,2.0,1&chxt=x,y&chxr=0," + 0 +"," + cyclesMax + "|1," + min +"," + max + lineStyleString + scalingString + dataString + labelString;
 		return retVal;		
 	}
 	
@@ -170,10 +171,78 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 		labelString = labelString.substring(0,labelString.length() - 1);
 		scalingString = scalingString.substring(0,scalingString.length() -1);
 		lineStyleString = lineStyleString.substring(0,lineStyleString.length() -1);
-		String retVal = "http://chart.apis.google.com/chart?&cht=lxy&chs=530x530&chco=ff0000,00dd00,0000ff,dd00dd,00dddd,dddd00&chg=" + gridLine +",0.0,2.0,1&chxt=x,y&chxr=0," + 0 +"," + cyclesMax + "|1," + min +"," + max + lineStyleString + scalingString + dataString + labelString;
+		String retVal = "http://chart.apis.google.com/chart?&cht=lxy&chs=600x400&chco=ff0000,00dd00,0000ff,dd00dd,00dddd,dddd00&chg=" + gridLine +",0.0,2.0,1&chxt=x,y&chxr=0," + 0 +"," + cyclesMax + "|1," + min +"," + max + lineStyleString + scalingString + dataString + labelString;
 		return retVal;		
 	}
-	
+	public String getRetentionByCyclesPercentageChartURL()
+	{
+		int min = 0;
+		int max = 100;
+		int cyclesMax=0;
+		String dataString = "&chd=t:";
+		String labelString = "&chdl=";
+		String scalingString = "&chds=";
+		String lineStyleString = "&chls=";
+		
+		ReadPosCounter t_list = this.getKeysBySymbol(DNATools.t());
+		ReadPosCounter c_list = this.getKeysBySymbol(DNATools.c());
+		
+		HashMap<String,String> countsDataGroup = new HashMap<String,String>();
+		HashMap<String,String> cyclesDataGroup = new HashMap<String,String>();
+		
+		for(ReadPos t_ReadPosKey : t_list.keySet())
+		{
+			ReadPosRich t_key = (ReadPosRich) t_ReadPosKey;
+			if(t_key.getCycle() > cyclesMax)
+				cyclesMax = t_key.getCycle();
+			
+			int t_total = 0;
+			int c_total = 0;
+						
+			ReadPosCounter t_byCycleCount = t_list.getKeysByCycle(t_key.getCycle());
+			ReadPosCounter c_byCycleCount = c_list.getKeysByCycle(t_key.getCycle());
+			for(ReadPos t_cycleKey : t_byCycleCount.keySet())
+			{
+				t_total += t_byCycleCount.get(t_cycleKey);
+			}
+			
+			for(ReadPos c_cycleKey : c_byCycleCount.keySet())
+			{
+				c_total += c_byCycleCount.get(c_cycleKey);
+			}
+
+			if(countsDataGroup.containsKey(String.valueOf(t_key.getSymToken())))
+			{
+				if(t_total + c_total == 0)
+						countsDataGroup.put(String.valueOf(t_key.getSymToken()), countsDataGroup.get(String.valueOf(t_key.getSymToken())) + "," +  "0");
+				else
+					countsDataGroup.put(String.valueOf(t_key.getSymToken()), countsDataGroup.get(String.valueOf(t_key.getSymToken())) + "," +  (100 * this.get(t_key) / (t_total + c_total)));
+				cyclesDataGroup.put(String.valueOf(t_key.getSymToken()), cyclesDataGroup.get(String.valueOf(t_key.getSymToken())) + "," + t_key.getCycle());
+			}
+			else
+			{
+				if(t_total + c_total == 0)
+					countsDataGroup.put(String.valueOf(t_key.getSymToken()), "0");
+				else
+				countsDataGroup.put(String.valueOf(t_key.getSymToken()), String.valueOf( (100 * this.get(t_key) / (t_total + c_total))));
+				cyclesDataGroup.put(String.valueOf(t_key.getSymToken()),  String.valueOf(t_key.getCycle()));
+			}						
+		}
+		//for(String datakey : countsDataGroup.keySet())
+		//{
+			labelString += "t/tc";// + "|";
+			//dataString += counts.get(key) + ",";
+			dataString += cyclesDataGroup.get("t") + "|" + countsDataGroup.get("t");// + "|";
+			scalingString += "0," + cyclesMax + "," + min + "," + max + ",";
+			lineStyleString += "2,0,0|";					
+		//}
+		double gridLine = 100.0 / cyclesMax;
+		dataString = dataString.substring(0, dataString.length() - 1);
+		scalingString = scalingString.substring(0,scalingString.length() -1);
+		lineStyleString = lineStyleString.substring(0,lineStyleString.length() -1);
+		String retVal = "http://chart.apis.google.com/chart?&cht=lxy&chs=600x400&chco=ff0000,00dd00,0000ff,dd00dd,00dddd,dddd00&chg=" + gridLine +",0.0,2.0,1&chxt=x,y&chxr=0," + 0 +"," + cyclesMax + "|1," + min +"," + max + lineStyleString + scalingString + dataString + labelString;
+		return retVal;		
+	}
 	
 	/**
 	 * subset of this collection that only pertains to the given cycle
