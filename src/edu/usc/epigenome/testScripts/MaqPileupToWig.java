@@ -3,6 +3,11 @@ package edu.usc.epigenome.testScripts;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import edu.usc.epigenome.genomeLibs.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosIteratorMaqPileup;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresFast;
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresIteratorAlignmentPosFwRev;
 
 public class MaqPileupToWig {
 

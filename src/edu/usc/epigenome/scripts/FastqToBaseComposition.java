@@ -9,6 +9,11 @@ import org.kohsuke.args4j.*;
 import org.kohsuke.args4j.spi.*;
 
 import edu.usc.epigenome.genomeLibs.*;
+import edu.usc.epigenome.genomeLibs.ReadPos.ReadPos;
+import edu.usc.epigenome.genomeLibs.ReadPos.ReadPosIteratorFastq;
+import edu.usc.epigenome.genomeLibs.ReadPos.ReadPosOptions;
+import edu.usc.epigenome.genomeLibs.ReadPos.StreamHandlers.RPHandlerReadPosCounts;
+import edu.usc.epigenome.genomeLibs.ReadPos.Streamers.ReadPosStreamer;
 
 public class FastqToBaseComposition {
 

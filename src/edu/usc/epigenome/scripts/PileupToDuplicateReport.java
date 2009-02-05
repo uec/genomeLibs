@@ -9,6 +9,9 @@ import org.kohsuke.args4j.*;
 import org.kohsuke.args4j.spi.*;
 
 import edu.usc.epigenome.genomeLibs.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerDepthCounts;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
 public class PileupToDuplicateReport {
 

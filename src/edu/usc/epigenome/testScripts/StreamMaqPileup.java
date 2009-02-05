@@ -2,6 +2,13 @@ package edu.usc.epigenome.testScripts;
 
 import java.util.Iterator;
 import edu.usc.epigenome.genomeLibs.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosIteratorMaqPileup;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APFilterCphs;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerWindowStatsCpGConcordance;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerWatsonThenCrick;
 
 public class StreamMaqPileup {
 

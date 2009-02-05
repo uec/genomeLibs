@@ -9,12 +9,17 @@ import org.kohsuke.args4j.*;
 import org.kohsuke.args4j.spi.*;
 
 import edu.usc.epigenome.genomeLibs.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosIteratorMaqPileup;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerWindowCounts;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
 public class PileupToReadDepthWindows {
 
 	// -c track cycles
 	// -q track qual scores
-	private static final String USAGE = "Usage: PileupToReadDepthWindows -maxIdentical 1 -minQual 30 -windSize 500 -countEachBase file1.pileup file2.pileup ...";
+	private static final String USAGE = "Usage: PileupToReadDepthWindows -strandSpecific -maxIdentical 1 -minQual 30 -windSize 500 -countEachBase file1.pileup file2.pileup ...";
 	
 	
     @Option(name="-minQual",usage="minimum quality score (default 0)")
@@ -25,6 +30,8 @@ public class PileupToReadDepthWindows {
     private int maxIdentical = 0;
     @Option(name="-countEachBase", usage="Count each base (default false, meaning count each read once)")
     private boolean countEachBase = false;
+    @Option(name="-strandSpecific", usage="Count reads on opposite strands separately (field 4 of output lists strand)")
+    private boolean strandSpecific = false;
     
     // receives other command line parameters than options
     @Argument
@@ -77,7 +84,7 @@ public class PileupToReadDepthWindows {
 		apos.maxIdentical = maxIdentical;
 		apos.onlyFirstCycle = !countEachBase;
 
-		APHandlerWindowCounts counter = new APHandlerWindowCounts(windSize);
+		APHandlerWindowCounts counter = new APHandlerWindowCounts(windSize, strandSpecific);
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{

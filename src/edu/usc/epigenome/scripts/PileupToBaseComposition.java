@@ -9,6 +9,14 @@ import org.kohsuke.args4j.*;
 import org.kohsuke.args4j.spi.*;
 
 import edu.usc.epigenome.genomeLibs.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosIteratorMaqPileup;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APFilterCpgs;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APFilterCphs;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerSymbolCounts;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerWatsonThenCrick;
 
 public class PileupToBaseComposition {
 
