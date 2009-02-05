@@ -13,7 +13,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerDepthCounts;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
-public class PileupToDuplicateReport {
+public class PileupToDepthReport {
 
 	// -c track cycles
 	// -q track qual scores
@@ -22,6 +22,10 @@ public class PileupToDuplicateReport {
 	
   
     // receives other command line parameters than options
+    @Option(name="-maxIdentical",usage="Maximum reads with identical alignment positions (default infinite)")
+    private int maxIdentical = 0;
+    @Option(name="-countEachBase", usage="Count each base (default false, meaning count each read once)")
+    private boolean countEachBase = false;
     @Argument
     private List<String> arguments = new ArrayList<String>();
 
@@ -31,7 +35,7 @@ public class PileupToDuplicateReport {
     public static void main(String[] args)
     throws Exception
     {
-    	new PileupToDuplicateReport().doMain(args);
+    	new PileupToDepthReport().doMain(args);
     }
     
 	public void doMain(String[] args)
@@ -69,9 +73,10 @@ public class PileupToDuplicateReport {
 		apos.minQualityScore = 0;
 		apos.trackPositions = true;
 		apos.trackQuals = false;
-		apos.maxIdentical = 0;
-		apos.onlyFirstCycle = true; // Track at the read level
-
+		apos.maxIdentical = maxIdentical;
+		apos.onlyFirstCycle = !countEachBase;
+		
+		
 		APHandlerDepthCounts counter = new APHandlerDepthCounts();
 		
 		for (int i = 0; i < this.arguments.size(); i++)
