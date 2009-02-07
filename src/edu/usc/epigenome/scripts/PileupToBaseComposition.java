@@ -22,7 +22,7 @@ public class PileupToBaseComposition {
 
 	// -c track cycles
 	// -q track qual scores
-	private static final String USAGE = "Usage: PileupToBaseComposition -minQual 30 -cgonly -chonly -cycles -quals file1.pileup file2.pileup ...";
+	private static final String USAGE = "Usage: PileupToBaseComposition -desc DescritionTag -minQual 30 -cgonly -chonly -cycles -quals file1.pileup file2.pileup ...";
 	
 	
     @Option(name="-minQual",usage="minimum quality score (default 0)")
@@ -35,6 +35,8 @@ public class PileupToBaseComposition {
     private boolean cgonly = false;
     @Option(name="-chonly", usage="Store quality scores (default false)")
     private boolean chonly = false;
+    @Option(name="-additionalDesc", usage="Additional description tag")
+    private String additionalDesc = null;
 
     
     // receives other command line parameters than options
@@ -109,6 +111,7 @@ public class PileupToBaseComposition {
 
 		// Now output
 		String description = "postAlignment";
+		if (additionalDesc != null) description += "_" + additionalDesc;
 		if (chonly) description += ".CpH";
 		if (cgonly) description += ".CpG";
 		
