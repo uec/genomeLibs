@@ -1,9 +1,11 @@
 package edu.usc.epigenome.genomeLibs.AlignmentPos;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.util.zip.*;
+
 import java.util.Iterator;
+
+import org.jfree.util.StringUtils;
 
 
 public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
@@ -17,7 +19,18 @@ public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 	public AlignmentPosIterator(String fn, AlignmentPosOptions apos)
 	throws IOException
 	{
-		openStream = new BufferedReader(new FileReader(fn));
+		if (fn.endsWith(".gz"))
+		{
+			System.err.println("UNzipping " + fn);
+			InputStream is = new GZIPInputStream(new FileInputStream(fn));
+			InputStreamReader isr = new InputStreamReader(is);
+			openStream = new BufferedReader(isr);
+		}
+		else
+		{
+			openStream = new BufferedReader(new FileReader(fn));
+		}	
+		
 		openFile = fn;
 		apOptions = apos;
 	}
