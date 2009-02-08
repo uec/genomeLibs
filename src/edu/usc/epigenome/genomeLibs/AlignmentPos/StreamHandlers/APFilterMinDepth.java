@@ -7,13 +7,13 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
 public class APFilterMinDepth extends AlignmentPosStreamFilter {
 
 	protected int minDepth = 1;
+	protected boolean eachStrand = false;
 	
-	public APFilterMinDepth(int inMinDepth) {
+	public APFilterMinDepth(int inMinDepth, boolean inEachStrand) {
 		minDepth = inMinDepth;
+		eachStrand = inEachStrand;
 	}
 
-	
-	
 	/**
 	 * @return the minDepth
 	 */
@@ -32,10 +32,35 @@ public class APFilterMinDepth extends AlignmentPosStreamFilter {
 
 
 
+	/**
+	 * @return the eachStrand
+	 */
+	public boolean isEachStrand() {
+		return eachStrand;
+	}
+
+	/**
+	 * @param eachStrand the eachStrand to set
+	 */
+	public void setEachStrand(boolean eachStrand) {
+		this.eachStrand = eachStrand;
+	}
+
 	@Override
 	public boolean elementPasses(AlignmentPos[] priorAps,
 			AlignmentPos currentAp, AlignmentPos[] nextAps) {
 
-		return (currentAp.getTotalDepth() >= this.getMinDepth());
+		boolean passes = true;
+		if (this.isEachStrand())
+		{
+			passes &= (currentAp.getDepth(true) >= this.getMinDepth()); 
+			passes &= (currentAp.getDepth(false) >= this.getMinDepth()); 
+		}
+		else
+		{
+			passes = (currentAp.getTotalDepth() >= this.getMinDepth());
+		}
+		
+		return passes;
 	}
 }

@@ -139,6 +139,30 @@ public abstract class AlignmentPos implements Cloneable {
 	}
 
 	/**
+	 * @return the strand symbol [+-.]
+	 */
+	public char getStrandSymbol() {
+		StrandedFeature.Strand s = this.getStrand();
+		
+		if (s == StrandedFeature.POSITIVE) return '+';
+		if (s == StrandedFeature.NEGATIVE) return '-';
+		
+		return '.';
+	}
+
+	/**
+	 * @return the strand integer (-1, 0, +1)
+	 */
+	public int getStrandInt() {
+		StrandedFeature.Strand s = this.getStrand();
+		
+		if (s == StrandedFeature.POSITIVE) return 1;
+		if (s == StrandedFeature.NEGATIVE) return -1;
+		
+		return 0;
+	}
+
+	/**
 	 * @param strand the strand to set
 	 */
 	public void setStrand(StrandedFeature.Strand strand) {

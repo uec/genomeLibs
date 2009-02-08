@@ -35,14 +35,31 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 	 * conversion counting (fw strand only)
 	 */
 	
-	public double convertedFrac()
+	public double getConvertedFrac()
 	{
 		SymbolCounter snpCounts = this.getSnpCounter(true);
 		double conv = snpCounts.getConvertedFrac();
 		return conv;
 	}
 	
-	
+	public double getMethylatedFrac()
+	{
+		return 1.0 - getConvertedFrac();
+	}
+
+	public String getConvertedFracString()
+	{
+		StringBuffer buf = new StringBuffer(5);
+		buf.append(String.format("%.2f",this.getConvertedFrac()));
+		return buf.toString();
+	}
+
+	public String getMethylatedFracString()
+	{
+		StringBuffer buf = new StringBuffer(5);
+		buf.append(String.format("%.2f",this.getMethylatedFrac()));
+		return buf.toString();
+	}
 
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos#toGff(java.lang.String, boolean, int)
@@ -51,7 +68,7 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 	public SimpleGFFRecord toGff(boolean ref_fw_strand) {
 		
 		SimpleGFFRecord rec = super.toGff(ref_fw_strand);
-		GFFUtils.add_gffrecord_map_entry(rec, "conversion", "" + this.convertedFrac());
+		GFFUtils.add_gffrecord_map_entry(rec, "conversion", "" + this.getConvertedFrac());
 		return rec;
 	}
 	
@@ -65,7 +82,7 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 		{
 			AlignmentPos ap = it.next();
 			AlignmentPosSnpsBisulfiteConverted apCast = (AlignmentPosSnpsBisulfiteConverted)ap;
-			buf.append(String.format("%.2f,",apCast.convertedFrac()));
+			buf.append(String.format("%.2f,",apCast.getConvertedFrac()));
 		}
 		return buf.toString();
 	}
