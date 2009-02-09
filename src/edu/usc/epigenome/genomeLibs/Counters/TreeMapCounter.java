@@ -4,6 +4,7 @@
 package edu.usc.epigenome.genomeLibs.Counters;
 
 import java.util.*;
+import java.io.*;
 
 
 /**
@@ -59,11 +60,11 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 	
 	public void increment(T key, int numToAdd)
 	{
-		if (numToAdd!=0)
-		{
+//		if (numToAdd!=0)
+//		{
 			int newCount = this.getCount(key) + numToAdd;
 			this.setCount(key, newCount);
-		}
+//		}
 	}
 	
 	public void setCount(T key, int newCount)
@@ -110,31 +111,27 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 	
 	public String excelOutput()
 	{
-		String out = "";
-		
-		Iterator<T> strIt = this.keySet().iterator();
-		while (strIt.hasNext())
-		{
-			T key = strIt.next();
-			out += key.toString() + "," + this.get(key);
-			out += "\n";
-		}
-		
-		return out;
+		return excelOutput(null);
 	}
 
 	public String excelOutput(String firstCol)
 	{
-		String out = "";
-		
+		OutputStream os = new ByteArrayOutputStream(this.size()*25);
+		PrintStream ps = new PrintStream(os);
+		this.excelOutput(firstCol, ps);
+		return os.toString();
+	}
+	
+	public void excelOutput(String firstCol, PrintStream ps)
+	{
 		Iterator<T> strIt = this.keySet().iterator();
 		while (strIt.hasNext())
 		{
 			T key = strIt.next();
-			out += firstCol + "," + key.toString() + "," + this.get(key);
-			out += "\n";
+			if (firstCol!=null) ps.print(firstCol + ",");
+			ps.print(key.toString() + "," + this.get(key));
+			ps.print("\n");
 		}
-		
-		return out;
+
 	}
 }

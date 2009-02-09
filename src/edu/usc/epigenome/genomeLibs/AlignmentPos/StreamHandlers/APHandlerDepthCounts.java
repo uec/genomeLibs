@@ -42,17 +42,25 @@ public class APHandlerDepthCounts extends TreeMapCounter<Integer> implements Ali
 		// Check how many reads overlap this position, do forward and reverse separately.
 		int fw = currentAp.getDepth(true);
 		int rev = currentAp.getDepth(false);
-		
+
+		boolean empty = true;
 		if (fw>0)
 		{
 			this.increment(new Integer(fw));
+			empty = false;
 		}
-		
 		if (rev>0)
 		{
 			// Make reverse negative
 			this.increment(new Integer(-rev));
+			empty = false;
 		}
+		if (empty)
+		{
+			this.increment(new Integer(0));
+		}
+
+		
 		return true;
 	}
 

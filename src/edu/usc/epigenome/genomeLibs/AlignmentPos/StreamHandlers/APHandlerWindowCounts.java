@@ -42,17 +42,5 @@ public class APHandlerWindowCounts extends AlignmentPosWindCounter implements Al
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.TreeMapCounter#excelOutput()
-	 */
-	@Override
-	public String excelOutput() {
-		// TODO Auto-generated method stub
-		return super.excelOutput();
-	}
-
-	
-	
-	
 
 }

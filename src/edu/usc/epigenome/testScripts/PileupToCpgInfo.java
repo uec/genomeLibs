@@ -89,7 +89,7 @@ public class PileupToCpgInfo {
 
 			// Create iterator, streamer
 			Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
-			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, 1, 1);
+			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, 100, 100);
 			apStreamer.add(new APFilterCpgs());
 			
 			if (minDepth>0) apStreamer.add(new APFilterMinDepth(minDepth,minDepthEachStrand));

@@ -89,17 +89,20 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				// Blank line, keep trying (unless we hit the end of file)
 				done = !this.openStream.ready();
 			}
-			else if (line_items.length == 8)
+			else if ((line_items.length == 7) || (line_items.length == 8)) // length 7 if no reads
 			{
 				String line_chr = line_items[0];
 				int line_pos = Integer.parseInt(line_items[1]);
 				char line_ref = line_items[2].charAt(0);
 				//		int line_count = Integer.parseInt(line_items[3]);
+				int read_count = Integer.parseInt(line_items[3]);
 				String snps_str = line_items[4];
 				char[] snps = snps_str.toCharArray();
 				String base_quals = line_items[5];
 				//		String mapping_quals = line_items[6];
-				String read_positions = line_items[7];
+				
+				String read_positions = "";
+				if (read_count>0) read_positions = line_items[7];
 
 
 				// Make the output object.  Just make one with SNPs, and then reduce if necessary
@@ -111,9 +114,14 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				{
 					ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
 				}
+				
 				ap.setStrand(StrandedFeature.POSITIVE); // Positive by default
 				//	System.err.println("ap=" + ap);
+				
+				if (read_count>0)
+				{
 				addMaqPositions(this.apOptions, (AlignmentPosSnps)ap, snps, base_quals, read_positions);
+				}
 
 				if (!apOptions.trackSnps)
 				{

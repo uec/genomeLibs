@@ -101,9 +101,7 @@ public class PileupToReadDepthWindows {
 
 		// Now output
 		String description = "readDepthWind";
-		
-		System.out.print(counter.excelOutput(description));
-
+		counter.excelOutput(description, System.out);
 	}
 	
 
