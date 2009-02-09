@@ -9,6 +9,7 @@ import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.*;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.Counters.ReadPosCounter;
 import edu.usc.epigenome.genomeLibs.ReadPos.ReadPos;
 
@@ -46,10 +47,10 @@ public class APHandlerSymbolCounts extends ReadPosCounter implements AlignmentPo
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	public boolean streamElement(AlignmentPos[] pre, AlignmentPos currentAp, AlignmentPos[] post) 
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
 		boolean passes = true;
-		Iterator<ReadPos> it = currentAp.getReadPositions().iterator();
+		Iterator<ReadPos> it = streamPos.currentAp.getReadPositions().iterator();
 		while (it.hasNext())
 		{
 			ReadPos rp = it.next();

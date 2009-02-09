@@ -4,6 +4,7 @@
 package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 /**
  * @author benb
@@ -13,14 +14,11 @@ public abstract class AlignmentPosStreamFilter implements
 		AlignmentPosStreamHandler {
 
 	/**
-	 * @param priorAps is a list APs preceeding current one (length determined by streamer)
-	 * @param currentAp is the current AP
-	 * @param nextAps is a list APs following current one (length determined by streamer)
+	 * @param streamPos
 	 * @return true if AP should be passed
 	 */
 
-	public abstract boolean elementPasses(AlignmentPos[] priorAps, 
-			AlignmentPos currentAp, AlignmentPos[] nextAps);
+	public abstract boolean elementPasses(AlignmentPosStreamerPosition streamPos);
 
 	
 	/* (non-Javadoc)
@@ -40,9 +38,8 @@ public abstract class AlignmentPosStreamFilter implements
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(edu.usc.epigenome.genomeLibs.AlignmentPos[], edu.usc.epigenome.genomeLibs.AlignmentPos, edu.usc.epigenome.genomeLibs.AlignmentPos[])
 	 */
-	public boolean streamElement(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps) {
-		return this.elementPasses(priorAps, currentAp, nextAps); 
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) {
+		return this.elementPasses(streamPos); 
 	}
 
 }

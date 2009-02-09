@@ -6,6 +6,7 @@ package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 import java.util.*;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 /**
  * @author benb
@@ -36,8 +37,7 @@ public interface AlignmentPosStreamHandler {
 	 * priorAps and nextAps are guaranteed to contain APs which are adjacent to each other 
 	 * on the chromosome.
 	 */
-	public abstract boolean streamElement(AlignmentPos[] priorAps, 
-			AlignmentPos currentAp, AlignmentPos[] nextAps);
+	public abstract boolean streamElement(AlignmentPosStreamerPosition streamPos);
 	
 	
 }

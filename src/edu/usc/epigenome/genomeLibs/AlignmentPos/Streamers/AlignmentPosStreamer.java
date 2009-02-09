@@ -246,23 +246,24 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 			postAps = postNull;
 		}
 		
-		return processAp(priorAps, currentAp, postAps);
+		AlignmentPosStreamerPosition streamPos = new AlignmentPosStreamerPosition();
+		streamPos.priorAps = priorAps;
+		streamPos.currentAp = currentAp;
+		streamPos.nextAps = postAps;
+		return processAp(streamPos);
 	}
 	
 
 	
 	
 	/**
-	 * @param priorAps
-	 * @param currentAp
-	 * @param postAps
+	 * @param streamPos
 	 * @return
 	 * 
 	 * priorAps and nextAps are guaranteed to contain APs which are adjacent to each other 
 	 * on the chromosome.
 	 */
-	protected boolean processAp(AlignmentPos[] priorAps, 
-			AlignmentPos currentAp, AlignmentPos[] postAps)
+	protected boolean processAp(AlignmentPosStreamerPosition streamPos)
 	{
 		// Now pass it through handler
 		boolean passes = true;
@@ -273,7 +274,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 ////			System.err.println("Streaming to " + handler + ":\t" + 
 //			System.err.println(AlignmentPos.getRefTokens(priorAps) + 
 //					"," + currentAp.getRefToken() + "," + AlignmentPos.getRefTokens(postAps));
-			passes &= handler.streamElement(priorAps, currentAp, postAps);
+			passes &= handler.streamElement(streamPos);
 		}
 		return passes;
 	}

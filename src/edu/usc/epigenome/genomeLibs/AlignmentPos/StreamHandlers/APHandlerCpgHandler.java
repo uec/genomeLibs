@@ -10,6 +10,7 @@ import org.biojava.bio.symbol.*;
 
 import edu.usc.epigenome.genomeLibs.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 /**
  * @author benb
@@ -39,8 +40,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	public boolean streamElement(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps) 
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
 		boolean passes = true;
 
@@ -49,15 +49,15 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 		AlignmentPosSnpsBisulfiteConverted nextBs = null;
 		try
 		{
-			currentBs = (AlignmentPosSnpsBisulfiteConverted)currentAp;
+			currentBs = (AlignmentPosSnpsBisulfiteConverted)streamPos.currentAp;
 			
-			if ((nextAps==null) || (nextAps.length<1))
+			if ((streamPos.nextAps==null) || (streamPos.nextAps.length<1))
 			{
 				throw new Exception("APHandlerCpgHandler: Can not be a CpG because nextAps is empty");
 			}
 			else
 			{
-				nextBs = (AlignmentPosSnpsBisulfiteConverted)nextAps[0].flipped();
+				nextBs = (AlignmentPosSnpsBisulfiteConverted)streamPos.nextAps[0].flipped();
 			}
 			
 			if (currentBs.getRef() != DNATools.c()) throw new Exception("APHandlerCpgHandler: First AP is not a cytosine");
@@ -71,11 +71,10 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 		}
 
 		CpgPair pair = new CpgPair(currentBs, nextBs);
-		return streamCpgPair(priorAps, pair, nextAps);
+		return streamCpgPair(streamPos, pair);
 	}
 
-	abstract public boolean streamCpgPair(AlignmentPos[] priorAps,
-			CpgPair pair, AlignmentPos[] nextAps); 
+	abstract public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos, CpgPair pair); 
 	
 
 }

@@ -5,6 +5,7 @@ import java.util.*;
 import org.biojava.bio.seq.StrandedFeature;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.Counters.SymbolCounterStratified;
 import edu.usc.epigenome.genomeLibs.ReadPos.StreamHandlers.RPHandlerSymbolCountsStratifyByCycle;
 
@@ -26,14 +27,11 @@ public class APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
 
 
 	@Override
-	public boolean streamWindow(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps,
-			Queue<AlignmentPos> apWind) {
-
-		
+	public boolean streamWindow(AlignmentPosStreamerPosition streamPos, Queue<AlignmentPos> apWind)
+	{
 		SymbolCounterStratified windCounts = new SymbolCounterStratified();
 		// Add our own counts
-		windCounts.addCounts(currentAp.getSnpCounterStratifiedByCycle(true));
+		windCounts.addCounts(streamPos.currentAp.getSnpCounterStratifiedByCycle(true));
 		// And out neighbors
 		for(AlignmentPos ap : apWind)
 		{

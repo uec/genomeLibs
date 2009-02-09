@@ -9,6 +9,7 @@ import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.*;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.Counters.StringCounter;
 
 /**
@@ -37,11 +38,10 @@ public class APHandlerGffEmitter extends StringCounter implements AlignmentPosSt
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	public boolean streamElement(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps) 
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
 		boolean passes = true;
-		System.out.print(currentAp.gffLine());
+		System.out.print(streamPos.currentAp.gffLine());
 		return passes;
 	}
 

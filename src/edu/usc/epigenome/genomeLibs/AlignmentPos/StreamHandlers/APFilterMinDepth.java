@@ -3,6 +3,7 @@ package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 import org.biojava.bio.seq.DNATools;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 public class APFilterMinDepth extends AlignmentPosStreamFilter {
 
@@ -47,18 +48,17 @@ public class APFilterMinDepth extends AlignmentPosStreamFilter {
 	}
 
 	@Override
-	public boolean elementPasses(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps) {
+	public boolean elementPasses(AlignmentPosStreamerPosition streamPos) {
 
 		boolean passes = true;
 		if (this.isEachStrand())
 		{
-			passes &= (currentAp.getDepth(true) >= this.getMinDepth()); 
-			passes &= (currentAp.getDepth(false) >= this.getMinDepth()); 
+			passes &= (streamPos.currentAp.getDepth(true) >= this.getMinDepth()); 
+			passes &= (streamPos.currentAp.getDepth(false) >= this.getMinDepth()); 
 		}
 		else
 		{
-			passes = (currentAp.getTotalDepth() >= this.getMinDepth());
+			passes = (streamPos.currentAp.getTotalDepth() >= this.getMinDepth());
 		}
 		
 		return passes;

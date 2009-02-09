@@ -3,6 +3,7 @@ package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 import org.biojava.bio.seq.DNATools;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 public class APFilterCytosines extends AlignmentPosStreamFilter {
 
@@ -11,9 +12,8 @@ public class APFilterCytosines extends AlignmentPosStreamFilter {
 	}
 
 	@Override
-	public boolean elementPasses(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps) {
+	public boolean elementPasses(AlignmentPosStreamerPosition streamPos) {
 
-		return currentAp.getRef().equals(DNATools.c());
+		return streamPos.currentAp.getRef().equals(DNATools.c());
 	}
 }

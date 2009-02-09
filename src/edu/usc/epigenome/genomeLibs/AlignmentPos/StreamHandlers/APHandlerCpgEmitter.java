@@ -8,6 +8,7 @@ import java.util.*;
 import edu.usc.epigenome.genomeLibs.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 /**
  * @author benb
@@ -34,13 +35,12 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.*;
 
 
 
-	public boolean streamCpgPair(AlignmentPos[] priorAps,
-			CpgPair pair, AlignmentPos[] nextAps)
+	public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos, CpgPair pair)
 	{
-		System.out.print( priorAps.length + ",");
-		System.out.print( AlignmentPos.getCpgDensityStr(priorAps) + ",");
-		System.out.print( nextAps.length + ",");
-		System.out.print( AlignmentPos.getCpgDensityStr(nextAps) + ",");
+		System.out.print( streamPos.priorAps.length + ",");
+		System.out.print( AlignmentPos.getCpgDensityStr(streamPos.priorAps) + ",");
+		System.out.print( streamPos.nextAps.length + ",");
+		System.out.print( AlignmentPos.getCpgDensityStr(streamPos.nextAps) + ",");
 		System.out.print(pair.csvLine());
 		System.out.println();
 		

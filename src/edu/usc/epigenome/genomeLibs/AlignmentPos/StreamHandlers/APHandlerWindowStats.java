@@ -9,6 +9,7 @@ import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.*;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 /**
  * @author benb
@@ -45,13 +46,12 @@ abstract public class APHandlerWindowStats implements AlignmentPosStreamHandler 
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	public boolean streamElement(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps) 
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
 
 		// Eat APs off the head until we are within range.
-		String curChr = currentAp.getChr();
-		int curPos = currentAp.getPos();
+		String curChr = streamPos.currentAp.getChr();
+		int curPos = streamPos.currentAp.getPos();
 		boolean done = false;
 		AlignmentPos endAp;
 		while (!done && ((endAp = window.peek()) != null))
@@ -68,24 +68,21 @@ abstract public class APHandlerWindowStats implements AlignmentPosStreamHandler 
 		}
 		
 		// And process this window
-		boolean passes = this.streamWindow(priorAps, currentAp, nextAps, window); 
+		boolean passes = this.streamWindow(streamPos, window); 
 		
 		// Add ourself to the window
-		window.add(currentAp);
+		window.add(streamPos.currentAp);
 		
 		return passes;
 	}
 
 	
 	/**
-	 * @param priorAps
-	 * @param currentAp
-	 * @param nextAps
+	 * @param streamPos
 	 * @param apWind All the other APs in the window (does NOT contain the currentAp)
 	 * @return
 	 */
-	public abstract boolean streamWindow(AlignmentPos[] priorAps, AlignmentPos currentAp, AlignmentPos[] nextAps,
-			Queue<AlignmentPos> apWind);
+	public abstract boolean streamWindow(AlignmentPosStreamerPosition streamPos, Queue<AlignmentPos> apWind);
 	
 	
 

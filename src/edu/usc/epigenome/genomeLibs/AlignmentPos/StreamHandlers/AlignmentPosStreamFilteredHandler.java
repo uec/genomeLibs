@@ -4,6 +4,7 @@
 package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 /**
  * @author benb
@@ -65,10 +66,9 @@ public class AlignmentPosStreamFilteredHandler implements
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(edu.usc.epigenome.genomeLibs.AlignmentPos[], edu.usc.epigenome.genomeLibs.AlignmentPos, edu.usc.epigenome.genomeLibs.AlignmentPos[])
 	 */
-	public boolean streamElement(AlignmentPos[] priorAps,
-			AlignmentPos currentAp, AlignmentPos[] nextAps) {
-		boolean out = filterer.elementPasses(priorAps, currentAp, nextAps);
-		if (out) handler.streamElement(priorAps, currentAp, nextAps);
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) {
+		boolean out = filterer.elementPasses(streamPos);
+		if (out) handler.streamElement(streamPos);
 		return true;
 	}
 

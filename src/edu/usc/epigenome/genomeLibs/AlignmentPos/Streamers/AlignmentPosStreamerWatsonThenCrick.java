@@ -36,8 +36,7 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamer#processAp(edu.usc.epigenome.genomeLibs.AlignmentPos[], edu.usc.epigenome.genomeLibs.AlignmentPos, edu.usc.epigenome.genomeLibs.AlignmentPos[])
 	 */
 	@Override
-	protected boolean processAp(AlignmentPos[] fivePrimeAps,
-			AlignmentPos currentAp, AlignmentPos[] threePrimeAps) {
+	protected boolean processAp(AlignmentPosStreamerPosition streamPos) {
 
 		boolean out = true;
 		for (int i = 0; i <= 1; i++)
@@ -45,7 +44,7 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 			boolean fw = (i==0);
 			
 			// Flip the current one if necessary
-			AlignmentPos currentApDirectional = (fw) ? currentAp.clone() : currentAp.flipped();
+			AlignmentPos currentApDirectional = (fw) ? streamPos.currentAp.clone() : streamPos.currentAp.flipped();
 			currentApDirectional.removeRevStrandReads();
 
 //			// Only process if we have a non-zero depth after removing.
@@ -61,12 +60,12 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 				{
 					if (fw) 
 					{
-						preAps[j] = fivePrimeAps[(fivePrimeAps.length - realPreWindSize) + j].clone(); 
+						preAps[j] = streamPos.priorAps[(streamPos.priorAps.length - realPreWindSize) + j].clone(); 
 						preAps[j].setStrand(StrandedFeature.POSITIVE);
 					}
 					else
 					{
-						preAps[j] = threePrimeAps[realPreWindSize - j - 1].flipped(); 
+						preAps[j] = streamPos.nextAps[realPreWindSize - j - 1].flipped(); 
 						preAps[j].setStrand(StrandedFeature.NEGATIVE);
 					}
 					preAps[j].removeRevStrandReads();
@@ -77,12 +76,12 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 				{
 					if (fw) 
 					{
-						postAps[j] = threePrimeAps[j].clone(); 
+						postAps[j] = streamPos.nextAps[j].clone(); 
 						postAps[j].setStrand(StrandedFeature.POSITIVE);
 					}
 					else
 					{
-						postAps[j] = fivePrimeAps[fivePrimeAps.length - j - 1].flipped(); 
+						postAps[j] = streamPos.priorAps[streamPos.priorAps.length - j - 1].flipped(); 
 						postAps[j].setStrand(StrandedFeature.NEGATIVE);
 					}
 					postAps[j].removeRevStrandReads();
@@ -92,7 +91,11 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 				//			System.err.print("Streaming " + realPreWindSize + ", " + realPostWindSize + ":\t"); 
 				//			System.err.println(AlignmentPos.getRefTokens(preAps) + 
 				//					"," + currentApDirectional.getRefToken() + "," + AlignmentPos.getRefTokens(postAps));
-				out &= super.processAp(preAps, currentApDirectional, postAps);
+				AlignmentPosStreamerPosition newStreamPos = new AlignmentPosStreamerPosition();
+				newStreamPos.priorAps = preAps;
+				newStreamPos.currentAp = currentApDirectional;
+				newStreamPos.nextAps = postAps;
+				out &= super.processAp(newStreamPos);
 			}
 //		}
 

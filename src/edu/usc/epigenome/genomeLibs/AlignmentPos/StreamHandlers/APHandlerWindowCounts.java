@@ -4,6 +4,7 @@
 package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.Counters.*;
 
 
@@ -36,9 +37,9 @@ public class APHandlerWindowCounts extends AlignmentPosWindCounter implements Al
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	public boolean streamElement(AlignmentPos[] pre, AlignmentPos currentAp, AlignmentPos[] post) 
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
-		this.increment(currentAp);
+		this.increment(streamPos.currentAp);
 		return true;
 	}
 

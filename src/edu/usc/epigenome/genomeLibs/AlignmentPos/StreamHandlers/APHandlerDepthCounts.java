@@ -4,6 +4,7 @@
 package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.Counters.TreeMapCounter;
 
 
@@ -37,11 +38,11 @@ public class APHandlerDepthCounts extends TreeMapCounter<Integer> implements Ali
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPosStreamHandler#streamElement(java.util.LinkedList, edu.usc.epigenome.genomeLibs.AlignmentPos, java.util.LinkedList)
 	 */
-	public boolean streamElement(AlignmentPos[] pre, AlignmentPos currentAp, AlignmentPos[] post) 
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
 		// Check how many reads overlap this position, do forward and reverse separately.
-		int fw = currentAp.getDepth(true);
-		int rev = currentAp.getDepth(false);
+		int fw = streamPos.currentAp.getDepth(true);
+		int rev = streamPos.currentAp.getDepth(false);
 
 		boolean empty = true;
 		if (fw>0)
