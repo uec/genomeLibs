@@ -37,7 +37,12 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.*;
 	public boolean streamCpgPair(AlignmentPos[] priorAps,
 			CpgPair pair, AlignmentPos[] nextAps)
 	{
-		System.out.print(pair.gffLine());
+		System.out.print( priorAps.length + ",");
+		System.out.print( AlignmentPos.getCpgDensityStr(priorAps) + ",");
+		System.out.print( nextAps.length + ",");
+		System.out.print( AlignmentPos.getCpgDensityStr(nextAps) + ",");
+		System.out.print(pair.csvLine());
+		System.out.println();
 		
 		return true;
 	}

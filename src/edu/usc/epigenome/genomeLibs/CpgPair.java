@@ -84,11 +84,28 @@ public class CpgPair {
 	
 //		out += cpgA.gffLine();
 //		out += cpgB.gffLine();
-		out += "\n";
 		
 		return out;
 	}
 	
-	
+	public String csvLine()
+	{
+		String out = "";
+		
+		out += cpgF.getChr();
+		
+		out += "," + cpgF.getPos();
+		out += "," + cpgR.getPos();
+		out += "," + this.getMethylatedFracStr(true);
+		out += "," + cpgF.getStrandSymbol();
+		out += "," + this.getDepth(true);
+		out += "," + this.getDepth(false);
+		out += "," + this.getMethylatedFracStr(true);
+		out += "," + this.getMethylatedFracStr(false);
+		out += "," + this.getStrandMismatch();
+		
+		return out;
+	}
+		
 	
 }

@@ -28,6 +28,8 @@ public class PileupToCpgInfo {
     private int maxIdentical = 0;
     @Option(name="-minDepth",usage="minimum read depth (default 0)")
     private int minDepth = 0;
+    @Option(name="-windSize",usage="window size, for CpG density windows (default 100)")
+    private int windSize = 100;
     @Option(name="-minDepthEachStrand",usage="minimum depth applies to each strand")
     private boolean minDepthEachStrand = false;
     @Argument
@@ -70,9 +72,6 @@ public class PileupToCpgInfo {
             return;
         }
 
-
-
-	
 		AlignmentPosOptions apos = new AlignmentPosOptions();
 		apos.minQualityScore = minQual;
 		apos.trackPositions = true;
@@ -89,7 +88,7 @@ public class PileupToCpgInfo {
 
 			// Create iterator, streamer
 			Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
-			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, 100, 100);
+			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, windSize, windSize);
 			apStreamer.add(new APFilterCpgs());
 			
 			if (minDepth>0) apStreamer.add(new APFilterMinDepth(minDepth,minDepthEachStrand));

@@ -169,7 +169,7 @@ public abstract class AlignmentPos implements Cloneable {
 		this.strand = strand;
 	}
 
-	static String getRefTokens(Collection<AlignmentPos> aps)
+	public static String getRefTokens(Collection<AlignmentPos> aps)
 	{
 		int len = aps.size();
 		String out = "";
@@ -219,6 +219,29 @@ public abstract class AlignmentPos implements Cloneable {
 		return buf.toString();
 	}
 
+	public static String getCpgDensityStr(AlignmentPos[] aps)
+	{
+		double dens = getCpgDensity(aps);
+		return String.format("%.2f", dens);
+	}
+	
+	public static double getCpgDensity(AlignmentPos[] aps)
+	{
+		int totalCpgs = 0;
+		int total = 0;
+		for (int i = 1; i < aps.length; i++)
+		{
+			Symbol pre = aps[i-1].getRef();
+			Symbol post = aps[i].getRef();
+			
+			if (pre != DNATools.n())
+			{
+				total++;
+				if ((pre == DNATools.c()) && (post == DNATools.g())) totalCpgs++;
+			}
+		}
+		return (double)totalCpgs/(double)total; 
+	}
 	
 	public char getRefToken()
 	{
