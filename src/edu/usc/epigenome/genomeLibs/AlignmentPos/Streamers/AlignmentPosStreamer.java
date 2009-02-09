@@ -236,13 +236,13 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		int currentApPos = currentAp.getPos();
 		if ((preWindSize>0) && (priorAps[0].getPos() != (currentApPos-preWindSize)))
 		{
-			System.err.println("PreWind non-contiguous: priorAps= " +  priorAps[0].getPos() +
-					", currentPos=" + currentApPos + ", preWindSize=" + preWindSize);
+//			System.err.println("PreWind non-contiguous: priorAps= " +  priorAps[0].getPos() +
+//					", currentPos=" + currentApPos + ", preWindSize=" + preWindSize);
 			priorAps = preNull;
 		}
 		if ((postWindSize>0) && (postAps[postWindSize-1].getPos() != (currentApPos+postWindSize)))
 		{
-			System.err.println("PostWind non-contiguous " + currentAp.toString());
+//			System.err.println("PostWind non-contiguous " + currentAp.toString());
 			postAps = postNull;
 		}
 		
