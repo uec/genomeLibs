@@ -194,6 +194,19 @@ public abstract class AlignmentPos implements Cloneable {
 		return buf.toString();
 	}
 
+	public static Symbol[] getSymbols(AlignmentPos[] aps)
+	{
+		
+		Symbol[] out= new Symbol[aps.length];
+		for (int i = 0; i < aps.length; i++)
+		{
+			out[i] = aps[i].getRef();
+		}
+		
+		return out;
+	}
+
+	
 	public static String getPosString(Collection<AlignmentPos> aps)
 	{
 		int len = aps.size();

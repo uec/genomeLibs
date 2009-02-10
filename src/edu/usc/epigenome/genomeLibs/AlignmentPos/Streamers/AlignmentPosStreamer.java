@@ -5,9 +5,14 @@ package edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers;
 
 import java.util.*;
 
+import org.biojava.bio.symbol.Symbol;
+
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosNull;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.AlignmentPosStreamHandler;
+import edu.usc.epigenome.genomeLibs.Counters.NmerCounter;
+import edu.usc.epigenome.genomeLibs.Counters.StringCounter;
+import edu.usc.epigenome.genomeLibs.Counters.SymbolCounter;
 
 /**
  * @author benb
@@ -26,11 +31,19 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 	private AlignmentPos[] preNull = null; // Temporary storage for the buffer
 	private AlignmentPos[] postNull = null; // Temporary storage for the buffer
 	
+	private NmerCounter preNmerCounter = null; // Keep track of symbol counts
+	private NmerCounter postNmerCounter = null; // Keep track of symbol counts
+	private boolean nmerCounterStale = true;
+	private Symbol[] singleSymBuf = new Symbol[1];
+	private Symbol[] doubleSymBuf = new Symbol[2];
+		
 	
 //	protected Queue queue = null;
 	
 	private static final long serialVersionUID = 7720L;
+
 	
+
 	/**
 	 * @param inApIt
 	 * @param inPreWindSize
@@ -138,9 +151,9 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 			{
 				// System.err.println(curAp.getChr() + " == " + currentChr);
 				// Same chrom. Remove one from head, add one to tail, process.
-				queue.poll();
+				AlignmentPos dropped = queue.poll();
 				queue.add(curAp);
-				processQueue(queue);
+				processQueue(queue, dropped);
 			}
 			
 			// Increment
@@ -189,7 +202,8 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		
 		// Process the queue
 //		System.err.println("\tfinish startChrom(" + AlignmentPos.getRefTokens(queue) + ", " + ((firstAp==null) ? "null" : firstAp.getRefToken()) + ")");
-		processQueue(queue);
+		symbolCountersMakeStale();
+		processQueue(queue, null);
 	}
 	
 	/**
@@ -204,9 +218,9 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		
 		for (int i = 0; i < postWindSize; i++)
 		{
-			queue.poll(); // Remove from head
+			AlignmentPos dropped = queue.poll(); // Remove from head
 			queue.add(new AlignmentPosNull());
-			processQueue(queue);
+			processQueue(queue, dropped);
 		}
 	}
 
@@ -217,7 +231,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 	 */
 	//TODO We could do a better job of managing buffers that are partially
 	// contiguous
-	protected boolean processQueue(Queue<AlignmentPos> apQueue)
+	protected boolean processQueue(Queue<AlignmentPos> apQueue, AlignmentPos droppedAp)
 	{
 //		System.err.print(AlignmentPos.getRefTokens(apQueue) + "  ");
 
@@ -236,20 +250,29 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		int currentApPos = currentAp.getPos();
 		if ((preWindSize>0) && (priorAps[0].getPos() != (currentApPos-preWindSize)))
 		{
-			System.err.println("PreWind non-contiguous: priorAps= " +  priorAps[0].getPos() +
-					", currentPos=" + currentApPos + ", preWindSize=" + preWindSize);
+//			System.err.println("PreWind non-contiguous: priorAps= " +  priorAps[0].getPos() +
+//					", currentPos=" + currentApPos + ", preWindSize=" + preWindSize);
 			priorAps = preNull;
+			this.symbolCountersMakeStale();
 		}
 		if ((postWindSize>0) && (postAps[postWindSize-1].getPos() != (currentApPos+postWindSize)))
 		{
-			System.err.println("PostWind non-contiguous " + currentAp.toString());
+//			System.err.println("PostWind non-contiguous " + currentAp.toString());
 			postAps = postNull;
+			this.symbolCountersMakeStale();
 		}
 		
+		// Pass to handlers
 		AlignmentPosStreamerPosition streamPos = new AlignmentPosStreamerPosition();
 		streamPos.priorAps = priorAps;
 		streamPos.currentAp = currentAp;
 		streamPos.nextAps = postAps;
+		
+		// Increment and pass on the nmer counters.
+		this.symbolCountersIncrement(droppedAp, priorAps, currentAp, postAps);
+		streamPos.preNmerCounts = (this.symbolCountersAreStale()) ? null : this.preNmerCounter;
+		streamPos.nextNmerCounts = (this.symbolCountersAreStale()) ? null : this.postNmerCounter;
+		
 		return processAp(streamPos);
 	}
 	
@@ -277,6 +300,98 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 			passes &= handler.streamElement(streamPos);
 		}
 		return passes;
+	}
+
+	
+	
+	
+	// -------------------------------  Symbol count handling ------------------
+	
+	protected void symbolCountersMakeStale()
+	{
+		nmerCounterStale = true;
+	}
+	
+	protected void symbolCountersMakeFresh()
+	{
+		nmerCounterStale = false;
+	}
+
+	protected boolean symbolCountersAreStale()
+	{
+		return nmerCounterStale;
+	}
+	
+	protected void symbolCountersInit(AlignmentPos[] preAps, AlignmentPos currentAp, AlignmentPos nextAps[])
+	{
+		if ((preAps != null) && (preWindSize>0))
+		{
+			preNmerCounter = new NmerCounter();
+			preNmerCounter.incrementAllSubstrings(AlignmentPos.getSymbols(preAps),2);
+		}
+
+		if ((nextAps != null) && (postWindSize > 0))
+		{
+			postNmerCounter = new NmerCounter();
+			postNmerCounter.incrementAllSubstrings(AlignmentPos.getSymbols(nextAps),2);
+		}
+	}
+
+	protected void symbolCountersIncrement(AlignmentPos droppedAp, AlignmentPos[] preAps, AlignmentPos currentAp, AlignmentPos nextAps[])
+	{
+		if (symbolCountersAreStale())
+		{
+			symbolCountersInit(preAps, currentAp, nextAps);
+			this.symbolCountersMakeFresh();
+		}
+		else
+		{
+			if ((preAps!=null) && (preWindSize>0))
+			{
+				// Increment pre
+				singleSymBuf[0] = preAps[preAps.length-1].getRef();
+				preNmerCounter.increment(singleSymBuf);
+				if (preWindSize>1)
+				{
+					doubleSymBuf[0] = preAps[preAps.length-2].getRef();
+					doubleSymBuf[1] = preAps[preAps.length-1].getRef();
+					preNmerCounter.increment(doubleSymBuf);
+				}
+
+				// Decrement pre
+				singleSymBuf[0] = droppedAp.getRef();
+				preNmerCounter.decrement(singleSymBuf);
+				if (preWindSize>1)
+				{
+					doubleSymBuf[0] = droppedAp.getRef();
+					doubleSymBuf[1] = preAps[0].getRef();
+					preNmerCounter.decrement(doubleSymBuf);
+				}
+			}
+
+			if ((nextAps != null) && (postWindSize>0))
+			{
+				// Increment post
+				singleSymBuf[0] = nextAps[nextAps.length-1].getRef();
+				postNmerCounter.increment(singleSymBuf);
+				if (postWindSize>1)
+				{
+					doubleSymBuf[0] = nextAps[nextAps.length-2].getRef();
+					doubleSymBuf[1] = nextAps[nextAps.length-1].getRef();
+					postNmerCounter.increment(doubleSymBuf);
+				}
+
+				// Decrement post
+				singleSymBuf[0] = currentAp.getRef();
+				postNmerCounter.decrement(singleSymBuf);
+				if (postWindSize>1)
+				{
+					doubleSymBuf[0] = currentAp.getRef();
+					doubleSymBuf[1] = nextAps[0].getRef();
+					postNmerCounter.decrement(doubleSymBuf);
+				}
+			}
+		}
 	}
 
 	
