@@ -269,9 +269,13 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		streamPos.nextAps = postAps;
 		
 		// Increment and pass on the nmer counters.
-		this.symbolCountersIncrement(droppedAp, priorAps, currentAp, postAps);
-		streamPos.preNmerCounts = (this.symbolCountersAreStale()) ? null : this.preNmerCounter;
-		streamPos.nextNmerCounts = (this.symbolCountersAreStale()) ? null : this.postNmerCounter;
+		// This is VERY slow, due to NmerCounter.keyFromSyms
+		if (false)
+		{
+			this.symbolCountersIncrement(droppedAp, priorAps, currentAp, postAps);
+			streamPos.preNmerCounts = (this.symbolCountersAreStale()) ? null : this.preNmerCounter;
+			streamPos.nextNmerCounts = (this.symbolCountersAreStale()) ? null : this.postNmerCounter;
+		}
 		
 		return processAp(streamPos);
 	}

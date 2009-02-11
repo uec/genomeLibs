@@ -313,11 +313,31 @@ public abstract class AlignmentPos implements Cloneable {
 		return getDepth(true, fw);
 	}
 	
+	public int getDepthNoIdentical(boolean fw)
+	{
+		int orig = this.apOptions.maxIdentical;
+		this.apOptions.maxIdentical = 1;
+		int depth = getDepth(true, fw);
+		this.apOptions.maxIdentical = orig;
+		return depth;
+	}
+
+	public int getDepthWithIdentical(boolean fw)
+	{
+		int orig = this.apOptions.maxIdentical;
+		this.apOptions.maxIdentical = 0;
+		int depth = getDepth(true, fw);
+		this.apOptions.maxIdentical = orig;
+		return depth;
+	}
+	
 	public int getDepth(boolean reference_forward_strand, boolean read_same_strand)
 	{
 		int[] d = getDepth();
 		return d[ (reference_forward_strand == read_same_strand) ? 0 : 1 ];
 	}
+	
+	
 	
 	abstract public int[] getDepth();
 	

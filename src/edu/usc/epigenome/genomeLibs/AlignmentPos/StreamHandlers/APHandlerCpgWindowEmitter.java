@@ -15,42 +15,51 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
  * 
  *
  */
- public class APHandlerCpgEmitter extends APHandlerCpgHandler {
+ public class APHandlerCpgWindowEmitter extends APHandlerCpgWindowStats {
 
-	/**
-	 * 
-	 */
-	public APHandlerCpgEmitter() {
-	}
 
 	/*
 	 * Overridden StreamHandler functions(non-Javadoc)
 	 */
 	
+	/**
+	 * @param inWindSize
+	 */
+	public APHandlerCpgWindowEmitter(int inWindSize) {
+		super(inWindSize);
+	}
+
 	public void init() {
+		super.init();
 	}
 
 	public void finish() {
+		super.finish();
 	}
 
 
 
-	public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos, CpgPair pair)
+	public boolean streamWindow(AlignmentPosStreamerPosition streamPos, CpgPair pair, Queue<CpgPair> cpgWind)
 	{
-		// PRINT THE MAXIDENTICAL DEPTH AND THE NON 
+
+		System.out.print(streamPos.currentAp.getChr() + ",");
+		System.out.print(streamPos.currentAp.getPos() + ",");
 		
-		
-		System.out.print(pair.csvLine() + ",");
 		System.out.print( streamPos.priorAps.length + ",");
 //		System.out.print( streamPos.preNmerCpgDensity() + ",");
 		System.out.print( AlignmentPos.getCpgDensityStr(streamPos.priorAps) + ",");
 		System.out.print( streamPos.nextAps.length + ",");
 //		System.out.print( streamPos.nextNmerCpgDensity() + ",");
 		System.out.print( AlignmentPos.getCpgDensityStr(streamPos.nextAps) + ",");
+		
+		// Add ourself to the window since we aren't included
+		Vector<CpgPair> list = new Vector<CpgPair>(cpgWind);
+		list.add(pair);
+		System.out.print(CpgPair.csvStats(list));
 		System.out.println();
 		
 		return true;
 	}
-	
+
 
 }

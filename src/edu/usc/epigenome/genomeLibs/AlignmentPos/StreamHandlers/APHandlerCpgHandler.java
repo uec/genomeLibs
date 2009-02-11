@@ -65,7 +65,8 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 		}
 		catch (Exception e)
 		{
-			System.err.println("APHandlerCpgEmitter called with non-AlignmentPosSnpsBisulfiteConverted objects");
+			System.err.println("APHandlerCpgEmitter called with non-AlignmentPosSnpsBisulfiteConverted objects.");
+			System.err.println("Try setting AlignmentOptions.trackBisulfiteConversion to true in AlignmentPos reader");
 			e.printStackTrace();
 			System.exit(0);
 		}

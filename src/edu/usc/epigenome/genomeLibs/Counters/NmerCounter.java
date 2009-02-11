@@ -80,6 +80,10 @@ public class NmerCounter extends TreeMapCounter<String> {
 		super.setCount(key, newCount);
 	}
 	
+	// This is VERY slow.
+	// ABout 50% from DNATools.dnaToke
+	// About 30% from StringBuffer.toString
+	// About 20% from StringBuffer.<init>
 	protected static String keyFromSyms(Symbol[] syms)
 	{
 		StringBuffer buf = new StringBuffer(syms.length);

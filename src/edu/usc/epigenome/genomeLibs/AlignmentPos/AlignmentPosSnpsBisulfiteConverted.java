@@ -37,14 +37,30 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 	
 	public double getConvertedFrac()
 	{
+		
 		SymbolCounter snpCounts = this.getSnpCounter(true);
 		double conv = snpCounts.getConvertedFrac();
+		return conv;
+	}
+
+	public double getConvertedFrac(int inMaxIdentical)
+	{
+		int orig = this.apOptions.maxIdentical;
+		this.apOptions.maxIdentical = inMaxIdentical;
+		SymbolCounter snpCounts = this.getSnpCounter(true);
+		double conv = snpCounts.getConvertedFrac();
+		this.apOptions.maxIdentical = orig;
 		return conv;
 	}
 	
 	public double getMethylatedFrac()
 	{
 		return 1.0 - getConvertedFrac();
+	}
+
+	public double getMethylatedFrac(int maxIdentical)
+	{
+		return 1.0 - getConvertedFrac(maxIdentical);
 	}
 
 	public String getConvertedFracString()
@@ -54,6 +70,13 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 		return buf.toString();
 	}
 
+	public String getMethylatedFracString(int inMaxIdentical)
+	{
+		StringBuffer buf = new StringBuffer(5);
+		buf.append(String.format("%.2f",this.getMethylatedFrac(inMaxIdentical)));
+		return buf.toString();
+	}
+	
 	public String getMethylatedFracString()
 	{
 		StringBuffer buf = new StringBuffer(5);
