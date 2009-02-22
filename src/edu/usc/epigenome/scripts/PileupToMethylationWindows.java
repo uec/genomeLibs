@@ -85,6 +85,7 @@ public class PileupToMethylationWindows {
 		apos.onlyFirstCycle = false;
 		apos.trackBisulfiteConversion = true;
 		
+		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{
 			String fn = (String)this.arguments.get(i);

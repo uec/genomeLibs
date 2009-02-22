@@ -22,7 +22,7 @@ public class PileupToBaseComposition {
 
 	// -c track cycles
 	// -q track qual scores
-	private static final String USAGE = "Usage: PileupToBaseComposition -desc DescritionTag -minQual 30 -cgonly -chonly -cycles -quals file1.pileup file2.pileup ...";
+	private static final String USAGE = "Usage: PileupToBaseComposition -additionalDesc DescritionTag -minQual 30 -cgonly -chonly -cycles -quals file1.pileup file2.pileup ...";
 	
 	
     @Option(name="-minQual",usage="minimum quality score (default 0)")

@@ -116,7 +116,7 @@ public class PileupToCpgConcordance {
 			}
 				
 			// Only non-zero depth cytosines
-			apStreamer.add(new APFilterMinDepth(1));
+			apStreamer.add(new APFilterMinDepth(1,false));
 			
 
 			apStreamer.add(counter);

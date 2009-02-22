@@ -30,6 +30,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 	}
 
 	public void init() {
+		System.out.println(headers());
 		super.init();
 	}
 
@@ -37,7 +38,20 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 		super.finish();
 	}
 
-
+	public static String headers()
+	{
+		String out = "";
+		
+		out += "chr,";
+		out += "pos,";
+		out += "preWindLen,";
+		out += "preWindCpgDens,";
+		out += "postWindLen,";
+		out += "postWindCpgDens,";
+		out += CpgPair.csvStatsHeaders();
+		
+		return out;
+	}
 
 	public boolean streamWindow(AlignmentPosStreamerPosition streamPos, CpgPair pair, Queue<CpgPair> cpgWind)
 	{

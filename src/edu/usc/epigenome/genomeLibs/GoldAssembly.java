@@ -11,12 +11,14 @@ import org.biojavax.bio.seq.RichSequenceIterator;
 
 public class GoldAssembly {
 
-	public static Map<String,Integer> c_chr_map; // "mm9_chr1"
+	public static Map<String,Integer> c_chr_map; // "mm9__chr1"
+	public static Map<String,Long> cGlobalOffsets;
 
 	
 	public static int chromLengthStatic(String chr, String genome)
 	throws Exception
 	{
+		chr = chr.toLowerCase();
 		int len = 0;
 		
 		String key = genome + "__" + chr;
@@ -31,8 +33,8 @@ public class GoldAssembly {
 			len = len_int.intValue();
 		}
 
-		System.err.println("Finding length of chrom " + chr + 
-				" from " + key + ", len=" + len);
+//		System.err.println("Finding length of chrom " + chr + 
+//				" from " + key + ", len=" + len);
 		
 		return len;
 	}
@@ -70,6 +72,52 @@ public class GoldAssembly {
 		return out_set.iterator();
 	}
 		
+	/*
+	 * File offsets (all are zero-based coordinates)
+	 */
+	
+	public static long getGlobalOffset(String chrom, String genome, int localOffset)
+	{
+		String key = genome + "__" + chrom;
+		long chromOffset = cGlobalOffsets.get(key).longValue();
+		long out = chromOffset + localOffset;
+		return out;
+	}
+	
+	public static long getGenomeSize(String genome)
+	{
+		String key = genome;
+		long out = cGlobalOffsets.get(key).longValue();
+		return out;
+	}
+
+	public static void initializeGlobalOffsets(String genome)
+	{
+		Iterator<String> chrs = chromIterator(genome, true);
+		
+		long offset = 0;
+
+		try
+		{
+			while (chrs.hasNext())
+			{
+				String chr = chrs.next();
+				String key = genome + "__" + chr;
+				cGlobalOffsets.put(key, new Long(offset));
+				offset += (long)GoldAssembly.chromLengthStatic(chr, genome);
+			}
+			
+			// Add a size
+			cGlobalOffsets.put(genome, offset);
+		}
+		catch (Exception e)
+		{
+			System.err.println("GoldAssembly::initializeGlobalOffsets died:\n" + e.toString());
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
 	
 	/************** FETCHING SEQUENCES
 	 * 
@@ -78,7 +126,6 @@ public class GoldAssembly {
 	public static Sequence chromSeq(String genome, String chr)
 	throws Exception
 	{
-
 		String suffix = "fa";
 		if (genome.matches("^tair.*"))
 		{
@@ -116,12 +163,12 @@ public class GoldAssembly {
 
 		return "/Users/benb/genome_data/ucsc/goldenPath/" + genome;
 	}
-
-
+	
 	// Static init
 	static {
-		c_chr_map = new HashMap<String,Integer>();
-
+		c_chr_map = new TreeMap<String,Integer>();  // TreeMap so they'll be sorted
+		cGlobalOffsets = new TreeMap<String,Long>();
+		
 		// Got from UCSC
 		//
 		// Transformed with:
@@ -177,6 +224,7 @@ public class GoldAssembly {
 		c_chr_map.put("hg18__chrx_random", new Integer(1719168));
 		c_chr_map.put("hg18__chry", new Integer(57772954));
 		c_chr_map.put("hg18__chrm", new Integer(16571));
+		GoldAssembly.initializeGlobalOffsets("hg18");
 		
 		// mm8
 		c_chr_map.put("mm8__chr1", new Integer(197069962));
@@ -213,6 +261,7 @@ public class GoldAssembly {
 		c_chr_map.put("mm8__chry_random", new Integer(14577732));
 		c_chr_map.put("mm8__chrun_random", new Integer(1540053));
 		c_chr_map.put("mm8__chrm", new Integer(16299));
+		GoldAssembly.initializeGlobalOffsets("mm8");
 	
 		// TAIR7
 		c_chr_map.put("tair7__chr1", new Integer(30432563));
@@ -222,6 +271,7 @@ public class GoldAssembly {
 		c_chr_map.put("tair7__chr5", new Integer(26992728));
 		c_chr_map.put("tair7__chrc", new Integer(154478));
 		c_chr_map.put("tair7__chrm", new Integer(366924));
+		GoldAssembly.initializeGlobalOffsets("tair7");
 	}
 	
 

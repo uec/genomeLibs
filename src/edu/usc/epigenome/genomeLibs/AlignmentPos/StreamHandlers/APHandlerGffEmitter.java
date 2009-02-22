@@ -30,6 +30,7 @@ public class APHandlerGffEmitter extends StringCounter implements AlignmentPosSt
 	 */
 	
 	public void init() {
+		
 	}
 
 	public void finish() {

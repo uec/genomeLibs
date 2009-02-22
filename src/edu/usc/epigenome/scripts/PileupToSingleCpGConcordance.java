@@ -79,6 +79,8 @@ public class PileupToSingleCpGConcordance {
 		
 		
 		APHandlerDepthCounts cpgCounts =  new APHandlerDepthCounts();
+		APHandlerDepthCounts cphCounts =  new APHandlerDepthCounts();
+		APHandlerDepthCounts cCounts =  new APHandlerDepthCounts();
 
 		for (int i = 0; i < this.arguments.size(); i++)
 		{

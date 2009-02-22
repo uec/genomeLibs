@@ -215,5 +215,20 @@ public class ListUtils {
 		}
 		return out;
 	}
+	
+	
+	public static double[] intArrToDouble(int[] in)
+	{
+		double[] out = new double[in.length];
+		
+		for (int i = 0; i < in.length; i++)
+		{
+			out[i] = (double)in[i];
+		}
+		
+		return out;
+	}
+	                  
+	                  
 
 }

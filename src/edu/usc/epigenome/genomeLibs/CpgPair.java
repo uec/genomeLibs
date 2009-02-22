@@ -157,7 +157,16 @@ public class CpgPair {
 		String out = ListUtils.excelLine(inStats);
 		return out;
 	}
-		
+	
+	public static String csvStatsHeaders()
+	{
+		ListUtils.setDelim(",");
+		String labels[] = { "fwDepth", "fwDepthCollapsed", "fwMeth", "fwMethCollapsed", 
+				 "revDepth", "revDepthCollapsed", "revMeth", "revMethCollapsed", "strandMismatch" }; 
+		String out = ListUtils.excelLine(labels);
+		return out;
+	}	
+	
 	public double[] stats()
 	{
 		double[] out = new double[9];
@@ -200,6 +209,7 @@ public class CpgPair {
 		for ( CpgPair cpg : cpgs)
 		{
 			double[] cpgStats = cpg.stats();
+			//System.err.println("Window has " + cpgs.size() + " cpgs");
 
 			// Create the output array if we haven't already
 			if (totals==null)
