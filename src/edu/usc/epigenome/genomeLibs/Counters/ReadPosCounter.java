@@ -40,8 +40,8 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 		String dataString = "&chd=t:";
 		String labelString = "&chl=";
 		HashMap<String,Integer> counts = new HashMap<String,Integer>();
-		int min = 0;
-		int max = 0;
+		long min = 0;
+		long max = 0;
 		for(ReadPos key :  this.keySet())
 		{
 			if(counts.containsKey(String.valueOf(key.getSymToken())))
@@ -71,9 +71,9 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	 */
 	public String getCountByCyclesChartURL()
 	{
-		int min = 0;
-		int max = 0;
-		int cyclesMax=0;
+		long min = 0;
+		long max = 0;
+		long cyclesMax=0;
 		String dataString = "&chd=t:";
 		String labelString = "&chdl=";
 		String scalingString = "&chds=";
@@ -127,9 +127,9 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 	 */
 	public String getCountByCyclesPercentageChartURL()
 	{
-		int min = 0;
-		int max = 100;
-		int cyclesMax=0;
+		long min = 0;
+		long max = 100;
+		long cyclesMax=0;
 		String dataString = "&chd=t:";
 		String labelString = "&chdl=";
 		String scalingString = "&chds=";
@@ -142,7 +142,7 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 			ReadPosRich key = (ReadPosRich) tkey;
 			if(key.getCycle() > cyclesMax)
 				cyclesMax = key.getCycle();
-			int total = 0;
+			long total = 0;
 			ReadPosCounter byCycleCount = this.getKeysByCycle(key.getCycle());
 			for(ReadPos cycleKey : byCycleCount.keySet())
 			{
@@ -151,12 +151,12 @@ public class ReadPosCounter extends TreeMapCounter<ReadPos>  {
 
 			if(countsDataGroup.containsKey(String.valueOf(key.getSymToken())))
 			{
-				countsDataGroup.put(String.valueOf(key.getSymToken()), countsDataGroup.get(String.valueOf(key.getSymToken())) + "," +  (100 * this.get(key) / total));
+				countsDataGroup.put(String.valueOf(key.getSymToken()), countsDataGroup.get(String.valueOf(key.getSymToken())) + "," +  (100L * this.get(key) / total));
 				cyclesDataGroup.put(String.valueOf(key.getSymToken()), cyclesDataGroup.get(String.valueOf(key.getSymToken())) + "," + key.getCycle());
 			}
 			else
 			{
-				countsDataGroup.put(String.valueOf(key.getSymToken()), String.valueOf(( 100 * this.get(key) / total)));
+				countsDataGroup.put(String.valueOf(key.getSymToken()), String.valueOf(( 100L * this.get(key) / total)));
 				cyclesDataGroup.put(String.valueOf(key.getSymToken()),  String.valueOf(key.getCycle()));
 			}						
 		}
