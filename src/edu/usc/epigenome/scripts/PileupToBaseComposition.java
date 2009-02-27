@@ -22,7 +22,7 @@ public class PileupToBaseComposition {
 
 	// -c track cycles
 	// -q track qual scores
-	private static final String USAGE = "Usage: PileupToBaseComposition -additionalDesc DescritionTag -minQual 30 -cgonly -chonly -cycles -quals file1.pileup file2.pileup ...";
+	private static final String USAGE = "Usage: PileupToBaseComposition -refComposition -additionalDesc DescritionTag -minQual 30 -cgonly -chonly -cycles -quals file1.pileup file2.pileup ...";
 	
 	
     @Option(name="-minQual",usage="minimum quality score (default 0)")
@@ -35,7 +35,9 @@ public class PileupToBaseComposition {
     private boolean cgonly = false;
     @Option(name="-chonly", usage="Store quality scores (default false)")
     private boolean chonly = false;
-    @Option(name="-additionalDesc", usage="Additional description tag")
+    @Option(name="-refComposition",usage="Take the base composition of the REFERENCE sequence (useful for selection artifacts)")
+    private boolean refComposition = false;
+   @Option(name="-additionalDesc", usage="Additional description tag")
     private String additionalDesc = null;
 
     
@@ -89,7 +91,7 @@ public class PileupToBaseComposition {
 		apos.trackQuals = this.quals;
 		apos.maxIdentical = 0;
 
-		APHandlerSymbolCounts counter = new APHandlerSymbolCounts();
+		APHandlerSymbolCounts counter = new APHandlerSymbolCounts(refComposition);
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{
@@ -114,6 +116,7 @@ public class PileupToBaseComposition {
 		if (additionalDesc != null) description += "_" + additionalDesc;
 		if (chonly) description += ".CpH";
 		if (cgonly) description += ".CpG";
+		if (refComposition) description += ".RefComposition";
 		
 		System.out.print(counter.excelOutput(description));
 
