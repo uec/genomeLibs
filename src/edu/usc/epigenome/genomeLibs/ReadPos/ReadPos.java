@@ -116,7 +116,26 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 		return UNKNOWN_CYCLE;
 	}
 
+	/**
+	 * @param readPos the readPos to set
+	 */
+	public void setReadPos(int pos) {
+		System.err.println("Trying to setReadPos() on a ReadPos object (should be a ReadPosRich)");
+		(new Exception()).printStackTrace();
+		System.exit(1);
+	}
 
+
+
+	/**
+	 * @param qual the qual to set
+	 */
+	public void setQual(int qual) {
+		System.err.println("Trying to setQual() on a ReadPos object (should be a ReadPosRich)");
+		(new Exception()).printStackTrace();
+		System.exit(1);
+	}
+	
 	/**
 	 * @return the qual
 	 */

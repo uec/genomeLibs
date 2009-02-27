@@ -6,6 +6,7 @@ package edu.usc.epigenome.genomeLibs.ReadPos;
 
 
 import org.biojava.bio.seq.StrandedFeature;
+import org.biojava.bio.seq.StrandedFeature.Strand;
 import org.biojava.bio.symbol.Symbol;
 
 /**
@@ -37,8 +38,16 @@ public class ReadPosRich extends ReadPos {
 		this.cycle = inPos;
 	}
 	
+	public ReadPosRich(Symbol inSym, boolean inForwardStrand, int inPos)
+	{
+		this.sym = inSym;
+		this.strand = (inForwardStrand) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
+		this.cycle = inPos;
+	}
+
 	
 	/* Getters/Setters */
+
 
 	/**
 	 * @return the readPos
