@@ -262,7 +262,7 @@ public class CpgPair {
 				 "revSnpProbCollapsed", 
 				 //OTHER
 				 "methOverall",
-				 "strandMismatch" 
+//				 "strandMismatch" 
 				 }; 
 		String out = ListUtils.excelLine(labels);
 		return out;
@@ -270,7 +270,7 @@ public class CpgPair {
 	
 	public double[] stats()
 	{
-		double[] out = new double[14];
+		double[] out = new double[13];
 
 		int ind = 0;
 		
@@ -292,16 +292,16 @@ public class CpgPair {
 		
 		// OTHER
 		out[ind++] = (double)this.getMethylatedFrac();
-		out[ind++] = (double)this.getStrandMismatch();
+//		out[ind++] = (double)this.getStrandMismatch();
 		
 		return out;
 	}
 	
 	public static double[] emptyStats()
 	{
-		int nStats = 14;
+		int nStats = 13;
 		
-		double[] out = new double[14];
+		double[] out = new double[13];
 		for (int i = 0; i < nStats; i++)
 		{
 			out[i] = Double.NaN;

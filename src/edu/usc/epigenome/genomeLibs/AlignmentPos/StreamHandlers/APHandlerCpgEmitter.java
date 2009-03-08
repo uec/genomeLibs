@@ -79,10 +79,10 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		out += "chr,";
 		out += "pos,";
 
-		out += "preWindLen,";
-		out += "preWindCpgDens,";
-		out += "postWindLen,";
-		out += "postWindCpgDens,";
+//		out += "preWindLen,";
+//		out += "preWindCpgDens,";
+//		out += "postWindLen,";
+//		out += "postWindCpgDens,";
 
 		out += CpgPair.csvStatsHeaders();
 		
@@ -102,12 +102,6 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		System.out.print(cur.getPos() + ",");
 		
 		
-//		System.out.print( streamPos.priorAps.length + ",");
-////		System.out.print( streamPos.preNmerCpgDensity() + ",");
-//		System.out.print( AlignmentPos.getCpgDensityStr(streamPos.priorAps) + ",");
-//		System.out.print( streamPos.nextAps.length + ",");
-////		System.out.print( streamPos.nextNmerCpgDensity() + ",");
-//		System.out.print( AlignmentPos.getCpgDensityStr(streamPos.nextAps) + ",");
 		
 		double preDens = -1.0, postDens = -1.0;
 		if (cpgTrackFile!=null)
@@ -125,10 +119,10 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			}
 		}
 		
-		System.out.print( cpgDensWindsize + ",");
-		System.out.print( preDens + ",");
-		System.out.print( cpgDensWindsize + ",");
-		System.out.print( postDens + ",");
+//		System.out.print( cpgDensWindsize + ",");
+//		System.out.print( preDens + ",");
+//		System.out.print( cpgDensWindsize + ",");
+//		System.out.print( postDens + ",");
 		
 		// Add ourself to the window since we aren't included
 		System.out.print(pair.csvStats());

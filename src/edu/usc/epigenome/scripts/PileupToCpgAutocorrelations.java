@@ -1,6 +1,7 @@
 package edu.usc.epigenome.scripts;
 
 import edu.usc.epigenome.genomeLibs.PileupToCpgTemplate;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFilterNonSnpCpgs;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgWindowAutocorr;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
@@ -21,6 +22,7 @@ public class PileupToCpgAutocorrelations extends PileupToCpgTemplate {
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
 		
+		apStreamer.add(new APHandlerCpgFilterNonSnpCpgs());
 		apStreamer.add(new APHandlerCpgWindowAutocorr(10000));
 
 	}
