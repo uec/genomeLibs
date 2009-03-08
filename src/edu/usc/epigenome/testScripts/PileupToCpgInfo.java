@@ -34,7 +34,7 @@ public class PileupToCpgInfo {
     private int windSize = 1;
     @Option(name="-CtTransitionFreq",usage="C->T transition rate (default 0.005)")
     private double CtTransitionFreq = 0.005; // From Schmidt 2008, Li 2009 (unpublished)
-   @Option(name="-cpgTrackFilename",usage="binary track file for CpG density")
+    @Option(name="-cpgTrackFilename",usage="binary track file for CpG density")
     private String cpgTrackFilename = null;
     @Argument
     private List<String> arguments = new ArrayList<String>();
@@ -76,10 +76,6 @@ public class PileupToCpgInfo {
             return;
         }
 
-        if (cpgTrackFilename != null)
-        {
-        	
-        }
         
         
 		AlignmentPosOptions apos = new AlignmentPosOptions();
@@ -104,16 +100,11 @@ public class PileupToCpgInfo {
 			
 			if (minDepth>0) apStreamer.add(new APFilterMinDepth(minDepth,minDepthEachStrand));
 			
-			apStreamer.add(new APHandlerCpgEmitter());
+			apStreamer.add(new APHandlerCpgEmitter(cpgTrackFilename));
 
 			// Run
 			apStreamer.run();
 		}	
-		
-		if (cpgTrackFilename != null)
-		{
-			
-		}
 
 	}
 	

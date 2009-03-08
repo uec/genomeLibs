@@ -45,8 +45,8 @@ public class TrackFileRandomAccess extends TrackFile {
 		long startFileOffset = startOffsetGlobal * 4; // Because it's an int
 		raFile.seek(startFileOffset);
 
-		System.err.println("Reading raw\t" + chrom + "\t" + startOffsetGlobal + "\t" + len);
-		System.err.println("\tSeeking to " + startFileOffset);
+//		System.err.println("Reading raw\t" + chrom + "\t" + startOffsetGlobal + "\t" + len);
+//		System.err.println("\tSeeking to " + startFileOffset);
 
 		for (int i = 0; i < len; i++)
 		{
@@ -62,10 +62,10 @@ public class TrackFileRandomAccess extends TrackFile {
 	throws IOException
 	{
 		long startFileOffset = startOffsetGlobal * 4; // Because it's an int
-		System.err.println("Writing raw\t" + chrom + "\t" + startOffsetGlobal + "\t" + vals.length);
+//		System.err.println("Writing raw\t" + chrom + "\t" + startOffsetGlobal + "\t" + vals.length);
 		
 		
-		System.err.println("\tSeeking to " + startFileOffset);
+//		System.err.println("\tSeeking to " + startFileOffset);
 		raFile.seek(startFileOffset);
 		for (int i = 0; i < vals.length; i++)
 		{

@@ -79,13 +79,13 @@ public abstract class TrackFile {
 	public double getValAvg(String chrom, int startPos, int len)
 	throws IOException
 	{
-		System.err.println("Getting " + len + " vals");
+//		System.err.println("Getting " + len + " vals");
 		int[] all = getVals(chrom,startPos,len);
 
-		System.err.println("Converting to double[]");
+//		System.err.println("Converting to double[]");
 		double[] allD = edu.usc.epigenome.genomeLibs.ListUtils.intArrToDouble(all);
 
-		System.err.println("Taking mean");
+//		System.err.println("Taking mean");
 		double mean = StatUtils.mean(allD);
 		
 //		System.err.println(edu.usc.epigenome.genomeLibs.ListUtils.excelLine(all));
