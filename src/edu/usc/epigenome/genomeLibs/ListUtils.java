@@ -103,14 +103,14 @@ public class ListUtils {
 	
 	public static String excelLine(double[] l)
 	{
-
-		String out = "";
+		StringBuffer sb = new StringBuffer(l.length*5);
+		
 		for (int i = 0; i < l.length; i++)
 		{
-			if (i > 0) out += delim;
-			out += l[i];
+			if (i > 0) sb.append(delim);
+			sb.append(l[i]);
 		}
-		return out;
+		return sb.toString();
 	}
 	
 	public static String excelLine(int[] l)

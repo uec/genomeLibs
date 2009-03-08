@@ -23,7 +23,7 @@ public class PileupToCpgAutocorrelations extends PileupToCpgTemplate {
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
 		
 		apStreamer.add(new APHandlerCpgFilterNonSnpCpgs());
-		apStreamer.add(new APHandlerCpgWindowAutocorr(10000));
+		apStreamer.add(new APHandlerCpgWindowAutocorr(25000));
 
 	}
 
