@@ -113,6 +113,27 @@ public class CpgPair {
 	// 
 	// *******************************************
 
+	public double getMethylatedFrac()
+	{
+		double fwDepth = (double)(cpgF.getDepth(true));
+		double revDepth = (double)(cpgR.getDepth(true));
+
+		double fwFrac = (fwDepth>0) ? (fwDepth/(fwDepth+revDepth)) : 0;
+		double revFrac = 1-fwFrac;
+		
+		double fwMeth = cpgF.getMethylatedFrac();
+		double revMeth = cpgR.getMethylatedFrac();
+		
+		// If it's a SNP, "depth" can be 0, but the number of C's and T's can be 0.
+		// In this case, fwMeth will be Nan
+		double total = 0.0;
+		total += ((fwDepth > 0) && !Double.isNaN(fwMeth)) ? (fwFrac*fwMeth) : 0.0;
+		total += ((revDepth > 0) && !Double.isNaN(revMeth)) ? (revFrac*revMeth) : 0.0;
+		
+		return total;
+	}
+	
+	
 	public double getMethylatedFrac(boolean fw)
 	{
 		AlignmentPosSnpsBisulfiteConverted c = (fw) ? cpgF : cpgR;
@@ -240,6 +261,7 @@ public class CpgPair {
 				 "revSnpProb", 
 				 "revSnpProbCollapsed", 
 				 //OTHER
+				 "methOverall",
 				 "strandMismatch" 
 				 }; 
 		String out = ListUtils.excelLine(labels);
@@ -248,7 +270,7 @@ public class CpgPair {
 	
 	public double[] stats()
 	{
-		double[] out = new double[13];
+		double[] out = new double[14];
 
 		int ind = 0;
 		
@@ -269,6 +291,7 @@ public class CpgPair {
 		out[ind++] = (double)this.getSnpProb(false, 1);
 		
 		// OTHER
+		out[ind++] = (double)this.getMethylatedFrac();
 		out[ind++] = (double)this.getStrandMismatch();
 		
 		return out;
@@ -276,9 +299,9 @@ public class CpgPair {
 	
 	public static double[] emptyStats()
 	{
-		int nStats = 13;
+		int nStats = 14;
 		
-		double[] out = new double[13];
+		double[] out = new double[14];
 		for (int i = 0; i < nStats; i++)
 		{
 			out[i] = Double.NaN;

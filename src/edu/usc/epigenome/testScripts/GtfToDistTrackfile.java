@@ -82,7 +82,7 @@ public class GtfToDistTrackfile {
 		// Get features
 		ChromFeatures feats = new ChromFeatures(gtf, true);
 		
-		int[] chroms = {21}; // !!!!! CHANGE BACK
+		int[] chroms = {11}; // !!!!! CHANGE BACK
 //		for (int chrNum : feats.activeChroms())
 		for (int chrNum : chroms)
 		{

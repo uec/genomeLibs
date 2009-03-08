@@ -17,7 +17,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APFilterCphs;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APFilterCytosines;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APFilterMinDepth;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerWindowStats;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerWindowStatsCpGConcordance;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.DEPR__APHandlerWindowStatsCpGConcordance;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerWatsonThenCrick;
 
@@ -90,7 +90,7 @@ public class PileupToCpgConcordance {
 		apos.maxIdentical = maxIdentical;
 		apos.trackBisulfiteConversion = true;
 
-		APHandlerWindowStats counter = new APHandlerWindowStatsCpGConcordance(windSize);
+		APHandlerWindowStats counter = new DEPR__APHandlerWindowStatsCpGConcordance(windSize);
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{

@@ -95,7 +95,10 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		
 		AlignmentPos cur = streamPos.currentAp;
 		
-		System.out.print(cur.getChr() + ",");
+		// Put a number so matlab can open it.
+		long globalPos = GoldAssembly.getGlobalOffset(cur.getChr(), "hg18", cur.getPos());
+//		System.out.print(cur.getChr() + ",");
+		System.out.print(globalPos + ",");
 		System.out.print(cur.getPos() + ",");
 		
 		

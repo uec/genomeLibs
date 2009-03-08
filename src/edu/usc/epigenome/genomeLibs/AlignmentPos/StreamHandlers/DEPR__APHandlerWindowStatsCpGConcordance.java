@@ -9,9 +9,9 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 import edu.usc.epigenome.genomeLibs.Counters.SymbolCounterStratified;
 import edu.usc.epigenome.genomeLibs.ReadPos.StreamHandlers.RPHandlerSymbolCountsStratifyByCycle;
 
-public class APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
+public class DEPR__APHandlerWindowStatsCpGConcordance extends APHandlerWindowStats {
 
-	public APHandlerWindowStatsCpGConcordance(int inWindSize) {
+	public DEPR__APHandlerWindowStatsCpGConcordance(int inWindSize) {
 		super(inWindSize);
 	}
 

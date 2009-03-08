@@ -6,7 +6,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosIteratorMaqPileup;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APFilterCphs;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerWindowStatsCpGConcordance;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.DEPR__APHandlerWindowStatsCpGConcordance;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerWatsonThenCrick;
 
@@ -48,7 +48,7 @@ public class StreamMaqPileup {
 		
 		// Add handlers, filters
 		apStreamer.add(new APFilterCphs());
-		APHandlerWindowStatsCpGConcordance baseCounter = new APHandlerWindowStatsCpGConcordance(100);
+		DEPR__APHandlerWindowStatsCpGConcordance baseCounter = new DEPR__APHandlerWindowStatsCpGConcordance(100);
 		apStreamer.add(baseCounter);
 		
 		// Run

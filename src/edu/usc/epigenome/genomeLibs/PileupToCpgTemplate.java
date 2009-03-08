@@ -1,4 +1,4 @@
-package edu.usc.epigenome.testScripts;
+package edu.usc.epigenome.genomeLibs;
 
 import java.util.Iterator;
 import java.util.List;
@@ -13,31 +13,33 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.*;
 
-public class PileupToCpgInfo {
+public class PileupToCpgTemplate {
 
 	// -c track cycles
 	// -q track qual scores
-	private static final String USAGE = "Usage: PileupToCpgInfo file1.pileup file2.pileup ...";
+	private static final String USAGE = "Usage: PileupToCpgXXXX file1.pileup file2.pileup ...";
 	
 	
   
     // receives other command line parameters than options
 	@Option(name="-minQual",usage="minimum quality score (default 0)")
-	private int minQual = 0;
+	protected int minQual = 0;
 	@Option(name="-maxIdentical",usage="Maximum reads with identical alignment positions (default infinite)")
-    private int maxIdentical = 0;
+    protected int maxIdentical = 0;
     @Option(name="-minDepth",usage="minimum read depth (default 0)")
-    private int minDepth = 0;
+    protected int minDepth = 0;
     @Option(name="-minDepthEachStrand",usage="minimum depth applies to each strand")
-    private boolean minDepthEachStrand = false;
+    protected boolean minDepthEachStrand = false;
     @Option(name="-windSize",usage="window size, for CpG density windows (default 100)")
-    private int windSize = 1;
+    protected int windSize = 1;
     @Option(name="-CtTransitionFreq",usage="C->T transition rate (default 0.005)")
-    private double CtTransitionFreq = 0.005; // From Schmidt 2008, Li 2009 (unpublished)
+    protected double CtTransitionFreq = 0.005; // From Schmidt 2008, Li 2009 (unpublished)
     @Option(name="-cpgTrackFilename",usage="binary track file for CpG density")
-    private String cpgTrackFilename = null;
-    @Argument
-    private List<String> arguments = new ArrayList<String>();
+    protected String cpgTrackFilename = null;
+    @Option(name="-filterOutSnps",usage="Remove likely SNP CpGs")
+    protected boolean filterOutSnps = false;
+   @Argument
+   protected List<String> arguments = new ArrayList<String>();
 
 	/**
 	 * @param args
@@ -45,7 +47,7 @@ public class PileupToCpgInfo {
     public static void main(String[] args)
     throws Exception
     {
-    	new PileupToCpgInfo().doMain(args);
+    	new PileupToCpgTemplate().doMain(args);
     }
     
 	public void doMain(String[] args)
@@ -96,11 +98,13 @@ public class PileupToCpgInfo {
 			// Create iterator, streamer
 			Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
 			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, windSize, windSize);
+			
 			apStreamer.add(new APFilterCpgs());
 			
 			if (minDepth>0) apStreamer.add(new APFilterMinDepth(minDepth,minDepthEachStrand));
+			if (filterOutSnps) apStreamer.add(new APHandlerCpgFilterNonSnpCpgs());
 			
-			apStreamer.add(new APHandlerCpgEmitter(cpgTrackFilename));
+			this.addHandlers(apStreamer);
 
 			// Run
 			apStreamer.run();
@@ -109,7 +113,11 @@ public class PileupToCpgInfo {
 	}
 	
 
-
+	protected void addHandlers(AlignmentPosStreamer apStreamer)
+	{
+		System.err.println("Can not call base class PileupToCpgTemplate::addHandlers() directly");
+		System.exit(1);
+	}
 
 		
 }

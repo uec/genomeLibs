@@ -60,8 +60,8 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 				nextBs = (AlignmentPosSnpsBisulfiteConverted)streamPos.nextAps[0].flipped();
 			}
 			
-			if (currentBs.getRef() != DNATools.c()) throw new Exception("APHandlerCpgHandler: First AP is not a cytosine");
-			if (nextBs.getRef() != DNATools.c()) throw new Exception("APHandlerCpgHandler: Second AP is not a cytosine");
+//			if (currentBs.getRef() != DNATools.c()) throw new Exception("APHandlerCpgHandler: First AP is not a cytosine");
+//			if (nextBs.getRef() != DNATools.c()) throw new Exception("APHandlerCpgHandler: Second AP is not a cytosine");
 		}
 		catch (Exception e)
 		{

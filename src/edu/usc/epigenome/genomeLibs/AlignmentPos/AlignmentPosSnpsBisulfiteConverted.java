@@ -40,7 +40,6 @@ public class AlignmentPosSnpsBisulfiteConverted extends AlignmentPosSnps {
 	
 	public double getConvertedFrac()
 	{
-		
 		SymbolCounter snpCounts = this.getSnpCounter(true);
 		double conv = snpCounts.getConvertedFrac();
 		return conv;
