@@ -77,6 +77,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		String out = "";
 		
 		out += "chr,";
+		out += "posGlobal,";
 		out += "pos,";
 
 //		out += "preWindLen,";
@@ -97,7 +98,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		
 		// Put a number so matlab can open it.
 		long globalPos = GoldAssembly.getGlobalOffset(cur.getChr(), "hg18", cur.getPos());
-//		System.out.print(cur.getChr() + ",");
+		System.out.print(cur.getChr() + ",");
 		System.out.print(globalPos + ",");
 		System.out.print(cur.getPos() + ",");
 		
