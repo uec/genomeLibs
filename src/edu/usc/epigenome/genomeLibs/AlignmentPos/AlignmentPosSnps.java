@@ -53,11 +53,12 @@ public class AlignmentPosSnps extends AlignmentPos {
 	
 	
 	/**
+	 * @param strand: Null to get both strands
 	 * @return a list of read positions , with identical ones removed
 	 * according to apOptions.maxIdentical
 	 */
-
-	public Vector<ReadPos> getReadPositions(boolean fwOnly)
+	@Override
+	public Vector<ReadPos> getReadPositions(StrandedFeature.Strand strand)
 	{
 		
 		TreeMap<String,Integer> counts = new TreeMap<String,Integer>();
@@ -68,7 +69,7 @@ public class AlignmentPosSnps extends AlignmentPos {
 			ReadPos rp = it.next();
 			boolean add = true;
 
-			if (fwOnly && (rp.getStrand() == StrandedFeature.NEGATIVE))
+			if ((strand!=null) && (rp.getStrand() != strand))
 			{
 
 			}
@@ -104,33 +105,50 @@ public class AlignmentPosSnps extends AlignmentPos {
 	}
 	
 	@Override
-	public SymbolCounter getSnpCounter(boolean fwOnly)
+	public Vector<ReadPos> getReadPositions(boolean fwOnly)
+	{
+		return this.getReadPositions( (!fwOnly) ? null : StrandedFeature.POSITIVE);
+	}
+	
+	@Override
+	public SymbolCounter getSnpCounter(StrandedFeature.Strand strand)
 	{
 		// Set up the counter
 		RPHandlerSymbolCounts counter = new RPHandlerSymbolCounts();
 
 		// Now stream the read pos list across counter
-		Iterator<ReadPos> rpIt = this.getReadPositions(fwOnly).iterator();
+		Iterator<ReadPos> rpIt = this.getReadPositions(strand).iterator();
 		ReadPosStreamer rpStreamer = new ReadPosStreamer(rpIt);
 		rpStreamer.add(counter);
 		rpStreamer.run();
 		
 		return counter;
 	}
+
+	@Override
+	public SymbolCounter getSnpCounter(boolean fwOnly)
+	{
+		return getSnpCounter( (!fwOnly) ? null : StrandedFeature.POSITIVE);
+	}
 	
 	@Override
-	public SymbolCounterStratified getSnpCounterStratifiedByCycle(boolean fwOnly)
+	public SymbolCounterStratified getSnpCounterStratifiedByCycle(StrandedFeature.Strand strand)
 	{
 		// Set up the counter
 		RPHandlerSymbolCountsStratifyByCycle counter = new RPHandlerSymbolCountsStratifyByCycle();
 
 		// Now stream the read pos list across counter
-		Iterator<ReadPos> rpIt = this.getReadPositions(fwOnly).iterator();
+		Iterator<ReadPos> rpIt = this.getReadPositions(strand).iterator();
 		ReadPosStreamer rpStreamer = new ReadPosStreamer(rpIt);
 		rpStreamer.add(counter);
 		rpStreamer.run();
 		
 		return counter;
+	}
+
+	public SymbolCounterStratified getSnpCounterStratifiedByCycle(boolean fwOnly)
+	{
+		return getSnpCounterStratifiedByCycle( (!fwOnly) ? null : StrandedFeature.POSITIVE);
 	}
 	
 	/*** 

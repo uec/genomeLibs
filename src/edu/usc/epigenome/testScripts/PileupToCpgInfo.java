@@ -28,10 +28,14 @@ public class PileupToCpgInfo {
     private int maxIdentical = 0;
     @Option(name="-minDepth",usage="minimum read depth (default 0)")
     private int minDepth = 0;
-    @Option(name="-windSize",usage="window size, for CpG density windows (default 100)")
-    private int windSize = 100;
     @Option(name="-minDepthEachStrand",usage="minimum depth applies to each strand")
     private boolean minDepthEachStrand = false;
+    @Option(name="-windSize",usage="window size, for CpG density windows (default 100)")
+    private int windSize = 1;
+    @Option(name="-CtTransitionFreq",usage="C->T transition rate (default 0.005)")
+    private double CtTransitionFreq = 0.005; // From Schmidt 2008, Li 2009 (unpublished)
+   @Option(name="-cpgTrackFilename",usage="binary track file for CpG density")
+    private String cpgTrackFilename = null;
     @Argument
     private List<String> arguments = new ArrayList<String>();
 
@@ -72,6 +76,12 @@ public class PileupToCpgInfo {
             return;
         }
 
+        if (cpgTrackFilename != null)
+        {
+        	
+        }
+        
+        
 		AlignmentPosOptions apos = new AlignmentPosOptions();
 		apos.minQualityScore = minQual;
 		apos.trackPositions = true;
@@ -80,6 +90,7 @@ public class PileupToCpgInfo {
 		apos.trackSnps = true;
 		apos.maxIdentical = maxIdentical;
 		apos.onlyFirstCycle = false;
+		apos.CtTransitionFrequency = CtTransitionFreq;
 		
 		
 		for (int i = 0; i < this.arguments.size(); i++)
@@ -98,6 +109,11 @@ public class PileupToCpgInfo {
 			// Run
 			apStreamer.run();
 		}	
+		
+		if (cpgTrackFilename != null)
+		{
+			
+		}
 
 	}
 	

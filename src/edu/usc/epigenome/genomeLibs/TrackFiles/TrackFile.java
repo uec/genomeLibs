@@ -133,5 +133,6 @@ public abstract class TrackFile {
 	
 	abstract public void getValsRaw(String chrom, long startOffsetGlobal, int len, int[] out) throws IOException;
 	abstract public void writeRaw(String chrom, long startOffsetGlobal, int[] vals) throws IOException;
+	abstract public void close() throws Exception;
 	
 }

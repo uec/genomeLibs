@@ -377,7 +377,26 @@ public abstract class AlignmentPos implements Cloneable {
 		return new SymbolCounterStratified();
 	}
 
+	public Vector<ReadPos> getReadPositions(StrandedFeature.Strand strand)
+	{
+		System.err.println("Base class AlignmentPos can not execute getReadPositions(strand).  Use AlignmentPosSnps instead");
+		(new Exception()).printStackTrace();
+		return new Vector<ReadPos>();
+	}
 	
+	public SymbolCounter getSnpCounter(StrandedFeature.Strand strand)
+	{
+		System.err.println("Base class AlignmentPos can not execute getSnpCounter(strand).  Use AlignmentPosSnps instead");
+		(new Exception()).printStackTrace();
+		return new SymbolCounter();
+	}
+	
+	public SymbolCounterStratified getSnpCounterStratifiedByCycle(StrandedFeature.Strand strand)
+	{
+		System.err.println("Base class AlignmentPos can not execute getSnpCounterStratified(strand).  Use AlignmentPosSnps instead");
+		(new Exception()).printStackTrace();
+		return new SymbolCounterStratified();
+	}	
 	
 	
 	

@@ -76,4 +76,15 @@ public class TrackFileRandomAccess extends TrackFile {
 		
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.TrackFiles.TrackFile#close()
+	 */
+	@Override
+	public void close()
+	throws Exception
+	{
+		// TODO Auto-generated method stub
+		if (raFile != null) raFile.close();
+	}
+
 }

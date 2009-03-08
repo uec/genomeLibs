@@ -31,8 +31,8 @@ public class CpgPair {
 		this.cpgF = cpgA;
 		this.cpgR = cpgB;
 		
-		if (cpgA.getRef() != DNATools.c()) System.err.println("CpgPair: Why is CpgF not a cytosine?");
-		if (cpgB.getRef() != DNATools.c()) System.err.println("CpgPair: Why is CpgR not a cytosine?");
+//		if (cpgA.getRef() != DNATools.c()) System.err.println("CpgPair: Why is CpgF not a cytosine?");
+//		if (cpgB.getRef() != DNATools.c()) System.err.println("CpgPair: Why is CpgR not a cytosine?");
 	}
 	
 	public String getChr()
@@ -44,6 +44,16 @@ public class CpgPair {
 	{
 		return cpgF.getPos();
 	}
+	
+	
+	
+	// *******************************************
+	//
+	//   DEPTH
+	// 
+	// *******************************************
+	
+	
 	
 	public int getDepth(boolean fw)
 	{
@@ -62,6 +72,46 @@ public class CpgPair {
 		AlignmentPosSnpsBisulfiteConverted c = (fw) ? cpgF : cpgR;
 		return c.getDepthNoIdentical(true);
 	}
+
+	// *******************************************
+	//
+	//   SNP
+	// 
+	// *******************************************
+	
+	public double getSnpProbCombined()
+	{
+		double fw = getSnpProb(true);
+		double rev = getSnpProb(false);
+		
+		return Math.max(fw, rev);
+	}
+
+	public double getSnpProb(boolean fw)
+	{
+		AlignmentPosSnpsBisulfiteConverted c = (fw) ? cpgF : cpgR;
+		return c.getSnpProb();
+	}
+	
+	public double getSnpProbCombined(int inMaxIdentical)
+	{
+		double fw = getSnpProb(true, inMaxIdentical);
+		double rev = getSnpProb(false, inMaxIdentical);
+		
+		return Math.max(fw, rev);
+	}
+
+	public double getSnpProb(boolean fw, int inMaxIdentical)
+	{
+		AlignmentPosSnpsBisulfiteConverted c = (fw) ? cpgF : cpgR;
+		return c.getSnpProb(inMaxIdentical);
+	}
+	
+	// *******************************************
+	//
+	//   Methylation
+	// 
+	// *******************************************
 
 	public double getMethylatedFrac(boolean fw)
 	{
@@ -93,7 +143,12 @@ public class CpgPair {
 		return c.getMethylatedFracString(inMaxIdentical);
 	}
 
-	
+	// *******************************************
+	//
+	//   GFF
+	// 
+	// *******************************************
+
 	public String gffLine()
 	{
 		String out = "";
@@ -139,6 +194,14 @@ public class CpgPair {
 		return out;
 	}
 	
+	// *******************************************
+	//
+	//   CSV STATS
+	// 
+	// *******************************************
+	
+	
+	
 	public String csvStats()
 	{
 		double[] myStats = this.stats();
@@ -161,42 +224,65 @@ public class CpgPair {
 	public static String csvStatsHeaders()
 	{
 		ListUtils.setDelim(",");
-		String labels[] = { "fwDepth", "fwDepthCollapsed", "fwMeth", "fwMethCollapsed", 
-				 "revDepth", "revDepthCollapsed", "revMeth", "revMethCollapsed", "strandMismatch" }; 
+		String labels[] = {
+				// FW
+				"fwDepth", 
+				"fwDepthCollapsed", 
+				"fwMeth", 
+				"fwMethCollapsed", 
+				"fwSnpProb", 
+				"fwSnpProbCollapsed", 
+				//REV
+				 "revDepth", 
+				 "revDepthCollapsed", 
+				 "revMeth", 
+				 "revMethCollapsed",
+				 "revSnpProb", 
+				 "revSnpProbCollapsed", 
+				 //OTHER
+				 "strandMismatch" 
+				 }; 
 		String out = ListUtils.excelLine(labels);
 		return out;
 	}	
 	
 	public double[] stats()
 	{
-		double[] out = new double[9];
+		double[] out = new double[13];
 
-		out[0] = (double)this.getDepthWithIdentical(true);
-		out[1] = (double)this.getDepthNoIdentical(true);
-		out[2] = (double)this.getMethylatedFrac(true, 0);
-		out[3] = (double)this.getMethylatedFrac(true, 1);
-		out[4] = (double)this.getDepthWithIdentical(false);
-		out[5] = (double)this.getDepthNoIdentical(false);
-		out[6] = (double)this.getMethylatedFrac(false, 0);
-		out[7] = (double)this.getMethylatedFrac(false, 1);
-		out[8] = (double)this.getStrandMismatch();
+		int ind = 0;
+		
+		// FW
+		out[ind++] = (double)this.getDepthWithIdentical(true);
+		out[ind++] = (double)this.getDepthNoIdentical(true);
+		out[ind++] = (double)this.getMethylatedFrac(true, 0);
+		out[ind++] = (double)this.getMethylatedFrac(true, 1);
+		out[ind++] = (double)this.getSnpProb(true, 0);
+		out[ind++] = (double)this.getSnpProb(true, 1);
+		
+		// REV
+		out[ind++] = (double)this.getDepthWithIdentical(false);
+		out[ind++] = (double)this.getDepthNoIdentical(false);
+		out[ind++] = (double)this.getMethylatedFrac(false, 0);
+		out[ind++] = (double)this.getMethylatedFrac(false, 1);
+		out[ind++] = (double)this.getSnpProb(false, 0);
+		out[ind++] = (double)this.getSnpProb(false, 1);
+		
+		// OTHER
+		out[ind++] = (double)this.getStrandMismatch();
 		
 		return out;
 	}
 	
 	public static double[] emptyStats()
 	{
-		double[] out = new double[9];
-
-		out[0] = Double.NaN;
-		out[1] = Double.NaN;
-		out[2] = Double.NaN;
-		out[3] = Double.NaN;
-		out[4] = Double.NaN;
-		out[5] = Double.NaN;
-		out[6] = Double.NaN;
-		out[7] = Double.NaN;
-		out[8] = Double.NaN;
+		int nStats = 13;
+		
+		double[] out = new double[13];
+		for (int i = 0; i < nStats; i++)
+		{
+			out[i] = Double.NaN;
+		}
 		
 		return out;
 	}

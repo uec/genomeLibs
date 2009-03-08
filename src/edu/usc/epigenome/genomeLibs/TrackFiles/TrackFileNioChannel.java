@@ -72,8 +72,17 @@ public class TrackFileNioChannel extends TrackFile {
 //		{
 //			raFile.writeInt(vals[i]);
 //		}
-		
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.TrackFiles.TrackFile#close()
+	 */
+	@Override
+	public void close() throws Exception {
+		// TODO Auto-generated method stub
 		
 	}
+	
+	
 
 }
