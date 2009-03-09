@@ -30,7 +30,7 @@ public class PileupToCpgTemplate {
     protected int minDepth = 0;
     @Option(name="-minDepthEachStrand",usage="minimum depth applies to each strand")
     protected boolean minDepthEachStrand = false;
-    @Option(name="-windSize",usage="window size, for CpG density windows (default 100)")
+    @Option(name="-windSize",usage="window size, for CpG dinucs windows (default 1)")
     protected int windSize = 1;
     @Option(name="-CtTransitionFreq",usage="C->T transition rate (default 0.005)")
     protected double CtTransitionFreq = 0.005; // From Schmidt 2008, Li 2009 (unpublished)
@@ -50,6 +50,16 @@ public class PileupToCpgTemplate {
     	new PileupToCpgTemplate().doMain(args);
     }
     
+    public void checkArgs()
+    throws Exception
+    {
+    	if( arguments.isEmpty() )
+    	{
+    		throw new CmdLineException("Must supply at least one input file");
+    	}
+   	
+    }
+    
 	public void doMain(String[] args)
 	throws Exception
 	{
@@ -62,11 +72,8 @@ public class PileupToCpgTemplate {
         try
 		{
         	parser.parseArgument(args);
-
-        	if( arguments.isEmpty() )
-        	{
-        		throw new CmdLineException("Must supply at least one input file");
-        	}
+        	checkArgs();
+        	
 		}
         catch (CmdLineException e)
         {
