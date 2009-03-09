@@ -59,8 +59,34 @@ public class GFFUtils {
 		out += ",";
 		out += rec.getSource();
 		out += ",";
-		out += rec.getStrand();
+		StrandedFeature.Strand s = rec.getStrand();
+		out += ((s == StrandedFeature.POSITIVE) ? 1 : ((s == StrandedFeature.NEGATIVE) ? -1 : 0));
 		
+		return out;
+	}
+	
+	public static String gffCsvMinimalLineHeader()
+	{
+		return "name,chrom,score,start,end,strand";
+	}
+
+	public static String gffCsvMinimalLine(GFFRecord rec)
+	{
+		String out = "";
+
+		out += GFFUtils.getGffRecordName(rec);
+		out += ",";
+		out += rec.getSeqName();
+		out += ",";
+		out += rec.getScore();
+		out += ",";
+		out += rec.getStart();
+		out += ",";
+		out += rec.getEnd();
+		out += ",";
+		StrandedFeature.Strand s = rec.getStrand();
+		out += ((s == StrandedFeature.POSITIVE) ? 1 : ((s == StrandedFeature.NEGATIVE) ? -1 : 0));
+
 		return out;
 	}
 	
