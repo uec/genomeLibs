@@ -59,10 +59,24 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 
 
 	// ********** OVERRIDE *************
+	
+	
+	/**
+	 * @param streamPos
+	 * @param pair
+	 * @param rec
+	 * @param cpgRelativeOffset
+	 * @return true if the Feat used the CpG
+	 */
 	abstract protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, CpgPair pair, GFFRecord rec, int cpgRelativeOffset);
 	
 
 
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgHandler#streamCpgPair(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition, edu.usc.epigenome.genomeLibs.CpgPair)
+	 * 
+	 * Returns true if any of the features use the CpG
+	 */
 	public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos, CpgPair pair)
 	{
 		AlignmentPos cur = streamPos.currentAp;
@@ -84,20 +98,22 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			
 
 			Iterator it = es.lineIterator();
+			out = false;
 			while (it.hasNext())
 			{
 				GFFRecord rec = (GFFRecord)it.next();
 //				System.err.println("\t" + regLoc + "\t" + GFFUtils.gffBetterString(rec));
 				
-				// Get the offset
+				// Get the offset (BASED ON START POSITION)
 				int offset = curPos - rec.getStart();
 				if (rec.getStrand() == StrandedFeature.NEGATIVE) offset *= -1;
 
-				out &= this.streamFeat(streamPos, pair, rec, offset);
+				boolean outThis = this.streamFeat(streamPos, pair, rec, offset);
+				out |= outThis; // Include it if any of the feats use it.
 			}
 		}
 		
-		return chromOk;
+		return out;
 	}
 	
 	

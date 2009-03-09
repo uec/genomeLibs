@@ -143,7 +143,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 		if (countItSame) uniqueCpgsSame++;
 		if (countItOpposite) uniqueCpgsOpposite++;
 		
-		return true;
+		return countIt;
 	}
 
 

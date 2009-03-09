@@ -81,12 +81,17 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	}
 
 
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFeatStreamer#streamFeat(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition, edu.usc.epigenome.genomeLibs.CpgPair, org.biojava.bio.program.gff.GFFRecord, int)
+	 * 
+	 * Returns true if the feature uses the CpG
+	 */
 	protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, CpgPair pair, GFFRecord rec, int cpgRelativeOffset)
 	{
 		AlignmentPos cur = streamPos.currentAp;
 		int curPos = pair.getPos();
 
-		boolean out = true;
+		boolean out = false;
 		int arrInd = cpgRelativeOffset + this.windSize;
 
 		// It's not necessarily in range
@@ -105,6 +110,8 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			boolean COUNT_EACH_CPG_ONCE = true;
 			totals[arrInd] += (COUNT_EACH_CPG_ONCE) ? 1 : depth; 
 			totalMeths[arrInd] += (COUNT_EACH_CPG_ONCE) ? meth : (meth*depth);
+			
+			out = true;
 		}
 
 		return out;

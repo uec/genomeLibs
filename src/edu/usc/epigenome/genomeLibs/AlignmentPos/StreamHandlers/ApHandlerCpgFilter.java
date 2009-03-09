@@ -11,8 +11,11 @@ abstract public class ApHandlerCpgFilter extends APHandlerCpgHandler {
 	@Override
 	public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos,
 			CpgPair pair) {
+		fReportCounts = false;
 		return this.elementPasses(streamPos, pair);
 	}
+	
+	
 	
 	abstract public boolean elementPasses(AlignmentPosStreamerPosition streamPos,CpgPair pair);
 

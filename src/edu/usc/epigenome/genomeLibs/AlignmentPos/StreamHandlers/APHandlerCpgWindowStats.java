@@ -26,6 +26,9 @@ abstract public class APHandlerCpgWindowStats extends APHandlerCpgHandler {
 	public LinkedList<CpgPair> window;
 	public int windSize = 0;
 	
+	// Count CpGs
+	
+	
 	public APHandlerCpgWindowStats(int inWindSize) 
 	{
 		windSize = inWindSize;
@@ -34,12 +37,14 @@ abstract public class APHandlerCpgWindowStats extends APHandlerCpgHandler {
 
 	public void init()
 	{
+		super.init();
 		window = new LinkedList<CpgPair>();
 	}
 
 
 	public void finish()
 	{
+		super.finish();
 		window = null;
 	}
 
