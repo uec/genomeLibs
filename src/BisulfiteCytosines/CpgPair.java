@@ -1,9 +1,10 @@
-package edu.usc.epigenome.genomeLibs;
+package BisulfiteCytosines;
 
 import java.util.Collection;
 
 import org.biojava.bio.seq.DNATools;
 
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosSnpsBisulfiteConverted;
 /**

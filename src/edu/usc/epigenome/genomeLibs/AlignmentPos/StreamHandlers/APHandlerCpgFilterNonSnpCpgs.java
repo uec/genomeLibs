@@ -1,6 +1,6 @@
 package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
-import edu.usc.epigenome.genomeLibs.CpgPair;
+import BisulfiteCytosines.CpgPair;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 
 public class APHandlerCpgFilterNonSnpCpgs extends ApHandlerCpgFilter {

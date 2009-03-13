@@ -5,6 +5,8 @@ package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
 import java.util.*;
 
+import BisulfiteCytosines.CpgPair;
+
 import edu.usc.epigenome.genomeLibs.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 

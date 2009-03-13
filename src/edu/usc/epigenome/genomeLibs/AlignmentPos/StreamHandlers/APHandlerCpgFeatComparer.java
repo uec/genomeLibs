@@ -13,6 +13,8 @@ import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.RangeLocation;
 import org.usckeck.genome.ChromFeatures;
 
+import BisulfiteCytosines.CpgPair;
+
 import edu.usc.epigenome.genomeLibs.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.*;

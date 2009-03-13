@@ -8,7 +8,8 @@ import java.util.*;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.*;
 
-import edu.usc.epigenome.genomeLibs.CpgPair;
+import BisulfiteCytosines.CpgPair;
+
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 

@@ -79,7 +79,12 @@ public class GoldAssembly {
 	public static long getGlobalOffset(String chrom, String genome, int localOffset)
 	{
 		String key = genome + "__" + chrom;
-		long chromOffset = cGlobalOffsets.get(key).longValue();
+		
+		Long val = cGlobalOffsets.get(key);
+		
+		if (val == null) System.err.println("Can't find global offset for key " + key);
+		
+		long chromOffset = (val==null) ? Long.MIN_VALUE : val.longValue();
 		long out = chromOffset + localOffset;
 		return out;
 	}

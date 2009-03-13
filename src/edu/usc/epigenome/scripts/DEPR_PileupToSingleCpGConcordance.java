@@ -13,7 +13,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.*;
 
-public class PileupToSingleCpGConcordance {
+public class DEPR_PileupToSingleCpGConcordance {
 
 	// -c track cycles
 	// -q track qual scores
@@ -36,7 +36,7 @@ public class PileupToSingleCpGConcordance {
     public static void main(String[] args)
     throws Exception
     {
-    	new PileupToSingleCpGConcordance().doMain(args);
+    	new DEPR_PileupToSingleCpGConcordance().doMain(args);
     }
     
 	public void doMain(String[] args)
