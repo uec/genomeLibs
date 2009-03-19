@@ -45,6 +45,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		catch (Exception e)
 		{
 			System.err.println("Could not process file " + openFile + "\n" + e.toString());
+			e.printStackTrace(System.err);
 			System.exit(0);
 		}
 		return out;
@@ -102,7 +103,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				//		String mapping_quals = line_items[6];
 				
 				String read_positions = "";
-				if (read_count>0) read_positions = line_items[7];
+				if ((line_items.length>7) && (read_count>0)) read_positions = line_items[7];
 
 
 				// Make the output object.  Just make one with SNPs, and then reduce if necessary
