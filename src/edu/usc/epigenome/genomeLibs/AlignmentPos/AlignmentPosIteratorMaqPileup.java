@@ -44,7 +44,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		}
 		catch (Exception e)
 		{
-			System.err.println("Could not process file " + openFile + "\n" + e.toString());
+			System.err.println("Could not process file " + openFile);
 			e.printStackTrace(System.err);
 			System.exit(0);
 		}
@@ -80,6 +80,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		while (!done && (ap == null))
 		{
 			String[] line_items = ListUtils.readLineSplitByChar(this.openStream, '\t', 20);
+			boolean positionsIncluded = (line_items.length > 7);
 			
 			if (line_items == null)
 			{
@@ -103,7 +104,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				//		String mapping_quals = line_items[6];
 				
 				String read_positions = "";
-				if ((line_items.length>7) && (read_count>0)) read_positions = line_items[7];
+				if (positionsIncluded && (read_count>0)) read_positions = line_items[7];
 
 
 				// Make the output object.  Just make one with SNPs, and then reduce if necessary
@@ -163,7 +164,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				char snpChar = snps[i+1]; // First one is a "@" char
 				ReadPos rp = maqPileupCharToReadPos(snpChar, ap.ref);
 
-				int cycle = Integer.parseInt(readPositionsStrs[i]);
+				int cycle = (readPositionsStrs.length==0) ? ReadPos.UNKNOWN_CYCLE : Integer.parseInt(readPositionsStrs[i]);
 
 				if (!inApOptions.onlyFirstCycle || (cycle==1))
 				{
