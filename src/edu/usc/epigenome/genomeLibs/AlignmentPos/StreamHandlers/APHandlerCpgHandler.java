@@ -85,8 +85,11 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 		}
 
 		CpgPair pair = new CpgPair(currentBs, nextBs);
-		boolean passed = streamCpgPair(streamPos, pair);
-		
+		streamPos.cpg = pair;
+
+//		boolean passed = streamCpgPair(streamPos);
+		boolean passed = streamCpgPair(streamPos,pair);
+
 		// Update counters
 		int depth = pair.getDepth(true) + pair.getDepth(false);
 		
@@ -102,7 +105,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerP
 		return passed;
 	}
 
-	abstract public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos, CpgPair pair); 
+	abstract public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos, CpgPair cpg); 
 	
 
 }

@@ -48,7 +48,7 @@ public class ListUtils {
 			}
 			onC++;
 			if (onC>=STRINGBUFLEN)
-				throw new Exception("Can not process lines with fields more than " + STRINGBUFLEN + " lines");
+				throw new Exception("Can not process lines with a field more than " + STRINGBUFLEN + " characters");
 		}
 		
 		// Add the last one (if there is one)

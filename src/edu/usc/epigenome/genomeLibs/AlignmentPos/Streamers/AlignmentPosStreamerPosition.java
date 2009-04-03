@@ -6,6 +6,8 @@ package edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.Symbol;
 
+import BisulfiteCytosines.CpgPair;
+
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
 import edu.usc.epigenome.genomeLibs.Counters.NmerCounter;
 
@@ -21,6 +23,8 @@ public class AlignmentPosStreamerPosition {
 	
 	public NmerCounter preNmerCounts = null;
 	public NmerCounter nextNmerCounts = null;
+	
+	public CpgPair cpg = null; // Does not need to be supplied.
 	
 	public static final Symbol[] CPG_SYMBOLS = { DNATools.c(), DNATools.g() };
 	
@@ -45,5 +49,7 @@ public class AlignmentPosStreamerPosition {
 		}
 		return out;
 	}	
+	
+	
 	
 }

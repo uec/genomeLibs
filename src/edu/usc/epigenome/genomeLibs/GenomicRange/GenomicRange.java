@@ -2,6 +2,8 @@ package edu.usc.epigenome.genomeLibs.GenomicRange;
 
 import org.biojava.bio.seq.StrandedFeature;
 
+import edu.usc.epigenome.genomeLibs.GoldAssembly;
+
 
 public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	
