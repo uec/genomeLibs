@@ -66,13 +66,13 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 	public void increment(T key, int numToAdd)
 	{
 			int newCount = this.getCount(key) + numToAdd;
-			this.setCount(key, newCount);
+			if (newCount!=0) this.setCount(key, newCount); // If it's still 0, don't create a new key
 	}
 	
 	public void decrement(T key, int numToSubtract)
 	{
 			int newCount = this.getCount(key) - numToSubtract;
-			this.setCount(key, newCount);
+			if (newCount!=0) this.setCount(key, newCount);  // If it's still 0, don't create a new key
 	}
 	
 	public void setCount(T key, int newCount)
