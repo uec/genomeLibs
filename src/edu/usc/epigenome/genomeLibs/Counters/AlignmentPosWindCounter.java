@@ -3,9 +3,12 @@
  */
 package edu.usc.epigenome.genomeLibs.Counters;
 
+import java.io.PrintStream;
+
 import org.biojava.bio.seq.StrandedFeature;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
 
@@ -21,6 +24,7 @@ public class AlignmentPosWindCounter extends GenomicRangeCounter  {
 
 	private int windSize;
 	private boolean strandSpecific;
+	private AlignmentPosOptions apOptions = null;
 	
 	/**
 	 * 
@@ -32,6 +36,8 @@ public class AlignmentPosWindCounter extends GenomicRangeCounter  {
 
 	
 	public void increment(AlignmentPos ap) {
+		
+		if (apOptions==null) apOptions = ap.getApOptions();
 		
 		if (strandSpecific)
 		{
@@ -50,21 +56,12 @@ public class AlignmentPosWindCounter extends GenomicRangeCounter  {
 	
 
 	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.TreeMapCounter#excelOutput()
+	 * @see edu.usc.epigenome.genomeLibs.Counters.TreeMapCounter#excelOutput(java.lang.String, java.io.PrintStream)
 	 */
 	@Override
-	public String excelOutput() {
-		return super.excelOutput(Integer.toString(windSize));
+	public void excelOutput(String firstCol, PrintStream ps) {
+		super.excelOutput(firstCol + "," + Integer.toString(windSize) + "," + strandSpecific + "," + apOptions.maxIdentical, ps);
 	}
-
-	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.TreeMapCounter#excelOutput(java.lang.String)
-	 */
-	@Override
-	public String excelOutput(String firstCol) {
-		return super.excelOutput(firstCol + "," + Integer.toString(windSize));
-	}
-	
 	
 	
 }

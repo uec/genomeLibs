@@ -308,6 +308,12 @@ public abstract class AlignmentPos implements Cloneable {
 		return d[0] + d[1];
 	}
 	
+	public int getTotalDepthNoIdentical()
+	{
+		int out = getDepthNoIdentical(true) + getDepthNoIdentical(false);
+		return out;
+	}
+
 	public int getDepth(boolean fw)
 	{
 		return getDepth(true, fw);
