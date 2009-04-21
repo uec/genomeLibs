@@ -4,7 +4,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
 
 import edu.usc.epigenome.genomeLibs.PileupToCpgTemplate;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFeatAligner;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerFeatAligner;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFilterNonSnpCpgs;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgWindowAutocorr;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgWindowAutocorrStranded;
@@ -46,7 +46,7 @@ public class PileupToCpgAlignedByFeats extends PileupToCpgTemplate {
 	 */
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
-		apStreamer.add(new APHandlerCpgFeatAligner(featGtf, featWindSize));
+		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize));
 	}
 
 	

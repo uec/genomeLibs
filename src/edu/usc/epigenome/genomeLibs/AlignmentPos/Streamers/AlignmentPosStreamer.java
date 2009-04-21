@@ -268,6 +268,9 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		streamPos.currentAp = currentAp;
 		streamPos.nextAps = postAps;
 		
+		// Subclasses or handlers might want to override this.  But by default it's the AP itself.
+		streamPos.currentScoredPosition = currentAp;
+		
 		// Increment and pass on the nmer counters.
 		// This is VERY slow, due to NmerCounter.keyFromSyms
 		if (false)

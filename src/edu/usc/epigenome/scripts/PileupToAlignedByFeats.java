@@ -3,21 +3,20 @@ package edu.usc.epigenome.scripts;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
 
-import edu.usc.epigenome.genomeLibs.PileupToCpgTemplate;
+import edu.usc.epigenome.genomeLibs.PileupToTemplate;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerFeatAligner;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerFeatComparer;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFilterNonSnpCpgs;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgWindowAutocorr;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgWindowAutocorrStranded;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
-public class PileupToCpgFeatCompare extends PileupToCpgTemplate {
+public class PileupToAlignedByFeats extends PileupToTemplate {
 
 	@Option(name="-featGtf",usage="feature Gtf")
 	protected String featGtf = null;
 //	@Option(name="-featGtfs",usage="feature Gtfs")
 //	protected String[] featGtfs = null;
-    @Option(name="-featWindSize",usage="will compare to anything in this window (default 1000)")
+    @Option(name="-featWindSize",usage="window size, for feature alignment (default 1000)")
     protected int featWindSize = -1;
  
 	/**
@@ -26,7 +25,7 @@ public class PileupToCpgFeatCompare extends PileupToCpgTemplate {
     public static void main(String[] args)
     throws Exception
     {
-    	new PileupToCpgFeatCompare().doMain(args);
+    	new PileupToAlignedByFeats().doMain(args);
     }
 
      
@@ -47,7 +46,7 @@ public class PileupToCpgFeatCompare extends PileupToCpgTemplate {
 	 */
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
-		apStreamer.add(new APHandlerFeatComparer(featGtf, featWindSize));
+		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize));
 	}
 
 	

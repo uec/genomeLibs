@@ -10,6 +10,7 @@ import BisulfiteCytosines.CpgPair;
 
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
 import edu.usc.epigenome.genomeLibs.Counters.NmerCounter;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicPositionScored;
 
 /**
  * @author benb
@@ -19,6 +20,7 @@ public class AlignmentPosStreamerPosition {
 
 	public AlignmentPos[] priorAps = null;
 	public AlignmentPos currentAp = null;
+	public GenomicPositionScored currentScoredPosition = null; // By default , this is the AP itself.  But it can be overridden.
 	public AlignmentPos[] nextAps = null;
 	
 	public NmerCounter preNmerCounts = null;

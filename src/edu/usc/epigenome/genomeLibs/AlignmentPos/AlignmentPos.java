@@ -5,14 +5,16 @@ import java.util.*;
 import edu.usc.epigenome.genomeLibs.GFFUtils;
 import edu.usc.epigenome.genomeLibs.Counters.SymbolCounter;
 import edu.usc.epigenome.genomeLibs.Counters.SymbolCounterStratified;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicPositionScored;
 import edu.usc.epigenome.genomeLibs.ReadPos.ReadPos;
 
 import org.biojava.bio.program.gff.*;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
 import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.seq.StrandedFeature.Strand;
 
-public abstract class AlignmentPos implements Cloneable {
+public abstract class AlignmentPos implements Cloneable, GenomicPositionScored {
 
 	/* Class vars */
 	public static final double NO_COVERAGE = -1.0;
@@ -61,6 +63,22 @@ public abstract class AlignmentPos implements Cloneable {
 		strand = ap.strand;
 	}
 
+	/** GenomicPositionScored implementation (score is the depth) **/
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.GenomicRange.GenomicPositionScored#getStrandedScore(org.biojava.bio.seq.StrandedFeature.Strand)
+	 */
+	public double getStrandedScore(Strand inStrand) {
+		return this.getDepth(inStrand);
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.GenomicRange.GenomicPositionScored#getSummaryScore()
+	 */
+	public double getSummaryScore() {
+		return this.getTotalDepth();
+	}	
+	
 
 	/**
 	 * 
@@ -74,6 +92,7 @@ public abstract class AlignmentPos implements Cloneable {
 	public String getChr() {
 		return chr;
 	}
+
 
 	/**
 	 * @param chr the chr to set
@@ -312,6 +331,22 @@ public abstract class AlignmentPos implements Cloneable {
 	{
 		int out = getDepthNoIdentical(true) + getDepthNoIdentical(false);
 		return out;
+	}
+
+	public int getDepth(StrandedFeature.Strand inStrand)
+	{
+		int depth = 0;
+		if ((inStrand == null) || (inStrand == StrandedFeature.UNKNOWN))
+		{
+			depth = this.getTotalDepth();
+		}
+		else
+		{
+			boolean fw = (inStrand == StrandedFeature.POSITIVE);
+			depth = this.getDepth(fw);
+		}
+
+		return depth;
 	}
 
 	public int getDepth(boolean fw)

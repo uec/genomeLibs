@@ -15,9 +15,7 @@ import org.usckeck.genome.ChromFeatures;
 
 import BisulfiteCytosines.CpgPair;
 
-import edu.usc.epigenome.genomeLibs.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFile;
 import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
@@ -27,7 +25,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
  * 
  *
  */
- abstract public class APHandlerCpgFeatStreamer extends APHandlerCpgHandler {
+ abstract public class APHandlerFeatStreamer implements AlignmentPosStreamHandler {
 	 
 	 public String gtfFilename = null;
 	 public int windSize = 0;
@@ -39,7 +37,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	/**
 	 * 
 	 */
-	public APHandlerCpgFeatStreamer(String inGtfFilename, int inWindSize) {
+	public APHandlerFeatStreamer(String inGtfFilename, int inWindSize) {
 		gtfFilename = inGtfFilename;
 		windSize = inWindSize;
 	}
@@ -51,12 +49,12 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 */
 	
 	public void init() {
-		super.init();
+//		super.init();
 
 	}
 
 	public void finish() {
-		super.finish();
+//		super.finish();
 	}
 
 
@@ -70,21 +68,19 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 * @param cpgRelativeOffset
 	 * @return true if the Feat used the CpG
 	 */
-	abstract protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, CpgPair pair, GFFRecord rec, int cpgRelativeOffset);
+	abstract protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, GFFRecord rec, int apRelativeOffset);
 	
 
 
 	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgHandler#streamCpgPair(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition, edu.usc.epigenome.genomeLibs.CpgPair)
-	 * 
-	 * Returns true if any of the features use the CpG
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.AlignmentPosStreamHandler#streamElement(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition)
 	 */
-	public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos, CpgPair pair)
+	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
 		AlignmentPos cur = streamPos.currentAp;
 		String chr = cur.getChr();
 		int chrInd = (new ChromFeatures()).chrom_from_public_str(chr);
-		int curPos = pair.getPos();
+		int curPos = cur.getPos();
 		
 		// Are we on a new chromosome? 
 		// checkChr returns false if ChromFeatures can't load the chromosome
@@ -93,8 +89,8 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		if (chromOk)
 		{
 			// Build the target region.
-			int regStart = pair.getPos() - windSize;
-			int regEnd = pair.getPos() + windSize;
+			int regStart = cur.getPos() - windSize;
+			int regEnd = cur.getPos() + windSize;
 			Location regLoc = new RangeLocation(regStart, regEnd);
 			GFFEntrySet es = cf.coord_filtered_features(chrInd, regLoc, false);
 			
@@ -110,7 +106,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 				int offset = curPos - rec.getStart();
 				if (rec.getStrand() == StrandedFeature.NEGATIVE) offset *= -1;
 
-				boolean outThis = this.streamFeat(streamPos, pair, rec, offset);
+				boolean outThis = this.streamFeat(streamPos, rec, offset);
 				out |= outThis; // Include it if any of the feats use it.
 			}
 		}

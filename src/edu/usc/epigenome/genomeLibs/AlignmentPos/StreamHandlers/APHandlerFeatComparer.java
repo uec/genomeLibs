@@ -27,7 +27,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
  * 
  *
  */
- public class APHandlerCpgFeatComparer extends APHandlerCpgFeatStreamer {
+ public class APHandlerFeatComparer extends APHandlerFeatStreamer {
 	 
 	 public double meth = -1.0;
 	 public int depth = -1;
@@ -40,22 +40,17 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 * @param inGtfFilename
 	 * @param inWindSize
 	 */
-	public APHandlerCpgFeatComparer(String inGtfFilename, int inWindSize) {
+	public APHandlerFeatComparer(String inGtfFilename, int inWindSize) {
 		super(inGtfFilename, inWindSize);
-		// TODO Auto-generated constructor stub
 	}
 
 	
 	public void init() {
-		super.init();
-		
 		// Make the header
 		System.out.println(headers());
-		
 	}
 
 	public void finish() {
-		super.finish();
 	}
 
 
@@ -70,25 +65,26 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	}
 
 
-	/* (non-Javadoc)
-	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFeatStreamer#streamCpgPair(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition, edu.usc.epigenome.genomeLibs.CpgPair)
-	 */
+//	/* (non-Javadoc)
+//	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFeatStreamer#streamCpgPair(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition, edu.usc.epigenome.genomeLibs.CpgPair)
+//	 */
+//	@Override
+//	public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos,
+//			CpgPair pair) {
+//
+//		// Set out caches up
+//		meth = -1.0;
+//		depth = -1;
+//		
+//		return super.streamCpgPair(streamPos, pair);
+//	}
+
+
 	@Override
-	public boolean streamCpgPair(AlignmentPosStreamerPosition streamPos,
-			CpgPair pair) {
-
-		// Set out caches up
-		meth = -1.0;
-		depth = -1;
-		
-		return super.streamCpgPair(streamPos, pair);
-	}
-
-
-	protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, CpgPair pair, GFFRecord rec, int cpgRelativeOffset)
+	protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, GFFRecord rec, int apRelativeOffset)
 	{
 		AlignmentPos cur = streamPos.currentAp;
-		int curPos = pair.getPos();
+		int curPos = cur.getPos();
 		String chr = cur.getChr();
 
 		boolean out = true;
@@ -100,14 +96,13 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		System.out.print(curPos);
 		System.out.print(",");
 		
-		// Finally the csv stats
-		System.out.print(pair.csvStats());
-		System.out.println();
+//		// Finally the csv stats
+//		System.out.print(cur.csvStats());
+//		System.out.println();
 
 		
 		return out;
 	}
 
-	
 
 }
