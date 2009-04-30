@@ -11,6 +11,7 @@ import org.kohsuke.args4j.spi.*;
 import edu.usc.epigenome.genomeLibs.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerDepthCounts;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerDepthCountsRandomSubset;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
 public class PileupToDepthReport {
@@ -24,6 +25,10 @@ public class PileupToDepthReport {
     // receives other command line parameters than options
     @Option(name="-maxIdentical",usage="Maximum reads with identical alignment positions (default infinite)")
     private int maxIdentical = 0;
+    @Option(name="-randomSubset",usage="Use a ranomized subset of N read positions (N reads unless -countEachBase is set)")
+    private int randomSubset = 0;
+    @Option(name="-randomSubsetNumTrials",usage="Number of randomized trials to average (only valid when randomSubset is also set) (default 1)")
+    private int randomSubsetNumTrials = 1;
     @Option(name="-countEachBase", usage="Count each base (default false, meaning count each read once)")
     private boolean countEachBase = false;
     @Argument
@@ -55,6 +60,11 @@ public class PileupToDepthReport {
         	{
         		throw new CmdLineException("Must supply at least one input file");
         	}
+        	
+        	if ((randomSubset == 0) && (randomSubsetNumTrials != 1))
+        	{
+        		throw new CmdLineException("Can not set -randomSubsetNumTrials without setting -randomSubset");
+        	}
 		}
         catch (CmdLineException e)
         {
@@ -77,7 +87,8 @@ public class PileupToDepthReport {
 		apos.onlyFirstCycle = !countEachBase;
 		
 		
-		APHandlerDepthCounts counter = new APHandlerDepthCounts();
+		APHandlerDepthCounts counter = (this.randomSubset > 0) ? (new APHandlerDepthCountsRandomSubset(randomSubsetNumTrials, randomSubset)) : 
+			(new APHandlerDepthCounts());
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{

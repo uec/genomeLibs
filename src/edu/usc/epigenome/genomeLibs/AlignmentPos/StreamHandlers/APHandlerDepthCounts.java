@@ -58,7 +58,7 @@ public class APHandlerDepthCounts extends TreeMapCounter<Integer> implements Ali
 		}
 		if (empty)
 		{
-			this.increment(new Integer(0));
+			//this.increment(new Integer(0));
 		}
 
 		

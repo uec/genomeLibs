@@ -6,6 +6,7 @@ import edu.usc.epigenome.genomeLibs.GFFUtils;
 import edu.usc.epigenome.genomeLibs.Counters.SymbolCounter;
 import edu.usc.epigenome.genomeLibs.Counters.SymbolCounterStratified;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicPositionScored;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 import edu.usc.epigenome.genomeLibs.ReadPos.ReadPos;
 
 import org.biojava.bio.program.gff.*;
@@ -378,6 +379,24 @@ public abstract class AlignmentPos implements Cloneable, GenomicPositionScored {
 		return d[ (reference_forward_strand == read_same_strand) ? 0 : 1 ];
 	}
 	
+	
+	public List<GenomicRange> getGenomicRanges()
+	{
+		int fwDepth = this.getDepth(true);
+		int revDepth = this.getDepth(false);
+		int totalDepth = fwDepth+revDepth;
+		
+		ArrayList<GenomicRange> out = new ArrayList<GenomicRange>(totalDepth);
+		
+		for (int i = 1; i <= totalDepth; i++)
+		{
+			StrandedFeature.Strand strand = (i<=fwDepth) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
+			GenomicRange range = new GenomicRange(this.getChr(), this.getPos(), this.getPos(), strand);
+			out.add(range);
+		}
+		
+		return out;
+	}
 	
 	
 	abstract public int[] getDepth();

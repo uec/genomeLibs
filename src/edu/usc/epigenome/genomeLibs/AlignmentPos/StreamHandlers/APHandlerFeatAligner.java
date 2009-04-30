@@ -37,6 +37,8 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 
 	 public double score = -1.0;
 	 public int depth = -1;
+	 
+	 public boolean doCensoring = false;
 
 	/*
 	 * Overridden StreamHandler functions(non-Javadoc)
@@ -46,7 +48,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 * @param inGtfFilename
 	 * @param inWindSize
 	 */
-	public APHandlerFeatAligner(String inGtfFilename, int inWindSize) {
+	public APHandlerFeatAligner(String inGtfFilename, int inWindSize, boolean inCensoring) {
 		super(inGtfFilename, inWindSize);
 		// TODO Auto-generated constructor stub
 	}

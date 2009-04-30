@@ -31,6 +31,8 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 public String gtfFilename = null;
 	 public int windSize = 0;
 	 
+	 public long totalBaseCoverageCountFw = 0; // A counter of all bases 
+	 public long totalBaseCoverageCountRev = 0; // A counter of all bases 
 	 
 	 public ChromFeatures cf = null;
 	 public String cfCurChr = null;
@@ -83,6 +85,10 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		int chrInd = (new ChromFeatures()).chrom_from_public_str(chr);
 		int curPos = cur.getPos();
 		
+		// Update total base counts
+		this.totalBaseCoverageCountFw += cur.getDepth(true);
+		this.totalBaseCoverageCountRev += cur.getDepth(false);
+				
 		// Are we on a new chromosome? 
 		// checkChr returns false if ChromFeatures can't load the chromosome
 		boolean chromOk = checkChr(chr); 
@@ -151,6 +157,11 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		}
 
 		return out;
+	}
+	
+	public long getTotalBaseCoverageCount()
+	{
+		return this.totalBaseCoverageCountFw + this.totalBaseCoverageCountRev;
 	}
 
 }

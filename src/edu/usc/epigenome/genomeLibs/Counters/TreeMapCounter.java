@@ -22,6 +22,7 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 	 */
 	public TreeMapCounter() 
 	{
+		super();
 	}
 	
 	
@@ -63,6 +64,14 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 		decrement(key,1);
 	}
 
+	public void increment(Collection<T> keys)
+	{
+		for(T key : keys)
+		{
+			this.increment(key);
+		}
+	}
+	
 	public void increment(T key, int numToAdd)
 	{
 			int newCount = this.getCount(key) + numToAdd;
@@ -96,12 +105,31 @@ public class TreeMapCounter<T extends Comparable<T>> extends TreeMap<T,Integer> 
 	 * Adds all key counts from a set of counters into this one
 	 * @param maps The tree maps to add to this one
 	 */
-	public void addCounts(Vector<TreeMapCounter<T>> maps)
+	public void addCounts(Collection<TreeMapCounter<T>> maps)
 	{
 		for(TreeMapCounter<T> map : maps)
 		{
 			addCounts(map);
 		}
+	}
+	
+	/* 
+	 * This is really a static one but we need it at runtime to determine type of T
+	 */
+	public TreeMapCounter<T> meanCounter(Collection<TreeMapCounter<T>> counters)
+	{
+		// Get the totals.
+		TreeMapCounter<T> totalCounts = new TreeMapCounter<T>();
+		totalCounts.addCounts(counters);
+		
+		// Divide all by the total number (rounding)
+		for (T key : totalCounts.keySet())
+		{
+			int newVal = Math.round((float)totalCounts.getCount(key) / (float)counters.size());
+			totalCounts.setCount(key, newVal);
+		}		
+		
+		return totalCounts;
 	}
 	
 	/******  OUTPUT ********/

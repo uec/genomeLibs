@@ -14,8 +14,8 @@ public class PileupToAlignedByFeats extends PileupToTemplate {
 
 	@Option(name="-featGtf",usage="feature Gtf")
 	protected String featGtf = null;
-//	@Option(name="-featGtfs",usage="feature Gtfs")
-//	protected String[] featGtfs = null;
+	@Option(name="-doCensoring",usage="Use feature censoring")
+	protected boolean doCensoring = false;
     @Option(name="-featWindSize",usage="window size, for feature alignment (default 1000)")
     protected int featWindSize = -1;
  
@@ -46,7 +46,7 @@ public class PileupToAlignedByFeats extends PileupToTemplate {
 	 */
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
-		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize));
+		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize, doCensoring));
 	}
 
 	

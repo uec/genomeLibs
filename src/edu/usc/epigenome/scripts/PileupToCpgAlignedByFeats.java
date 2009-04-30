@@ -18,7 +18,8 @@ public class PileupToCpgAlignedByFeats extends PileupToCpgTemplate {
 //	protected String[] featGtfs = null;
     @Option(name="-featWindSize",usage="window size, for feature alignment (default 1000)")
     protected int featWindSize = -1;
- 
+    @Option(name="-useCensoring",usage="censor out read positions outside of any feature of interest (default false)")
+    protected boolean useCensoring = false;
 	/**
 	 * @param args
 	 */
@@ -46,7 +47,7 @@ public class PileupToCpgAlignedByFeats extends PileupToCpgTemplate {
 	 */
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
-		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize));
+		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize, useCensoring));
 	}
 
 	
