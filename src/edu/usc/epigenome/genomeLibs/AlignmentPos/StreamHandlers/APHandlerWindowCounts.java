@@ -20,8 +20,8 @@ public class APHandlerWindowCounts extends AlignmentPosWindCounter implements Al
 	/**
 	 * Constructor
 	 */
-	public APHandlerWindowCounts(int inWindSize, boolean strandSpecific) {
-		super(inWindSize, strandSpecific);
+	public APHandlerWindowCounts(int inWindSize, boolean strandSpecific, String inGenome) {
+		super(inWindSize, strandSpecific, inGenome);
 	}
 
 	/*

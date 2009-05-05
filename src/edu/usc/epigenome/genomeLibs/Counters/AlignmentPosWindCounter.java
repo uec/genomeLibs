@@ -4,6 +4,7 @@
 package edu.usc.epigenome.genomeLibs.Counters;
 
 import java.io.PrintStream;
+import java.util.Iterator;
 
 import org.biojava.bio.seq.StrandedFeature;
 
@@ -24,14 +25,16 @@ public class AlignmentPosWindCounter extends GenomicRangeCounter  {
 
 	private int windSize;
 	private boolean strandSpecific;
+	private String genome;
 	private AlignmentPosOptions apOptions = null;
 	
 	/**
 	 * 
 	 */
-	public AlignmentPosWindCounter(int inWindSize, boolean inStrandSpecific) {
+	public AlignmentPosWindCounter(int inWindSize, boolean inStrandSpecific, String inGenome) {
 		windSize = inWindSize;
 		strandSpecific = inStrandSpecific;
+		genome = inGenome;
 	}
 
 	
@@ -60,7 +63,29 @@ public class AlignmentPosWindCounter extends GenomicRangeCounter  {
 	 */
 	@Override
 	public void excelOutput(String firstCol, PrintStream ps) {
-		super.excelOutput(firstCol + "," + Integer.toString(windSize) + "," + strandSpecific + "," + apOptions.maxIdentical, ps);
+
+		String initialCols = firstCol + "," + Integer.toString(windSize) + "," + strandSpecific + "," + apOptions.maxIdentical;
+
+		// Output all windows
+		Iterator<GenomicRange> rangeIt = null;
+		try {
+			rangeIt = GenomicRange.allPossibleGenomicRanges(genome, windSize, strandSpecific);
+		} catch (Exception e) {
+			System.err.println("GenomicRange.allPossibleGenomicRanges threw an exception: ");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		while (rangeIt.hasNext())
+		{
+			GenomicRange key = rangeIt.next();
+			int count = super.getCount(key);
+
+			ps.print(initialCols);
+			ps.print("," + key.toString());
+			ps.print("," + count);
+			ps.print("\n");
+		}
 	}
 	
 	

@@ -24,7 +24,9 @@ public class FastaToNmerWindowCounts {
 	private static final String USAGE = "Usage: FastaToNmerWindowCounts -nmer GAATG -strandSpecific -windSize 500 file1.fa file2.fa ...";
 	
 	
-    @Option(name="-nmer",usage="nmer (default CG)")
+	@Option(name="-genomeVers",usage="UCSC genome version code.  We need this to know the chromosome lengths.  Deafault \"hg18\"")
+	private String genomeVers = "hg18";
+	@Option(name="-nmer",usage="nmer (default CG)")
     private String nmer = "CG";
     @Option(name="-windSize",usage="genomic window size (default 500)")
     private int windSize = 500;
@@ -73,7 +75,7 @@ public class FastaToNmerWindowCounts {
         }
 
 
-		APHandlerWindowCounts counter = new APHandlerWindowCounts(windSize, strandSpecific);
+		APHandlerWindowCounts counter = new APHandlerWindowCounts(windSize, strandSpecific, genomeVers);
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{

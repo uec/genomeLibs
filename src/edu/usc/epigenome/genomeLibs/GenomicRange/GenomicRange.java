@@ -1,8 +1,14 @@
 package edu.usc.epigenome.genomeLibs.GenomicRange;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.biojava.bio.seq.StrandedFeature;
 
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
+import edu.usc.epigenome.genomeLibs.ChromStringComparator;
 
 
 public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
@@ -141,6 +147,39 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 		return new GenomicRange(inChrom, s, e, strand);
 	}
 	
+	public static Iterator<GenomicRange> allPossibleGenomicRanges(String inGenome, int inWindSize, boolean strandSpecific)
+	throws Exception
+	{
+		Set<GenomicRange> outSet = new TreeSet<GenomicRange>();
+		
+		// Go through chroms
+		Iterator<String> chromIt = GoldAssembly.chromIterator(inGenome, false);
+		while (chromIt.hasNext())
+		{
+			String chrom = chromIt.next();
+			int chrLen = GoldAssembly.chromLengthStatic(chrom, inGenome);
+			
+			for (int s = 0; s < chrLen; s+=inWindSize)
+			{
+				int e = s + inWindSize - 1;
+				if (e > chrLen) e = chrLen;
+				
+				if (strandSpecific)
+				{
+					outSet.add(new GenomicRange(chrom, s, e, StrandedFeature.POSITIVE));
+					outSet.add(new GenomicRange(chrom, s, e, StrandedFeature.NEGATIVE));
+				}					
+				else
+				{
+					outSet.add(new GenomicRange(chrom, s, e));
+				}
+			}
+		}
+		
+		
+		return outSet.iterator();
+	}
+	
 
 	/** Cloneable **/
 	
@@ -196,7 +235,8 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	 */
 	public int compareTo(GenomicRange o) {
 		
-		int strCmp = this.getChrom().compareTo(o.getChrom());
+		int strCmp = (new ChromStringComparator()).compare(this.getChrom(), o.getChrom());
+//		int strCmp = this.getChrom().compareTo(o.getChrom());
 		if (strCmp != 0) return strCmp;
 
 		// Do the end first (this only matters if one completely 

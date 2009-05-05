@@ -52,7 +52,7 @@ public class GoldAssembly {
 	{
 		Iterator<String> map_it = c_chr_map.keySet().iterator();
 		
-		Set<String> out_set = new TreeSet<String>();
+		List<String> outList = new ArrayList<String>();
 		while (map_it.hasNext())
 		{
 			String full = map_it.next();
@@ -64,12 +64,13 @@ public class GoldAssembly {
 				
 				if (extended || (!rest.contains("_")))
 				{
-					out_set.add(rest);
+					outList.add(rest);
 				}
 			}
 		}
 		
-		return out_set.iterator();
+		Collections.sort(outList, new ChromStringComparator());
+		return outList.iterator();
 	}
 		
 	/*
@@ -277,6 +278,28 @@ public class GoldAssembly {
 		c_chr_map.put("tair7__chrc", new Integer(154478));
 		c_chr_map.put("tair7__chrm", new Integer(366924));
 		GoldAssembly.initializeGlobalOffsets("tair7");
+		
+		// SAC CER 1
+		c_chr_map.put("sacCer1__chr1", new Integer(230208));
+		c_chr_map.put("sacCer1__chr2", new Integer(813136));
+		c_chr_map.put("sacCer1__chr3", new Integer(316613));
+		c_chr_map.put("sacCer1__chr4", new Integer(1531914));
+		c_chr_map.put("sacCer1__chr5", new Integer(576869));
+		c_chr_map.put("sacCer1__chr6", new Integer(270148));
+		c_chr_map.put("sacCer1__chr7", new Integer(1090944));
+		c_chr_map.put("sacCer1__chr8", new Integer(562639));
+		c_chr_map.put("sacCer1__chr9", new Integer(439885));
+		c_chr_map.put("sacCer1__chr10", new Integer(745446));
+		c_chr_map.put("sacCer1__chr11", new Integer(666445));
+		c_chr_map.put("sacCer1__chr12", new Integer(1078173));
+		c_chr_map.put("sacCer1__chr13", new Integer(924430));
+		c_chr_map.put("sacCer1__chr14", new Integer(784328));
+		c_chr_map.put("sacCer1__chr15", new Integer(1091285));
+		c_chr_map.put("sacCer1__chr16", new Integer(948060));
+		c_chr_map.put("sacCer1__chrm", new Integer(85779));
+		GoldAssembly.initializeGlobalOffsets("sacCer1");
+
+		
 	}
 	
 

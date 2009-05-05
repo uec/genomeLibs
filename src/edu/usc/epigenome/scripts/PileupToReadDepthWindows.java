@@ -20,8 +20,9 @@ public class PileupToReadDepthWindows {
 	// -c track cycles
 	// -q track qual scores
 	private static final String USAGE = "Usage: PileupToReadDepthWindows -strandSpecific -maxIdentical 1 -minQual 30 -windSize 500 -countEachBase file1.pileup file2.pileup ...";
-	
-	
+
+	@Option(name="-genomeVers",usage="UCSC genome version code.  We need this to know the chromosome lengths.  Deafault \"hg18\"")
+	private String genomeVers = "hg18";
     @Option(name="-minQual",usage="minimum quality score (default 0)")
     private int minQual = 0;
     @Option(name="-windSize",usage="genomic window size (default 500)")
@@ -84,7 +85,7 @@ public class PileupToReadDepthWindows {
 		apos.maxIdentical = maxIdentical;
 		apos.onlyFirstCycle = !countEachBase;
 
-		APHandlerWindowCounts counter = new APHandlerWindowCounts(windSize, strandSpecific);
+		APHandlerWindowCounts counter = new APHandlerWindowCounts(windSize, strandSpecific, genomeVers);
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{
