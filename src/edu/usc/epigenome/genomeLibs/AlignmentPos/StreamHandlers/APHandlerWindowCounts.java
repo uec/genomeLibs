@@ -3,6 +3,8 @@
  */
 package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
+import java.util.GregorianCalendar;
+
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.Counters.*;
@@ -32,6 +34,7 @@ public class APHandlerWindowCounts extends AlignmentPosWindCounter implements Al
 	}
 
 	public void finish() {
+		System.err.println((new GregorianCalendar()).getTime() + "\tAPHandlerWindowCounts finished");
 	}
 
 	/* (non-Javadoc)

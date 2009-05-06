@@ -1,12 +1,14 @@
 package edu.usc.epigenome.genomeLibs.GenomicRange;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.biojava.bio.seq.StrandedFeature;
 
+import edu.usc.epigenome.genomeLibs.BiojavaUtils;
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ChromStringComparator;
 
@@ -19,6 +21,7 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	/* Class vars */
 	static final String NO_CHROM = "NO_CHROM";
 	static final double NO_SCORE = Double.NEGATIVE_INFINITY;
+	static final Comparator<GenomicRange> comparator = new GenomicRangeComparator(true);
 	
 	
 	/* Obj vars */
@@ -132,8 +135,6 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 		this.score = score;
 	}
 
-
-
 	/** Static util functions **/
 	public static GenomicRange generateWindowFromCoord(String inChrom, int inCoord, int inWindSize)
 	{
@@ -147,10 +148,20 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 		return new GenomicRange(inChrom, s, e, strand);
 	}
 	
-	public static Iterator<GenomicRange> allPossibleGenomicRanges(String inGenome, int inWindSize, boolean strandSpecific)
+	/**
+	 * @param inGenome
+	 * @param inWindSize
+	 * @param strandSpecific
+	 * @param useSlowAndCorrectSorting
+	 * @return
+	 * @throws Exception
+	 */
+	public static Iterator<GenomicRange> allPossibleGenomicRanges(String inGenome, int inWindSize,
+			boolean strandSpecific, boolean useSlowAndCorrectSorting)
 	throws Exception
 	{
-		Set<GenomicRange> outSet = new TreeSet<GenomicRange>();
+		Set<GenomicRange> outSet = (useSlowAndCorrectSorting) ? 
+				new TreeSet<GenomicRange>(new GenomicRangeComparator(false)) : new TreeSet<GenomicRange>();
 		
 		// Go through chroms
 		Iterator<String> chromIt = GoldAssembly.chromIterator(inGenome, false);
@@ -164,14 +175,18 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 				int e = s + inWindSize - 1;
 				if (e > chrLen) e = chrLen;
 				
+				GenomicRange gr;
 				if (strandSpecific)
 				{
-					outSet.add(new GenomicRange(chrom, s, e, StrandedFeature.POSITIVE));
-					outSet.add(new GenomicRange(chrom, s, e, StrandedFeature.NEGATIVE));
+					gr = new GenomicRange(chrom, s, e, StrandedFeature.POSITIVE);
+					outSet.add(gr);
+					gr = new GenomicRange(chrom, s, e, StrandedFeature.NEGATIVE);
+					outSet.add(gr);
 				}					
 				else
 				{
-					outSet.add(new GenomicRange(chrom, s, e));
+					gr = new GenomicRange(chrom, s, e);
+					outSet.add(gr);
 				}
 			}
 		}
@@ -234,46 +249,15 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
 	public int compareTo(GenomicRange o) {
-		
-		int strCmp = (new ChromStringComparator()).compare(this.getChrom(), o.getChrom());
-//		int strCmp = this.getChrom().compareTo(o.getChrom());
-		if (strCmp != 0) return strCmp;
-
-		// Do the end first (this only matters if one completely 
-		// subsumes the other, in which case the internal one will
-		// be returned first.
-		if (this.getEnd() > o.getEnd()) return 1; 
-		if (this.getEnd() < o.getEnd()) return -1;
-		
-		if (this.getStart() > o.getStart()) return 1; 
-		if (this.getStart() < o.getStart()) return -1;
-		
-		if (strandToInt(this.getStrand()) > strandToInt(o.getStrand())) return 1; 
-		if (strandToInt(this.getStrand()) < strandToInt(o.getStrand())) return -1; 
-
-		return 0;
+		return comparator.compare(this, o);
 	}
 
 	
-	public static int strandToInt(StrandedFeature.Strand strand)
-	{
-		int out = 0;
-		
-		if (strand == StrandedFeature.NEGATIVE)
-		{
-			out = -1;
-		}
-		else if (strand == StrandedFeature.POSITIVE)
-		{
-			out = 1;
-		}
-		
-		return out;
-	}
-	
+
 	public String commaSeparatedLine()
 	{
-		return String.format("%s,%d,%d,%d",this.getChrom(), strandToInt(this.getStrand()), this.getStart(), this.getEnd());
+		return String.format("%s,%d,%d,%d",this.getChrom(), BiojavaUtils.strandToInt(this.getStrand()), 
+				this.getStart(), this.getEnd());
 	}
 
 	/* (non-Javadoc)

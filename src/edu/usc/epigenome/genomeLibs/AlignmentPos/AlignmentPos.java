@@ -380,6 +380,33 @@ public abstract class AlignmentPos implements Cloneable, GenomicPositionScored {
 	}
 	
 	
+	public GenomicRange getGenomicRangeAutostrand()
+	{
+		int fwDepth = this.getDepth(true);
+		int revDepth = this.getDepth(false);
+
+		StrandedFeature.Strand strand;
+		if ((fwDepth==0) && (revDepth>0))
+		{
+			strand = StrandedFeature.NEGATIVE;
+		}
+		else if ((fwDepth>0) && (revDepth==0))
+		{
+			strand = StrandedFeature.POSITIVE;
+		}
+		else
+		{
+			strand = StrandedFeature.UNKNOWN;
+		}
+		
+		return getGenomicRangeStranded(strand);
+	}
+	
+	public GenomicRange getGenomicRangeStranded(StrandedFeature.Strand inStrand)
+	{
+		return new GenomicRange(this.getChr(), this.getPos(), this.getPos(), inStrand);
+	}
+		
 	public List<GenomicRange> getGenomicRanges()
 	{
 		int fwDepth = this.getDepth(true);
@@ -548,7 +575,8 @@ public abstract class AlignmentPos implements Cloneable, GenomicPositionScored {
 	{
 		String out = null;
 
-		out = this.chr + ":" + this.pos + this.strand.getToken() + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
+//		out = this.chr + ":" + this.pos + this.strand.getToken() + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
+		out = this.chr + ":" + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
 		this.getDepth(true) + ", " + this.getDepth(false); 
 		
 		return out;

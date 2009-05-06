@@ -11,7 +11,7 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
  * 
  *
  */
-public class GenomicWindCounter extends GenomicRangeCounter  {
+public class DEPR_GenomicWindCounter extends GenomicRangeCounter  {
 
 
 	private static final long serialVersionUID = -8312065178497620972L;
@@ -21,7 +21,7 @@ public class GenomicWindCounter extends GenomicRangeCounter  {
 	/**
 	 * 
 	 */
-	public GenomicWindCounter(int inWindSize) {
+	public DEPR_GenomicWindCounter(int inWindSize) {
 		windSize = inWindSize;
 	}
 
