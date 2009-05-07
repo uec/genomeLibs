@@ -25,7 +25,7 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	
 	
 	/* Obj vars */
-	protected String chrom = NO_CHROM;
+	protected String chrom = NO_CHROM; // Should always be lower case (case-insensitive)
 	protected int start = 0;
 	protected int end = 0;
 	protected StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
@@ -34,17 +34,17 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	/* Constructors */
 	public GenomicRange(String inChrom, int inStart, int inEnd)
 	{
-		chrom = inChrom;
-		start = inStart;
-		end = inEnd;
+		this.setChrom(inChrom);
+		this.setStart(inStart);
+		this.setEnd(inEnd);
 	}
 
 	public GenomicRange(String inChrom, int inStart, int inEnd, StrandedFeature.Strand inStrand)
 	{
-		chrom = inChrom;
-		start = inStart;
-		end = inEnd;
-		strand = inStrand;
+		this.setChrom(inChrom);
+		this.setStart(inStart);
+		this.setEnd(inEnd);
+		this.setStrand(inStrand);
 	}
 
 	
@@ -71,7 +71,7 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	 * @param chrom the chrom to set
 	 */
 	public void setChrom(String chrom) {
-		this.chrom = chrom;
+		this.chrom = chrom.toLowerCase();
 	}
 
 

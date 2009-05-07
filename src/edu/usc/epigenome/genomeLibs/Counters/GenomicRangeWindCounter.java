@@ -91,6 +91,7 @@ public class GenomicRangeWindCounter extends GenomicRangeCounter  {
 		while (rangeIt.hasNext())
 		{
 			GenomicRange key = rangeIt.next();
+			// System.err.println("Looking for key: " + key.toString());
 			int count = super.getCount(key);
 
 			ps.print(initialCols);

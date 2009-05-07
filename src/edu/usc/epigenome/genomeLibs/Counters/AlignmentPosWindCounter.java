@@ -35,6 +35,7 @@ public class AlignmentPosWindCounter extends GenomicRangeWindCounter  {
 		
 //		if (apOptions==null) apOptions = ap.getApOptions();
 				
+		
 		if (strandSpecific)
 		{
 			super.increment(ap.getGenomicRangeStranded(StrandedFeature.POSITIVE), ap.getDepth(true));
@@ -45,6 +46,7 @@ public class AlignmentPosWindCounter extends GenomicRangeWindCounter  {
 			super.increment(ap.getGenomicRangeStranded(StrandedFeature.UNKNOWN), ap.getTotalDepth());
 		}
 		
+		//System.err.println("Adding " + ap.toString() + "\n\t" + this.oneLineOutput());
 		//System.err.println("Counter keys: " + this.size() + " (total count " + this.getTotalCount() + ")");
 	}
 

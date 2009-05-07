@@ -576,7 +576,7 @@ public abstract class AlignmentPos implements Cloneable, GenomicPositionScored {
 		String out = null;
 
 //		out = this.chr + ":" + this.pos + this.strand.getToken() + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
-		out = this.chr + ":" + "(" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
+		out = this.chr + ":" + this.pos + " (" + Character.toUpperCase(this.getRefToken()) + ") depth= " +
 		this.getDepth(true) + ", " + this.getDepth(false); 
 		
 		return out;
