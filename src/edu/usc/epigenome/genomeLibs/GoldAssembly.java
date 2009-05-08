@@ -25,7 +25,13 @@ public class GoldAssembly {
 		Integer len_int = c_chr_map.get(key);
 		if	(len_int == null)
 		{
-			System.err.println("Number of keys in c_chr_map = " + c_chr_map.size());
+			System.err.println("NNumber of keys in c_chr_map = " + c_chr_map.size());
+			String[] keyStrings = c_chr_map.keySet().toArray(new String[1]);
+			for (String s : keyStrings)
+			{
+				System.err.println(s);
+			}
+			
 			throw new Exception("Can not identify chrom lenth for " + key);
 		}
 		else
@@ -62,7 +68,7 @@ public class GoldAssembly {
 			{
 				String rest = parts[1]; // Only valid if chrom can not contain __ delimiter
 				
-				if (extended || (!rest.contains("_")))
+				if ((genome.equalsIgnoreCase("phiX")) || extended || (!rest.contains("_")))
 				{
 					outList.add(rest);
 				}
@@ -299,7 +305,9 @@ public class GoldAssembly {
 		c_chr_map.put("sacCer1__chrm", new Integer(85779));
 		GoldAssembly.initializeGlobalOffsets("sacCer1");
 
-		
+		// PHIX
+		c_chr_map.put("phiX__gi|9626372|ref|nc_001422.1|", new Integer(5386));
+		GoldAssembly.initializeGlobalOffsets("phiX");
 	}
 	
 

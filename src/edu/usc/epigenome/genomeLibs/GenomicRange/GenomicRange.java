@@ -190,8 +190,9 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 				}
 			}
 		}
-		
-		
+
+		System.err.println("Found " + outSet.size() + " genomic ranges size " + inWindSize);
+
 		return outSet.iterator();
 	}
 	

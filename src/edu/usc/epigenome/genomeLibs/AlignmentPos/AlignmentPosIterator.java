@@ -66,7 +66,7 @@ public abstract class AlignmentPosIterator implements Iterator<AlignmentPos> {
 			ap = nextAlignment();
 			this.numRead++;
 			if ((this.numRead % 1000000) == 0)
-//			if ((this.numRead % 1000) == 0)
+//			if ((this.numRead % 10) == 0)
 			{
 				System.err.println((new GregorianCalendar()).getTime() + "\t" + this.numRead + " APs processed");
 			}
