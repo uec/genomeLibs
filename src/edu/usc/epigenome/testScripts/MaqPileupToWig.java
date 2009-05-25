@@ -55,6 +55,8 @@ public class MaqPileupToWig {
 			ChromScoresFast[] cs = cs_it.next();
 			System.err.println("New chromScores iterator:" + cs);
 
+			// GZIP IT!!!
+
 			cs[0] = cs[0].smooth(wo.f_span, 36);
 			wo.f_name = name + "fw";
 			wo.makeFwStrand();
@@ -65,7 +67,10 @@ public class MaqPileupToWig {
 			wo.makeRevStrand();
 			cs[1].wigOutput(pw, wo);
 
+			
+			
 		}
+		
 	}
 
 }

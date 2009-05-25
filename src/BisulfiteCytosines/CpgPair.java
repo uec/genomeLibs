@@ -1,8 +1,10 @@
 package BisulfiteCytosines;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.seq.StrandedFeature;
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
@@ -10,6 +12,7 @@ import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosSnpsBisulfiteConver
 /**
  * 
  */
+import edu.usc.epigenome.genomeLibs.Counters.SymbolCounter;
 
 /**
  * @author benb
@@ -164,6 +167,30 @@ public class CpgPair {
 		AlignmentPosSnpsBisulfiteConverted c = (fw) ? cpgF : cpgR;
 		return c.getMethylatedFracString(inMaxIdentical);
 	}
+	
+	public int[] getOrderedSnvCounts(boolean fw, int inMaxIdentical)
+	{
+		int[] out = new int[16];
+		
+		int ind = 0;
+		
+		SymbolCounter[] scs= { 
+				cpgF.getSnpCounter(StrandedFeature.POSITIVE) ,
+				cpgR.flipped().getSnpCounter(StrandedFeature.POSITIVE) ,
+				cpgR.getSnpCounter(StrandedFeature.POSITIVE) ,
+				cpgF.flipped().getSnpCounter(StrandedFeature.POSITIVE)
+		};
+		
+		for (SymbolCounter sc : scs)
+		{
+			out[ind++] = sc.getAdenineCount();
+			out[ind++] = sc.getCytosineCount();
+			out[ind++] = sc.getThymineCount();
+			out[ind++] = sc.getGuanineCount();
+		}
+		
+		return out;
+	}
 
 	// *******************************************
 	//
@@ -264,6 +291,22 @@ public class CpgPair {
 				 //OTHER
 				 "methOverall",
 //				 "strandMismatch" 
+				 "snvpos1A",
+				 "snvpos1C",
+				 "snvpos1T",
+				 "snvpos1G",
+				 "snvpos2A",
+				 "snvpos2C",
+				 "snvpos2T",
+				 "snvpos2G",
+				 "snvpos3A",
+				 "snvpos3C",
+				 "snvpos3T",
+				 "snvpos3G",
+				 "snvpos4A",
+				 "snvpos4C",
+				 "snvpos4T",
+				 "snvpos4G"
 				 }; 
 		String out = ListUtils.excelLine(labels);
 		return out;
@@ -271,7 +314,7 @@ public class CpgPair {
 	
 	public double[] stats()
 	{
-		double[] out = new double[13];
+		double[] out = new double[13+16];
 
 		int ind = 0;
 		
@@ -294,6 +337,12 @@ public class CpgPair {
 		// OTHER
 		out[ind++] = (double)this.getMethylatedFrac();
 //		out[ind++] = (double)this.getStrandMismatch();
+		
+		// Full SNV counts
+		for (int count : this.getOrderedSnvCounts(true, this.cpgF.getApOptions().maxIdentical))
+		{
+			out[ind++] = count;
+		}
 		
 		return out;
 	}

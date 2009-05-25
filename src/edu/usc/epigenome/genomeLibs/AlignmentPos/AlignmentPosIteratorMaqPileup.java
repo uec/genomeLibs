@@ -147,7 +147,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 	
 	
 	protected static void addMaqPositions(AlignmentPosOptions inApOptions, AlignmentPosSnps ap, char[] snps, String baseQualsStr, String readPositionsStr)
-	throws IllegalSymbolException
+	throws IllegalSymbolException, Exception
 	{
 		//String[] readPositionsStrs = readPositionsStr.split(","); //TODO VERY SLOW, 25% of execution time, but it's probably the best we can do with a string
 		String[] readPositionsStrs = ListUtils.splitByChar(readPositionsStr, ','); 
@@ -157,6 +157,9 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 		
 		for (int i=0; i < (snps.length-1); i++)
 		{
+			if ((i+1)>=baseQualChars.length) throw new Exception ("Maq PILEUP illegal format: quality string (" + baseQualsStr +
+					") has more characters than nucleotide string (" + readPositionsStr + ")");
+			
 			int qual = MiscUtils.fastqQualCodeToInt(baseQualChars[i+1], false); // First one is a "@" char
 			
 			if (qual >= inApOptions.minQualityScore)
