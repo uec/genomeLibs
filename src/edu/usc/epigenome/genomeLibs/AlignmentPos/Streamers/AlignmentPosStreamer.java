@@ -36,7 +36,8 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 	private boolean nmerCounterStale = true;
 	private Symbol[] singleSymBuf = new Symbol[1];
 	private Symbol[] doubleSymBuf = new Symbol[2];
-		
+	
+	protected AlignmentPos sApNull = new AlignmentPosNull(); // so that we don't have to create a new one each time.
 	
 //	protected Queue queue = null;
 	
@@ -58,9 +59,9 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		preBuffer = new AlignmentPos[preWindSize];
 		postBuffer = new AlignmentPos[postWindSize];
 		preNull = new AlignmentPos[preWindSize];
-		for (int i = 0; i < preWindSize; i++) { preNull[i] = new AlignmentPosNull(); }
+		for (int i = 0; i < preWindSize; i++) { preNull[i] = sApNull; }
 		postNull = new AlignmentPos[postWindSize];
-		for (int i = 0; i < postWindSize; i++) { postNull[i] = new AlignmentPosNull(); }
+		for (int i = 0; i < postWindSize; i++) { postNull[i] = sApNull; }
 		
 	}
 	
@@ -195,7 +196,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 			}
 			else
 			{
-				AlignmentPos nextAp = (apIt.hasNext()) ? apIt.next() : (new AlignmentPosNull());
+				AlignmentPos nextAp = (apIt.hasNext()) ? apIt.next() : sApNull;
 				queue.add(nextAp);
 			}
 		}
@@ -248,22 +249,60 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		// Check if the preWindow and postWindow are actually in 
 		// contiguous position in the alignment
 		int currentApPos = currentAp.getPos();
-		if ((preWindSize>0) && (priorAps[0].getPos() != (currentApPos-preWindSize)))
+		int windMinPos = currentApPos-preWindSize;
+		int windMaxPos = currentApPos+postWindSize;
+		if ((preWindSize>0) && (priorAps[0].getPos() != windMinPos))
 		{
 //			System.err.println("PreWind non-contiguous: priorAps= " +  priorAps[0].getPos() +
 //					", currentPos=" + currentApPos + ", preWindSize=" + preWindSize);
-			priorAps = preNull;
+			
+			boolean done = false;
+			for (int ind=0; !done && (ind<priorAps.length); ind++)
+			{
+				AlignmentPos ap = priorAps[ind];
+				if (ap.getPos() == -1) // AlignmentPosNull, skip it
+				{
+					
+				}
+				else if (ap.getPos() < windMinPos)
+				{
+					priorAps[ind] = sApNull;
+				}
+				else	
+				{
+					done = true;
+				}
+			}
+
 			this.symbolCountersMakeStale();
 		}
-		if ((postWindSize>0) && (postAps[postWindSize-1].getPos() != (currentApPos+postWindSize)))
+		if ((postWindSize>0) && (postAps[postWindSize-1].getPos() != windMaxPos))
 		{
-//			System.err.println("PostWind non-contiguous " + currentAp.toString());
-			postAps = postNull;
+			// System.err.println("PostWind non-contiguous " + currentAp.toString());
+
+			boolean done = false;
+			for (int ind=(postAps.length)-1; !done && (ind>=0); ind--)
+			{
+				AlignmentPos ap = postAps[ind];
+				//System.err.println("\tTesting #" + ind + " , " + ap.getPos());
+				if (ap.getPos() == -1) // AlignmentPosNull, skip it
+				{
+				}
+				else if (ap.getPos() > windMaxPos)
+				{
+					postAps[ind] = sApNull;
+				}
+				else	
+				{
+					done = true;
+				}
+			}		
+			
 			this.symbolCountersMakeStale();
 		}
 		
 		// Pass to handlers
-		AlignmentPosStreamerPosition streamPos = new AlignmentPosStreamerPosition();
+		AlignmentPosStreamerPosition streamPos = new AlignmentPosStreamerPosition(preWindSize,postWindSize);
 		streamPos.priorAps = priorAps;
 		streamPos.currentAp = currentAp;
 		streamPos.nextAps = postAps;
@@ -301,9 +340,9 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		while (passes && handlerIt.hasNext())
 		{
 			AlignmentPosStreamHandler handler = handlerIt.next();
-////			System.err.println("Streaming to " + handler + ":\t" + 
-//			System.err.println(AlignmentPos.getRefTokens(priorAps) + 
-//					"," + currentAp.getRefToken() + "," + AlignmentPos.getRefTokens(postAps));
+//			// System.err.print("Streaming to " + handler + ":\t"); 
+//			System.err.println(AlignmentPos.getRefTokens(streamPos.priorAps) + 
+//					"," + streamPos.currentAp.getRefToken() + "," + AlignmentPos.getRefTokens(streamPos.nextAps));
 			passes &= handler.streamElement(streamPos);
 		}
 		return passes;

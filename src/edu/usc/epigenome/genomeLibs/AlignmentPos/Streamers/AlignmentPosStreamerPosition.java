@@ -18,6 +18,20 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicPositionScored;
  */
 public class AlignmentPosStreamerPosition {
 
+	/**
+	 * @param preWindSize
+	 * @param postWindSize
+	 */
+	public AlignmentPosStreamerPosition(int preWindSize, int postWindSize) {
+		super();
+		this.preWindSize = preWindSize;
+		this.postWindSize = postWindSize;
+	}
+
+
+	public int preWindSize = 0;
+	public int postWindSize = 0;
+	
 	public AlignmentPos[] priorAps = null;
 	public AlignmentPos currentAp = null;
 	public GenomicPositionScored currentScoredPosition = null; // By default , this is the AP itself.  But it can be overridden.
@@ -52,6 +66,44 @@ public class AlignmentPosStreamerPosition {
 		return out;
 	}	
 	
+	public int getWindSize()
+	{
+		return preWindSize + postWindSize;
+	}
 	
+	public double getAvgScore()
+	{
+			
+		double total = 0.0;
+		for (AlignmentPos ap : priorAps)
+		{
+			total += ap.getSummaryScore();
+		}
+		total += currentAp.getSummaryScore();
+		for (AlignmentPos ap : nextAps)
+		{
+			total += ap.getSummaryScore();
+		}
+		
+		//System.err.println("total = " + total + "\tWind size = " +this.getWindSize() );
+		return total / (double)this.getWindSize();
+	}
+	
+	public double getAvgDepth()
+	{
+			
+		double total = 0.0;
+		for (AlignmentPos ap : priorAps)
+		{
+			total += ap.getTotalDepth();
+		}
+		total += currentAp.getTotalDepth();
+		for (AlignmentPos ap : nextAps)
+		{
+			total += ap.getTotalDepth();
+		}
+		
+		return total / (double)this.getWindSize();
+	}
 	
 }

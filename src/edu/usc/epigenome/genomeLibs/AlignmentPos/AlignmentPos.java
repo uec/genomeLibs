@@ -29,8 +29,7 @@ public abstract class AlignmentPos implements Cloneable, GenomicPositionScored {
 	protected StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
 	protected AlignmentPosOptions apOptions = null;
 	
-
-
+	
 	/*****************
 	 *  Constructors
 	 */

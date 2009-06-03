@@ -91,7 +91,7 @@ public class AlignmentPosStreamerWatsonThenCrick extends AlignmentPosStreamer {
 				//			System.err.print("Streaming " + realPreWindSize + ", " + realPostWindSize + ":\t"); 
 				//			System.err.println(AlignmentPos.getRefTokens(preAps) + 
 				//					"," + currentApDirectional.getRefToken() + "," + AlignmentPos.getRefTokens(postAps));
-				AlignmentPosStreamerPosition newStreamPos = new AlignmentPosStreamerPosition();
+				AlignmentPosStreamerPosition newStreamPos = new AlignmentPosStreamerPosition(preWindSize, postWindSize);
 				newStreamPos.priorAps = preAps;
 				newStreamPos.currentAp = currentApDirectional;
 				newStreamPos.nextAps = postAps;
