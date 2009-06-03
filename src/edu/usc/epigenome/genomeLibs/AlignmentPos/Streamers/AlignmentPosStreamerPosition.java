@@ -68,7 +68,7 @@ public class AlignmentPosStreamerPosition {
 	
 	public int getWindSize()
 	{
-		return preWindSize + postWindSize;
+		return preWindSize + postWindSize + 1;
 	}
 	
 	public double getAvgScore()

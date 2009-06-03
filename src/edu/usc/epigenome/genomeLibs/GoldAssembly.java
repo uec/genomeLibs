@@ -15,6 +15,14 @@ public class GoldAssembly {
 	public static Map<String,Long> cGlobalOffsets;
 
 	
+	public static boolean chromExists(String chr, String genome)
+	{
+		chr = chr.toLowerCase();
+		String key = genome + "__" + chr;
+		Integer val = c_chr_map.get(key);
+		return (val != null);
+	}
+
 	public static int chromLengthStatic(String chr, String genome)
 	throws Exception
 	{

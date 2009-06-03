@@ -28,6 +28,10 @@ public class PileupToWig {
 	private String genomeVers = "hg18";
 	@Option(name="-output",usage="Output file. If suffix is \".gz\", it will be automatically gzip'd.  Deafault stdout")
 	private String output = null;
+	@Option(name="-name",usage="Track name.  Deafaults to filename")
+	private String name = null;
+	@Option(name="-desc",usage="Track description.  Deafaults to filename")
+	private String desc = null;
     @Option(name="-windSize",usage="genomic window size (default 100)")
     private int windSize = 100;
     @Option(name="-type",usage="WIG format: FixedStep=1, VariableStep=2, BEDgraph=3, BED=4 (default 2)")
@@ -83,35 +87,43 @@ public class PileupToWig {
 
 
 	
-		AlignmentPosOptions apos = new AlignmentPosOptions();
-		apos.trackPositions = true;
-		apos.trackQuals = false;
-		apos.maxIdentical = maxIdentical;
-		apos.onlyFirstCycle = !countEachBase;
+        AlignmentPosOptions apos = new AlignmentPosOptions();
+        apos.trackPositions = true;
+        apos.trackQuals = false;
+        apos.maxIdentical = maxIdentical;
+        apos.onlyFirstCycle = !countEachBase;
 
-		APFilterFixedIntervals intervalFilter = new APFilterFixedIntervals(stepSize);
-		
-		{
-			
+        APFilterFixedIntervals intervalFilter = new APFilterFixedIntervals(stepSize);
+        {
+        	
+        	for (int i = 0; i < this.arguments.size(); i++)
+        	{
+        		String fn = (String)this.arguments.get(i);
+            	String base = (new File(fn)).getName();
+            	
+            	String thisName = (name != null) ? (name + "." + base) : base;
+            	String thisDesc = (desc != null) ? desc : base;
 
-		APHandlerWigEmitter emitter = new APHandlerWigEmitter(type, windSize, output);
-		
-		for (int i = 0; i < this.arguments.size(); i++)
-		{
-			String fn = (String)this.arguments.get(i);
+            	APHandlerWigEmitter emitter = new APHandlerWigEmitter(type, windSize, genomeVers,output, thisName, thisDesc);
 
-			// Create iterator, streamer
-			Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
-			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, windSize/2, windSize/2);
-			apStreamer.add(intervalFilter);
-			apStreamer.add(emitter);
+                	        		
 
-			// Run
-			apStreamer.run();
-		}
-		}
+        		// Create iterator, streamer
+        		Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
+        		int preWindSize = (int)Math.floor((double)windSize/2.0);
+        		// Make the postWindow 1 shorter than pre because it does not include the current AP
+        		int postWindSize = (int)Math.floor((double)(windSize-1)/2.0);
+
+        		AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt,preWindSize, postWindSize);
+        		apStreamer.add(intervalFilter);
+        		apStreamer.add(emitter);
+
+        		// Run
+        		apStreamer.run();
+        	}
+        }
 	}
-	
+
 
 
 
