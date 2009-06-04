@@ -101,9 +101,22 @@ public class PileupToWig {
         		String fn = (String)this.arguments.get(i);
             	String base = (new File(fn)).getName();
             	
-            	String thisName = (name != null) ? (name + "." + base) : base;
             	String thisDesc = (desc != null) ? desc : base;
 
+            	String thisName;
+            	if (name == null)
+            	{
+            		thisName = base;
+            	}
+            	else if (this.arguments.size() > 1)
+            	{
+            		thisName = name + "." + base;
+            	}
+            	else 
+            	{
+            		thisName = name;
+            	}
+            	
             	APHandlerWigEmitter emitter = new APHandlerWigEmitter(type, windSize, genomeVers,output, thisName, thisDesc);
 
                 	        		
