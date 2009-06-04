@@ -119,8 +119,6 @@ public class PileupToWig {
             	
             	APHandlerWigEmitter emitter = new APHandlerWigEmitter(type, windSize, genomeVers,output, thisName, thisDesc);
 
-                	        		
-
         		// Create iterator, streamer
         		Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
         		int preWindSize = (int)Math.floor((double)windSize/2.0);

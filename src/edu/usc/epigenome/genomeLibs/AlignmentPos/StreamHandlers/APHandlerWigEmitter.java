@@ -8,11 +8,7 @@ import java.util.zip.*;
 import java.io.*;
 
 
-import org.biojava.bio.seq.DNATools;
-import org.biojava.bio.symbol.*;
-
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPos;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.Counters.StringCounter;
 
@@ -23,13 +19,20 @@ import edu.usc.epigenome.genomeLibs.Counters.StringCounter;
  */
 public class APHandlerWigEmitter extends StringCounter implements AlignmentPosStreamHandler {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1641042070723916711L;
+	
+	
 	// Types
 	public static final int FIXED_STEP = 1;
 	public static final int VARIABLE_STEP = 2;
 	public static final int BEDGRAPH = 3;
 	public static final int BED = 4;
 	
-	public boolean strandedCounts = true;
+	public final boolean strandedCounts = true;
+	public final int defaultStrandedSpan = 0;
 	
 	protected int type = VARIABLE_STEP;
 	protected String genome = null;
@@ -69,11 +72,13 @@ public class APHandlerWigEmitter extends StringCounter implements AlignmentPosSt
 	throws IOException 
 	{
 		type = inType;
-		span = inSpan;
 		genome = inGenome;
 		name = inName;
 		desc = inDesc;
 
+		// If strandedCounts is set, the span doesn't apply because we are triangulating centerpoint
+		span = (this.strandedCounts) ? this.defaultStrandedSpan : inSpan;
+		
 		if (outFilename == null)
 		{
 			outstream = System.out;
@@ -142,33 +147,34 @@ public class APHandlerWigEmitter extends StringCounter implements AlignmentPosSt
 		boolean chrLegal = this.lastChrLegal;
 		if (! (lastChr.equals(chr)))
 		{
+			// New chromosome
 			// Is the chromosome legal
 			chrLegal = GoldAssembly.chromExists(chr, this.genome);
-
+			this.lastCoord = -1;
+			
 			if (chrLegal)
 			{	
 				outstream.printf("variableStep\tchrom=%s",chr);
-				if (span >= 0) outstream.printf("\tspan=%d", span);
+				if (span > 1) outstream.printf("\tspan=%d", span);
 				outstream.println();
 			}
 			
 		}
-		else
+			
+		int coord = pos-Math.round(span/2);
+		if (chrLegal)
 		{
+			if (coord <= 0)
+			{
+				coord = Math.max(1, lastCoord+1); // Sometimes we get multiple at 1
+			}
+			
 			// UCSC also doesn't like any out of order coordinates (chrLegal also filters out the fake Ns at the end of the chrom)
-			if (chrLegal && (pos <= this.lastCoord))
+			if (coord <= this.lastCoord)
 			{
 				throw new Exception("Why is " + chr + " coord " + this.lastCoord + " coming before coord " + pos);
 			}
 
-		}
-
-			
-		if (chrLegal)
-		{
-			int coord = pos-Math.round(span/2);
-			coord = Math.max(coord, 1);
-			
 			// This one is unnecessary because we should always be *less* than the end of the chrom
 			//coord = Math.min(coord, GoldAssembly.chromLengthStatic(chr, this.genome));
 			
@@ -177,8 +183,7 @@ public class APHandlerWigEmitter extends StringCounter implements AlignmentPosSt
 		
 		this.lastChr = chr;
 		this.lastChrLegal = chrLegal;
-		this.lastCoord = pos;
-		
+		this.lastCoord = coord;
 	}
 
 	
