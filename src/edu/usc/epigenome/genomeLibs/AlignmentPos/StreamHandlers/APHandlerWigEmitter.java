@@ -166,7 +166,13 @@ public class APHandlerWigEmitter extends StringCounter implements AlignmentPosSt
 			
 		if (chrLegal)
 		{
-			outstream.printf("%d\t%f\n",pos-Math.round(span/2), score);
+			int coord = pos-Math.round(span/2);
+			coord = Math.max(coord, 1);
+			
+			// This one is unnecessary because we should always be *less* than the end of the chrom
+			//coord = Math.min(coord, GoldAssembly.chromLengthStatic(chr, this.genome));
+			
+			outstream.printf("%d\t%f\n",coord, score);
 		}	
 		
 		this.lastChr = chr;
