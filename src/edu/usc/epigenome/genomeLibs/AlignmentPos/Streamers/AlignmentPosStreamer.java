@@ -133,7 +133,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 			AlignmentPos curAp = apIt.next();
 			if (!curAp.getChr().equalsIgnoreCase(currentChr))
 			{
-				// System.err.println(curAp.getChr() + " != " + currentChr);
+				 // System.err.println(curAp.getChr() + " != " + currentChr);
 				
 				// New chrom.  First, finish up the old chrom if necessary 
 				if (queue != null)
@@ -202,7 +202,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		}
 		
 		// Process the queue
-//		System.err.println("\tfinish startChrom(" + AlignmentPos.getRefTokens(queue) + ", " + ((firstAp==null) ? "null" : firstAp.getRefToken()) + ")");
+		// System.err.println("\tfinish startChrom(" + AlignmentPos.getRefTokens(queue) + ", " + ((firstAp==null) ? "null" : firstAp.getRefToken()) + ")");
 		symbolCountersMakeStale();
 		processQueue(queue, null);
 	}
@@ -215,7 +215,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 	 */
 	protected void finishChrom(Queue<AlignmentPos> queue)
 	{
-//		System.err.println("finishChrom(" + AlignmentPos.getRefTokens(queue) + ")");
+		// System.err.println("finishChrom(" + AlignmentPos.getRefTokens(queue) + ")");
 		
 		for (int i = 0; i < postWindSize; i++)
 		{
@@ -251,6 +251,9 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 		int currentApPos = currentAp.getPos();
 		int windMinPos = currentApPos-preWindSize;
 		int windMaxPos = currentApPos+postWindSize;
+		
+		// Invalidate APs that might be in the pre window buffer but not actually in the
+		// window (due to non-contiguity)
 		if ((preWindSize>0) && (priorAps[0].getPos() != windMinPos))
 		{
 //			System.err.println("PreWind non-contiguous: priorAps= " +  priorAps[0].getPos() +
@@ -264,7 +267,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 				{
 					
 				}
-				else if (ap.getPos() < windMinPos)
+				else if (!ap.getChr().equals(currentAp.getChr()) || (ap.getPos() < windMinPos))
 				{
 					priorAps[ind] = sApNull;
 				}
@@ -276,6 +279,9 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 
 			this.symbolCountersMakeStale();
 		}
+
+		// Invalidate APs that might be in the post window buffer but not actually in the
+		// window (due to non-contiguity)
 		if ((postWindSize>0) && (postAps[postWindSize-1].getPos() != windMaxPos))
 		{
 			// System.err.println("PostWind non-contiguous " + currentAp.toString());
@@ -288,7 +294,7 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 				if (ap.getPos() == -1) // AlignmentPosNull, skip it
 				{
 				}
-				else if (ap.getPos() > windMaxPos)
+				else if (!ap.getChr().equals(currentAp.getChr()) || (ap.getPos() > windMaxPos))
 				{
 					postAps[ind] = sApNull;
 				}

@@ -4,6 +4,7 @@
 package edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers;
 
 import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.Symbol;
 
 import BisulfiteCytosines.CpgPair;
@@ -71,36 +72,52 @@ public class AlignmentPosStreamerPosition {
 		return preWindSize + postWindSize + 1;
 	}
 	
-	public double getAvgScore()
+	/**
+	 * Gets a summary score across the entire window. 
+	 * 
+	 * @param stranded If set, for APs in the pre-window, we use only the forward
+	 * strand score, while for the APs in the post-window, we use reverse strand scores.
+	 * 
+	 * @return
+	 */
+	public double getAvgScore(boolean stranded)
 	{
 			
 		double total = 0.0;
 		for (AlignmentPos ap : priorAps)
 		{
-			total += ap.getSummaryScore();
+			total += (stranded) ? ap.getStrandedScore(StrandedFeature.POSITIVE) : ap.getSummaryScore();
 		}
 		total += currentAp.getSummaryScore();
 		for (AlignmentPos ap : nextAps)
 		{
-			total += ap.getSummaryScore();
+			total += (stranded) ? ap.getStrandedScore(StrandedFeature.NEGATIVE) : ap.getSummaryScore();
 		}
 		
 		//System.err.println("total = " + total + "\tWind size = " +this.getWindSize() );
 		return total / (double)this.getWindSize();
 	}
 	
-	public double getAvgDepth()
+	/**
+	 * Gets a summary score across the entire window. 
+	 * 
+	 * @param stranded If set, for APs in the pre-window, we use only the forward
+	 * strand score, while for the APs in the post-window, we use reverse strand scores.
+	 * 
+	 * @return
+	 */
+	public double getAvgDepth(boolean stranded)
 	{
 			
 		double total = 0.0;
 		for (AlignmentPos ap : priorAps)
 		{
-			total += ap.getTotalDepth();
+			total += (stranded) ? ap.getDepth(StrandedFeature.POSITIVE) : ap.getTotalDepth();
 		}
 		total += currentAp.getTotalDepth();
 		for (AlignmentPos ap : nextAps)
 		{
-			total += ap.getTotalDepth();
+			total += (stranded) ? ap.getDepth(StrandedFeature.NEGATIVE) : ap.getTotalDepth();
 		}
 		
 		return total / (double)this.getWindSize();

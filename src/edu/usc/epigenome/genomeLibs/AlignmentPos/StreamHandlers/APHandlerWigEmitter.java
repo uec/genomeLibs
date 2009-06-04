@@ -29,11 +29,13 @@ public class APHandlerWigEmitter extends StringCounter implements AlignmentPosSt
 	public static final int BEDGRAPH = 3;
 	public static final int BED = 4;
 	
-	public int type = VARIABLE_STEP;
-	public String genome = null;
-	public int span = -1;
-	public String name = "trackName";
-	public String desc = "trackDesc";
+	public boolean strandedCounts = true;
+	
+	protected int type = VARIABLE_STEP;
+	protected String genome = null;
+	protected int span = -1;
+	protected String name = "trackName";
+	protected String desc = "trackDesc";
 
 	protected String lastChr = "none";
 	protected boolean lastChrLegal = false;
@@ -108,7 +110,7 @@ public class APHandlerWigEmitter extends StringCounter implements AlignmentPosSt
 	public boolean streamElement(AlignmentPosStreamerPosition streamPos) 
 	{
 		boolean passes = true;
-		double score = streamPos.getAvgScore();
+		double score = streamPos.getAvgScore(strandedCounts);
 		String chr = streamPos.currentAp.getChr();
 		int pos = streamPos.currentAp.getPos();
 		
@@ -153,9 +155,12 @@ public class APHandlerWigEmitter extends StringCounter implements AlignmentPosSt
 		}
 		else
 		{
-			// UCSC also doesn't like any out of order coordinates
-			if (pos <= this.lastCoord) throw new Exception("Why is " + chr + " coord " + this.lastCoord +
-					" coming before coord " + pos);
+			// UCSC also doesn't like any out of order coordinates (chrLegal also filters out the fake Ns at the end of the chrom)
+			if (chrLegal && (pos <= this.lastCoord))
+			{
+				throw new Exception("Why is " + chr + " coord " + this.lastCoord + " coming before coord " + pos);
+			}
+
 		}
 
 			
