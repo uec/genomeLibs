@@ -4,48 +4,92 @@ import java.util.*;
 
 import org.biojava.bio.seq.io.*;
 import org.biojava.bio.symbol.*;
-import org.biojava.bio.seq.io.*;
 import org.biojava.bio.seq.*;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 
 
 
-public class NmerCounts {
+public class FastaToNmerCounts {
 	
-	private static String C_USAGE = "Use: NmerCounts n both_strands(0|1) file.fa";
+	private static final String USAGE = "Use: FastaToNmerCounts -listAllPerms -nmer 6 -bothStrands [file.fa]\n" + 
+	"If file.fa is not included, uses stdin.";
 	
-	
-	static final boolean C_ALL_PERMS = false;
-	
-	public static void main(String[] args)
-	throws Exception {
+    @Option(name="-bothStrands",usage="Reverse complement all sequences (default false)")
+    private boolean bothStrands = false;
+    @Option(name="-listAllPerms",usage="list all permutations of length nmer on output (default false, list only observed nmers)")
+    private boolean listAllPerms = false;
+   @Option(name="-nmer", usage="nmer length (default 6)")
+    private int nmer = 6;
+    // receives other command line parameters than options
+    @Argument
+    private List<String> arguments = new ArrayList<String>();	
 
-		if(args.length != 3) {
-			System.err.println(C_USAGE);
-			System.exit(1);
+	/**
+	 * @param args
+	 */
+    public static void main(String[] args)
+    throws Exception
+    {
+    	new FastaToNmerCounts().doMain(args);
+    }
+    
+	public void doMain(String[] args)
+	throws Exception
+	{
+
+
+		CmdLineParser parser = new CmdLineParser(this);
+        // if you have a wider console, you could increase the value;
+        // here 80 is also the default
+        parser.setUsageWidth(80);
+        BufferedReader f_read;
+        try
+		{
+        	parser.parseArgument(args);
+
+
+    		if( arguments.isEmpty() )
+        	{
+        		//throw new CmdLineException("Must supply at least one input file");
+    			f_read = new BufferedReader(new InputStreamReader(System.in));
+        	}
+    		else
+    		{
+        		String fn = arguments.get(0);
+        		f_read = new BufferedReader(new FileReader(fn));
+  			
+    		}
 		}
+        catch (CmdLineException e)
+        {
+        	System.err.println(e.getMessage());
+            System.err.println(USAGE);
+            // print the list of available options
+            parser.printUsage(System.err);
+            System.err.println();
+            return;
+        }
 
-		int n = Integer.parseInt(args[0]);
-		
-		int both_strands_in = Integer.parseInt(args[1]);
-		boolean both_strands = (both_strands_in>0);
 
-		String fn = args[2];
+
 
 		// Get permutations
 		Vector alph = new Vector();
 		alph.add("A"); alph.add("C"); alph.add("T"); alph.add("G");
 		Vector perms = new Vector();
-		getPermutations(perms, alph, n, 0, "");
+		getPermutations(perms, alph, nmer, 0, "");
 		System.err.println("Found " + perms.size() + " perms");
 
 
 		// Make counts
-		BufferedReader f_read = new BufferedReader(new FileReader(fn));
 		SequenceIterator seqs = SeqIOTools.readFastaDNA(f_read);
 
 
-		HashMap counts = new HashMap(1 + (4^n));
+		HashMap counts = new HashMap(1 + (4^nmer));
 		HashMap onemers = new HashMap(4);
 		int on_seq = 1;
 		long total_len = 0;
@@ -54,13 +98,13 @@ public class NmerCounts {
 		{
 			Sequence seq = seqs.nextSequence();
 			
-			addCounts(n, counts, seq);
+			addCounts(nmer, counts, seq);
 			addCounts(1, onemers, seq);
 			total_len += seq.length();
-			if (both_strands)
+			if (bothStrands)
 			{
 				SymbolList revseq = DNATools.reverseComplement(seq);
-				addCounts(n, counts, revseq);
+				addCounts(nmer, counts, revseq);
 				addCounts(1, onemers, revseq);
 				total_len += seq.length();
 			}
@@ -76,7 +120,7 @@ public class NmerCounts {
 
 		
 
-		if (C_ALL_PERMS)
+		if (listAllPerms)
 		{
 			// Output all permutations
 			TreeSet nmers = new TreeSet(perms);
@@ -93,7 +137,7 @@ public class NmerCounts {
 				{
 					count = 0;
 				}
-				count++; // tiny pseudocount to avoid counts of 0
+				//count++; // tiny pseudocount to avoid counts of 0
 				System.out.println(nmer + "\t" + count);
 			}
 		}
@@ -136,7 +180,7 @@ public class NmerCounts {
 					double enriched = frac / expected;
 					
 					System.err.println(residues + "\t" + count + "\t" + frac + "\t" + expected + "\t" + enriched);
-					System.out.println("preAlignmentNmers" + "," + residues + ",+,-1,-1," + count); 
+					//System.out.println("preAlignmentNmers" + "," + residues + ",+,-1,-1," + count); 
 				}
 			}
 		}
