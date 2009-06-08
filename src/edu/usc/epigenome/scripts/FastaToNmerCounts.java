@@ -179,7 +179,7 @@ public class FastaToNmerCounts {
 					double expected = fracExpected(residues,onemers, total_len);
 					double enriched = frac / expected;
 					
-					System.err.println(residues + "\t" + count + "\t" + frac + "\t" + expected + "\t" + enriched);
+					System.out.println(residues + "\t" + count + "\t" + frac + "\t" + expected + "\t" + enriched);
 					//System.out.println("preAlignmentNmers" + "," + residues + ",+,-1,-1," + count); 
 				}
 			}
