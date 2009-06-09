@@ -9,7 +9,7 @@ public class ListUtils {
 	protected static String delim = ",";
 
 	//TODO Not thread safe
-	protected static final int STRINGBUFLEN = 1000000;
+	protected static final int STRINGBUFLEN = 100000000;
 	protected static StringBuffer STRINGBUF = new StringBuffer(STRINGBUFLEN);
 
 	public static void setDelim(String d)
