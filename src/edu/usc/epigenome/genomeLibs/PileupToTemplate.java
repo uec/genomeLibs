@@ -30,7 +30,7 @@ public class PileupToTemplate {
     protected int minDepth = 0;
     @Option(name="-minDepthEachStrand",usage="minimum depth applies to each strand")
     protected boolean minDepthEachStrand = false;
-    @Option(name="-windSize",usage="window size, for CpG dinucs windows (default 1)")
+    @Option(name="-windSize",usage="window size (default 1)")
     protected int windSize = 1;
     @Argument
    protected List<String> arguments = new ArrayList<String>();
@@ -97,9 +97,7 @@ public class PileupToTemplate {
 			// Create iterator, streamer
 			Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
 			AlignmentPosStreamer apStreamer = new AlignmentPosStreamer(apIt, windSize, windSize);
-			
-			apStreamer.add(new APFilterCpgs());
-			
+						
 			if (minDepth>0) apStreamer.add(new APFilterMinDepth(minDepth,minDepthEachStrand));
 			
 			this.addHandlers(apStreamer);
@@ -113,7 +111,7 @@ public class PileupToTemplate {
 
 	protected void addHandlers(AlignmentPosStreamer apStreamer)
 	{
-		System.err.println("Can not call base class PileupToCpgTemplate::addHandlers() directly");
+		System.err.println("Can not call base class PileupToTemplate::addHandlers() directly");
 		System.exit(1);
 	}
 
