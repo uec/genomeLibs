@@ -96,8 +96,8 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			double revScore = -1.0;
 
 			// Get the summary scores
-			 score = scoredPos.getSummaryScore();  // In the case of a CpG , this will return CpG score
-			//score = streamPos.getAvgScore(true);
+			// score = scoredPos.getSummaryScore();  // In the case of a CpG , this will return CpG score
+			score = streamPos.getAvgScore(true); //rec.getStrand());
 			depth = cur.getDepth(true) + cur.getDepth(false);
 
 			// Strands should be relative to rec. (offset has already been flipped)
