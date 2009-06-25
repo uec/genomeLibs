@@ -3,7 +3,6 @@
  */
 package edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers;
 
-import java.io.File;
 import java.util.*;
 
 import org.biojava.bio.program.gff.GFFEntrySet;
@@ -14,12 +13,8 @@ import org.biojava.bio.symbol.RangeLocation;
 
 import org.usckeck.genome.ChromFeatures;
 
-import BisulfiteCytosines.CpgPair;
-
 import edu.usc.epigenome.genomeLibs.AlignmentPos.*;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
-import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFile;
-import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 
 /**
  * @author benb

@@ -236,7 +236,6 @@ public class AlignmentPosStreamer extends LinkedList<AlignmentPosStreamHandler> 
 	{
 //		System.err.print(AlignmentPos.getRefTokens(apQueue) + "  ");
 
-		
 		// Copy the pre and post portions of the queue to separate arrays.
 		apQueue.toArray(apBuffer);
 		System.arraycopy(apBuffer, 0, preBuffer, 0, preWindSize);

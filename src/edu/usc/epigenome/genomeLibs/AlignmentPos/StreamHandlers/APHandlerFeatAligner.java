@@ -50,7 +50,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 */
 	public APHandlerFeatAligner(String inGtfFilename, int inWindSize, boolean inCensoring) {
 		super(inGtfFilename, inWindSize);
-		// TODO Auto-generated constructor stub
+		doCensoring = inCensoring;
 	}
 
 	
@@ -91,13 +91,13 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		// It's not necessarily in range
 		if ((arrInd > 0) && (arrInd < totals.length)) 
 		{
-			// Get the meth
+			// Get the score
 			double fwScore = -1.0;
 			double revScore = -1.0;
 
-			// Why did i do this??
-			// System.err.println("\t\tGrabbing score for " + curPos);
-			score = scoredPos.getSummaryScore();
+			// Get the summary scores
+			 score = scoredPos.getSummaryScore();  // In the case of a CpG , this will return CpG score
+			//score = streamPos.getAvgScore(true);
 			depth = cur.getDepth(true) + cur.getDepth(false);
 
 			// Strands should be relative to rec. (offset has already been flipped)
@@ -105,13 +105,8 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			fwScore = scoredPos.getStrandedScore(rec.getStrand());
 			revScore = scoredPos.getStrandedScore(rec.getStrand().flip());
 
-
-			// *** Do we want to weight it by unique CpG or CpG reading??
-			boolean COUNT_EACH_CPG_ONCE = true;
-			totals[arrInd] += (COUNT_EACH_CPG_ONCE) ? 1 : depth; 
-			totalScores[arrInd] += (COUNT_EACH_CPG_ONCE) ? score : (score*depth);
-			totalScoresFw[arrInd] += (COUNT_EACH_CPG_ONCE) ? fwScore : (fwScore*depth);
-			totalScoresRev[arrInd] += (COUNT_EACH_CPG_ONCE) ? revScore : (revScore*depth);
+			// Now update our counters
+			this.increment(streamPos, rec, arrInd, score, fwScore, revScore);
 			
 			out = true;
 		}
@@ -119,6 +114,13 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		return out;
 	}
 
+	protected void increment(AlignmentPosStreamerPosition streamPos, GFFRecord rec, int arrInd, double score, double fwScore, double revScore)
+	{
+		totals[arrInd] += 1;
+		totalScores[arrInd] += score;
+		totalScoresFw[arrInd] += fwScore;
+		totalScoresRev[arrInd] += revScore;
+	}
 	
 
 }

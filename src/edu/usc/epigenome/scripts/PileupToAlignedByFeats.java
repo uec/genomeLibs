@@ -4,10 +4,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
 
 import edu.usc.epigenome.genomeLibs.PileupToTemplate;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerFeatAligner;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgFilterNonSnpCpgs;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgWindowAutocorr;
-import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerCpgWindowAutocorrStranded;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
 public class PileupToAlignedByFeats extends PileupToTemplate {
@@ -47,6 +45,17 @@ public class PileupToAlignedByFeats extends PileupToTemplate {
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
 		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize, doCensoring));
+	}
+
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.PileupToTemplate#defaultApOptions()
+	 */
+	@Override
+	protected AlignmentPosOptions defaultApOptions() {
+		AlignmentPosOptions apos = super.defaultApOptions();
+		apos.onlyFirstCycle = true;
+		return apos;
 	}
 
 	

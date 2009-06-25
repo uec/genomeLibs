@@ -82,16 +82,21 @@ public class AlignmentPosStreamerPosition {
 	 */
 	public double getAvgScore(boolean stranded)
 	{
+		return getAvgScore( (stranded) ? StrandedFeature.POSITIVE : StrandedFeature.UNKNOWN );
+	}
+	
+	public double getAvgScore(StrandedFeature.Strand relativeToStrand)
+	{
 			
 		double total = 0.0;
 		for (AlignmentPos ap : priorAps)
 		{
-			total += (stranded) ? ap.getStrandedScore(StrandedFeature.POSITIVE) : ap.getSummaryScore();
+			total += (relativeToStrand != StrandedFeature.UNKNOWN) ? ap.getStrandedScore(relativeToStrand) : ap.getSummaryScore();
 		}
 		total += currentAp.getSummaryScore();
 		for (AlignmentPos ap : nextAps)
 		{
-			total += (stranded) ? ap.getStrandedScore(StrandedFeature.NEGATIVE) : ap.getSummaryScore();
+			total += (relativeToStrand != StrandedFeature.UNKNOWN) ? ap.getStrandedScore(relativeToStrand.flip()) : ap.getSummaryScore();
 		}
 		
 		//System.err.println("total = " + total + "\tWind size = " +this.getWindSize() );

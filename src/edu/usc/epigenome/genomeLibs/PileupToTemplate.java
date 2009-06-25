@@ -81,13 +81,7 @@ public class PileupToTemplate {
 
         
         
-		AlignmentPosOptions apos = new AlignmentPosOptions();
-		apos.minQualityScore = minQual;
-		apos.trackPositions = true;
-		apos.trackQuals = false;
-		apos.trackSnps = true;
-		apos.maxIdentical = maxIdentical;
-		apos.onlyFirstCycle = false;
+		AlignmentPosOptions apos = this.defaultApOptions();
 		
 		
 		for (int i = 0; i < this.arguments.size(); i++)
@@ -108,6 +102,18 @@ public class PileupToTemplate {
 
 	}
 	
+	protected AlignmentPosOptions defaultApOptions()
+	{
+		AlignmentPosOptions apos = new AlignmentPosOptions();
+		apos.minQualityScore = minQual;
+		apos.trackPositions = true;
+		apos.trackQuals = false;
+		apos.trackSnps = true;
+		apos.maxIdentical = maxIdentical;
+		apos.onlyFirstCycle = false;
+		return apos;
+		
+	}
 
 	protected void addHandlers(AlignmentPosStreamer apStreamer)
 	{

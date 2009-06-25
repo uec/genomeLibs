@@ -17,7 +17,7 @@ public class APFilterChgs extends AlignmentPosStreamFilter {
 		if ((streamPos.nextAps.length < 2) || (streamPos.priorAps.length < 2))
 		{
 			System.err.println("APFilterChgs must have at least 2 bp of sequence context on either side");
-		//	(new Exception()).printStackTrace();
+			//(new Exception()).printStackTrace();
 			System.exit(0);
 		}
 		
