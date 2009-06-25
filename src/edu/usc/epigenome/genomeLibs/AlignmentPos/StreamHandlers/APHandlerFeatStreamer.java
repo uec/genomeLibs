@@ -74,7 +74,6 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	abstract protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, GFFRecord rec, int apRelativeOffset);
 	
 
-
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.AlignmentPosStreamHandler#streamElement(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition)
 	 */
@@ -135,7 +134,11 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			try
 			{
 				if (newChrInd <= 0) throw new Exception ("ChromFeatures doesn't understand chromosome " + newChr);
+				
+				// !!!!! This will complain if we use a non-hg18 chromosome !!!!
 				cf = new ChromFeatures(gtfFilename, false);
+				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				
 				cf.c_first_chrom_num = newChrInd;	
 				cf.c_last_chrom_num = newChrInd;
 				System.err.println("Loading " + newChr + " from " + gtfFilename);

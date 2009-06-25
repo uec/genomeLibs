@@ -25,7 +25,7 @@ public class PileupToCpgConcordance {
 
 	// -c track cycles
 	// -q track qual scores
-	private static final String USAGE = "Usage: PileupToReadDepthWindows -maxIdentical 1 -minQual 30 -windSize 500 -countEachBase file1.pileup file2.pileup ...";
+	private static final String USAGE = "Usage: PileupToCpgConcordance -maxIdentical 1 -minQual 30 -windSize 500 -countEachBase file1.pileup file2.pileup ...";
 	
 	
     @Option(name="-minQual",usage="minimum quality score (default 0)")
@@ -90,7 +90,7 @@ public class PileupToCpgConcordance {
 		apos.maxIdentical = maxIdentical;
 		apos.trackBisulfiteConversion = true;
 
-		APHandlerWindowStats counter = new DEPR__APHandlerWindowStatsCpGConcordance(windSize);
+	//	APHandlerWindowStats counter = new APHandlerWindowStatsCpGConcordance(windSize);
 		
 		for (int i = 0; i < this.arguments.size(); i++)
 		{
@@ -119,7 +119,7 @@ public class PileupToCpgConcordance {
 			apStreamer.add(new APFilterMinDepth(1,false));
 			
 
-			apStreamer.add(counter);
+	//		apStreamer.add(counter);
 	//		apStreamer.add(new APHandlerGffEmitter());
 
 			// Run

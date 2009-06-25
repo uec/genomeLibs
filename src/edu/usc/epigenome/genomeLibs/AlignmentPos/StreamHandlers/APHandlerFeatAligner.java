@@ -96,17 +96,14 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			double revScore = -1.0;
 
 			// Why did i do this??
-//			if (score == -1.0) // Cache it after the first time.
-//			{
 			// System.err.println("\t\tGrabbing score for " + curPos);
-				score = scoredPos.getSummaryScore();
-				depth = cur.getDepth(true) + cur.getDepth(false);
-				
-				// Strands should be relative to rec. (offset has already been flipped)
-//				System.err.println("FW Strand = " + rec.getStrand() + "\tREV strand = " + rec.getStrand().flip());
-				fwScore = scoredPos.getStrandedScore(rec.getStrand());
-				revScore = scoredPos.getStrandedScore(rec.getStrand().flip());
-//			}
+			score = scoredPos.getSummaryScore();
+			depth = cur.getDepth(true) + cur.getDepth(false);
+
+			// Strands should be relative to rec. (offset has already been flipped)
+			//				System.err.println("FW Strand = " + rec.getStrand() + "\tREV strand = " + rec.getStrand().flip());
+			fwScore = scoredPos.getStrandedScore(rec.getStrand());
+			revScore = scoredPos.getStrandedScore(rec.getStrand().flip());
 
 
 			// *** Do we want to weight it by unique CpG or CpG reading??
