@@ -22,7 +22,9 @@ public class PileupToAlignedByFeats extends PileupToTemplate {
     protected int featWindSize = -1;
     @Option(name="-fragSize",usage="fragment size, for feature alignment (default 500)")
     protected int fragSize = 500;
-    
+    @Option(name="-downsamplingFactor",usage="Downsamples data matrix by this factor, for instance 10 will yield a 10x smaller matrix (default 1)")
+    protected int downsamplingFactor = 1;
+   
 	/**
 	 * @param args
 	 */
@@ -51,7 +53,14 @@ public class PileupToAlignedByFeats extends PileupToTemplate {
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
 		
-		AlignmentPosStreamHandler featAligner = (eachFeat) ? new APHandlerFeatAlignerEachfeat(featGtf, featWindSize, doCensoring, fragSize) : 
+		if (!eachFeat && (downsamplingFactor != 1))
+		{
+			System.err.println("Can only use -downsamplingFactor with -eachFeat");
+			System.exit(1);
+		}
+		
+		AlignmentPosStreamHandler featAligner = (eachFeat) ? 
+				new APHandlerFeatAlignerEachfeat(featGtf, featWindSize, doCensoring, fragSize,downsamplingFactor) : 
 			new APHandlerFeatAligner(featGtf, featWindSize, doCensoring, fragSize);
 		
 		apStreamer.add(featAligner);

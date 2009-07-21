@@ -2,6 +2,9 @@ package edu.usc.epigenome.genomeLibs.ChromScores;
 
 public class ChromScoresArray extends ChromScoresFast {
 
+	public int downsamplingFactor = 1;
+	
+	
 //	public ChromScoresArray() 
 //	{
 //		System.err.println("Initializing ChromScoresArray");
@@ -13,10 +16,16 @@ public class ChromScoresArray extends ChromScoresFast {
 		super(genome);
 	}
 
+	public ChromScoresArray(String genome, int inSmoothingFactor) 
+	{
+		super(genome);
+		downsamplingFactor = inSmoothingFactor;
+	}
+
 	protected Object newChromArray(int chr_len)
 	{
 		//System.err.println("About to allocate array of " + chr_len + " floats");
-		double[] out = new double[chr_len+1];
+		double[] out = new double[(int)Math.ceil((double)chr_len/(double)downsamplingFactor)+1];
 
 		// Initialize to 0
 		//for (int i = 0; i < chr_len; i++) out[i]=0.0;
@@ -28,6 +37,8 @@ public class ChromScoresArray extends ChromScoresFast {
 	protected Object addScoreToArray(Object array, int pos, Number score)
 	{
 		
+		pos = Math.round((float)pos / (float)downsamplingFactor);
+		
 		if (pos >= ((double[])array).length)
 		{
 			System.err.println("Trying to add to a position ("+pos+") larger than the array size (" + ((double[])array).length + ")");
@@ -36,7 +47,7 @@ public class ChromScoresArray extends ChromScoresFast {
 		else
 		{
 			double[] doubleArray = (double[])array;
-			doubleArray[pos] += score.doubleValue();
+			doubleArray[pos] += (score.doubleValue() / (double)downsamplingFactor);
 		}
 
 		return array;
@@ -44,6 +55,9 @@ public class ChromScoresArray extends ChromScoresFast {
 	
 	protected Number getArrayScore(Object array, int pos)
 	{
+		pos = Math.round(pos / downsamplingFactor);
+
+		
 		// Should we auto this to 0?
 		double[] ar = (double[])array;
 		Double out;

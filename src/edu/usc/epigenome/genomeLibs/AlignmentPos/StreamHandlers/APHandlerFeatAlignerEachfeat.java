@@ -12,6 +12,7 @@ import edu.usc.epigenome.genomeLibs.GFFUtils;
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition;
 import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresArray;
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresFast;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
 /**
@@ -21,6 +22,7 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 public class APHandlerFeatAlignerEachfeat extends APHandlerFeatAligner {
 
 	ChromScoresArray scoreArray = null;
+	int downsamplingFactor = 1;
 		
 	/**
 	 * @param inGtfFilename
@@ -28,8 +30,9 @@ public class APHandlerFeatAlignerEachfeat extends APHandlerFeatAligner {
 	 * @param inCensoring
 	 */
 	public APHandlerFeatAlignerEachfeat(String inGtfFilename, int inWindSize,
-			boolean inCensoring, int inFragSize) {
+			boolean inCensoring, int inFragSize, int inDownsamplingFactor) {
 		super(inGtfFilename, inWindSize, inCensoring, inFragSize);
+		downsamplingFactor = inDownsamplingFactor;
 	}
 
 	/* (non-Javadoc)
@@ -38,7 +41,7 @@ public class APHandlerFeatAlignerEachfeat extends APHandlerFeatAligner {
 	@Override
 	public void init() {
 		super.init();
-		scoreArray = new ChromScoresArray(ChromScoresArray.ARBITRARY_GENOME);
+		scoreArray = new ChromScoresArray(ChromScoresArray.ARBITRARY_GENOME, downsamplingFactor);
 		scoreArray.setArbitraryGenomeLength(this.windSize*2);
 	}
 
@@ -51,6 +54,8 @@ public class APHandlerFeatAlignerEachfeat extends APHandlerFeatAligner {
 		
 		
 		try {
+			//ChromScoresFast smoothed = scoreArray.smooth(1000, 0, 0, 100); 
+			
 			PrintWriter pr = new PrintWriter(System.out);
 			scoreArray.singleLinePerChrOutput(pr);
 			pr.flush();

@@ -335,10 +335,17 @@ abstract public class ChromScoresFast {
 	public ChromScoresFast smooth(int smooth_window, double min_avg, int read_length)
 	throws Exception
 	{
+		return smooth(smooth_window, min_avg, read_length, 1);
+	}
+	
+	public ChromScoresFast smooth(int smooth_window, double min_avg, int read_length, int step)
+	throws Exception
+	{
 		if (smooth_window <= 0) return this;
 		
 		// Make the output the same type as the input
 		ChromScoresFast out = new ChromScoresArray(f_genome);
+		out.setArbitraryGenomeLength(this.getArbitraryGenomeLength() / step);
 		String[] active_chroms = this.activeChroms();
 		
 		for (int i = 0; i < active_chroms.length; i++)
@@ -348,7 +355,7 @@ abstract public class ChromScoresFast {
 						
 			if (chrom_array != null)
 			{
-				addSmoothedChr(smooth_window, chr, chrom_array, out, min_avg, read_length);
+				addSmoothedChr(smooth_window, chr, chrom_array, out, min_avg, read_length, step);
 			}
 		}
 		
@@ -357,7 +364,7 @@ abstract public class ChromScoresFast {
 	
 //	abstract protected void addSmoothedChr(int smooth_window, String chr, Object chrom_array, ChromScoresFast out);
 
-	protected void addSmoothedChr(int smooth_window, String chr, Object array, ChromScoresFast out, double min_avg, int read_length)
+	protected void addSmoothedChr(int smooth_window, String chr, Object array, ChromScoresFast out, double min_avg, int read_length, int step)
 	{
 		
 		int smooth_half = Math.round((float)smooth_window/(float)2.0)-1;
@@ -412,9 +419,9 @@ abstract public class ChromScoresFast {
 				avg = avg / (double)queue_size;
 			}
 			
-			if ((avg != 0.0) && (avg>min_avg))
+			if ((avg != 0.0) && (avg>min_avg) && ((wind_center%step)==0))
 			{
-				out.addScore(chr, wind_center, new Double(avg));
+				out.addScore(chr, wind_center/step, new Double(avg));
 			}
 
 //			System.err.println("chrom=" + chr + "\twind_start=" + wind_start + "\twind_end=" + 
