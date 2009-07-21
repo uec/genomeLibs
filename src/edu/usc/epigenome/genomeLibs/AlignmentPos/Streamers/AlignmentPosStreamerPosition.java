@@ -113,16 +113,21 @@ public class AlignmentPosStreamerPosition {
 	 */
 	public double getAvgDepth(boolean stranded)
 	{
+		return getAvgDepth( (stranded) ? StrandedFeature.POSITIVE : StrandedFeature.UNKNOWN );
+	}
+	
+	public double getAvgDepth(StrandedFeature.Strand relativeToStrand)
+	{
 			
 		double total = 0.0;
 		for (AlignmentPos ap : priorAps)
 		{
-			total += (stranded) ? ap.getDepth(StrandedFeature.POSITIVE) : ap.getTotalDepth();
+			total += (relativeToStrand != StrandedFeature.UNKNOWN) ? ap.getDepth(relativeToStrand) : ap.getTotalDepth();
 		}
 		total += currentAp.getTotalDepth();
 		for (AlignmentPos ap : nextAps)
 		{
-			total += (stranded) ? ap.getDepth(StrandedFeature.NEGATIVE) : ap.getTotalDepth();
+			total += (relativeToStrand != StrandedFeature.UNKNOWN) ? ap.getDepth(relativeToStrand.flip()) : ap.getTotalDepth();
 		}
 		
 		return total / (double)this.getWindSize();

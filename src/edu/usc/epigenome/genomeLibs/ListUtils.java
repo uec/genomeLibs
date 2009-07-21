@@ -104,18 +104,20 @@ public class ListUtils {
 	public static String excelLine(double[] l)
 	{
 		StringBuffer sb = new StringBuffer(l.length*5);
+		//System.err.println("excelLine length = " + l.length);
 		
 		for (int i = 0; i < l.length; i++)
 		{
 			if (i > 0) sb.append(delim);
+			//System.err.println("\tOutputting " + l[i]);
 			sb.append(l[i]);
 		}
+		//System.err.println(sb.toString());
 		return sb.toString();
 	}
 	
 	public static String excelLine(int[] l)
 	{
-
 		String out = "";
 		for (int i = 0; i < l.length; i++)
 		{

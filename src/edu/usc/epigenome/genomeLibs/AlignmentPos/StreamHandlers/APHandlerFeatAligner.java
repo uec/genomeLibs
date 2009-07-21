@@ -34,11 +34,13 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 public double[] totalScores = null;
 	 public double[] totalScoresFw = null;
 	 public double[] totalScoresRev = null;
+	 public int arrLen;
 	 
 	 public double score = -1.0;
 	 public int depth = -1;
 	 
 	 public boolean doCensoring = false;
+	 public int fragSize = 500;
 
 	/*
 	 * Overridden StreamHandler functions(non-Javadoc)
@@ -48,9 +50,10 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	 * @param inGtfFilename
 	 * @param inWindSize
 	 */
-	public APHandlerFeatAligner(String inGtfFilename, int inWindSize, boolean inCensoring) {
+	public APHandlerFeatAligner(String inGtfFilename, int inWindSize, boolean inCensoring, int inFragSize) {
 		super(inGtfFilename, inWindSize);
 		doCensoring = inCensoring;
+		fragSize = inFragSize;
 	}
 
 	
@@ -61,7 +64,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		totalScores = new double[(this.windSize*2)+1];
 		totalScoresFw = new double[(this.windSize*2)+1];
 		totalScoresRev = new double[(this.windSize*2)+1];
-
+		arrLen = totals.length;
 	}
 
 	public void finish() {
@@ -105,8 +108,36 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			fwScore = scoredPos.getStrandedScore(rec.getStrand());
 			revScore = scoredPos.getStrandedScore(rec.getStrand().flip());
 
+			// Make a string for the rec
+			//String recString = GFFUtils.gffCsvPosLine(rec) + "," + GFFUtils.getGffRecordName(rec);
+			String recString = GFFUtils.gffCsvPosLine(rec);
+			
 			// Now update our counters
-			this.increment(streamPos, rec, arrInd, score, fwScore, revScore);
+			if (cur.getApOptions().onlyFirstCycle)
+			{
+				// We are only streaming the read start position(s). So we will go through and 
+				// increment every position in the read (using the fragLength param)
+				int stPos, endPos, i;
+				if (fwScore > 0.0)
+				{
+					stPos = arrInd;
+					endPos = Math.min(arrLen-1, arrInd+this.fragSize-1);
+					//System.err.println("\tIncrementing " + GFFUtils.getGffRecordName(rec) + "\t FW from " + stPos + " to " + endPos + "\t" + fwScore);
+					for (i=stPos; i<=endPos; i++) this.increment(streamPos, recString, i, fwScore, fwScore, 0.0);
+				}
+				if (revScore > 0.0)
+				{
+					stPos = Math.max(0, arrInd-this.fragSize+1);
+					endPos = arrInd;
+					//System.err.println("\tIncrementing " + GFFUtils.getGffRecordName(rec) + "\t REV from " + stPos + " to " + endPos  + "\t" + revScore);
+					for (i=stPos; i<=endPos; i++) this.increment(streamPos, recString, i, revScore, 0.0, revScore);
+				}
+			}
+			else
+			{
+				// Otherwise, just increment the current position
+				this.increment(streamPos, recString, arrInd, score, fwScore, revScore);
+			}
 			
 			out = true;
 		}
@@ -114,7 +145,8 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 		return out;
 	}
 
-	protected void increment(AlignmentPosStreamerPosition streamPos, GFFRecord rec, int arrInd, double score, double fwScore, double revScore)
+	// Provide a unique string for the record so that it will be easily hashable
+	protected void increment(AlignmentPosStreamerPosition streamPos, String recString, int arrInd, double score, double fwScore, double revScore)
 	{
 		totals[arrInd] += 1;
 		totalScores[arrInd] += score;

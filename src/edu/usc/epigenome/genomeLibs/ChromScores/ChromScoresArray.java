@@ -15,7 +15,7 @@ public class ChromScoresArray extends ChromScoresFast {
 
 	protected Object newChromArray(int chr_len)
 	{
-		System.err.println("About to allocate array of " + chr_len + " floats");
+		//System.err.println("About to allocate array of " + chr_len + " floats");
 		double[] out = new double[chr_len+1];
 
 		// Initialize to 0
@@ -31,10 +31,12 @@ public class ChromScoresArray extends ChromScoresFast {
 		if (pos >= ((double[])array).length)
 		{
 			System.err.println("Trying to add to a position ("+pos+") larger than the array size (" + ((double[])array).length + ")");
+			System.exit(0);
 		}
 		else
 		{
-			((double[])array)[pos] += score.doubleValue();
+			double[] doubleArray = (double[])array;
+			doubleArray[pos] += score.doubleValue();
 		}
 
 		return array;
@@ -65,6 +67,7 @@ public class ChromScoresArray extends ChromScoresFast {
 		
 		double[] out = new double[w];
 		System.arraycopy(array,s,out,0,w);
+		//return (double[])array;
 		return out;
 	}
 
@@ -73,13 +76,16 @@ public class ChromScoresArray extends ChromScoresFast {
 		 double[] ar = (double[])array;
 		 
 		 int ar_len = ar.length;
-		 int first = 0;
-		 for ( first = 0; (first < ar_len) && (ar[first]<=0.0); first++)
-		 {
-		 }
 		 
-		 System.err.println("First = " + first);
-		 return first;
+		 return 0;
+		 
+//		 int first = 0;
+//		 for ( first = 0; (first < ar_len) && (ar[first]<=0.0); first++)
+//		 {
+//		 }
+//		 
+//		 System.err.println("First = " + first);
+//		 return first;
 	 }
 
 	
@@ -88,13 +94,16 @@ public class ChromScoresArray extends ChromScoresFast {
 		 double[] ar = (double[])array;
 		 
 		 int ar_len = ar.length;
-		 int last = 0;
-		 for ( last = (ar_len-1); (last > 0) && (ar[last]<=0.0); last--)
-		 {
-		 }
+		 System.err.println("ar_len = " + ar.length);
+		 return ar.length - 1;
 		 
-		 System.err.println("Last = " + last);
-		 return last;
+//		 int last = 0;
+//		 for ( last = (ar_len-1); (last > 0) && (ar[last]<=0.0); last--)
+//		 {
+//		 }
+//		 
+//		 System.err.println("Last = " + last);
+//		 return last;
 	 }
 
 	

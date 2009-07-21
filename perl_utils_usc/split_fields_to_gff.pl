@@ -130,20 +130,20 @@ $::DELIM = "\\s+";
 #     9 => 0 # name
 #     };
 
-# simple chr, s
-$::DELIM = "\t";
-my $fld_map = 
-{
-    1 => 1, # Chrom
-    2 => "chr-st", # source
-    3 => "exon", # type
-    4 => 2, # start
-    5 => 2, #end
-    6 => 0, # score
-    7 => 0, # strand
-    8 => 0, # phase
-    9 => 0 # name
-    };
+# # simple chr, s
+# $::DELIM = "\t";
+# my $fld_map = 
+# {
+#     1 => 1, # Chrom
+#     2 => "chr-st", # source
+#     3 => "exon", # type
+#     4 => 2, # start
+#     5 => 2, #end
+#     6 => 0, # score
+#     7 => 0, # strand
+#     8 => 0, # phase
+#     9 => 0 # name
+#     };
 
 # #Xiting AcH3 file
 # $::DELIM = "\t";
@@ -208,6 +208,23 @@ my $fld_map =
 #     9 => 0 # name
 #     };
 
+## Illumina positions
+$::NO_IDS = 0;
+$::DELIM = ",";
+$::SAME_ORDER = 1;
+my $fld_map = 
+{
+    1 => 2, # Chrom
+    2 => "Infinium", # source
+    3 => "exon", # type
+    4 => 3, # start
+    5 => 3, #end  (if < 0, we interpret field as width)
+    6 => 8, # score
+    7 => 0, # strand
+    8 => 0, # phase
+    9 => 1 # name
+    };
+
 my $fld_map_default = 
 {
 #    1 => "DEFAULT",
@@ -232,6 +249,15 @@ foreach my $f (@files)
     my ($name, $path, $suf) = fileparse($f, qr/\.[^.]*/);
     print "($name)\t($path)\t($suf)\n";
 
+    # Open output file
+    my $outfn = $path.$name;
+    $outfn .= "_transformed" if ($suf =~ /g[tf]f/i);
+    $outfn .= ".gtf";
+    print "Writing to $outfn\n";
+    die "Can't write to $outfn\n" unless (open(OUT,">$outfn"));
+    print OUT "track name=\'$name\' useScore=".($::SCORE_USED?1:0)." visibility=3\n";
+
+
     # Keep output strings in a hash
     my $src_h = {};
 
@@ -240,10 +266,17 @@ foreach my $f (@files)
     while (my $line = <F>)
     {
 	my ($chr, $new_line) = transform_line($line, $on_line,$name);
-#	print STDERR "(line $on_line) Found $chr line: $new_line\n";
+	#print STDERR "(line $on_line) Found $chr line: $new_line\n";
 	if ($chr)
 	{
-	    $src_h->{$chr} .= $new_line."\n";
+	    if ($::SAME_ORDER)
+	    {
+		print OUT $new_line."\n";
+	    }
+	    else
+	    {
+		$src_h->{$chr} .= $new_line."\n";
+	    }
 	    $on_line++;
 	}
     }
@@ -252,43 +285,23 @@ foreach my $f (@files)
     close(F);
 
 
-    # And write
-    my $outfn = $path.$name;
-    $outfn .= "_transformed" if ($suf =~ /g[tf]f/i);
-    $outfn .= ".gtf";
-    print "Writing to $outfn\n";
-    die "Can't write to $outfn\n" unless (open(OUT,">$outfn"));
+    if (!$::SAME_ORDER)
+    {
+#  SRC: foreach my $src (sort { $a=~s/chr//g; $a=~s/X/23/g; $a=~s/Y/24/g; $b=~s/chr//g; $b=~s/X/23/g; $b=~s/Y/24/g; $a <=> $b } keys(%$src_h))
+      SRC: foreach my $src (sort keys(%$src_h))
+      { 
+	  print STDERR "on src chrom $src\n";
+	  next SRC if (!$src || ($src =~ /^\s*\#/) || ($src =~ /^\s*$/));
+	  print STDERR "\tprinting..\n";
+	  
+	  my $str = $src_h->{$src};
+	  print OUT $str;
+      }
+    }
+    
 
-    print OUT "track name=\'$name\' useScore=".($::SCORE_USED?1:0)." visibility=3\n";
-
-  SRC: foreach my $src (sort { $a=~s/chr//g; $a=~s/X/23/g; $a=~s/Y/24/g; $b=~s/chr//g; $b=~s/X/23/g; $b=~s/Y/24/g; $a <=> $b } keys(%$src_h))
-  { 
-      print STDERR "on src chrom $src\n";
-     next SRC if (!$src || ($src =~ /^\s*\#/) || ($src =~ /^\s*$/));
-      print STDERR "\tprinting..\n";
-
-      my $str = $src_h->{$src};
-      print OUT $str;
-  }
+    # Close output files
     close(OUT);
-
-#     # And write output files
-#   SRC: foreach my $src (keys(%$src_h))
-#   {
-#       next SRC if (!$src || ($src =~ /^\s*\#/) || ($src =~ /^\s*$/));
-
-#       my $str = $src_h->{$src};
-#       $src =~ s/\/\#\://g;
-#       my $outfn = $path.$name."_$src".$suf;
-#       print "Writing to $outfn\n";
-
-#       if (1)
-#       {
-# 	  die "Can't write to $outfn\n" unless (open(OUT,">$outfn"));
-# 	  print OUT $str;
-# 	  close(OUT);
-#       }
-#   }
 
 }
 

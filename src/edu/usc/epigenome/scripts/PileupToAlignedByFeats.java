@@ -6,6 +6,8 @@ import org.kohsuke.args4j.Option;
 import edu.usc.epigenome.genomeLibs.PileupToTemplate;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.AlignmentPosOptions;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerFeatAligner;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerFeatAlignerEachfeat;
+import edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.AlignmentPosStreamHandler;
 import edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamer;
 
 public class PileupToAlignedByFeats extends PileupToTemplate {
@@ -14,9 +16,13 @@ public class PileupToAlignedByFeats extends PileupToTemplate {
 	protected String featGtf = null;
 	@Option(name="-doCensoring",usage="Use feature censoring")
 	protected boolean doCensoring = false;
+	@Option(name="-eachFeat",usage="Output a line for each feature (ouput can be huge, default false)")
+	protected boolean eachFeat = false;
     @Option(name="-featWindSize",usage="window size, for feature alignment (default 1000)")
     protected int featWindSize = -1;
- 
+    @Option(name="-fragSize",usage="fragment size, for feature alignment (default 500)")
+    protected int fragSize = 500;
+    
 	/**
 	 * @param args
 	 */
@@ -44,7 +50,11 @@ public class PileupToAlignedByFeats extends PileupToTemplate {
 	 */
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
-		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize, doCensoring));
+		
+		AlignmentPosStreamHandler featAligner = (eachFeat) ? new APHandlerFeatAlignerEachfeat(featGtf, featWindSize, doCensoring, fragSize) : 
+			new APHandlerFeatAligner(featGtf, featWindSize, doCensoring, fragSize);
+		
+		apStreamer.add(featAligner);
 	}
 
 

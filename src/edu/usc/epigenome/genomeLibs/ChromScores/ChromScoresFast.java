@@ -21,6 +21,7 @@ import java.text.*;
 import java.util.*;
 
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.WigOptions;
 
 
@@ -31,11 +32,15 @@ abstract public class ChromScoresFast {
 //	private final static boolean C_BED_STYLE = true;
 	
 	/* Obj vars */
-	protected Map<String,Object> f_chrom_arrays = new HashMap<String,Object>();
+	protected Map<String,Object> f_chrom_arrays = new TreeMap<String,Object>();
 //	private Map f_chrom_locs = new HashMap();
 	int f_first_chrom = 0;
 	int f_last_chrom = 0;
+	int f_arbitrary_genome_length = 1000;
 	String f_genome = null;
+	
+	public final static String ARBITRARY_GENOME = "arbitraryGenome";
+	
 	
 	/* counters */
 	protected int f_ranges_added = 0;
@@ -47,6 +52,8 @@ abstract public class ChromScoresFast {
 //		init();
 //	}
 	
+	// If genome = ARBITRARY_GENOME, we all arbitrary chromosomes with a set length
+	// (settable by arbitraryGenomeLength)
 	public ChromScoresFast(String genome) 
 	{
 		init(genome);
@@ -66,7 +73,7 @@ abstract public class ChromScoresFast {
 	
 	
 	// Override this to change the underlying data structur
-	abstract protected Object addScoreToArray(Object array, int pos, Number score); // Does not "sum" score, it replaces it
+	abstract protected Object addScoreToArray(Object array, int pos, Number score); // Increments score
 	abstract protected Number getArrayScore(Object array, int pos);
 	//abstract protected double[] getArrayScores(Object array, int st, int end);
 	abstract protected double[] getAllScores(Object array);
@@ -74,6 +81,20 @@ abstract public class ChromScoresFast {
 	abstract protected int maxPos(Object array);
 	
 	
+	/**
+	 * @return the f_arbitrary_genome_length
+	 */
+	public int getArbitraryGenomeLength() {
+		return f_arbitrary_genome_length;
+	}
+
+	/**
+	 * @param f_arbitrary_genome_length the f_arbitrary_genome_length to set
+	 */
+	public void setArbitraryGenomeLength(int in_length) {
+		this.f_arbitrary_genome_length = in_length;
+	}
+
 	public String[] activeChroms()
 	{
 		return (String[])(f_chrom_arrays.keySet().toArray(new String[1]));
@@ -98,6 +119,7 @@ abstract public class ChromScoresFast {
 			catch (Exception e)
 			{
 				System.err.println("Could not init chrom " + chr + ": " + e.toString());
+				System.exit(0);
 			}
 		}
 //		System.err.println("Checking chrom " + chr + " out=" + out);
@@ -112,10 +134,10 @@ abstract public class ChromScoresFast {
 			throw new Exception("Called ChromScoresFast::initChrom without specifying genome");
 		}
 		
-		System.err.println("Initializing chrom " + chr + " with genome " + f_genome);
+		// System.err.println("Initializing chrom " + chr + " with genome " + f_genome);
 		
 		// Get the length of the chrom
-		int chr_len = GoldAssembly.chromLengthStatic(chr,f_genome);
+		int chr_len = (f_genome == ARBITRARY_GENOME) ? this.getArbitraryGenomeLength() : GoldAssembly.chromLengthStatic(chr,f_genome);
 		
 		// Initialize the chrom array
 		Object chrom_arr = this.newChromArray(chr_len);
@@ -407,7 +429,23 @@ abstract public class ChromScoresFast {
 	 * Output
 	 */
 
+	public void singleLinePerChrOutput(PrintWriter out)
+	throws Exception
+	{
+		ListUtils.setDelim(",");
+		Iterator<String> it = (this.f_genome==ARBITRARY_GENOME) ? this.f_chrom_arrays.keySet().iterator() : GoldAssembly.chromIterator(f_genome, false);
+		while (it.hasNext())
+		{
+			String chr = it.next();
+			Object chrom_array = f_chrom_arrays.get(chr);
 
+			double[] scores = (double[])chrom_array; // this.getAllScores(chrom_array);
+			// System.err.println("Outputting " + chr + "\tlen=" + scores.length);
+			out.println(ListUtils.excelLine(scores));
+		}
+		out.flush();
+	}
+	
 	// If compact is false, we put each nucleotide on it's own line.  Otherwise we consolidate adjacent
 	// nucleotides that have the same value.
 	//
@@ -415,7 +453,8 @@ abstract public class ChromScoresFast {
 	public void countOutput(String name, double min_count, PrintWriter out)
 	throws Exception
 	{
-		Iterator<String> it = GoldAssembly.chromIterator(f_genome, false);
+		Iterator<String> it = (this.f_genome==ARBITRARY_GENOME) ? this.f_chrom_arrays.keySet().iterator() : GoldAssembly.chromIterator(f_genome, false);
+		
 		while (it.hasNext())
 		{
 			String chr = it.next();
@@ -487,7 +526,7 @@ abstract public class ChromScoresFast {
 			String head = wo.trackHead();
 			if (wo.f_print_head) out.println(head);
 
-			Iterator<String> it = GoldAssembly.chromIterator(f_genome, false);
+			Iterator<String> it = (this.f_genome==ARBITRARY_GENOME) ? this.f_chrom_arrays.keySet().iterator() : GoldAssembly.chromIterator(f_genome, false);
 			while (it.hasNext())
 			{
 				String chr = it.next();
@@ -646,111 +685,6 @@ abstract public class ChromScoresFast {
 		}
 	}	
 
-//	// Averaging genomic features
-//	// We use a general double[][] array to store values
-//	// ar[i][j] where i is the feature number and j is the position
-//	// n_i = pre_gran + core_gran + post_gran
-//	//
-//	// gran = granularity
-//	static public double[][] initFeatureAvsArray(FeatureCountParams params, int n_feats)
-//	{
-//		int total_out_size = params.pre_gran + params.core_gran + params.post_gran;
-//		double[][] out = new double[n_feats][total_out_size];
-//		return out;
-//	}
-//	
-//	public double[][] addFeatureCounts(ChromFeatures cfs, FeatureCountParams params)
-//	throws Exception
-//	{
-//		int n_feats = (int)cfs.num_features_genome();
-//		double[][] mat = initFeatureAvsArray(params, n_feats);
-//		addFeatureCounts(cfs, params, mat, 0, null);
-//		return mat;
-//	}
-//	
-//	public void addFeatureCounts(ChromFeatures cfs, FeatureCountParams params, double[][] mat, 
-//			int feat_start_ind, GFFEntrySet feats_ordered)
-//	throws Exception
-//	{
-//		Iterator it = cfs.featureIterator();
-//		int on_feat = feat_start_ind;
-//		while (it.hasNext())
-//		{
-//			GFFRecord feat = (GFFRecord)it.next();
-//			feats_ordered.add(feat);
-//			featureCounts(feat, params, mat[on_feat]);
-//			on_feat++;
-//		}
-//	}
-//
-//	public void featureCounts(GFFRecord feat, FeatureCountParams params, double[] out)
-//	throws Exception
-//	{
-//		String feat_chr = feat.getSeqName();
-//		int feat_s = feat.getStart();
-//		int feat_e = feat.getEnd();
-//		boolean feat_rev = (feat.getStrand() == StrandedFeature.NEGATIVE);
-//		
-//		
-//		int pre_s = 0, pre_e = params.pre_gran - 1;
-//		int core_s = pre_e + 1, core_e = core_s + params.core_gran - 1;
-//		int post_s = core_e + 1, post_e = post_s + params.post_gran - 1;
-//		
-//		if (post_e != (out.length-1)) System.err.println("Array size ("+out.length+") != expected(" + post_e+1 + ")");
-//		
-//		int in_s = 0, in_e = 0;
-//		int out_s = 0, out_e = 0;
-//		double[] scores;
-//
-//		// 5'
-//		in_s = feat_s - ((feat_rev) ? params.post_size : params.pre_size);
-//		in_e = feat_s - 1;
-//		out_s = (feat_rev) ? post_s : pre_s;
-//		out_e = (feat_rev) ? post_e : pre_e;
-//		scores = this.getScores(feat_chr, 0, in_s, in_e, feat_rev);
-//		MatUtils.downscaleArray(out, scores, out_s, out_e);
-//		
-//		// Core
-//		in_s = feat_s;
-//		in_e = feat_e;
-//		out_s = core_s;
-//		out_e = core_e;
-//		scores = this.getScores(feat_chr, 0, in_s, in_e, feat_rev);
-//		MatUtils.downscaleArray(out, scores, out_s, out_e);
-//		
-//		// 3'
-//		in_s = feat_e + 1;
-//		in_e = feat_e + ((feat_rev) ? params.pre_size : params.post_size);
-//		out_s = (!feat_rev) ? post_s : pre_s;
-//		out_e = (!feat_rev) ? post_e : pre_e;
-//		scores = this.getScores(feat_chr, 0, in_s, in_e, feat_rev);
-//		MatUtils.downscaleArray(out, scores, out_s, out_e);
-//	}	
-	
-//	
-//	
-////	CHARTING
-// 
-//	public void histogramChr(String name, double min_score, int chr, int strand)
-//	{
-//		ChromFeatures cf = new ChromFeatures();
-//		cf.setGenomeVersion(this.f_genome);
-//		String chr_str = cf.public_chrom_str(chr);	
-//		
-//		Object chrom_array = f_chrom_arrays.get(chr_str);
-//
-//		if (chrom_array != null)
-//		{
-//			double[] series = getAllScores(chrom_array);
-//			
-//			
-//			ChromScoresHistogram hist = new ChromScoresHistogram(name, series, 30);
-//			hist.pack();
-//			RefineryUtilities.centerFrameOnScreen(hist);
-//			hist.setVisible(true);
-//		}
-//	}
-//	
 
 	
 }

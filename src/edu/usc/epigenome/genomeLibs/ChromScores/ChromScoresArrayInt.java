@@ -23,7 +23,7 @@ public class ChromScoresArrayInt extends ChromScoresFast {
 
 	protected Object addScoreToArray(Object array, int pos, Number score)
 	{
-		((int[])array)[pos] = score.intValue();
+		((int[])array)[pos] += score.intValue();
 		return array;
 	}
 	

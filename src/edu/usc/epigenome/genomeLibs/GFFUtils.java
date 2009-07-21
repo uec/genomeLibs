@@ -90,6 +90,27 @@ public class GFFUtils {
 		return out;
 	}
 	
+	public static String gffCsvPosLineHeader()
+	{
+		return "chrom,start,end,strand";
+	}
+
+	public static String gffCsvPosLine(GFFRecord rec)
+	{
+		String out = "";
+
+		out += rec.getSeqName();
+		out += ",";
+		out += rec.getStart();
+		out += ",";
+		out += rec.getEnd();
+		out += ",";
+		StrandedFeature.Strand s = rec.getStrand();
+		out += ((s == StrandedFeature.POSITIVE) ? 1 : ((s == StrandedFeature.NEGATIVE) ? -1 : 0));
+
+		return out;
+	}
+
 	public static String htmlTabLineHeader(String session_str)
 	{
 		
