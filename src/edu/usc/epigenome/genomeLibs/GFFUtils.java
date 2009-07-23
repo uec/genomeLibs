@@ -7,6 +7,7 @@ import org.biojava.utils.SmallMap;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.*;
 import org.biojava.bio.program.gff.*;
+import org.usckeck.genome.ChromFeatures;
 
 import org.apache.commons.math.stat.StatUtils;
 
@@ -99,7 +100,18 @@ public class GFFUtils {
 	{
 		String out = "";
 
-		out += rec.getSeqName();
+		int chr;
+		try
+		{
+			chr = (new ChromFeatures()).chrom_from_public_str(rec.getSeqName());
+		}
+		catch (Exception e)
+		{
+			System.err.println("Couldn't translate chrom \"" + rec.getSeqName() + "\" to int");
+			chr = rec.getSeqName().hashCode();
+		}
+		
+		out += chr;
 		out += ",";
 		out += rec.getStart();
 		out += ",";

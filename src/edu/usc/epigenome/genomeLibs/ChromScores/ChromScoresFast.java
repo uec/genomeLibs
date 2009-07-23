@@ -448,7 +448,7 @@ abstract public class ChromScoresFast {
 
 			double[] scores = (double[])chrom_array; // this.getAllScores(chrom_array);
 			// System.err.println("Outputting " + chr + "\tlen=" + scores.length);
-			out.println(ListUtils.excelLine(scores));
+			out.println(chr + "," + ListUtils.excelLine(scores));
 		}
 		out.flush();
 	}
