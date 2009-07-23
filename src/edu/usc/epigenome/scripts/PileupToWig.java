@@ -119,7 +119,9 @@ public class PileupToWig {
             	
             	APHandlerWigEmitter emitter = new APHandlerWigEmitter(type, windSize, genomeVers,output, thisName, thisDesc);
 
-        		// Create iterator, streamer
+        		// Create iterator, streamer.
+            	// The wind size is really critical here, because we use the "average" window score meaning we sum
+            	// all the reads starting in pre and post windows.
         		Iterator<AlignmentPos> apIt = new AlignmentPosIteratorMaqPileup(fn, apos);
         		int preWindSize = (int)Math.floor((double)windSize/2.0);
         		// Make the postWindow 1 shorter than pre because it does not include the current AP

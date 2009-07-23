@@ -115,19 +115,33 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 			// Now update our counters
 			if (cur.getApOptions().onlyFirstCycle)
 			{
+
+				// EVEN THOUGH IT'S MORE EFFICIENT, THIS ONE LOOKED TOO CHOPPY
+//				// We are only streaming the read start position(s).
+//				// Increment the midpoint of the fragment based on fragment length.
+//				if (fwScore > 0.0)
+//				{
+//					int fwPos = arrInd+Math.round(this.fragSize/2);
+//					if (fwPos < arrLen) increment(streamPos, recString, fwPos, fwScore, fwScore, 0.0);
+//					int revPos = arrInd-Math.round(this.fragSize/2);
+//					if (revPos >= 0) increment(streamPos, recString, revPos, revScore, 0.0, revScore);
+//				}
+				
+				
+				
 				// We are only streaming the read start position(s). So we will go through and 
 				// increment every position in the read (using the fragLength param)
 				int stPos, endPos, i;
 				if (fwScore > 0.0)
 				{
 					stPos = arrInd;
-					endPos = Math.min(arrLen-1, arrInd+this.fragSize-1);
-					//System.err.println("\tIncrementing " + GFFUtils.getGffRecordName(rec) + "\t FW from " + stPos + " to " + endPos + "\t" + fwScore);
+					endPos = Math.min(arrLen-1, arrInd+(this.fragSize/2)-1);
+					//System.err.println("\tIncrementing " + GFFUtils.getGffRecordName(rec) + "\t FW from " + stPos + " to " + endPos + "\t" + fwScore + "\tfrag=" + this.fragSize);
 					for (i=stPos; i<=endPos; i++) this.increment(streamPos, recString, i, fwScore, fwScore, 0.0);
 				}
 				if (revScore > 0.0)
 				{
-					stPos = Math.max(0, arrInd-this.fragSize+1);
+					stPos = Math.max(0, arrInd-(this.fragSize/2)+1);
 					endPos = arrInd;
 					//System.err.println("\tIncrementing " + GFFUtils.getGffRecordName(rec) + "\t REV from " + stPos + " to " + endPos  + "\t" + revScore);
 					for (i=stPos; i<=endPos; i++) this.increment(streamPos, recString, i, revScore, 0.0, revScore);
