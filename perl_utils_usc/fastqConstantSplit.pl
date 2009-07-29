@@ -12,7 +12,6 @@ if ( (-f $numberOfFiles) || (@inputFileList == 0) )
     die "$USAGE\n";
 }
 
-sleep(600);
 foreach my $inputFile (@inputFileList)
 {
 	my $totalFileLength = `wc -l $inputFile`;
