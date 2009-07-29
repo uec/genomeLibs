@@ -11,7 +11,6 @@ if ( (-f $seqs_per_file) || (@files == 0) )
 {
     die "$USAGE\n";
 }
-system("sleep 600");
 
 foreach my $f (@files)
 {
