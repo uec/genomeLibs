@@ -12,7 +12,7 @@ my ($infile, $outfile) = @ARGV;
 die "wrap_maq_sol2sanger: input file ${infile} is 0 length\n" unless (-s $infile);
 
 # Run
-my $cmd = join(" ", "maq","sol2sanger",@ARGV);
+my $cmd = join(" ", "maq","ill2sanger",@ARGV);
 print STDERR "${cmd}\n";
 print STDERR `${cmd} 2>&1`;
 
