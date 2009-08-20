@@ -4,13 +4,13 @@ use strict;
 use DBI qw(:sql_types);
 
 # Takes $numWinds windows on either side of the CpG.   Tabulates number of Cpgs in windows.
-my $USAGE = "cseToCpgBoundaryDensity.pl 10 [windSize] 50 [numWinds] (cse file on STDIN)";
+my $USAGE = "cseToCpgBoundaryDensity.pl 10 [windSize] 50 [numWinds] 1 [auto flip] < (cse file on STDIN)\nauto-flip, if set, will flip so that the higher density half is on the right";
 my $DBNAME = "genomes";
 my $TABLE = "hg18genomeSeqs";
 
 die "$USAGE\n" unless (@ARGV>=1);
 
-my ($windSize, $numWinds) = @ARGV;
+my ($windSize, $numWinds, $autoFlip) = @ARGV;
 
 # DB connect
 $::dbh = DBI->connect( "dbi:mysql:${DBNAME}",
@@ -41,7 +41,20 @@ eval
 	}
 	
 	my $chr = $flds[0];
+	if ($chr == 23)
+	{
+		$chr = 'M';	
+	}
+	elsif ($chr == 24)
+	{
+		$chr = 'X';	
+	}
+	elsif ($chr == 26)
+	{
+		$chr = 'Y';	
+	}
 	$chr = "chr$chr" unless ($chr =~ /^chr/);
+		
 	my $center = $flds[1];
 	my @outFlds = ();
 
@@ -70,7 +83,7 @@ eval
     
 	# Reverse depending on bigger side
 #	print STDERR "Balance:\t$balanceOfPower\n";
-	if ($balanceOfPower < 0)
+	if ($autoFlip && ($balanceOfPower < 0))
 	{
 	    @outFlds = reverse(@outFlds);
 	}
