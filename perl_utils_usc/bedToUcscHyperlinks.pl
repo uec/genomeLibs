@@ -7,7 +7,7 @@ my $USAGE = "bedToUcscHyperlinks.pl [--prefix http://epiweb.usc.edu/] [--genome 
 
 my $prefix = "http://epiweb.usc.edu/";
 my $genome = "hg18";
-GetOptions ('prefix=s' => \$prefix, 'genome=s' => \$genome) || print STDERR "$USAGE\n";
+GetOptions ('prefix=s' => \$prefix, 'genome=s' => \$genome) || die "$USAGE\n";
 print STDERR "prefix=$prefix\tgenome=$genome\n";
 
 # Headers
