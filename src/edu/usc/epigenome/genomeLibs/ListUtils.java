@@ -110,6 +110,7 @@ public class ListUtils {
 		{
 			if (i > 0) sb.append(delim);
 			//System.err.println("\tOutputting " + l[i]);
+			//sb.append(String.format("%g", l[i]));
 			sb.append(l[i]);
 		}
 		//System.err.println(sb.toString());
