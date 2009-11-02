@@ -28,6 +28,9 @@ public class APHandlerFeatAlignerEachfeat extends APHandlerFeatAligner {
 	 * @param inGtfFilename
 	 * @param inWindSize
 	 * @param inCensoring
+	 * 
+	 * We output the unique record string as the first field, this is generally
+	 * the chrom,start,end coord string.
 	 */
 	public APHandlerFeatAlignerEachfeat(String inGtfFilename, int inWindSize,
 			boolean inCensoring, int inFragSize, int inDownsamplingFactor) {
@@ -72,11 +75,11 @@ public class APHandlerFeatAlignerEachfeat extends APHandlerFeatAligner {
 	 */
 	@Override
 	protected void increment(AlignmentPosStreamerPosition streamPos,
-			String recString, int arrInd, double score, double fwScore,
+			String uniqueRecordString, int arrInd, double score, double fwScore,
 			double revScore) {
-		super.increment(streamPos, recString, arrInd, score, fwScore, revScore);
+		super.increment(streamPos, uniqueRecordString, arrInd, score, fwScore, revScore);
 		
-		scoreArray.addScore(recString, arrInd, new Double(score));
+		scoreArray.addScore(uniqueRecordString, arrInd, new Double(score));
 		//System.err.println("Adding " + score + "\t" + recString + ":" + arrInd);
 	}
 
