@@ -7,24 +7,61 @@ import org.biojava.bio.seq.io.*;
 import org.biojava.bio.symbol.*;
 import org.biojava.bio.seq.io.*;
 import org.biojava.bio.seq.*;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 public class BisulfiteConvertFasta {
 
-	private static String C_USAGE = "Use: BisulfiteConvert file1.fa file2.fa ...";
+	private static String C_USAGE = "Use: BisulfiteConvertFasta -cpgToY file1.fa file2.fa ...";
+
+	@Option(name="-cpgToY",usage="if true, CpH are set to T and CpG are set to Y (default false)")
+	private boolean cpgToY = false;
+	// receives other command line parameters than options
+	@Argument
+	private List<String> arguments = new ArrayList<String>();
 
 
 	public static void main(String[] args)
-	throws Exception {
+	throws Exception
+	{
+		new BisulfiteConvertFasta().doMain(args);
+	}
 
-		if(args.length < 1) {
-			System.err.println(C_USAGE);
-			System.exit(1);
+	public void doMain(String[] args)
+	throws Exception
+	{
+		CmdLineParser parser = new CmdLineParser(this);
+		// if you have a wider console, you could increase the value;
+		// here 80 is also the default
+		parser.setUsageWidth(80);
+		try
+		{
+			parser.parseArgument(args);
+
+
+
+			if(arguments.size() < 1) {
+				System.err.println(C_USAGE);
+				System.exit(1);
+			}
+
 		}
+		catch (CmdLineException e)
+		{
+			System.err.println(e.getMessage());
+			System.err.println(C_USAGE);
+			// print the list of available options
+			parser.printUsage(System.err);
+			System.err.println();
+			return;
+		}	
 
-		for (String fn : args)
+		for (String fn : arguments)
 		{
 
-			
+
 			// Now read the file
 			BufferedReader f_read = new BufferedReader(new FileReader(fn));
 			SequenceIterator seqs = SeqIOTools.readFastaDNA(f_read);
@@ -39,7 +76,6 @@ public class BisulfiteConvertFasta {
 			System.err.println("REV=" + rev_fn);
 			PrintWriter rev = new PrintWriter(new FileOutputStream(rev_fn));
 
-			int on_seq = 1;
 			long total_len = 0;
 			int total_seqs = 0;
 			while (seqs.hasNext())
@@ -58,7 +94,8 @@ public class BisulfiteConvertFasta {
 					out.println();
 
 					SymbolList symbols = seq;
-					String full_residues = symbols.seqString();
+					String full_residues = symbols.seqString().toUpperCase(); // They come out as all lower case
+					
 
 					int line_count = 0;
 					for (int i = 0; i < seq_len; i++)
@@ -67,24 +104,28 @@ public class BisulfiteConvertFasta {
 
 						if (s==0)
 						{
+							char c2 = (i==(seq_len-1)) ? 'N' : full_residues.charAt(i+1);
+							
 							if (c == 'C')
 							{
-								c = 'T';
+								c = (cpgToY && (c2 == 'G' || c2 == 'g')) ? 'Y' : 'T'; 
 							}
 							else if (c == 'c')
 							{
-								c = 't';
+								c = (cpgToY && (c2 == 'G' || c2 == 'g')) ? 'y' : 't';
 							}
 						}
 						else
 						{
+							char c0 = (i==0) ? 'N' : full_residues.charAt(i-1);
+
 							if (c == 'G')
 							{
-								c = 'A';
+								c = (cpgToY && (c0 == 'C' || c0 == 'c')) ? 'R' : 'A';
 							}
 							else if (c == 'g')
 							{
-								c = 'a';
+								c = (cpgToY && (c0 == 'C' || c0 == 'c')) ? 'r' : 'a';
 							}
 						}
 
