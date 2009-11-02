@@ -47,7 +47,8 @@ public class ChromScoresArray extends ChromScoresFast {
 		else
 		{
 			double[] doubleArray = (double[])array;
-			doubleArray[pos] += (score.doubleValue() / (double)downsamplingFactor);
+			double incrementVal = (score.doubleValue() / (double)downsamplingFactor);
+			doubleArray[pos] += incrementVal;
 		}
 
 		return array;
