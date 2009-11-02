@@ -81,7 +81,11 @@ public class MiscUtils {
 		int v;
 		if (solexaEncoding)
 		{
-			v = (int)Math.round(10.0 * Math.log10(1+Math.pow(10.0,(((int)c-64)/10.0))));
+			// Pre pipe 1.4
+			// v = (int)Math.round(10.0 * Math.log10(1+Math.pow(10.0,(((int)c-64)/10.0))));
+			 
+			// Pipe >= 1.4
+			v = (int)c-64;
 		}
 		else
 		{
