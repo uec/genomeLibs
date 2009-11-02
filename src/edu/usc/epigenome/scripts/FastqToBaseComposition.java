@@ -29,8 +29,8 @@ public class FastqToBaseComposition {
     private boolean cycles = false;
     @Option(name="-quals", usage="Store quality scores (default false)")
     private boolean quals = false;
-    @Option(name="-solexa",usage="Use solexa (64-scaled) quality scores (default true)")
-    private boolean solexa = true;
+    @Option(name="-solexa",usage="Use solexa (64-scaled) quality scores (default false)")
+    private boolean solexa = false;
     // receives other command line parameters than options
     @Argument
     private List<String> arguments = new ArrayList<String>();
