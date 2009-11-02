@@ -81,6 +81,11 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	
 
 
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.AlignmentPos.StreamHandlers.APHandlerFeatStreamer#streamFeat(edu.usc.epigenome.genomeLibs.AlignmentPos.Streamers.AlignmentPosStreamerPosition, org.biojava.bio.program.gff.GFFRecord, int)
+	 * 
+	 * We use GFFUtils.gffCsvPosLine(rec) to generate a unique record string
+	 */
 	@Override
 	protected boolean streamFeat(AlignmentPosStreamerPosition streamPos, GFFRecord rec, int apRelativeOffset)
 	{
@@ -160,7 +165,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 	}
 
 	// Provide a unique string for the record so that it will be easily hashable
-	protected void increment(AlignmentPosStreamerPosition streamPos, String recString, int arrInd, double score, double fwScore, double revScore)
+	protected void increment(AlignmentPosStreamerPosition streamPos, String uniqueRecordString, int arrInd, double score, double fwScore, double revScore)
 	{
 		totals[arrInd] += 1;
 		totalScores[arrInd] += score;
