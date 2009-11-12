@@ -1,5 +1,6 @@
 package edu.usc.epigenome.genomeLibs;
 
+
 public class MiscUtils {
 
 
@@ -94,8 +95,6 @@ public class MiscUtils {
 
 		return v;
 	}
-	
-	
-	
-	
+		
+
 }
