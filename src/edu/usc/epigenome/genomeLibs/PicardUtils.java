@@ -12,7 +12,7 @@ public class PicardUtils {
 	static final int BUFFERLEN = 1000;
 	
 	
-	static Pattern pairPat = Pattern.compile("\\G(?:([0-9]+)|([ACTGNactgn])|(\\^[ACTGNactgn]+))");
+	static Pattern mdPat = Pattern.compile("\\G(?:([0-9]+)|([ACTGNactgn])|(\\^[ACTGNactgn]+))");
 	
 	/*
 	 * ROLL BACK INTO PICARD
@@ -24,7 +24,7 @@ public class PicardUtils {
 		// Use sb as the reference output string
 		StringBuilder sb = new StringBuilder(BUFFERLEN);
 
-		Matcher match = pairPat.matcher(md);
+		Matcher match = mdPat.matcher(md);
 		int curSeqPos = 0;
 		//int curMdPos = 0; // Not the same as seq pos when you have indels
 
@@ -33,8 +33,8 @@ public class PicardUtils {
 		{
 			int cigElLen = cigEl.getLength();
 			CigarOperator cigElOp = cigEl.getOperator();
-			System.err.printf("\tCigar El: len=%d, op=%s, consumesRead=%b, consumesRef=%b\n",
-					cigElLen,cigElOp,cigElOp.consumesReadBases(), cigElOp.consumesReferenceBases());
+//			System.err.printf("\tCigar El: len=%d, op=%s, consumesRead=%b, consumesRef=%b\n",
+//					cigElLen,cigElOp,cigElOp.consumesReadBases(), cigElOp.consumesReferenceBases());
 			
 			
 			// If it consumes reference bases, it's either a match or a deletion in the sequence
@@ -50,7 +50,7 @@ public class PicardUtils {
 					sb.append(seq.charAt(curSeqPos++));
 					savedBases--;
 					basesMatched++;
-					System.err.printf("\t\tDepleting saved bases, saved=%d, curSeqPos=%d, basesMatched=%d\n",savedBases,curSeqPos,basesMatched); 
+//					System.err.printf("\t\tDepleting saved bases, saved=%d, curSeqPos=%d, basesMatched=%d\n",savedBases,curSeqPos,basesMatched); 
 				}
 
 				while (basesMatched < cigElLen)
@@ -58,7 +58,7 @@ public class PicardUtils {
 					boolean matched = match.find();
 					if (matched)
 					{
-						System.err.println("Matched , basesMatched=" + basesMatched + ", match=" + match.group() + "," + match.group(1) + "," + match.group(2) + ", start=" + match.start());
+//						System.err.println("Matched , basesMatched=" + basesMatched + ", match=" + match.group() + "," + match.group(1) + "," + match.group(2) + ", start=" + match.start());
 						String mg;
 						if ( ((mg = match.group(1)) !=null) && (mg.length() > 0) )
 						{
@@ -128,7 +128,7 @@ public class PicardUtils {
 						throw new Exception("Illegal MD pattern: " + md);
 					}
 
-					System.err.println("SavedBasesMatched=" + savedBases);
+//					System.err.println("SavedBasesMatched=" + savedBases);
 				}
 
 			}
