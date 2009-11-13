@@ -137,7 +137,8 @@ public class PicardUtils {
 				// We have an insertion in read
 				for (int i = 0; i < cigElLen; i++)
 				{
-					sb.append( (cigElOp.consumesReadBases() && !cigElOp.consumesReferenceBases()) ? "-" : seq.charAt(curSeqPos) );
+					char c = (cigElOp == CigarOperator.SOFT_CLIP) ? '0' : '-';
+					sb.append( c );
 					curSeqPos++;
 				}
 			}
