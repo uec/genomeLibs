@@ -179,6 +179,8 @@ public class ReadPosIteratorFastq extends ReadPosIterator {
 				}
 				else
 				{
+					boolean finalNucOfRead = (currentNucsCycle == (currentNucs.length() - 1)); 
+						
 					Symbol sym = DNATools.forSymbol(currentNucs.charAt(currentNucsCycle));
 					int qual = MiscUtils.fastqQualCodeToInt(currentQuals.charAt(currentNucsCycle),this.rpOptions.positionQualsSolexaEncoding);
 					//System.err.println("\t" + currentNucs.charAt(currentNucsCycle) + "\t" + qual + "  (" + currentQuals.charAt(currentNucsCycle) + ") >= " + rpOptions.minQualityScore);
@@ -193,6 +195,7 @@ public class ReadPosIteratorFastq extends ReadPosIterator {
 							outRp = new ReadPosRich(outRp, rpCycle, rpQual);
 						}
 						if (rollback) currentNucsCycle--;
+						outRp.finalNucOfRead = finalNucOfRead;
 					}
 					done = (outRp != null);
 

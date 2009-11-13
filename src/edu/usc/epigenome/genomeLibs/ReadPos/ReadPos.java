@@ -22,6 +22,7 @@ public class ReadPos implements Cloneable, Comparable<ReadPos> {
 	/* Obj vars */
 	protected Symbol sym = DNATools.n();
 	protected StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
+	public boolean finalNucOfRead = false;
 	
 	/* Constructors */
 	public ReadPos()
