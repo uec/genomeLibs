@@ -21,6 +21,9 @@ public class PicardUtils {
 	public static String refStrFromMd(String seq, String md, Cigar cigar)
 	throws Exception
 	{
+		if (seq == null) throw new Exception("Can not run refStrFromMd with a null seq variable");
+		if (md == null) throw new Exception("Can not run refStrFromMd with a null seq variable");
+		
 		// Use sb as the reference output string
 		StringBuilder sb = new StringBuilder(BUFFERLEN);
 
