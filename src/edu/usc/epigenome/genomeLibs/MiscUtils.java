@@ -13,7 +13,7 @@ public class MiscUtils {
 			out += revCompNuc(in.charAt(i));
 		}
 
-		System.err.println("revCompStr(" + in + ") = " + out);
+		//System.err.println("revCompStr(" + in + ") = " + out);
 		return out;
 	}
 
