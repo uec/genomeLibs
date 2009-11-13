@@ -7,6 +7,9 @@ import org.biojava.bio.seq.io.*;
 import org.biojava.bio.symbol.*;
 import org.biojava.bio.seq.io.*;
 import org.biojava.bio.seq.*;
+import org.biojavax.SimpleNamespace;
+import org.biojavax.bio.seq.RichSequence;
+import org.biojavax.bio.seq.RichSequenceIterator;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -14,10 +17,12 @@ import org.kohsuke.args4j.Option;
 
 public class BisulfiteConvertFasta {
 
-	private static String C_USAGE = "Use: BisulfiteConvertFasta -cpgToY file1.fa file2.fa ...";
+	private static String C_USAGE = "Use: BisulfiteConvertFasta -cpgToY -repeatMaskToN file1.fa file2.fa ...";
 
 	@Option(name="-cpgToY",usage="if true, CpH are set to T and CpG are set to Y (default false)")
 	private boolean cpgToY = false;
+	@Option(name="-repeatMaskToN",usage="if true, lower case bases are set to n (default false)")
+	private boolean repeatMaskToN = false;
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -58,21 +63,26 @@ public class BisulfiteConvertFasta {
 			return;
 		}	
 
+		Alphabet maskeddna = SoftMaskedAlphabet.getInstance(DNATools.getDNA());
+		SymbolTokenization dnaParser = maskeddna.getTokenization("token");
+
 		for (String fn : arguments)
 		{
 
 
 			// Now read the file
 			BufferedReader f_read = new BufferedReader(new FileReader(fn));
-			SequenceIterator seqs = SeqIOTools.readFastaDNA(f_read);
+			RichSequenceIterator seqs = RichSequence.IOTools.readFasta(f_read, dnaParser, null);
 
-			// Make output file 
+			
+			// Make output file
+			String suffix = (repeatMaskToN) ? ".masked.fa" : ".fa";
 			String fw_fn = fn;
-			fw_fn = fw_fn.replaceFirst(".fa$",".BSfw.fa");
+			fw_fn = fw_fn.replaceFirst(".fa$",".BSfw" + suffix);
 			System.err.println("FW=" + fw_fn);
 			PrintWriter fw = new PrintWriter(new FileOutputStream(fw_fn));
 			String rev_fn = fn;
-			rev_fn = rev_fn.replaceFirst(".fa$",".BSrev.fa");
+			rev_fn = rev_fn.replaceFirst(".fa$",".BSrev" + suffix);
 			System.err.println("REV=" + rev_fn);
 			PrintWriter rev = new PrintWriter(new FileOutputStream(rev_fn));
 
@@ -81,6 +91,7 @@ public class BisulfiteConvertFasta {
 			while (seqs.hasNext())
 			{
 				Sequence seq = seqs.nextSequence();
+				// System.err.println("Seq: " + seq.seqString());
 				int seq_len = seq.length();
 				total_len += seq_len;
 				System.err.println("Processing " + seq.getName() + " total len = " + total_len);
@@ -94,7 +105,7 @@ public class BisulfiteConvertFasta {
 					out.println();
 
 					SymbolList symbols = seq;
-					String full_residues = symbols.seqString().toUpperCase(); // They come out as all lower case
+					String full_residues = symbols.seqString(); // They come out as all lower case
 					
 
 					int line_count = 0;
@@ -102,7 +113,11 @@ public class BisulfiteConvertFasta {
 					{
 						char c = full_residues.charAt(i);
 
-						if (s==0)
+						if (repeatMaskToN && Character.isLowerCase(c))
+						{
+							c = 'n';
+						}
+						if (s==0) // s==0 means fw
 						{
 							char c2 = (i==(seq_len-1)) ? 'N' : full_residues.charAt(i+1);
 							
@@ -130,7 +145,7 @@ public class BisulfiteConvertFasta {
 						}
 
 						out.print(c);
-						if (line_count++ == 60)
+						if (line_count++ == 70)
 						{
 							out.println();
 							line_count = 0;
