@@ -11,6 +11,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.usckeck.genome.ListUtils;
 
 import edu.usc.epigenome.genomeLibs.MiscUtils;
 import edu.usc.epigenome.genomeLibs.PicardUtils;
@@ -19,7 +20,7 @@ import edu.usc.epigenome.genomeLibs.Counters.SNPByCycleCounter;
 
 public class SamMatlabInfo {
 
-	static final String USAGE = "SamMatlabInfo -summaryInfo -mismatchesByCycle -mismatchContexts -debug -minMapQ 30 MD XM ...";
+	static final String USAGE = "SamMatlabInfo -summaryInfo -mismatchesByRead -mismatchesByCycle -mismatchContexts -debug -minMapQ 30 MD XM ...";
 
 
 
@@ -34,6 +35,8 @@ public class SamMatlabInfo {
 	protected boolean summaryInfo = false;
 	@Option(name="-mismatchesByCycle",usage=" An alternative output which gives a table of mismatches, stratified by cycle (default false)")
 	protected boolean mismatchesByCycle = false;
+	@Option(name="-mismatchesByRead",usage=" An alternative output which gives a table reads by cycles, with each mismatch position marked")
+	protected boolean mismatchesByRead = false;
 	@Option(name="-mismatchContexts",usage=" An alternative output which shows mismatches by context, one base before, one after (default false)")
 	protected boolean mismatchContexts = false;
 	@Option(name="-debug",usage=" Debugging statements (default false)")
@@ -129,6 +132,7 @@ public class SamMatlabInfo {
 				{
 					seq = MiscUtils.revCompNucStr(seq);
 					ref = MiscUtils.revCompNucStr(ref);
+					baseQual = MiscUtils.revString(baseQual);
 				}
 				
 				
@@ -136,7 +140,6 @@ public class SamMatlabInfo {
 				if (summaryInfo) System.out.print(baseQual + ",");
 				if (summaryInfo) System.out.println();
 				
-				if (debug) System.err.printf("%s\t%d\t%s\t%s\n%s\n\n",seq, mapQual, md, samRecord.getCigarString(), ref);
 
 //				if (seq.length() != ref.length())
 //				{
@@ -145,17 +148,37 @@ public class SamMatlabInfo {
 //				}
 
 				int seqLen = Math.min(seq.length(), ref.length());
+				int[] mismatches = new int[seqLen+1];
+				mismatches[0] = revStrand?1:0;
+				int mismatchCount = 0;
+				int mismatchCountLow = 0;
+				int mismatchCountHigh = 0;
 				for (int i = 0; i < seqLen; i++)
 				{
 					char seqi = seq.charAt(i);
 					char refi = ref.charAt(i);
 					if (refi != '0')
 					{
-						if (debug && (seqi != refi)) System.err.printf("Mismatch %c->%c pos %d\n",refi,seqi,i);
+						if (seqi != refi)
+						{		
+							mismatchCount++;
+							if (i<15) mismatchCountLow++;
+							if (i>60) mismatchCountHigh++;
+							
+							mismatches[i+1] = 1;
+							if (debug) System.err.printf("Mismatch %c->%c pos %d\n",refi,seqi,i);
+						}
+						
 						if (mismatchesByCycle) counter.increment(refi, seqi, i);
 					}
+				} // nuc
+				
+				if (mismatchesByRead && (mismatchCount>0)) System.out.println(ListUtils.excelLine(mismatches));
+				
+				
+				if (mismatchCountHigh>0 || mismatchCountLow>0) System.err.printf("%d\t%d\t%s\t%d\t%s\t%s\t%s\n\t\t%s\n\n",
+						mismatchCountLow, mismatchCountHigh, seq, mapQual, md, samRecord.getCigarString(), baseQual, ref);
 
-				}
 			}
 			catch (Exception e)
 			{
