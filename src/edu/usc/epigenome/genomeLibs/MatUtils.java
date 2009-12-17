@@ -6,7 +6,56 @@ import org.apache.commons.math.stat.StatUtils;
 
 public class MatUtils {
 
+	public static void initMat(int[][] mat, int initVal)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			for (int j = 0; j < mat[0].length; j++)
+			{
+				mat[i][j] = initVal;
+			}
+		}
+	}
+
+	public static void initMat(double[][] mat, double initVal)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			for (int j = 0; j < mat[0].length; j++)
+			{
+				mat[i][j] = initVal;
+			}
+		}
+	}
+
+	public static void initMat(int[][][] mat, int initVal)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			for (int j = 0; j < mat[0].length; j++)
+			{
+				for (int k = 0; k < mat[0][0].length; k++)
+				{
+					mat[i][j][k] = initVal;
+				}
+			}
+		}
+	}
 	
+	public static void initMat(double[][][] mat, double initVal)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			for (int j = 0; j < mat[0].length; j++)
+			{
+				for (int k = 0; k < mat[0][0].length; k++)
+				{
+					mat[i][j][k] = initVal;
+				}
+			}
+		}
+	}
+
 	public static int sumAll(int[][] mat)
 	{
 		return (int)(sumAll(MatUtils.intMatToDouble(mat)));
