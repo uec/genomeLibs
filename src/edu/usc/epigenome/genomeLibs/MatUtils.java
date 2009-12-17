@@ -78,14 +78,23 @@ public class MatUtils {
     	return out;
 	}
 
-	// Too slow to put it in a string
+
+	
 	public static void matlabCsv(PrintWriter writer, double[][] mat)
 	{
+		matlabCsv(writer, mat, 0, 0);
+	}
+		
+	// If nI or nJ are 0, it uses the total number of rows/columns in the array
+	public static void matlabCsv(PrintWriter writer, double[][] mat, int nI, int nJ)
+	{
 		int n_r = mat.length;
+		if (nI>0 && nI<=n_r) n_r = nI;
+		int n_c = mat[0].length;
+		if (nJ>0 && nJ<=n_c) n_c = nJ;
 		
 		for (int i=0 ; i<n_r; i++)
 		{
-			int n_c = mat[i].length;
 			for (int j=0; j<n_c; j++)
 			{
 				if (j>0) writer.print(",");
