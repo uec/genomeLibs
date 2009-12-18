@@ -4,6 +4,14 @@ package edu.usc.epigenome.genomeLibs;
 public class MiscUtils {
 
 
+	public static String revString(String in)
+	{
+		StringBuilder sb = new StringBuilder(in);
+		sb.reverse();
+		return sb.toString();
+	}
+
+	
 	public static String revCompNucStr(String in)
 	{
 		String out = "";
