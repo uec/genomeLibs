@@ -6,7 +6,12 @@ import java.util.regex.Pattern;
 import net.sf.samtools.Cigar;
 import net.sf.samtools.CigarElement;
 import net.sf.samtools.CigarOperator;
+import net.sf.samtools.SAMRecord;
 
+/**
+ * @author benb
+ *
+ */
 public class PicardUtils {
 
 	static final int BUFFERLEN = 1000;
@@ -154,7 +159,75 @@ public class PicardUtils {
 		
 		return sb.toString();
 	}
+
+	/**
+	 * @param samRecord
+	 * @return true if the read or the reference sequence contains at least one CpG
+	 */
+	public static boolean readContainsCpg(SAMRecord samRecord) throws Exception {
+		int nCpgs = readNumCpgs(samRecord);
+		return (nCpgs>=1);
+	}
+
+	/**
+	 * @param samRecord
+	 * @return Returns the number of CpGs in the sequence, either in the read or reference.
+	 */
+	private static int readNumCpgs(SAMRecord samRecord) throws Exception {
+
+		String md = (String)samRecord.getAttribute("MD");
+		Cigar cigar = samRecord.getCigar();
+		String seq = samRecord.getReadString().toUpperCase();
+		//String baseQual = samRecord.getBaseQualityString();
+		String ref = PicardUtils.refStrFromMd(seq, md, cigar).toUpperCase();
+
+		// Revcomp if negative strand
+		boolean revStrand = samRecord.getReadNegativeStrandFlag();
+		if (revStrand)
+		{
+			seq = MiscUtils.revCompNucStr(seq);
+			ref = MiscUtils.revCompNucStr(ref);
+			// baseQual = MiscUtils.revString(baseQual);
+		}
 		
+		int out = 0;
+		for (int i = 0; i < seq.length(); i++)
+		{
+			if (isCpg(i,ref,seq)) out++;
+		}
+		//System.err.printf("\t%d cpgs\n",out);
+		
+		return out;
+	}
+		
+	static boolean isCpg(int pos, String refStr, String seqStr)
+	{
+		if (pos >= (refStr.length()-1)) return false; // At the last character
+		
+		char refCnext = refStr.charAt(pos+1);
+		char seqCnext = seqStr.charAt(pos+1);
+		
+		return ( isCytosine(pos,refStr,seqStr) && (refCnext == 'G') && (seqCnext == 'G') );
+	}	
+
+	static boolean isCytosine(int pos, String refStr, String seqStr)
+	{
+		char refC = refStr.charAt(pos);
+		char seqC = seqStr.charAt(pos);
+		
+		return ((refC == 'C') && ((seqC == 'C') || (seqC == 'T'))); 
+	}
+	
+	
+	static boolean isConverted(int pos, String refStr, String seqStr)
+	{
+		char refC = refStr.charAt(pos);
+		char seqC = seqStr.charAt(pos);
+		
+		return ((refC == 'C') && (seqC == 'T'));
+	}
+
+
 	
 	
 	
