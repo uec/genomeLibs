@@ -123,9 +123,6 @@ public class SamFilterNoncpgReads {
 					
 
 
-					//				if (this.debug) System.err.printf("%s\t%d\t%s\t%s\t%s\n\t\t%s\n\n",
-					//						seq, mapQual, md, samRecord.getCigarString(), baseQual, ref);
-
 				}
 				catch (Exception e)
 				{

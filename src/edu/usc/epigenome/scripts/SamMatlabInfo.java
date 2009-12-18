@@ -116,7 +116,6 @@ public class SamMatlabInfo {
 				
 				if (summaryInfo) System.out.print(mapQual + ",");
 
-
 				
 				String md = (String)samRecord.getAttribute("MD");
 				Cigar cigar = samRecord.getCigar();

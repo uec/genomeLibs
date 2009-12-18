@@ -12,6 +12,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import edu.usc.epigenome.genomeLibs.PicardUtils;
+
 
 public class SamFiveprimeConversion {
 
@@ -94,27 +96,15 @@ public class SamFiveprimeConversion {
 			// Convert read name to upper case.
 			//samRecord.setReadName(samRecord.getReadName().toUpperCase());
 						
-			if (samRecord.getReadNegativeStrandFlag())
-			{
-				continue record;
-				// Reverse comp seq
-				// Reverse comp ref
-			}
-			
-			String md = (String)samRecord.getAttribute("MD");
-			String seq = samRecord.getReadString().toUpperCase();
+			String seq = PicardUtils.getReadString(samRecord, true);
 
 			recCounter++;
 			if ((recCounter % 1E5)==0) System.err.println("On new record #" + recCounter); 
-
-			
-//			System.err.println("\tMD=" + md);
-//			System.err.println("\tseq=" + seq);
 			
 			try
 			{
 
-				String ref = refStrFromMd(seq, md).toUpperCase();
+				String ref = PicardUtils.refStr(samRecord, true);
 				//			System.err.println("\tref=" + ref);
 
 				if (seq.length() != ref.length())
@@ -150,16 +140,19 @@ public class SamFiveprimeConversion {
 							ByCycleCounter cycleCounter = (cpg) ? cpgCycleCounter : cphCycleCounter;
 							cycleCounter.increment(i<convStart, conv, i);
 						}
+						
+						//if (cpg && (i<convStart)) System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
+
 					}
 				}
 
-				if (outputReads) System.out.println(convStart + "\t" + localCounter.toString() + "\t" + seq + "\t" + ref + "\t" + md);
+				if (outputReads) System.out.println(convStart + "\t" + localCounter.toString() + "\t" + seq + "\t" + ref);
 			}
 			catch (Exception e)
 			{
 				System.err.println("-----------------------------------------");
 				System.err.println("Couldn't handle seq #" + recCounter);
-				System.err.println(seq + "\t" + md);
+				System.err.println(seq);
 				e.printStackTrace(System.err);
 				System.err.println("-----------------------------------------");
 			}
