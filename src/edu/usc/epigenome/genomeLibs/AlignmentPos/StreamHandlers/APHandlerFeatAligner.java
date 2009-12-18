@@ -137,6 +137,7 @@ import edu.usc.epigenome.genomeLibs.TrackFiles.TrackFileRandomAccess;
 				// We are only streaming the read start position(s). So we will go through and 
 				// increment every position in the read (using the fragLength param)
 				int stPos, endPos, i;
+				if (this.fragSize<2) this.fragSize=2;
 				if (fwScore > 0.0)
 				{
 					stPos = arrInd;
