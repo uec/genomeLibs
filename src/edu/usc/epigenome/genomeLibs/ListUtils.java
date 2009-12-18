@@ -10,7 +10,7 @@ public class ListUtils {
 
 	//TODO Not thread safe
 	protected static final int STRINGBUFLEN = 100000000;
-	protected static StringBuffer STRINGBUF = new StringBuffer(STRINGBUFLEN);
+	protected static StringBuilder STRINGBUF = new StringBuilder(STRINGBUFLEN);
 
 	public static void setDelim(String d)
 	{
@@ -119,13 +119,13 @@ public class ListUtils {
 	
 	public static String excelLine(int[] l)
 	{
-		String out = "";
+		STRINGBUF.setLength(0);
 		for (int i = 0; i < l.length; i++)
 		{
-			if (i > 0) out += delim;
-			out += l[i];
+			if (i > 0) STRINGBUF.append(delim);
+			STRINGBUF.append(l[i]);
 		}
-		return out;
+		return STRINGBUF.toString();
 	}
 	
 	public static String excelLine(boolean[] l)
