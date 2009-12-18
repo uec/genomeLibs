@@ -11,7 +11,7 @@ $confirm =~ /\-test/ || $confirm =~ /\-delete/ ||die "must run with either -dele
 my $runDir = $ARGV[1] || die "specify dir to run on: ex /srv/data/slxa/incoming/myrun123AAXX/Images\n$USAGE";
 -d $runDir || die "DIR NOT FOUND. specify dir to run on: ex /srv/data/slxa/incoming/myrun/Images\n$USAGE";
 
-my $tileMod = $ARGV[3] || die "specify tile modulus to keep\n$USAGE";
+my $tileMod = $ARGV[2] || die "specify tile modulus to keep\n$USAGE";
 $tileMod =~ /\d+/ || die "specify tile modulus to keep\n$USAGE";
 
 my @files = glob("$runDir/L00?/C*/*.tif");
