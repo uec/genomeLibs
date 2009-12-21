@@ -209,37 +209,51 @@ public class PicardUtils {
 	 * @return Returns the number of CpGs in the sequence, either in the read or reference.
 	 */
 	private static int readNumCpgs(SAMRecord samRecord) throws Exception {
-		String seq = PicardUtils.getReadString(samRecord, true);
 		String ref = PicardUtils.refStr(samRecord, true);
 
 		int out = 0;
-		for (int i = 0; i < seq.length(); i++)
+		for (int i = 0; i < ref.length(); i++)
 		{
-			if (isCpg(i,ref,seq)) out++;
+			if (isCpg(i,ref)) out++;
 		}
 		//System.err.printf("\t%d cpgs\n",out);
 		
 		return out;
 	}
 		
-	public static boolean isCpg(int pos, String refStr, String seqStr)
+	public static boolean isCpg(int pos, String refStr)
 	{
 		if (pos >= (refStr.length()-1)) return false; // At the last character
 		
 		char refCnext = refStr.charAt(pos+1);
-		char seqCnext = seqStr.charAt(pos+1);
 		
-		return ( isCytosine(pos,refStr,seqStr) && (refCnext == 'G') && (seqCnext == 'G') );
+		return ( isCytosine(pos,refStr) && (refCnext == 'G') );
 	}	
 
-	public static boolean isCytosine(int pos, String refStr, String seqStr)
+	// The G opposit the CpG
+	public static boolean isOppositeCpg(int pos, String refStr)
+	{
+		if (pos == 0) return false; // At the first char
+		
+		char refCprev = refStr.charAt(pos-1);
+		
+		return ( isGuanine(pos,refStr) && (refCprev == 'C') );
+	}	
+
+	
+	public static boolean isCytosine(int pos, String refStr)
 	{
 		char refC = refStr.charAt(pos);
-		char seqC = seqStr.charAt(pos);
 		
-		return ((refC == 'C') && ((seqC == 'C') || (seqC == 'T'))); 
+		return (refC == 'C') ;
 	}
 	
+	public static boolean isGuanine(int pos, String refStr)
+	{
+		char refC = refStr.charAt(pos);
+		
+		return (refC == 'G') ; 
+	}
 	
 	public static boolean isConverted(int pos, String refStr, String seqStr)
 	{
