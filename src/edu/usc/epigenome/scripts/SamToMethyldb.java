@@ -309,9 +309,9 @@ public class SamToMethyldb {
 			int cReadsNonconversionFilt, int tReads, int agReads, int aReadsOpposite, int totalReadsOpposite)
 	throws SQLException
 	{
-		System.out.printf("pos=%d\tstrand=%c\ttotalReads=%d\tcReads=%d\tcReadsNonconv=%d\ttReads=%d\tagReads=%d\taReadsOpp=%d\ttotalReadsOpp=%d\n",
-				chromPos,  negStrand ? '-' : '+',  totalReads,  cReads,
-				 cReadsNonconversionFilt,  tReads,  agReads,  aReadsOpposite,  totalReadsOpposite);
+//		System.out.printf("pos=%d\tstrand=%c\ttotalReads=%d\tcReads=%d\tcReadsNonconv=%d\ttReads=%d\tagReads=%d\taReadsOpp=%d\ttotalReadsOpp=%d\n",
+//				chromPos,  negStrand ? '-' : '+',  totalReads,  cReads,
+//				 cReadsNonconversionFilt,  tReads,  agReads,  aReadsOpposite,  totalReadsOpposite);
 		
 		
 		// First see if we already have this one
@@ -322,7 +322,7 @@ public class SamToMethyldb {
 		if (rs.next())
 		{
 			// Already in DB
-			System.out.printf("%d%c: Already in database\n", chromPos, negStrand?'-':'+');
+			//System.err.printf("%d%c: Already in database\n", chromPos, negStrand?'-':'+');
 			incrementShort(rs, 3, (short)totalReads);
 			incrementShort(rs, 4, (short)cReads);
 			incrementShort(rs, 5, (short)cReadsNonconversionFilt);
@@ -337,7 +337,7 @@ public class SamToMethyldb {
 		else
 		{
 			// First time seen
-			System.out.printf("%d%c: first time encountered\n", chromPos, negStrand?'-':'+');
+			//System.err.printf("%d%c: first time encountered\n", chromPos, negStrand?'-':'+');
 			prep = (negStrand) ? this.fInsertByCoordPrepRev : this.fInsertByCoordPrepFw;
 			prep.setInt(1, chromPos);
 			prep.setShort(2, (short)totalReads);
