@@ -8,27 +8,66 @@ my $USAGE = "generateMaqToBam.pl newname refGenome.fa f1.map f2.map f3.map ...";
 my $region = "chr11";
 my $SAMDIR = "/home/uec-00/bberman/bin";
 my $RMTMPS = 1;
+my $BATCHSIZE = 50;
 
 # Input params
 die "$USAGE\n" unless (@ARGV>=3);
 my ($newname , $refFa, @mapFns) = @ARGV;
 
-
-# Go through pipeline for each map
+# Go through pipeline for each map.  We do it in batches because
+# Map merge can only take a limited number.
+my @topDependJobs = ();
+my @topBamFns = ();
 my @dependJobs = ();
-my @individualBamFns = ();
+my @bamFns = ();
+my $onJob = 0;
+my $tmpDir;
+my $batchname = "";
 foreach my $mapFn (@mapFns)
 {
-    my ($jobid, $bamFn) = runMapPipeline($mapFn, $refFa);
+    if (($onJob % $BATCHSIZE) == 0)
+    {
+	# End old batch
+	if (scalar(@dependJobs)>1)
+	{
+	    my ($mergeJobid, $mergeBamFn) = mergeBams($batchname, \@dependJobs, \@bamFns);
+	    push(@topDependJobs, $mergeJobid);
+	    push(@topBamFns, $mergeBamFn);
+	}
+
+	# Start a new batch
+	@dependJobs = ();
+	@bamFns = ();
+	my $batchEnd = ($onJob+$BATCHSIZE-1);
+	$batchname = "${newname}-BATCH${onJob}-${batchEnd}";
+	$tmpDir = "./tmp_${batchname}";
+	`mkdir $tmpDir`;
+    }
+
+    my ($jobid, $bamFn) = runMapPipeline($mapFn, $refFa, $tmpDir);
     push (@dependJobs, $jobid);
-    push (@individualBamFns, $bamFn);
+    push (@bamFns, "${tmpDir}/$bamFn");
+
+    $onJob++;
 }
 
-mergeBams($newname, \@dependJobs, \@individualBamFns);
+# Finish final batch
+if (scalar(@dependJobs)>1)
+{
+    my ($mergeJobid, $mergeBamFn) = mergeBams($batchname, \@dependJobs, \@bamFns);
+    push(@topDependJobs, $mergeJobid);
+    push(@topBamFns, $mergeBamFn);
+}
+
+# And merge top level
+mergeBams($newname, \@topDependJobs, \@topBamFns);
 
 
 # - - - - - - OUTPUTS
 
+
+# Returns
+# ($processId, $outBamFn)
 sub mergeBams
 {
     my ($prefix, $dependJobs, $individualBamFns) = @_;
@@ -38,13 +77,17 @@ sub mergeBams
     my $regionSec = ($region) ? ".${region}" : "";
     my $curOut = "${prefix}.NODUPS.sorted.calmd${regionSec}.bam";
     my $cmd = "${SAMDIR}/samtools merge ${curOut} " . join(" ", @$individualBamFns);
-    my $curJobids = [runCmd($cmd, "M2B_mergeBams", $dependJobs)];
+    my $curJobids = [runCmd(0, $cmd, "M2B_mergeBams", $dependJobs)];
+
+    my $finalBamOut = $curOut;
 
     # Index bam
     my $curIn = $curOut;
     $curOut = "${curIn}.bai";
     my $cmd = "${SAMDIR}/samtools index ${curIn} ${curOut}";
-    $curJobids = [runCmd($cmd, "M2B_index", $curJobids)];
+    $curJobids = [runCmd(0, $cmd, "M2B_index", $curJobids)];
+
+    return (@${curJobids}[0], $finalBamOut);
 }
 
 
@@ -52,78 +95,91 @@ sub mergeBams
 # ($processId, $outBamFn)
 sub runMapPipeline
 {
-    my ($mapFn, $refFa) = @_;
+    my ($mapFn, $refFa, $tmpdir) = @_;
 
     my $finalProcId = 0;
     my $finalBamFn = 0;
 
     my $mapFnBase = basename($mapFn, qr/\.map/);
 
+    # Since we're going into a temp dir one level deeper, we have to adjust for relative FNs
     my $curIn = $mapFn;
+    if ($curIn =~ /^\.\//)
+    {
+	$curIn =~ s/^\.\//\.\.\//g;
+    }
+    elsif ($curIn =~ /^\//)
+    {
+	# Global, no problem
+    }
+    else
+    {
+	$curIn = "../" . $curIn;
+    }
+
+
     my $curOut;
     my $curJobids = 0;
 
-    `mkdir ./tmp`;
-
     # Maq 2 sam
-    $curOut = "./tmp/${mapFnBase}.sam";
+    $curOut = "${mapFnBase}.sam";
     my $cmd = "${SAMDIR}/maq2sam-long ${curIn} > ${curOut}";
-    $curJobids = [runCmd($cmd, "M2B_maq2sam", $curJobids)];
+    $curJobids = [runCmd($tmpdir,$cmd, "M2B_maq2sam", $curJobids)];
     
     # Sam to full bam
     $curIn = $curOut;
-    $curOut = "./tmp/${mapFnBase}.bam";
+    $curOut = "${mapFnBase}.bam";
     my $cmd = "${SAMDIR}/samtools view -bt /home/uec-00/shared/production/genomes/sambam/hg18.fai -o ${curOut} ${curIn}";
     $cmd .= "; rm -f ${curIn}" if ($RMTMPS);
-    $curJobids = [runCmd($cmd, "M2B_sam2fullbam", $curJobids)];
+    $curJobids = [runCmd($tmpdir,$cmd, "M2B_sam2fullbam", $curJobids)];
 
     # remove dups
     $curIn = $curOut;
-    $curOut = "./tmp/${mapFnBase}.NODUPS.bam";
+    $curOut = "${mapFnBase}.NODUPS.bam";
     my $cmd = "${SAMDIR}/samtools rmdup -s ${curIn} ${curOut}";
     $cmd .= "; rm -f ${curIn}" if ($RMTMPS);
-    $curJobids = [runCmd($cmd, "M2B_rmdups", $curJobids)];
+    $curJobids = [runCmd($tmpdir,$cmd, "M2B_rmdups", $curJobids)];
     
     # Sort bam
     $curIn = $curOut;
-    $curOut = "./tmp/${mapFnBase}.NODUPS.sorted.bam";
+    $curOut = "${mapFnBase}.NODUPS.sorted.bam";
     my $curOutPrefix = $curOut; $curOutPrefix =~ s/\.bam$//g; # You only specify the prefix
     my $cmd = "${SAMDIR}/samtools sort ${curIn} ${curOutPrefix}";
     $cmd .= "; rm -f ${curIn}" if ($RMTMPS);
-    $curJobids = [runCmd($cmd, "M2B_sort", $curJobids)];
+    $curJobids = [runCmd($tmpdir,$cmd, "M2B_sort", $curJobids)];
 
     # calmd
     $curIn = $curOut;
-    $curOut = "./tmp/${mapFnBase}.NODUPS.sorted.calmd.bam";
+    $curOut = "${mapFnBase}.NODUPS.sorted.calmd.bam";
     my $cmd = "${SAMDIR}/samtools calmd -b ${curIn} ${refFa} > ${curOut}";
     $cmd .= "; rm -f ${curIn}" if ($RMTMPS);
-    $curJobids = [runCmd($cmd, "M2B_calmd", $curJobids)];
+    $curJobids = [runCmd($tmpdir,$cmd, "M2B_calmd", $curJobids)];
 
     # Set final BAM name
     $finalBamFn = $curOut;
     
     # Index bam
     $curIn = $curOut;
-    $curOut = "./tmp/${mapFnBase}.NODUPS.sorted.calmd.bam.bai";
+    $curOut = "${mapFnBase}.NODUPS.sorted.calmd.bam.bai";
     my $cmd = "${SAMDIR}/samtools index ${curIn} ${curOut}";
-    $curJobids = [runCmd($cmd, "M2B_index", $curJobids)];
+    $curJobids = [runCmd($tmpdir,$cmd, "M2B_index", $curJobids)];
 
     # Pull region
     if ($region)
     {
-	$curIn = "./tmp/${mapFnBase}.NODUPS.sorted.calmd.bam";
-	$curOut = "./tmp/${mapFnBase}.NODUPS.sorted.calmd.${region}.bam";
+	$curIn = "${mapFnBase}.NODUPS.sorted.calmd.bam";
+	$curOut = "${mapFnBase}.NODUPS.sorted.calmd.${region}.bam";
 	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
-	$curJobids = [runCmd($cmd, "M2B_pullRegion", $curJobids)];
+	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegion", $curJobids)];
 
 	# Set final BAM name
 	$finalBamFn = $curOut;
 
 	# Index bam
 	$curIn = $curOut;
-	$curOut = "./tmp/${mapFnBase}.NODUPS.sorted.calmd.${region}.bam.bai";
+	$curOut = "${mapFnBase}.NODUPS.sorted.calmd.${region}.bam.bai";
 	my $cmd = "${SAMDIR}/samtools index ${curIn} ${curOut}";
-	$curJobids = [runCmd($cmd, "M2B_pullRegionIndex", $curJobids)];
+	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegionIndex", $curJobids)];
     }
 
     $finalProcId = @${curJobids}[0];
@@ -134,19 +190,20 @@ sub runMapPipeline
 # Returns jobid
 sub runCmd
 {
-    my ($cmd, $prefix, $dependJobs) = @_;
+    my ($tmpdir, $cmd, $prefix, $dependJobs) = @_;
 
     my ($fh, $file) = tempfile( "${prefix}XXXXXX" , DIR => "/tmp");
     print $fh "#Run on 1 processors on laird\n";
-    print $fh "#PBS -l walltime=30:00:00\n#PBS -l mem=2000mb\n#PBS -l arch=x86_64\n#PBS -q laird\n";
+    print $fh "#PBS -l walltime=30:00:00\n#PBS -l mem=4000mb\n#PBS -l arch=x86_64\n#PBS -q laird\n";
     print $fh "#PBS -W depend=afterany:" . join(":",@$dependJobs) ."\n" if ($dependJobs && @$dependJobs);
     print $fh "cd \"\$PBS_O_WORKDIR\"\n";
     print $fh "${cmd}\n\n";
     close($fh);
 
-
     my $fullcmd = "qsub $file";
+    $fullcmd = "cd ${tmpdir}; ${fullcmd}; cd .." if ($tmpdir);
     print STDERR "${cmd}\n${fullcmd}\n";
+
     my $lineout = `$fullcmd`;
     chomp $lineout;
     print STDERR "runCmd got lineout:\t\"$lineout\"\n";
