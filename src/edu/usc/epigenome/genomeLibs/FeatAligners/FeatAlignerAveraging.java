@@ -1,14 +1,20 @@
 package edu.usc.epigenome.genomeLibs.FeatAligners;
 
+import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.StrandedFeature.Strand;
 
 import edu.usc.epigenome.genomeLibs.MatUtils;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
 public class FeatAlignerAveraging extends FeatAligner {
 
 	// arr[0] fwTotalScores, arr[1] fwTotalFeats, arr[2] revTotalScores, arr[3] revTotalFeats
-	double[][] arr;  
+	double[][] arr;
+	Set<GenomicRange> featsSeen;
 	
 	/**
 	 * @param flankSize
@@ -21,6 +27,12 @@ public class FeatAlignerAveraging extends FeatAligner {
 		this.arr = new double[4][nC];
 		
 		MatUtils.initMat(arr, (zeroInit)  ? 0.0 : Double.NaN);
+		
+		if (zeroInit)
+		{
+			// We want absolute numbers, so count the number of feats
+			featsSeen = new HashSet<GenomicRange>();
+		}
 	}
 
 	// Assumes that everything's already been flipped to the correct strand
@@ -65,12 +77,38 @@ public class FeatAlignerAveraging extends FeatAligner {
 			double revStrandScore, String featName, String featChr,
 			int featCoord, Strand featStrand) {
 		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand);
+		
 		this.addAlignmentPosFast(colInd,
 				(featStrand == StrandedFeature.NEGATIVE) ? revStrandScore : fwStrandScore,
 						(featStrand == StrandedFeature.NEGATIVE) ? fwStrandScore : revStrandScore);
+
+		if (this.zeroInit)
+		{
+			GenomicRange gr = new GenomicRange(featChr, featCoord, featCoord, featStrand);
+			featsSeen.add(gr);
+		}
+
 	}
 
 
-	
+	public void matlabCsv(PrintWriter pw, boolean strandSpecific)
+	{
+		if (strandSpecific)
+		{
+			if (this.zeroInit)
+			{
+				// If it's zero init, it means we just want to divide by the
+				// total.
+				MatUtils.initMat(this.arr[1],(double)featsSeen.size());
+				MatUtils.initMat(this.arr[3],(double)featsSeen.size());
+			}
+			MatUtils.matlabCsv(pw, this.arr);
+		}
+		else
+		{
+			
+		}
+	}
+
 	
 }

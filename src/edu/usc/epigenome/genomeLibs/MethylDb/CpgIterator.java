@@ -21,7 +21,8 @@ import java.util.logging.Logger;
  */
 public class CpgIterator implements Iterator<Cpg> {
 
-	final private static String TABLE_PREFIX = "methylCGsRich_tumor_";
+//	final private static String TABLE_PREFIX = "methylCGsRich_tumor_";
+	final private static String TABLE_PREFIX = "RestingNucleosomes_CD4_";
 
 	// Class vars
 	protected static Connection cConn = null; 

@@ -28,5 +28,6 @@ LINE: while (my $line = <STDIN>)
 
     next LINE unless ($valid);
 
-    print join("\t", $f[0], $readStart, $f[5])."\n";
+#    print join("\t", $f[0], $readStart, $f[5])."\n";
+    print join("\t", $readStart, $f[5], 1.0, 0, 0, 0, 0, 0, 0)."\n"; # To fit into methyl schema
 }

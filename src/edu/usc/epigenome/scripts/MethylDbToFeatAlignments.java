@@ -18,6 +18,8 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.usckeck.genome.ChromFeatures;
 
+import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
+import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
@@ -42,7 +44,7 @@ public class MethylDbToFeatAlignments {
 
 	// class vars
 //	double[][][] fMethMat; // 3 (methylReads,reads,cpgs) x nFeats x (2*flankSize+1)
-	FeatAlignerEachfeat[] fMats = new FeatAlignerEachfeat[3]; // 3 (methylReads,reads,cpgs)
+	FeatAligner[] fMats = new FeatAligner[3]; // 3 (methylReads,reads,cpgs)
 	int fCurFeatInd = 0;
 
 
@@ -94,7 +96,7 @@ public class MethylDbToFeatAlignments {
 		// Create arrays
 		this.fMats[0] = new FeatAlignerEachfeat(flankSize, false, nFeats);
 		this.fMats[1] = new FeatAlignerEachfeat(flankSize, false, nFeats);
-		this.fMats[2] = new FeatAlignerEachfeat(flankSize, true, nFeats);
+		this.fMats[2] = new FeatAlignerAveraging(flankSize, true);
 //		int nC = (flankSize*2) + 1;
 //		fMethMat = new double[3][nFeats][nC];
 //		MatUtils.initMat(fMethMat[0], C_NAN);
@@ -121,7 +123,7 @@ public class MethylDbToFeatAlignments {
 		writer.close();
 
 		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nCpgs.csv", outputPrefix, featsFnBase)));
-		this.fMats[2].matlabCsv(writer, true);
+		this.fMats[2].toAverageFeatAligner().matlabCsv(writer, true);
 		writer.close();
 }
 	

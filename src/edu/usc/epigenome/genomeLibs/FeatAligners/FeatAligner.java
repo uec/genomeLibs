@@ -1,5 +1,7 @@
 package edu.usc.epigenome.genomeLibs.FeatAligners;
 
+import java.io.PrintWriter;
+
 import org.biojava.bio.seq.StrandedFeature;
 
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
@@ -40,6 +42,8 @@ public abstract class FeatAligner {
 			String featName, String featChr, int featCoord, StrandedFeature.Strand featStrand);
 	
 	abstract public FeatAlignerAveraging toAverageFeatAligner();
+	abstract public void matlabCsv(PrintWriter pw, boolean strandSpecific);
+
 
 	
 	/*** Non-abstract ***/
