@@ -51,14 +51,30 @@ public class FeatAlignerAveraging extends FeatAligner {
 	{
 		if (!Double.isNaN(fwScore))
 		{
-			this.arr[0][relPos]+= fwScore;
-			this.arr[1][relPos]++;
+			if (Double.isNaN(this.arr[0][relPos]))
+			{
+				this.arr[0][relPos] = fwScore;
+				this.arr[1][relPos] = 1.0;
+			}
+			else
+			{
+				this.arr[0][relPos] += fwScore;
+				this.arr[1][relPos]++;
+			}
 		}
 
 		if (!Double.isNaN(revScore))
 		{
-			this.arr[2][relPos]+= revScore;
-			this.arr[3][relPos]++;
+			if (Double.isNaN(this.arr[2][relPos]))
+			{
+				this.arr[2][relPos] = revScore;
+				this.arr[3][relPos] = 1.0;
+			}
+			else
+			{
+				this.arr[2][relPos] += revScore;
+				this.arr[3][relPos]++;
+			}
 		}
 	}
 
