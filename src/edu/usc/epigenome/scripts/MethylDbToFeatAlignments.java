@@ -1,22 +1,16 @@
 package edu.usc.epigenome.scripts;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.PrintWriter;
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.biojava.bio.program.gff.GFFEntrySet;
-import org.biojava.bio.program.gff.GFFParser;
 import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.seq.StrandedFeature;
-
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -24,9 +18,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.usckeck.genome.ChromFeatures;
 
-import edu.usc.epigenome.genomeLibs.GFFUtils;
-import edu.usc.epigenome.genomeLibs.LocUtils;
-import edu.usc.epigenome.genomeLibs.MatUtils;
+import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 
@@ -34,7 +26,6 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 public class MethylDbToFeatAlignments {
 
 	private static final String C_USAGE = "Use: MethylDbToFeatAlignments -maxFeatSize 10 -skipUnoriented -flankSize 2000 -outputPrefix outputTag feats.gtf";
-	private static final double C_NAN = Double.NaN;
 	
 	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 	protected boolean skipUnoriented = false;
@@ -50,7 +41,8 @@ public class MethylDbToFeatAlignments {
 
 
 	// class vars
-	double[][][] fMethMat; // 3 (methylReads,reads,cpgs) x nFeats x (2*flankSize+1)
+//	double[][][] fMethMat; // 3 (methylReads,reads,cpgs) x nFeats x (2*flankSize+1)
+	FeatAlignerEachfeat[] fMats = new FeatAlignerEachfeat[3]; // 3 (methylReads,reads,cpgs)
 	int fCurFeatInd = 0;
 
 
@@ -100,11 +92,14 @@ public class MethylDbToFeatAlignments {
 		int nFeats = feats.num_features(11); // ***** CHANGE THIS IF GOING ACROSS CHROMS *** 
 		
 		// Create arrays
-		int nC = (flankSize*2) + 1;
-		fMethMat = new double[3][nFeats][nC];
-		MatUtils.initMat(fMethMat[0], C_NAN);
-		MatUtils.initMat(fMethMat[1], C_NAN);
-		MatUtils.initMat(fMethMat[2], 0.0);
+		this.fMats[0] = new FeatAlignerEachfeat(flankSize, false, nFeats);
+		this.fMats[1] = new FeatAlignerEachfeat(flankSize, false, nFeats);
+		this.fMats[2] = new FeatAlignerEachfeat(flankSize, true, nFeats);
+//		int nC = (flankSize*2) + 1;
+//		fMethMat = new double[3][nFeats][nC];
+//		MatUtils.initMat(fMethMat[0], C_NAN);
+//		MatUtils.initMat(fMethMat[1], C_NAN);
+//		MatUtils.initMat(fMethMat[2], 0.0);
 		
 		for (int chr = 11; chr <= 11; chr++)
 		{
@@ -118,15 +113,15 @@ public class MethylDbToFeatAlignments {
 		String featsFnBase = (new File(featsFn)).getName();
 
 		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nmCpgs.csv", outputPrefix, featsFnBase)));
-		MatUtils.matlabCsv(writer, this.fMethMat[0], fCurFeatInd, 0);
+		this.fMats[0].matlabCsv(writer, true);
 		writer.close();
 
 		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nReads.csv", outputPrefix, featsFnBase)));
-		MatUtils.matlabCsv(writer, this.fMethMat[1], fCurFeatInd, 0);
+		this.fMats[1].matlabCsv(writer, true);
 		writer.close();
 
 		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nCpgs.csv", outputPrefix, featsFnBase)));
-		MatUtils.matlabCsv(writer, this.fMethMat[2], fCurFeatInd, 0);
+		this.fMats[2].matlabCsv(writer, true);
 		writer.close();
 }
 	
@@ -143,6 +138,7 @@ public class MethylDbToFeatAlignments {
 		{
 			GFFRecord rec = (GFFRecord)featit.next();
 			StrandedFeature.Strand featStrand = rec.getStrand();
+			String featName = null; // rec.getSeqName();
 
 			if (skipUnoriented)
 			{
@@ -158,8 +154,8 @@ public class MethylDbToFeatAlignments {
 			
 			int start = rec.getStart() - flankSize;
 			int end = rec.getStart() + flankSize;
-			//System.err.printf("region len=%d\tarray size=%d\n", end-start+1, fMnaseMat[0].length);
-			
+//			//System.err.printf("region len=%d\tarray size=%d\n", end-start+1, fMnaseMat[0].length);
+
 	
 			
 			// Meth
@@ -170,15 +166,28 @@ public class MethylDbToFeatAlignments {
 				Cpg cpg = cpgit.next();
 				
 				int chromPos = cpg.chromPos;
-				//String strand = cpg.getStrand();
+				StrandedFeature.Strand cpgStrand = cpg.getStrand();
 				int methylReads = cpg.totalReadsC(true);
 				int reads = cpg.totalReadsCorT(true);
-				int relPos = relPos(start, end, chromPos, featStrand);
-				//System.err.printf("\tGot meth row: %d, %d, %s = %d/%d\n", chromPos, relPos, strand, methylReads, reads);
+				//int relPos = relPos(start, end, chromPos, featStrand);
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(
+						String.format("\tGot meth row: %d, %s = %d/%d\n", chromPos, cpgStrand, methylReads, reads));
+
+				this.fMats[0].addAlignmentPos(chromPos, 
+						(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : (double)methylReads,
+								(cpgStrand == StrandedFeature.NEGATIVE) ? (double)methylReads : Double.NaN,
+										featName, chrStr, rec.getStart(), featStrand);	
 				
-				this.fMethMat[0][this.fCurFeatInd][relPos] = (double)methylReads;
-				this.fMethMat[1][this.fCurFeatInd][relPos] = (double)reads;
-				this.fMethMat[2][this.fCurFeatInd][relPos] = 1.0;
+				this.fMats[1].addAlignmentPos(chromPos, 
+						(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : (double)reads,
+								(cpgStrand == StrandedFeature.NEGATIVE) ? (double)reads : Double.NaN,
+										featName, chrStr, rec.getStart(), featStrand);	
+
+				this.fMats[2].addAlignmentPos(chromPos, 
+						(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : (double)1.0,
+								(cpgStrand == StrandedFeature.NEGATIVE) ? (double)1.0 : Double.NaN,
+										featName, chrStr, rec.getStart(), featStrand);	
+
 			}
 			
 			// Increment feat ind

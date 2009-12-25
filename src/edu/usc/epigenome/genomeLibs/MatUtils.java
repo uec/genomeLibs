@@ -17,6 +17,7 @@ public class MatUtils {
 		}
 	}
 
+
 	public static void initMat(double[][] mat, double initVal)
 	{
 		for (int i = 0; i < mat.length; i++)
@@ -458,5 +459,6 @@ public class MatUtils {
     	}
     	return out;
 	}
+
 	
 }

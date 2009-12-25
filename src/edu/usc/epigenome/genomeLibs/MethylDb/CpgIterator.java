@@ -11,6 +11,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * @author benb
+ *
+ */
+/**
+ * @author benb
+ *
+ */
 public class CpgIterator implements Iterator<Cpg> {
 
 	final private static String TABLE_PREFIX = "methylCGsRich_tumor_";
@@ -46,7 +54,7 @@ public class CpgIterator implements Iterator<Cpg> {
 		}
 		else
 		{
-			logger.log(Level.INFO, "Found prepared statement for chrom " + chrom);
+			//logger.log(Level.INFO, "Found prepared statement for chrom " + chrom);
 		}
 
 		prep.setInt(1, startCoord);
@@ -74,7 +82,9 @@ public class CpgIterator implements Iterator<Cpg> {
 //		if (fConn == null) setupDb();
 	}
 
-	@Override
+	/* (non-Javadoc)
+	 * @see java.util.Iterator#hasNext()
+	 */
 	public boolean hasNext() 
 	{
 		boolean out = false;
@@ -95,12 +105,15 @@ public class CpgIterator implements Iterator<Cpg> {
 			System.exit(1);
 		}
 		
-		logger.log(Level.INFO, "hasNext(): " + out);
+		//logger.log(Level.INFO, "hasNext(): " + out);
 		
 		return out;
 	}
 
-	@Override
+
+	/* (non-Javadoc)
+	 * @see java.util.Iterator#next()
+	 */
 	public Cpg next() {
 
 		Cpg out = null;
@@ -128,7 +141,9 @@ public class CpgIterator implements Iterator<Cpg> {
 		return out;
 	}
 
-	@Override
+	/* (non-Javadoc)
+	 * @see java.util.Iterator#remove()
+	 */
 	public void remove() {
 		
 	}
