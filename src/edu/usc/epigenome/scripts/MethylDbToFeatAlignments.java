@@ -94,14 +94,11 @@ public class MethylDbToFeatAlignments {
 		int nFeats = feats.num_features(11); // ***** CHANGE THIS IF GOING ACROSS CHROMS *** 
 		
 		// Create arrays
-		this.fMats[0] = new FeatAlignerEachfeat(flankSize, false, nFeats);
-		this.fMats[1] = new FeatAlignerEachfeat(flankSize, false, nFeats);
+//		this.fMats[0] = new FeatAlignerEachfeat(flankSize, false, nFeats);
+//		this.fMats[1] = new FeatAlignerEachfeat(flankSize, false, nFeats);
+		this.fMats[0] = new FeatAlignerAveraging(flankSize, false);
+		this.fMats[1] = new FeatAlignerAveraging(flankSize, false);
 		this.fMats[2] = new FeatAlignerAveraging(flankSize, true);
-//		int nC = (flankSize*2) + 1;
-//		fMethMat = new double[3][nFeats][nC];
-//		MatUtils.initMat(fMethMat[0], C_NAN);
-//		MatUtils.initMat(fMethMat[1], C_NAN);
-//		MatUtils.initMat(fMethMat[2], 0.0);
 		
 		for (int chr = 11; chr <= 11; chr++)
 		{
