@@ -6,6 +6,53 @@ import org.apache.commons.math.stat.StatUtils;
 
 public class MatUtils {
 
+	public static double nanMean(double[] arr)
+	{
+		return nanMean(arr, 0, arr.length);
+	}
+	
+	public static double nanMean(double[] arr, int startInd, int len)
+	{
+		double total = 0.0;
+		double count = 0.0;
+		
+		for (int i = startInd; i < (startInd+len) ; i++)
+		{
+			double val = arr[i];
+			if (!Double.isNaN(val))
+			{
+				total += val;
+				count += 1.0;
+			}
+		}
+		
+		return (count == 0.0) ? Double.NaN : (total/count);
+	}
+	
+	
+	public static double nanSum(double[] arr)
+	{
+		return nanSum(arr, 0, arr.length);
+	}
+
+	public static double nanSum(double[] arr, int startInd, int len)
+	{
+		double total = 0.0;
+		double count = 0.0;
+		
+		for (int i = startInd; i < (startInd+len) ; i++)
+		{
+			double val = arr[i];
+			if (!Double.isNaN(val))
+			{
+				total += val;
+				count += 1.0;
+			}
+		}
+		
+		return (count == 0.0) ? Double.NaN : total;
+	}
+
 	public static void initMat(int[] mat, int initVal)
 	{
 		for (int i = 0; i < mat.length; i++)
@@ -14,6 +61,14 @@ public class MatUtils {
 		}
 	}
 
+
+	public static void nansToVal(double[] mat, double inVal)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			if (Double.isNaN(mat[i])) mat[i] = inVal;
+		}
+	}
 
 	public static void initMat(double[] mat, double initVal)
 	{
@@ -200,7 +255,7 @@ public class MatUtils {
 		if (n_cols ==0) n_cols = m[0].length;
 		for (int i = 0; i < n_rows; i++)
 		{
-			out[i] = StatUtils.mean(m[i], 0, n_cols);
+			out[i] = nanMean(m[i], 0, n_cols);
 		}
 		return out;
 	}
@@ -212,7 +267,7 @@ public class MatUtils {
 		
 		for (int i = 0; i < n_rows; i++)
 		{
-			out[i] = StatUtils.sum(m[i]);
+			out[i] = nanSum(m[i]);
 		}
 		return out;
 	}
@@ -229,13 +284,13 @@ public class MatUtils {
 		return out;
 	}
 	
-	protected static void downscaleArray(double[] out, double[] in)
+	public static void downscaleArray(double[] out, double[] in)
 	throws Exception
 	{
 		downscaleArray(out,in,0,out.length-1);
 	}
 
-	protected static void downscaleArray(double[] out, double[] in, int out_start_ind, int out_end_ind)
+	public static void downscaleArray(double[] out, double[] in, int out_start_ind, int out_end_ind)
 	throws Exception
 	{
 		int n_in = in.length;
@@ -256,7 +311,7 @@ public class MatUtils {
 
 			if (in_e >= in_s)
 			{
-				out[out_ind] = StatUtils.mean(in, in_s, in_e-in_s+1);
+				out[out_ind] = nanMean(in, in_s, in_e-in_s+1);
 //				System.err.println("\tout[" + out_ind + "] = mean(" + in_s + "-" + in_e +")");
 			}
 
@@ -459,6 +514,7 @@ public class MatUtils {
     	}
     	return out;
 	}
+	
 	
 	public static int[][] doubleMatToInt(double[][] mat)
 	{
