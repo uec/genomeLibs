@@ -21,8 +21,8 @@ import java.util.logging.Logger;
  */
 public class CpgIterator implements Iterator<Cpg> {
 
-//	final private static String TABLE_PREFIX = "methylCGsRich_tumor_";
-	final private static String TABLE_PREFIX = "RestingNucleosomes_CD4_";
+	final private static String TABLE_PREFIX = "methylCGsRich_tumor_";
+//	final private static String TABLE_PREFIX = "RestingNucleosomes_CD4_";
 
 	// Class vars
 	protected static Connection cConn = null; 
@@ -49,9 +49,10 @@ public class CpgIterator implements Iterator<Cpg> {
 		if (prep == null)
 		{
 			String table = TABLE_PREFIX + chrom;
-			prep = cConn.prepareStatement("select * from " + table + " WHERE chromPos >= ? AND chromPos <= ?;");
+			String sql = "select * from " + table + " WHERE chromPos >= ? AND chromPos <= ?;";
+			prep = cConn.prepareStatement(sql);
 			cByCoordsPreps.put(chrom, prep);
-			logger.log(Level.INFO, "Making prepared statement for chrom " + chrom);
+			logger.log(Level.INFO, "Making prepared statement for chrom " + chrom + ": " + sql );
 		}
 		else
 		{
