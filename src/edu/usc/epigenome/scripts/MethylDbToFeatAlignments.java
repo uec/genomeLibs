@@ -44,7 +44,7 @@ public class MethylDbToFeatAlignments {
 
 	// class vars
 //	double[][][] fMethMat; // 3 (methylReads,reads,cpgs) x nFeats x (2*flankSize+1)
-	FeatAligner[] fMats = new FeatAligner[3]; // 3 (methylReads,reads,cpgs)
+	FeatAligner[] fMats = new FeatAligner[4]; // 3 (methylReads,reads,cpgs, mLevel)
 	int fCurFeatInd = 0;
 
 
@@ -99,7 +99,8 @@ public class MethylDbToFeatAlignments {
 		this.fMats[0] = new FeatAlignerAveraging(flankSize, false);
 		this.fMats[1] = new FeatAlignerAveraging(flankSize, false);
 		this.fMats[2] = new FeatAlignerAveraging(flankSize, true);
-		
+		this.fMats[3] = new FeatAlignerAveraging(flankSize, false);
+	
 		for (int chr = 11; chr <= 11; chr++)
 		{
 			processChrom(chr, feats, skipUnoriented);
@@ -122,7 +123,16 @@ public class MethylDbToFeatAlignments {
 		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nCpgs.csv", outputPrefix, featsFnBase)));
 		this.fMats[2].toAverageFeatAligner().matlabCsv(writer, true);
 		writer.close();
-}
+
+		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.mLevel.csv", outputPrefix, featsFnBase)));
+		this.fMats[3].toAverageFeatAligner().matlabCsv(writer, true);
+		writer.close();
+
+		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.charts.html", outputPrefix, featsFnBase)));
+		writer.print(this.fMats[3].htmlChart(true));
+		writer.close();
+	
+	}
 	
 	
 	protected void processChrom(int chr, ChromFeatures feats, boolean skipUnoriented)
@@ -185,6 +195,13 @@ public class MethylDbToFeatAlignments {
 				this.fMats[2].addAlignmentPos(chromPos, 
 						(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : (double)1.0,
 								(cpgStrand == StrandedFeature.NEGATIVE) ? (double)1.0 : Double.NaN,
+										featName, chrStr, rec.getStart(), featStrand);	
+
+				double mLevel = (double)methylReads/(double)reads;
+				//System.err.printf("mLevel = %.2f\n",mLevel*100.0);
+				this.fMats[3].addAlignmentPos(chromPos, 
+						(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
+								(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
 										featName, chrStr, rec.getStart(), featStrand);	
 
 			}

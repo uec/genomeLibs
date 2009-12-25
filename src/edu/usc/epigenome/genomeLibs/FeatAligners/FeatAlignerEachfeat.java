@@ -63,6 +63,14 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 
 
+	@Override
+	public String htmlChart(boolean strandSpecific) throws Exception{
+
+		FeatAlignerAveraging av = this.toAverageFeatAligner();
+		return av.htmlChart(strandSpecific);
+	}
+
+
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner#toAverageFeatAligner()
 	 */

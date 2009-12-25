@@ -44,6 +44,7 @@ public abstract class FeatAligner {
 	abstract public FeatAlignerAveraging toAverageFeatAligner();
 	abstract public void matlabCsv(PrintWriter pw, boolean strandSpecific);
 
+	abstract public String htmlChart(boolean strandSpecific) throws Exception;
 
 	
 	/*** Non-abstract ***/

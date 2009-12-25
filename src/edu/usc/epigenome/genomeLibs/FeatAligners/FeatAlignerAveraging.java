@@ -3,9 +3,12 @@ package edu.usc.epigenome.genomeLibs.FeatAligners;
 import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.StrandedFeature.Strand;
+
+import com.googlecode.charts4j.*;
 
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
@@ -35,6 +38,8 @@ public class FeatAlignerAveraging extends FeatAligner {
 		}
 	}
 
+	
+	
 	// Assumes that everything's already been flipped to the correct strand
 	public void addAlignmentFast (double[] fwStrandScores, double[] revStrandScores)
 	{
@@ -87,6 +92,57 @@ public class FeatAlignerAveraging extends FeatAligner {
 		return this;
 	}
 
+	
+
+	@Override
+	public String htmlChart(boolean strandSpecific) 
+	throws Exception {
+
+		StringBuilder sb = new StringBuilder(10000);
+		
+		int NUMPOINTS = 500;
+
+		/***** MUST DIVIDE arr[0]/arr[1]  and arr[3]/arr[4]!!!! ******/
+		
+		double[] fwArrSmall = this.arr[0];
+		if (fwArrSmall.length > NUMPOINTS)
+		{
+			fwArrSmall = new double[NUMPOINTS];
+			MatUtils.downscaleArray(fwArrSmall, this.arr[0]);
+		}
+		MatUtils.nansToVal(fwArrSmall, -0.2);
+//		Data fwData = DataUtil.scale(fwArrSmall);
+		Data fwData = DataUtil.scaleWithinRange(0.0, 10.0, fwArrSmall);
+        Plot plotFw = Plots.newPlot(fwData);
+//        plotFw.addShapeMarkers(Shape.DIAMOND, Color.BLUE, 4);
+        plotFw.setColor(Color.newColor(Color.BLUE, 80));
+  
+		double[] revArrSmall = this.arr[2];
+		if (revArrSmall.length > NUMPOINTS)
+		{
+			revArrSmall = new double[NUMPOINTS];
+			MatUtils.downscaleArray(revArrSmall, this.arr[2]);
+		}
+		MatUtils.nansToVal(revArrSmall, -0.2);
+		Data revData = DataUtil.scale(revArrSmall);
+//		Data revData = DataUtil.scaleWithinRange(0.0, 1.0, revArrSmall);
+        Plot plotRev = Plots.newPlot(revData);
+//        plotRev.addShapeMarkers(Shape.DIAMOND, Color.BLUE, 4);
+        plotRev.setColor(Color.newColor(Color.RED, 80));
+
+       
+        LineChart chart = GCharts.newLineChart(plotFw, plotRev);
+        chart.setSize(600, 200);
+        chart.setDataEncoding(DataEncoding.SIMPLE);
+       
+        sb.append("<IMG ");
+        sb.append(" SRC=\"");
+        sb.append(chart.toURLString());
+        sb.append("\" ALT=\"google chart\">\n");
+
+        
+        return sb.toString();
+	}
 
 	@Override
 	public void addAlignmentPos(int genomeRelPos, double fwStrandScore,
