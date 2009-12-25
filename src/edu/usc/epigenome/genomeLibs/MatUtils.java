@@ -6,6 +6,23 @@ import org.apache.commons.math.stat.StatUtils;
 
 public class MatUtils {
 
+	public static void initMat(int[] mat, int initVal)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			mat[i] = initVal;
+		}
+	}
+
+
+	public static void initMat(double[] mat, double initVal)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			mat[i] = initVal;
+		}
+	}
+	
 	public static void initMat(int[][] mat, int initVal)
 	{
 		for (int i = 0; i < mat.length; i++)
