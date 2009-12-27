@@ -53,6 +53,8 @@ public class MatUtils {
 		return (count == 0.0) ? Double.NaN : total;
 	}
 
+
+		
 	public static void initMat(int[] mat, int initVal)
 	{
 		for (int i = 0; i < mat.length; i++)
@@ -260,6 +262,15 @@ public class MatUtils {
 		return out;
 	}
 	
+	public static double[] vectSum(double[] a, double[] b)
+	{
+		int nC = a.length;
+		double[][] rowMat = new double[2][nC];
+		rowMat[0] = a;
+		rowMat[1] = b;
+		return MatUtils.colSums(rowMat);
+	}
+	
 	public static double[] rowSums(double[][] m)
 	{
 		int n_rows = m.length;
@@ -364,7 +375,56 @@ public class MatUtils {
 	{
 		return divMats (MatUtils.intMatToDouble(nmat), MatUtils.intMatToDouble(dmat));
 	}
+	
+	public static double[] divVects(double[] a, double[] b)
+	throws Exception
+	{
+		double[][] aMat = new double[1][a.length];
+		aMat[0] = a;
+		double[][] bMat = new double[1][b.length];
+		bMat[0] = b;
 		
+		double[][] outMat = MatUtils.divMats(aMat, bMat);
+		return outMat[0];
+	}
+	
+	public static double[] divVect(double[] vect, double denom)
+	{
+		return multVect(vect, 1/denom);
+	}
+
+	public static double[] multVect(double[] vect, double denom)
+	{
+		
+		double[][] mat = new double[1][vect.length];
+		mat[0] = vect;
+		double[][] outMat = multMat(mat, denom);
+		return outMat[0];
+	}
+	
+	public static double[][] divMat(double[][] mat, double denom)
+	{
+		return multMat(mat, 1/denom);
+	}
+
+	public static double[][] multMat(double[][] mat, double denom)
+	{
+		int nrow = mat.length;
+		int ncol = mat[0].length;
+
+		double[][] out = new double[nrow][ncol];
+		for (int i = 0; i < nrow; i++)
+		{
+			for (int j = 0; j < ncol; j++)
+			{
+				out[i][j] = mat[i][j] * denom;
+			}
+		}
+		
+		return out;		
+	}
+	
+	
 	public static double[][] divMats(double[][] nmat , double[][] dmat)
 	throws Exception
 	{

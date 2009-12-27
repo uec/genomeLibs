@@ -27,7 +27,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 
 public class MethylDbToFeatAlignments {
 
-	private static final String C_USAGE = "Use: MethylDbToFeatAlignments -maxFeatSize 10 -skipUnoriented -flankSize 2000 -outputPrefix outputTag feats.gtf";
+	private static final String C_USAGE = "Use: MethylDbToFeatAlignments -maxFeatSize 10 -skipUnoriented -flankSize 2000 -outputPrefix outputTag feats1.gtf feats2.gtf ...";
 	
 	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 	protected boolean skipUnoriented = false;
@@ -37,6 +37,8 @@ public class MethylDbToFeatAlignments {
     protected int flankSize = 2000;
     @Option(name="-outputPrefix",usage="Prefix for output files (default methylDb)")
     protected String outputPrefix = "methylDb";
+    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + CpgIterator.DEFAULT_TABLE_PREFIX + ")")
+    protected String tablePrefix = null;
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -112,24 +114,41 @@ public class MethylDbToFeatAlignments {
 
 		String featsFnBase = (new File(featsFn)).getName();
 
-		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nmCpgs.csv", outputPrefix, featsFnBase)));
-		this.fMats[0].matlabCsv(writer, true);
-		writer.close();
+//		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nmCpgs.csv", outputPrefix, featsFnBase)));
+//		this.fMats[0].matlabCsv(writer, true);
+//		writer.close();
+//
+//		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nReads.csv", outputPrefix, featsFnBase)));
+//		this.fMats[1].matlabCsv(writer, true);
+//		writer.close();
+//
+//		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nCpgs.csv", outputPrefix, featsFnBase)));
+//		this.fMats[2].toAverageFeatAligner().matlabCsv(writer, true);
+//		writer.close();
+//
+//		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.mLevel.csv", outputPrefix, featsFnBase)));
+//		this.fMats[3].toAverageFeatAligner().matlabCsv(writer, true);
+//		writer.close();
 
-		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nReads.csv", outputPrefix, featsFnBase)));
-		this.fMats[1].matlabCsv(writer, true);
-		writer.close();
-
-		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.nCpgs.csv", outputPrefix, featsFnBase)));
-		this.fMats[2].toAverageFeatAligner().matlabCsv(writer, true);
-		writer.close();
-
-		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.mLevel.csv", outputPrefix, featsFnBase)));
-		this.fMats[3].toAverageFeatAligner().matlabCsv(writer, true);
-		writer.close();
-
+		
 		writer = new PrintWriter(new FileOutputStream(String.format("%s.%s.charts.html", outputPrefix, featsFnBase)));
-		writer.print(this.fMats[3].htmlChart(true));
+		writer.printf("<H1>Sample=%s, Feature=%s</H1>\n<P></P>\n", outputPrefix, featsFnBase);
+		for (int i = 1; i >=0; i--)
+		{
+			boolean strandSpec = (i == 0) ? true : false;
+
+			writer.printf("<H3>mLevel</H3>");
+			writer.print(this.fMats[3].htmlChart(strandSpec, true, true));
+
+			writer.printf("<H3>Read counts</H3>");
+			writer.print(this.fMats[1].htmlChart(strandSpec, true, false));
+
+//			writer.printf("<H3>mCpGs</H3>");
+//			writer.print(this.fMats[0].htmlChart(strandSpec, false, false));
+
+			writer.printf("<H3>CpGs</H3>");
+			writer.print(this.fMats[2].htmlChart(strandSpec, false, false));
+}
 		writer.close();
 	
 	}
@@ -168,7 +187,7 @@ public class MethylDbToFeatAlignments {
 	
 			
 			// Meth
-			CpgIterator cpgit = new CpgIterator(chrStr, start, end); 
+			CpgIterator cpgit = new CpgIterator(chrStr, start, end, tablePrefix); 
 
 			while (cpgit.hasNext()) 
 			{

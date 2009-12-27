@@ -11,7 +11,9 @@ public abstract class FeatAligner {
 	public int flankSize;
 	protected boolean zeroInit = false;
 
-
+	public enum PlotType {
+		   FW, REV, COMBINED
+		 }
 	
 	/**
 	 * @param flankSize
@@ -44,7 +46,7 @@ public abstract class FeatAligner {
 	abstract public FeatAlignerAveraging toAverageFeatAligner();
 	abstract public void matlabCsv(PrintWriter pw, boolean strandSpecific);
 
-	abstract public String htmlChart(boolean strandSpecific) throws Exception;
+	abstract public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1) throws Exception;
 
 	
 	/*** Non-abstract ***/

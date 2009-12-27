@@ -21,8 +21,8 @@ import java.util.logging.Logger;
  */
 public class CpgIterator implements Iterator<Cpg> {
 
-	final private static String TABLE_PREFIX = "methylCGsRich_tumor10x_";
 //	final private static String TABLE_PREFIX = "RestingNucleosomes_CD4_";
+	final public static String DEFAULT_TABLE_PREFIX = "methylCGsRich_tumor10x_";
 
 	// Class vars
 	protected static Connection cConn = null; 
@@ -37,21 +37,23 @@ public class CpgIterator implements Iterator<Cpg> {
 	/**
 	 * 
 	 */
-	public CpgIterator(String chrom, int startCoord, int endCoord)
+	public CpgIterator(String chrom, int startCoord, int endCoord, String tablePrefix)
 	throws Exception 
 	{
 		super();
 		
+		if (tablePrefix==null) tablePrefix = DEFAULT_TABLE_PREFIX;
+		
 		// Check if we've started DB connection
 		if (cConn == null) setupDb();
 		
-		PreparedStatement prep = cByCoordsPreps.get(chrom);
+		String table = tablePrefix + chrom;
+		PreparedStatement prep = cByCoordsPreps.get(table);
 		if (prep == null)
 		{
-			String table = TABLE_PREFIX + chrom;
 			String sql = "select * from " + table + " WHERE chromPos >= ? AND chromPos <= ?;";
 			prep = cConn.prepareStatement(sql);
-			cByCoordsPreps.put(chrom, prep);
+			cByCoordsPreps.put(table, prep);
 			logger.log(Level.INFO, "Making prepared statement for chrom " + chrom + ": " + sql );
 		}
 		else
@@ -62,7 +64,6 @@ public class CpgIterator implements Iterator<Cpg> {
 		prep.setInt(1, startCoord);
 		prep.setInt(2, endCoord);
 		curRS = prep.executeQuery();
-		
 	}
 		
 	public CpgIterator(String chrom)

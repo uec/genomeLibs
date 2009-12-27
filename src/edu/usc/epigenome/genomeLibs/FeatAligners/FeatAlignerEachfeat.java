@@ -64,10 +64,10 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 
 	@Override
-	public String htmlChart(boolean strandSpecific) throws Exception{
+	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1) throws Exception{
 
 		FeatAlignerAveraging av = this.toAverageFeatAligner();
-		return av.htmlChart(strandSpecific);
+		return av.htmlChart(strandSpecific, normalizedByCounts, range0to1);
 	}
 
 
