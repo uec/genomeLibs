@@ -9,7 +9,8 @@ my $USAGE = "splitColsByChrom.pl --chromCol 1 --delim , --outPrefix fileout file
 my $delim = "\t";
 my $outPrefix = 0;
 my $chromCol = 1;
-GetOptions ('chromCol=i' => \$chromCol, 'outPrefix=s' => \$outPrefix, 'delimx=s' => \$delim) || die "$USAGE\n";
+my $omitChrFld = 0;
+GetOptions ('chromCol=i' => \$chromCol, 'omitChromFldInOutput' => \$omitChrFld, 'outPrefix=s' => \$outPrefix, 'delimx=s' => \$delim) || die "$USAGE\n";
 
 
 die "$USAGE\n" unless (@ARGV>0);
@@ -33,14 +34,16 @@ foreach my $fn (@ARGV)
 		$chr = "chr${chr}" unless ($chr =~ /^chr/i);
 		$flds[$chromCol-1] = $chr;
 		
+		splice (@flds, $chromCol-1, 1) if ($omitChrFld);
+		
 		my $fh = $outfhByChrom->{$chr};
 		if ($fh)
 		{
-			print STDERR "Found fh for chr $chr: $fh\n";	
+			#print STDERR "Found fh for chr $chr: $fh\n";	
 		}
 		else
 		{
-			print STDERR "Didn't find fh for chr $chr\n";	
+			#print STDERR "Didn't find fh for chr $chr\n";	
 			my $outfn = "${outPrefix}${chr}.txt";
 			die "Can't write to $outfn\n" unless (open($fh, ">$outfn"));
 			$outfhByChrom->{$chr} = $fh;
