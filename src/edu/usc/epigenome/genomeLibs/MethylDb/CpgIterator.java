@@ -51,7 +51,7 @@ public class CpgIterator implements Iterator<Cpg> {
 		PreparedStatement prep = cByCoordsPreps.get(table);
 		if (prep == null)
 		{
-			String sql = "select * from " + table + " WHERE chromPos >= ? AND chromPos <= ?;";
+			String sql = "select * from " + table + " WHERE chromPos >= ? AND chromPos <= ? ORDER BY chromPos;";
 			prep = cConn.prepareStatement(sql);
 			cByCoordsPreps.put(table, prep);
 			logger.log(Level.INFO, "Making prepared statement for chrom " + chrom + ": " + sql );
@@ -66,16 +66,40 @@ public class CpgIterator implements Iterator<Cpg> {
 		curRS = prep.executeQuery();
 	}
 		
-	public CpgIterator(String chrom)
+	public void init(String chrom, int startCoord, int endCoord, String tablePrefix)
+	{
+		
+	}
+	
+	public CpgIterator(String chrom, String tablePrefix)
 	throws Exception 
 	{
 		super();
+		if (tablePrefix==null) tablePrefix = DEFAULT_TABLE_PREFIX;
 		
 		// Check if we've started DB connection
 		if (cConn == null) setupDb();
 		
+		String table = tablePrefix + chrom;
+		PreparedStatement prep = cByChromPreps.get(table);
+		if (prep == null)
+		{
+			String sql = "select * from " + table + " ORDER BY chromPos;";
+			prep = cConn.prepareStatement(sql);
+			cByChromPreps.put(table, prep);
+			logger.log(Level.INFO, "Making prepared statement for chrom " + chrom + ": " + sql );
+		}
+		else
+		{
+			//logger.log(Level.INFO, "Found prepared statement for chrom " + chrom);
+		}
+
+		curRS = prep.executeQuery();
 	}
 
+	
+	
+	
 	public CpgIterator()
 	throws Exception 
 	{

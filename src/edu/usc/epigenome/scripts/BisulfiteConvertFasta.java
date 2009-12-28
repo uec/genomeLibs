@@ -31,7 +31,7 @@ public class BisulfiteConvertFasta {
 	public static void main(String[] args)
 	throws Exception
 	{
-		new BisulfiteConvertFasta().doMain(args);
+		 new BisulfiteConvertFasta().doMain(args);
 	}
 
 	public void doMain(String[] args)

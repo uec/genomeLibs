@@ -11,6 +11,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
+
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 
@@ -18,10 +20,12 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 
 public class MethylDbToWig {
 
-	private static final String C_USAGE = "Use: MethylDbToWig -noNonconvFilter chr [startPos] [endPos]";
+	private static final String C_USAGE = "Use: MethylDbToWig -tablePrefix " + CpgIterator.DEFAULT_TABLE_PREFIX+ " -noNonconvFilter chr [startPos] [endPos]";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
+    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + CpgIterator.DEFAULT_TABLE_PREFIX + ")")
+    protected String tablePrefix = null;
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -45,17 +49,19 @@ public class MethylDbToWig {
 		{
 			parser.parseArgument(args);
 
+			if(arguments.size() < 1 ) {
+				System.err.println(C_USAGE);
+				System.exit(1);
+			}
+
 			chr = arguments.get(0);
+			if (!chr.startsWith("chr")) chr = "chr" + chr;
 			if (arguments.size()>1)
 			{
 				chrSt = Integer.parseInt(arguments.get(1));
 				chrEnd = Integer.parseInt(arguments.get(2));
 			}
 
-			if(arguments.size() < 1 ) {
-				System.err.println(C_USAGE);
-				System.exit(1);
-			}
 		}
 		catch (CmdLineException e)
 		{
@@ -75,11 +81,11 @@ public class MethylDbToWig {
 		
 		if (arguments.size()>1)
 		{
-			it = new CpgIterator(chr, chrSt, chrEnd);
+			it = new CpgIterator(chr, chrSt, chrEnd, tablePrefix);
 		}
 		else
 		{
-			it = new CpgIterator(chr, chrSt, chrEnd);
+			it = new CpgIterator(chr, tablePrefix);
 		}
 		
 		int count = 0;
