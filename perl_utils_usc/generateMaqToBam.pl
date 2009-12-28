@@ -76,10 +76,48 @@ sub mergeBams
 
     my $regionSec = ($region) ? ".${region}" : "";
     my $curOut = "${prefix}.NODUPS.sorted.calmd${regionSec}.bam";
-    my $cmd = "${SAMDIR}/samtools merge ${curOut} " . join(" ", @$individualBamFns);
-    my $curJobids = [runCmd(0, $cmd, "M2B_mergeBams", $dependJobs)];
+    my $curJobids;
+    if (scalar(@$individualBamFns) == 1)
+    {
+	my $cmd = "mv " . @{$individualBamFns}[0] . " $curOut";
+	$curJobids = [runCmd(0, $cmd, "M2B_mvBams", $dependJobs)];
+    }
+    else
+    {
+	my $cmd = "${SAMDIR}/samtools merge ${curOut} " . join(" ", @$individualBamFns);
+	$cmd .= "; rm -f " . join(" ", @$individualBamFns) if ($RMTMPS);
+	$curJobids = [runCmd(0, $cmd, "M2B_mergeBams", $dependJobs)];
+    }
+
+    # We have to remove dups again
+    my $curIn = $curOut;
+    $curOut = "${prefix}.NODUPS.sorted.calmd${regionSec}.NODUPS.bam";
+    my $cmd = "${SAMDIR}/samtools rmdup -s ${curIn} ${curOut}";
+    $cmd .= "; rm -f ${curIn}" if ($RMTMPS);
+    $curJobids = [runCmd(0,$cmd, "M2B_rmdups", $curJobids)];
 
     my $finalBamOut = $curOut;
+
+#     # Pull region
+#     if ($region)
+#     {
+# 	$curIn = "${mapFnBase}.NODUPS.sorted.calmd.bam";
+# 	$curOut = "${mapFnBase}.NODUPS.sorted.calmd.${region}.bam";
+# 	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
+# 	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegion", $curJobids)];
+
+# 	# Don't do this. Make the region a side effect and actually merge
+# 	# full bam going up
+# 	# Set final BAM name
+# 	#$finalBamFn = $curOut;
+
+# 	# Index bam
+# 	$curIn = $curOut;
+# 	$curOut = "${mapFnBase}.NODUPS.sorted.calmd.${region}.bam.bai";
+# 	my $cmd = "${SAMDIR}/samtools index ${curIn} ${curOut}";
+# 	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegionIndex", $curJobids)];
+#     }
+
 
     # Index bam
     my $curIn = $curOut;
@@ -172,6 +210,8 @@ sub runMapPipeline
 	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
 	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegion", $curJobids)];
 
+	# Don't do this. Make the region a side effect and actually merge
+	# full bam going up
 	# Set final BAM name
 	$finalBamFn = $curOut;
 
