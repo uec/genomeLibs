@@ -1,6 +1,7 @@
 package edu.usc.epigenome.scripts;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -15,19 +16,18 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
 
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
 
 
 
-public class MethylDbToWig {
+public class MethylDbToPairedDeltaWig {
 
-	private static final String C_USAGE = "Use: MethylDbToWig -tablePrefix " + MethylDbParams.DEFAULT_TABLE_PREFIX + 
-	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
+	private static final String C_USAGE = "Use: MethylDbToPairedDeltaWig " +  
+	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos] table1prefix table2prefix";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
-    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbParams.DEFAULT_TABLE_PREFIX + ")")
-    protected String tablePrefix = null;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
@@ -40,7 +40,7 @@ public class MethylDbToWig {
 	public static void main(String[] args)
 	throws Exception	
 	{
-		new MethylDbToWig().doMain(args);
+		new MethylDbToPairedDeltaWig().doMain(args);
 	}
 
 	public void doMain(String[] args)
@@ -49,8 +49,8 @@ public class MethylDbToWig {
 		CmdLineParser parser = new CmdLineParser(this);
 		// if you have a wider console, you could increase the value;
 		// here 80 is also the default
-		int chrSt = 0, chrEnd = 0;
-		String chr;
+		int chrSt = -1, chrEnd = -1;
+		String chr, table1prefix, table2prefix;
 		parser.setUsageWidth(80);
 		try
 		{
@@ -61,14 +61,15 @@ public class MethylDbToWig {
 				System.exit(1);
 			}
 
-			chr = arguments.get(0);
+			chr = arguments.remove(0);
 			if (!chr.startsWith("chr")) chr = "chr" + chr;
-			if (arguments.size()>1)
+			if (arguments.size()==4)
 			{
-				chrSt = Integer.parseInt(arguments.get(1));
-				chrEnd = Integer.parseInt(arguments.get(2));
+				chrSt = Integer.parseInt(arguments.remove(0));
+				chrEnd = Integer.parseInt(arguments.remove(0));
 			}
-
+			table1prefix = arguments.remove(0);
+			table2prefix = arguments.remove(0);
 		}
 		catch (CmdLineException e)
 		{
@@ -85,11 +86,10 @@ public class MethylDbToWig {
 		
 		
 		MethylDbParams params = new MethylDbParams();
-		if (this.tablePrefix != null) params.tablePrefix = this.tablePrefix;
 		params.minCTreads = this.minCTreads;
 		params.useNonconversionFilter = !this.noNonconvFilter;
 		params.maxOppstrandAfrac = this.maxOppStrandAfrac;
-		if (arguments.size()>1)
+		if (chrSt >= 0)
 		{
 			params.addRangeFilter(chr, chrSt, chrEnd);
 		}
@@ -98,8 +98,8 @@ public class MethylDbToWig {
 			params.addRangeFilter(chr);
 		}
 
-		Iterator<Cpg> it;
-		it = new CpgIterator(params);
+		Iterator<Cpg[]> it;
+		it = new CpgIteratorMultisample(params, Arrays.asList(table1prefix,table2prefix));
 		
 		int count = 0;
 		System.out.printf("track type=wiggle_0 name=%s description=%s\n", "test", "test");
@@ -107,12 +107,28 @@ public class MethylDbToWig {
 		
 		while (it.hasNext())
 		{
-			Cpg cpg = it.next();
-			if (!Double.isNaN(cpg.fracMeth(!this.noNonconvFilter)))
+			Cpg[] cpgs = it.next();
+			int ns = cpgs.length;
+			
+			
+			double a = cpgs[0].fracMeth(!this.noNonconvFilter);
+			double b = cpgs[1].fracMeth(!this.noNonconvFilter);
+			double delta = b - a;
+			if (!Double.isNaN(a) && !Double.isNaN(b))
 			{
-				System.out.println(cpg.variableStepWigLine(!this.noNonconvFilter));
-				//System.err.println(cpg.toString());
+				System.out.println(cpgs[0].chromPos + "\t" + delta);
 			}
+			
+//			for (int i = 0; i < ns; i++)
+//			{
+//				Cpg cpg = cpgs[i];
+//				if (i>0) System.out.print("\t");
+//			
+//				System.out.print(cpg.variableStepWigLine(!this.noNonconvFilter));
+//				// System.out.print(cpg.toString());
+//			}
+//			System.out.println();
+
 			count++;
 		}
 		

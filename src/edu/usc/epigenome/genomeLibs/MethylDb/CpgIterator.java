@@ -4,99 +4,78 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author benb
- *
- */
+
 /**
  * @author benb
  *
  */
 public class CpgIterator implements Iterator<Cpg> {
 
-//	final private static String TABLE_PREFIX = "RestingNucleosomes_CD4_";
-	final public static String DEFAULT_TABLE_PREFIX = "methylCGsRich_tumor10x_";
-
 	// Class vars
 	protected static Connection cConn = null; 
-	protected static Map<String,PreparedStatement> cByCoordsPreps = new HashMap<String,PreparedStatement>();
-	protected static Map<String,PreparedStatement> cByChromPreps = new HashMap<String,PreparedStatement>();
+	protected static Map<String,PreparedStatement> cPreps = new HashMap<String,PreparedStatement>();
 	private static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME); // "edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator");
 	
 	// Object vars
+	protected MethylDbParams params = null;
 	protected ResultSet curRS = null;
 	
 
 	/**
 	 * 
 	 */
-	public CpgIterator(String chrom, int startCoord, int endCoord, String tablePrefix)
+	public CpgIterator(MethylDbParams inParams)
 	throws Exception 
 	{
 		super();
-		
-		if (tablePrefix==null) tablePrefix = DEFAULT_TABLE_PREFIX;
-		
-		// Check if we've started DB connection
-		if (cConn == null) setupDb();
-		
-		String table = tablePrefix + chrom;
-		PreparedStatement prep = cByCoordsPreps.get(table);
-		if (prep == null)
-		{
-			String sql = "select * from " + table + " WHERE chromPos >= ? AND chromPos <= ? ORDER BY chromPos;";
-			prep = cConn.prepareStatement(sql);
-			cByCoordsPreps.put(table, prep);
-			logger.log(Level.INFO, "Making prepared statement for chrom " + chrom + ": " + sql );
-		}
-		else
-		{
-			//logger.log(Level.INFO, "Found prepared statement for chrom " + chrom);
-		}
+		this.init(inParams);
+	}
 
-		prep.setInt(1, startCoord);
-		prep.setInt(2, endCoord);
-		curRS = prep.executeQuery();
-	}
-		
-	public void init(String chrom, int startCoord, int endCoord, String tablePrefix)
-	{
-		
-	}
+
+
 	
-	public CpgIterator(String chrom, String tablePrefix)
+	public CpgIterator(String chrom, int startCoord, int endCoord, String inTablePrefix)
 	throws Exception 
 	{
 		super();
-		if (tablePrefix==null) tablePrefix = DEFAULT_TABLE_PREFIX;
+		MethylDbParams params = new MethylDbParams();
+		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
+		params.addRangeFilter(chrom, startCoord, endCoord);
+		this.init(params);
+	}
 		
-		// Check if we've started DB connection
-		if (cConn == null) setupDb();
-		
-		String table = tablePrefix + chrom;
-		PreparedStatement prep = cByChromPreps.get(table);
-		if (prep == null)
-		{
-			String sql = "select * from " + table + " ORDER BY chromPos;";
-			prep = cConn.prepareStatement(sql);
-			cByChromPreps.put(table, prep);
-			logger.log(Level.INFO, "Making prepared statement for chrom " + chrom + ": " + sql );
-		}
-		else
-		{
-			//logger.log(Level.INFO, "Found prepared statement for chrom " + chrom);
-		}
+	
+	public CpgIterator(String chrom, String inTablePrefix)
+	throws Exception 
+	{
+		super();
+		MethylDbParams params = new MethylDbParams();
+		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
+		params.addRangeFilter(chrom);
+		this.init(params);
 
-		curRS = prep.executeQuery();
 	}
 
+	public void init(MethylDbParams inParams)
+	throws Exception
+	{
+		this.params = inParams;
+
+		// Check if we've started DB connection
+		if (cConn == null) setupDb();
+		PreparedStatement prep = CpgIterator.getPrep(inParams);
+		CpgIterator.fillPrep(params, prep);
+		curRS = prep.executeQuery();		
+	}
 	
 	
 	
@@ -172,15 +151,63 @@ public class CpgIterator implements Iterator<Cpg> {
 	 * @see java.util.Iterator#remove()
 	 */
 	public void remove() {
-		
+	}
+	
+	protected static String getSql(MethylDbParams params)
+	throws Exception
+	{
+		return sqlHelper(params, null);
 	}
 	
 	
-	
-	protected static void setupDb()
+	private static void fillPrep(MethylDbParams params, PreparedStatement prep)
 	throws Exception
 	{
-		String connStr = "jdbc:mysql://localhost/cr?user=benb";
+		sqlHelper(params, prep);
+	}
+	
+
+	protected static PreparedStatement getPrep(MethylDbParams inParams)
+	throws Exception
+	{
+		String sql = getSql(inParams);
+		return getPrep(sql);
+	}
+	
+	protected static PreparedStatement getPrep(String sql)
+	throws SQLException
+	{
+		PreparedStatement prep = cPreps.get(sql);
+		if (prep==null)
+		{
+			prep = cConn.prepareStatement(sql);
+			cPreps.put(sql, prep);
+			logger.log(Level.SEVERE, "Making prepared statement: " + sql );
+		}
+		return prep;
+	}
+
+	
+	/**
+	 * @param params
+	 * @param prep If not null, we actually fill in the prepared statment with values
+	 * @return
+	 */
+	private static String sqlHelper(MethylDbParams params, PreparedStatement prep)
+	throws Exception
+	{
+		String table = params.getTable();
+		String sql = String.format("select * from %s cpg WHERE ", table);
+		sql += params.sqlWhereSecHelper(prep, "cpg");
+		sql += " ORDER BY chromPos ;";
+		return sql;
+	}
+	
+	
+	protected void setupDb()
+	throws Exception
+	{
+		String connStr = this.params.connStr;
 		Class.forName("com.mysql.jdbc.Driver").newInstance();
 		System.err.println("Getting connection for " + connStr);
 		cConn = DriverManager.getConnection(connStr);

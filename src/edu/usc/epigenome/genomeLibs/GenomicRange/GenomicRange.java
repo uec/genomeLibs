@@ -5,6 +5,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
 
@@ -47,6 +49,21 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 		this.setStrand(inStrand);
 	}
 
+	
+	public static GenomicRange fullChromRange(String inChrom, String genomeAssembly)
+	{
+		int end = Integer.MAX_VALUE;
+		try
+		{
+			end = GoldAssembly.chromLengthStatic(inChrom, genomeAssembly);
+		}
+		catch (Exception e)
+		{
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).log(Level.WARNING,
+					"Can't find chrom length for assembly " + genomeAssembly + ": " + e.toString());
+		}
+		return new GenomicRange(inChrom, 0, end);
+	}
 	
 	/**
 	 * @return the strand

@@ -23,6 +23,7 @@ import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
 
 
 public class MethylDbToFeatAlignments {
@@ -37,7 +38,7 @@ public class MethylDbToFeatAlignments {
     protected int flankSize = 2000;
     @Option(name="-outputPrefix",usage="Prefix for output files (default methylDb)")
     protected String outputPrefix = "methylDb";
-    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + CpgIterator.DEFAULT_TABLE_PREFIX + ")")
+    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbParams.DEFAULT_TABLE_PREFIX + ")")
     protected String tablePrefix = null;
 	// receives other command line parameters than options
 	@Argument
