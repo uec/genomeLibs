@@ -10,13 +10,21 @@ my $outfile = shift(@ARGV);
 my @infiles = @ARGV;
 
 # Check that input exists
+my @goodInfiles = ();
 foreach my $infile (@infiles)
 {
-    die "wrap_maq_mapmerge: input file ${infile} is 0 length\n" unless (-s $infile);
+	if (-s $infile)
+	{
+		push(@goodInfiles, $infile);
+	}
+	else
+	{
+    	print STDERR "wrap_maq_mapmerge: input file ${infile} is 0 length\n" ;
+	}
 }
 
 # Run
-my $cmd = join(" ", "maq","mapmerge",$outfile, @infiles);
+my $cmd = join(" ", "maq","mapmerge",$outfile, @goodInfiles);
 print STDERR "${cmd}\n";
 print STDERR `${cmd} 2>&1`;
 
