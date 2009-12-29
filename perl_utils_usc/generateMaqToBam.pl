@@ -74,7 +74,8 @@ sub mergeBams
 
     print STDERR "merging bams (".join(",",@$individualBamFns) .")\n\tFrom jobs(".join(",",@$dependJobs).")\n";
 
-    my $regionSec = ($region) ? ".${region}" : "";
+#    my $regionSec = ($region) ? ".${region}" : "";
+    my $regionSec = "";
     my $curOut = "${prefix}.NODUPS.sorted.calmd${regionSec}.bam";
     my $curJobids;
     if (scalar(@$individualBamFns) == 1)
@@ -98,32 +99,32 @@ sub mergeBams
 
     my $finalBamOut = $curOut;
 
-#     # Pull region
-#     if ($region)
-#     {
-# 	$curIn = "${mapFnBase}.NODUPS.sorted.calmd.bam";
-# 	$curOut = "${mapFnBase}.NODUPS.sorted.calmd.${region}.bam";
-# 	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
-# 	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegion", $curJobids)];
-
-# 	# Don't do this. Make the region a side effect and actually merge
-# 	# full bam going up
-# 	# Set final BAM name
-# 	#$finalBamFn = $curOut;
-
-# 	# Index bam
-# 	$curIn = $curOut;
-# 	$curOut = "${mapFnBase}.NODUPS.sorted.calmd.${region}.bam.bai";
-# 	my $cmd = "${SAMDIR}/samtools index ${curIn} ${curOut}";
-# 	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegionIndex", $curJobids)];
-#     }
-
-
     # Index bam
     my $curIn = $curOut;
     $curOut = "${curIn}.bai";
     my $cmd = "${SAMDIR}/samtools index ${curIn} ${curOut}";
     $curJobids = [runCmd(0, $cmd, "M2B_index", $curJobids)];
+
+
+    # Pull region
+    if ($region)
+    {
+	$curIn = $finalBamOut;
+	$curOut = "${prefix}.NODUPS.sorted.calmd.${region}.NODUPS.bam";
+	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
+	$curJobids = [runCmd(0,$cmd, "M2B_pullRegion", $curJobids)];
+
+	# Don't do this. Make the region a side effect and actually merge
+	# full bam going up
+	# Set final BAM name
+	#$finalBamFn = $curOut;
+
+	# Index bam
+	$curIn = $curOut;
+	$curOut = "${curIn}.bai";
+	my $cmd = "${SAMDIR}/samtools index ${curIn} ${curOut}";
+	$curJobids = [runCmd(0,$cmd, "M2B_pullRegionIndex", $curJobids)];
+    }
 
     return (@${curJobids}[0], $finalBamOut);
 }
@@ -205,15 +206,15 @@ sub runMapPipeline
     # Pull region
     if ($region)
     {
-	$curIn = "${mapFnBase}.NODUPS.sorted.calmd.bam";
+	$curIn = $finalBamFn;
 	$curOut = "${mapFnBase}.NODUPS.sorted.calmd.${region}.bam";
 	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
 	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegion", $curJobids)];
 
 	# Don't do this. Make the region a side effect and actually merge
 	# full bam going up
-	# Set final BAM name
-	$finalBamFn = $curOut;
+	# # Set final BAM name
+	# $finalBamFn = $curOut;
 
 	# Index bam
 	$curIn = $curOut;
