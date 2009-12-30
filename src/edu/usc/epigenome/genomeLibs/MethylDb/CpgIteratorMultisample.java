@@ -219,7 +219,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 			{
 				numParams++;
 			}
-			System.err.println("Found " + numParams + " params");
+			//System.err.println("Found " + numParams + " params");
 			curInd += numParams;
 		}		
 		ListUtils.setDelim(" AND ");

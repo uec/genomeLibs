@@ -29,6 +29,41 @@ public class MatUtils {
 		return (count == 0.0) ? Double.NaN : (total/count);
 	}
 	
+	public static double nanStdev(double[] arr)
+	{
+		return nanStdev(arr, 0, arr.length);
+	}
+
+	public static double nanStdev(double[] arr , int startInd, int len)
+	{
+		return Math.sqrt(nanVariance(arr, startInd, len));
+	}
+	
+	
+	public static double nanVariance(double[] arr)
+	{
+		return nanVariance(arr, 0, arr.length);
+	}
+	
+	
+	public static double nanVariance(double[] arr , int startInd, int len)
+	{
+		double mean = nanMean(arr, startInd, len);
+		
+		int count = 0;
+		double totalVar = 0;
+		for (int i = startInd; i < (startInd+len) ; i++)
+		{
+			if (!Double.isNaN(arr[i]))
+			{
+				count++;
+				totalVar += Math.pow(arr[i] - mean, 2.0);
+			}
+		}		
+		
+		return totalVar / (double)count;
+	}
+	
 	
 	public static double nanSum(double[] arr)
 	{
@@ -290,7 +325,7 @@ public class MatUtils {
 		
 		for (int i = 0; i < n_rows; i++)
 		{
-			out[i] = Math.sqrt(StatUtils.variance(m[i]));
+			out[i] = Math.sqrt(nanVariance(m[i]));
 		}
 		return out;
 	}

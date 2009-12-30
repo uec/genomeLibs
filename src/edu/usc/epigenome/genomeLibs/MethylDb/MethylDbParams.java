@@ -30,7 +30,7 @@ public class MethylDbParams {
 	// Filtering
 	public int minCTreads = 0;
 	public boolean useNonconversionFilter = true;
-	public double maxOppstrandAfrac = Double.MAX_VALUE;
+	public double maxOppstrandAfrac = 0.2; // Double.MAX_VALUE;
 	
 	public void addRangeFilter(String chrom)
 	{

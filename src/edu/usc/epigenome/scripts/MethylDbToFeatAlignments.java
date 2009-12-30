@@ -24,6 +24,7 @@ import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
 public class MethylDbToFeatAlignments {
@@ -104,9 +105,10 @@ public class MethylDbToFeatAlignments {
 		this.fMats[2] = new FeatAlignerAveraging(flankSize, true);
 		this.fMats[3] = new FeatAlignerAveraging(flankSize, false);
 	
-		for (int chr = 11; chr <= 11; chr++)
+		
+		for (String chrStr : MethylDbUtils.CHROMS11)
 		{
-			processChrom(chr, feats, skipUnoriented);
+			processChrom(chrStr, feats, skipUnoriented);
 		}
 
 		
@@ -155,11 +157,11 @@ public class MethylDbToFeatAlignments {
 	}
 	
 	
-	protected void processChrom(int chr, ChromFeatures feats, boolean skipUnoriented)
+	protected void processChrom(String chrStr, ChromFeatures feats, boolean skipUnoriented)
 	throws Exception
 	{
 		// Setup the DB queries
-		String chrStr = feats.public_chrom_str(chr);
+		int chr = feats.chrom_from_public_str(chrStr); 
 
 		Iterator featit = feats.featureIterator(chr);
 		System.err.println("Processing " + chrStr);
@@ -188,6 +190,9 @@ public class MethylDbToFeatAlignments {
 	
 			
 			// Meth
+			MethylDbParams params = new MethylDbParams();
+			params.tablePrefix = this.tablePrefix;
+			params.addRangeFilter(chrStr);
 			CpgIterator cpgit = new CpgIterator(chrStr, start, end, tablePrefix); 
 
 			while (cpgit.hasNext()) 

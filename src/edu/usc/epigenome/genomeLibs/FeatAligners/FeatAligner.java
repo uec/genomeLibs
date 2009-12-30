@@ -101,7 +101,9 @@ public abstract class FeatAligner {
 		int rangeStart = featCoord - this.flankSize; 
 		int rangeEnd = featCoord + this.flankSize; 
 		
-		return this.getColumnInd(genomeRelPos, featCoord, featStrand, rangeStart, rangeEnd);
+		int out = this.getColumnInd(genomeRelPos, featCoord, featStrand, rangeStart, rangeEnd);
+		//System.err.printf("getColumnInd(%d, %d, %s) = %d\n",genomeRelPos,featCoord,featStrand.toString(),out);
+		return out;
 	}
 	
 

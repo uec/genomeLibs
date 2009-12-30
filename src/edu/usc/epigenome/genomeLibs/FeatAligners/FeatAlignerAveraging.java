@@ -140,7 +140,7 @@ public class FeatAlignerAveraging extends FeatAligner {
         }
         chart.addYAxisLabels(yAxis);
         
-        sb.append(String.format("<H3>strandSpec=<EM>%s</EM> normalizedByCounts=<EM>%s</EM>, range0to1=<EM>%s</EM></H3>",
+        sb.append(String.format("<P>strandSpec=<EM>%s</EM> normalizedByCounts=<EM>%s</EM>, range0to1=<EM>%s</EM></P>",
 				strandSpecific, normalizedByCounts, range0to1));
         
         sb.append("<IMG ");
@@ -180,7 +180,7 @@ public class FeatAlignerAveraging extends FeatAligner {
 			c = Color.CORNFLOWERBLUE; break;
 		}
 
-		//plot.addShapeMarkers(Shape.DIAMOND, Color.BLACK, 4);
+//		plot.addShapeMarkers(Shape.DIAMOND, Color.BLACK, 4);
 		plot.setColor(c);
 		
 		return plot;
