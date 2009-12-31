@@ -47,7 +47,7 @@ public class PileupToCpgAlignedByFeats extends PileupToCpgTemplate {
 	 */
 	@Override
 	protected void addHandlers(AlignmentPosStreamer apStreamer) {
-		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize, useCensoring));
+//		apStreamer.add(new APHandlerFeatAligner(featGtf, featWindSize, useCensoring));
 	}
 
 	

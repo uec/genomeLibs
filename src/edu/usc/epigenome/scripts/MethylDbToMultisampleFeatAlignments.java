@@ -237,8 +237,8 @@ public class MethylDbToMultisampleFeatAlignments {
 			
 			// Meth
 			MethylDbQuerier params = new MethylDbQuerier();
-			params.minCTreads = this.minCTreads;
-			params.maxOppstrandAfrac = this.maxOppStrandAfrac;
+			params.setMinCTreads(this.minCTreads);
+			params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 			params.addRangeFilter(chrStr,start,end);
 			CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
 			while (cpgit.hasNext()) 
@@ -253,7 +253,7 @@ public class MethylDbToMultisampleFeatAlignments {
 				double mLevels[] = new double[nS];
 				for (int i = 0; i < nS; i++)
 				{
-					double mLevel = cpgs[i].fracMeth(params.useNonconversionFilter);
+					double mLevel = cpgs[i].fracMeth(params.getUseNonconversionFilter());
 					mLevels[i] = mLevel;
 					this.fStatMats[i][2].addAlignmentPos(
 							chromPos,

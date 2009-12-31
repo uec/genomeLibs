@@ -39,7 +39,7 @@ public class MethylDbToFeatAlignments {
     protected int flankSize = 2000;
     @Option(name="-outputPrefix",usage="Prefix for output files (default methylDb)")
     protected String outputPrefix = "methylDb";
-    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_TABLE_PREFIX + ")")
+    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
     protected String tablePrefix = null;
 	// receives other command line parameters than options
 	@Argument
@@ -191,7 +191,7 @@ public class MethylDbToFeatAlignments {
 			
 			// Meth
 			MethylDbQuerier params = new MethylDbQuerier();
-			params.tablePrefix = this.tablePrefix;
+			params.methylTablePrefix = this.tablePrefix;
 			params.addRangeFilter(chrStr);
 			CpgIterator cpgit = new CpgIterator(chrStr, start, end, tablePrefix); 
 

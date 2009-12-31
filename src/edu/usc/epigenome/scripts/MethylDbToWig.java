@@ -21,12 +21,12 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 public class MethylDbToWig {
 
-	private static final String C_USAGE = "Use: MethylDbToWig -tablePrefix " + MethylDbQuerier.DEFAULT_TABLE_PREFIX + 
+	private static final String C_USAGE = "Use: MethylDbToWig -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
 	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
-    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_TABLE_PREFIX + ")")
+    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
     protected String tablePrefix = null;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
@@ -85,10 +85,10 @@ public class MethylDbToWig {
 		
 		
 		MethylDbQuerier params = new MethylDbQuerier();
-		if (this.tablePrefix != null) params.tablePrefix = this.tablePrefix;
-		params.minCTreads = this.minCTreads;
-		params.useNonconversionFilter = !this.noNonconvFilter;
-		params.maxOppstrandAfrac = this.maxOppStrandAfrac;
+		if (this.tablePrefix != null) params.methylTablePrefix = this.tablePrefix;
+		params.setMinCTreads(this.minCTreads);
+		params.setUseNonconversionFilter(!this.noNonconvFilter);
+		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 		if (arguments.size()>1)
 		{
 			params.addRangeFilter(chr, chrSt, chrEnd);

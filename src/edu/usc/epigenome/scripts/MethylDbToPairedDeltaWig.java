@@ -86,9 +86,9 @@ public class MethylDbToPairedDeltaWig {
 		
 		
 		MethylDbQuerier params = new MethylDbQuerier();
-		params.minCTreads = this.minCTreads;
-		params.useNonconversionFilter = !this.noNonconvFilter;
-		params.maxOppstrandAfrac = this.maxOppStrandAfrac;
+		params.setMinCTreads(this.minCTreads);
+		params.setUseNonconversionFilter(!this.noNonconvFilter);
+		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 		if (chrSt >= 0)
 		{
 			params.addRangeFilter(chr, chrSt, chrEnd);

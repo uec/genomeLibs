@@ -48,7 +48,7 @@ public class CpgIterator implements Iterator<Cpg> {
 	{
 		super();
 		MethylDbQuerier params = new MethylDbQuerier();
-		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
+		if (inTablePrefix!=null) params.methylTablePrefix = inTablePrefix;
 		params.addRangeFilter(chrom, startCoord, endCoord);
 		this.init(params);
 	}
@@ -59,7 +59,7 @@ public class CpgIterator implements Iterator<Cpg> {
 	{
 		super();
 		MethylDbQuerier params = new MethylDbQuerier();
-		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
+		if (inTablePrefix!=null) params.methylTablePrefix = inTablePrefix;
 		params.addRangeFilter(chrom);
 		this.init(params);
 

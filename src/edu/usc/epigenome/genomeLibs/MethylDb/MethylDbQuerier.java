@@ -14,11 +14,13 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
 public class MethylDbQuerier {
 
-	public final static String DEFAULT_TABLE_PREFIX = "methylCGsRich_tumor10x_";
+	public final static String DEFAULT_METHYL_TABLE_PREFIX = "methylCGsRich_tumor10x_";
+	public final static String DEFAULT_FEAT_TABLE_PREFIX = "features_";
 	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/cr?user=benb";
 	
 	
-	public String tablePrefix = DEFAULT_TABLE_PREFIX;
+	public String methylTablePrefix = DEFAULT_METHYL_TABLE_PREFIX;
+	public String featureTablePrefix = DEFAULT_FEAT_TABLE_PREFIX;
 	public String connStr = DEFAULT_CONN_STR;
 	
 	
@@ -28,9 +30,11 @@ public class MethylDbQuerier {
 
 	
 	// Filtering
-	public int minCTreads = 0;
-	public boolean useNonconversionFilter = true;
-	public double maxOppstrandAfrac = 0.2; // Double.MAX_VALUE;
+	protected int minCTreads = 0;
+	protected boolean useNonconversionFilter = true;
+	protected double maxOppstrandAfrac = 0.2; // Double.MAX_VALUE;
+	
+	
 	
 	public void addFeatFilter(String featType)
 	{
@@ -98,14 +102,20 @@ public class MethylDbQuerier {
 	throws Exception
 	{
 		String chrom = this.getChrom();
-		String table = this.tablePrefix + chrom;
+		String table = this.methylTablePrefix + chrom;
 
 		return table;
 	}
 
 
 	
+	
+	
+	
 	/******* PUBLIC DB STUFF ********/
+
+	
+
 
 	/**
 	 * @param asName This is the table alias, i.e. SELECT ... FROM tab1 t1, tab2 t2 ... 
@@ -134,6 +144,56 @@ public class MethylDbQuerier {
 	}
 
 
+	/******* GETTERS AND SETTERS ************/
+	public String getMethylTablePrefix() {
+		return methylTablePrefix;
+	}
+
+
+	public void setMethylTablePrefix(String methylTablePrefix) {
+		this.methylTablePrefix = methylTablePrefix;
+	}
+
+
+	public String getFeatureTablePrefix() {
+		return featureTablePrefix;
+	}
+
+
+	public void setFeatureTablePrefix(String featureTablePrefix) {
+		this.featureTablePrefix = featureTablePrefix;
+	}
+
+
+	public int getMinCTreads() {
+		return minCTreads;
+	}
+
+
+	public void setMinCTreads(int minCTreads) {
+		this.minCTreads = minCTreads;
+	}
+
+
+	public boolean getUseNonconversionFilter() {
+		return useNonconversionFilter;
+	}
+
+
+	public void setUseNonconversionFilter(boolean useNonconversionFilter) {
+		this.useNonconversionFilter = useNonconversionFilter;
+	}
+
+
+	public double getMaxOppstrandAfrac() {
+		return maxOppstrandAfrac;
+	}
+
+
+	public void setMaxOppstrandAfrac(double maxOppstrandAfrac) {
+		this.maxOppstrandAfrac = maxOppstrandAfrac;
+	}
+	
 	/******* BEHIND THE SCENES PRIVATE DB STUFF ********/
 
 	/**

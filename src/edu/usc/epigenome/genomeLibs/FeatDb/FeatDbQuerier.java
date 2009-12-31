@@ -18,7 +18,7 @@ public class FeatDbQuerier {
 	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/cr?user=benb";
 	
 	
-	public String tablePrefix = DEFAULT_TABLE_PREFIX;
+	protected String tablePrefix = DEFAULT_TABLE_PREFIX;
 	public String connStr = DEFAULT_CONN_STR;
 	
 	
@@ -92,9 +92,19 @@ public class FeatDbQuerier {
 		return table;
 	}
 
+	/********** GETTERS AND SETTERS ********/
+	
+	public String getTablePrefix() {
+		return tablePrefix;
+	}
+
+	public void setTablePrefix(String tablePrefix) {
+		this.tablePrefix = tablePrefix;
+	}
 
 	
 	/******* PUBLIC DB STUFF ********/
+	
 	
 	
 	/**
