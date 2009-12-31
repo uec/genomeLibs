@@ -26,14 +26,14 @@ public class CpgIterator implements Iterator<Cpg> {
 	private static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME); // "edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator");
 	
 	// Object vars
-	protected MethylDbParams params = null;
+	protected MethylDbQuerier params = null;
 	protected ResultSet curRS = null;
 	
 
 	/**
 	 * 
 	 */
-	public CpgIterator(MethylDbParams inParams)
+	public CpgIterator(MethylDbQuerier inParams)
 	throws Exception 
 	{
 		super();
@@ -47,7 +47,7 @@ public class CpgIterator implements Iterator<Cpg> {
 	throws Exception 
 	{
 		super();
-		MethylDbParams params = new MethylDbParams();
+		MethylDbQuerier params = new MethylDbQuerier();
 		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
 		params.addRangeFilter(chrom, startCoord, endCoord);
 		this.init(params);
@@ -58,14 +58,14 @@ public class CpgIterator implements Iterator<Cpg> {
 	throws Exception 
 	{
 		super();
-		MethylDbParams params = new MethylDbParams();
+		MethylDbQuerier params = new MethylDbQuerier();
 		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
 		params.addRangeFilter(chrom);
 		this.init(params);
 
 	}
 
-	public void init(MethylDbParams inParams)
+	public void init(MethylDbQuerier inParams)
 	throws Exception
 	{
 		this.params = inParams;
@@ -153,21 +153,21 @@ public class CpgIterator implements Iterator<Cpg> {
 	public void remove() {
 	}
 	
-	protected static String getSql(MethylDbParams params)
+	protected static String getSql(MethylDbQuerier params)
 	throws Exception
 	{
 		return sqlHelper(params, null);
 	}
 	
 	
-	private static void fillPrep(MethylDbParams params, PreparedStatement prep)
+	private static void fillPrep(MethylDbQuerier params, PreparedStatement prep)
 	throws Exception
 	{
 		sqlHelper(params, prep);
 	}
 	
 
-	protected static PreparedStatement getPrep(MethylDbParams inParams)
+	protected static PreparedStatement getPrep(MethylDbQuerier inParams)
 	throws Exception
 	{
 		String sql = getSql(inParams);
@@ -193,7 +193,7 @@ public class CpgIterator implements Iterator<Cpg> {
 	 * @param prep If not null, we actually fill in the prepared statment with values
 	 * @return
 	 */
-	private static String sqlHelper(MethylDbParams params, PreparedStatement prep)
+	private static String sqlHelper(MethylDbQuerier params, PreparedStatement prep)
 	throws Exception
 	{
 		String table = params.getTable();

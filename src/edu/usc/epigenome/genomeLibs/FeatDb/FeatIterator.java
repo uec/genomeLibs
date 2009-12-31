@@ -32,14 +32,14 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	private static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME); // "edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator");
 	
 	// Object vars
-	protected FeatDbParams params = null;
+	protected FeatDbQuerier params = null;
 	protected ResultSet curRS = null;
 	
 
 	/**
 	 * 
 	 */
-	public FeatIterator(FeatDbParams inParams)
+	public FeatIterator(FeatDbQuerier inParams)
 	throws Exception 
 	{
 		super();
@@ -53,7 +53,7 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	throws Exception 
 	{
 		super();
-		FeatDbParams params = new FeatDbParams();
+		FeatDbQuerier params = new FeatDbQuerier();
 		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
 		params.addRangeFilter(chrom, startCoord, endCoord);
 		params.addFeatFilter(featType);
@@ -64,7 +64,7 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	throws Exception 
 	{
 		super();
-		FeatDbParams params = new FeatDbParams();
+		FeatDbQuerier params = new FeatDbQuerier();
 		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
 		params.addRangeFilter(chrom, startCoord, endCoord);
 		this.init(params);
@@ -75,14 +75,14 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	throws Exception 
 	{
 		super();
-		FeatDbParams params = new FeatDbParams();
+		FeatDbQuerier params = new FeatDbQuerier();
 		if (inTablePrefix!=null) params.tablePrefix = inTablePrefix;
 		params.addRangeFilter(chrom);
 		this.init(params);
 
 	}
 
-	public void init(FeatDbParams inParams)
+	public void init(FeatDbQuerier inParams)
 	throws Exception
 	{
 		this.params = inParams;
@@ -190,21 +190,21 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	public void remove() {
 	}
 	
-	protected static String getSql(FeatDbParams params)
+	protected static String getSql(FeatDbQuerier params)
 	throws Exception
 	{
 		return sqlHelper(params, null);
 	}
 	
 	
-	private static void fillPrep(FeatDbParams params, PreparedStatement prep)
+	private static void fillPrep(FeatDbQuerier params, PreparedStatement prep)
 	throws Exception
 	{
 		sqlHelper(params, prep);
 	}
 	
 
-	protected static PreparedStatement getPrep(FeatDbParams inParams)
+	protected static PreparedStatement getPrep(FeatDbQuerier inParams)
 	throws Exception
 	{
 		String sql = getSql(inParams);
@@ -230,7 +230,7 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	 * @param prep If not null, we actually fill in the prepared statment with values
 	 * @return
 	 */
-	private static String sqlHelper(FeatDbParams params, PreparedStatement prep)
+	private static String sqlHelper(FeatDbQuerier params, PreparedStatement prep)
 	throws Exception
 	{
 		String table = params.getTable();

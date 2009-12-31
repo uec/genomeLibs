@@ -27,7 +27,7 @@ import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
-import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
@@ -236,7 +236,7 @@ public class MethylDbToMultisampleFeatAlignments {
 	
 			
 			// Meth
-			MethylDbParams params = new MethylDbParams();
+			MethylDbQuerier params = new MethylDbQuerier();
 			params.minCTreads = this.minCTreads;
 			params.maxOppstrandAfrac = this.maxOppStrandAfrac;
 			params.addRangeFilter(chrStr,start,end);

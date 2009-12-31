@@ -22,20 +22,20 @@ import org.usckeck.genome.GFFUtils;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
-import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbParams;
+import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
-import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 
 
 public class GtfToFeatDbOffline {
 
-	private static final String C_USAGE = "Use: GtfToFeatDb -tablePrefix " + FeatDbParams.DEFAULT_TABLE_PREFIX + 
+	private static final String C_USAGE = "Use: GtfToFeatDb -tablePrefix " + FeatDbQuerier.DEFAULT_TABLE_PREFIX + 
 	" feat1.gtf file2.gtf ...";
 	
-	@Option(name="-tablePrefix",usage="Prefix for DB table (default " + FeatDbParams.DEFAULT_TABLE_PREFIX + ")")
-    protected String tablePrefix = FeatDbParams.DEFAULT_TABLE_PREFIX;
+	@Option(name="-tablePrefix",usage="Prefix for DB table (default " + FeatDbQuerier.DEFAULT_TABLE_PREFIX + ")")
+    protected String tablePrefix = FeatDbQuerier.DEFAULT_TABLE_PREFIX;
  	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();

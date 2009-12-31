@@ -29,7 +29,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	private static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME); // "edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator");
 	
 	// Object vars
-	protected MethylDbParams params = null;
+	protected MethylDbQuerier params = null;
 	protected List<String> sampleTablePrefixes = null;
 	protected ResultSet curRS = null;
 	
@@ -37,7 +37,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	/**
 	 * 
 	 */
-	public CpgIteratorMultisample(MethylDbParams inParams, List<String> inSampleTablePrefixes)
+	public CpgIteratorMultisample(MethylDbQuerier inParams, List<String> inSampleTablePrefixes)
 	throws Exception 
 	{
 		super();
@@ -47,7 +47,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 
 
 
-	public void init(MethylDbParams inParams, List<String> inSampleTablePrefixes)
+	public void init(MethylDbQuerier inParams, List<String> inSampleTablePrefixes)
 	throws Exception
 	{
 		this.params = inParams;
@@ -143,21 +143,21 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	public void remove() {
 	}
 	
-	protected String getSql(MethylDbParams params)
+	protected String getSql(MethylDbQuerier params)
 	throws Exception
 	{
 		return sqlHelper(params, null);
 	}
 	
 	
-	private void fillPrep(MethylDbParams params, PreparedStatement prep)
+	private void fillPrep(MethylDbQuerier params, PreparedStatement prep)
 	throws Exception
 	{
 		sqlHelper(params, prep);
 	}
 	
 
-	protected  PreparedStatement getPrep(MethylDbParams inParams)
+	protected  PreparedStatement getPrep(MethylDbQuerier inParams)
 	throws Exception
 	{
 		String sql = getSql(inParams);
@@ -183,7 +183,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	 * @param prep If not null, we actually fill in the prepared statment with values
 	 * @return
 	 */
-	private String sqlHelper(MethylDbParams params, PreparedStatement prep)
+	private String sqlHelper(MethylDbQuerier params, PreparedStatement prep)
 	throws Exception
 	{
 		int nS = this.sampleTablePrefixes.size();

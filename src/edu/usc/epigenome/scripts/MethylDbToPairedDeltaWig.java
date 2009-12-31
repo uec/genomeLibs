@@ -17,7 +17,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
-import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 
 
@@ -85,7 +85,7 @@ public class MethylDbToPairedDeltaWig {
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
 		
 		
-		MethylDbParams params = new MethylDbParams();
+		MethylDbQuerier params = new MethylDbQuerier();
 		params.minCTreads = this.minCTreads;
 		params.useNonconversionFilter = !this.noNonconvFilter;
 		params.maxOppstrandAfrac = this.maxOppStrandAfrac;

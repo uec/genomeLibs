@@ -26,12 +26,12 @@ import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
-import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbParams;
+import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
-import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
@@ -106,7 +106,7 @@ public class FeatDbReorientGtfFeats {
 				SimpleGFFRecord target = (SimpleGFFRecord) targetit.next();
 
 				// Get the overlapping feats
-				FeatDbParams params = new FeatDbParams();
+				FeatDbQuerier params = new FeatDbQuerier();
 				params.addRangeFilter(target.getSeqName(), target.getStart(), target.getEnd());
 				params.addFeatFilter(featType);
 				FeatIterator feats = new FeatIterator(params);

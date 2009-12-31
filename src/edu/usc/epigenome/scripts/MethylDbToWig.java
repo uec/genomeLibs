@@ -15,18 +15,18 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
 
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
-import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbParams;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 
 
 public class MethylDbToWig {
 
-	private static final String C_USAGE = "Use: MethylDbToWig -tablePrefix " + MethylDbParams.DEFAULT_TABLE_PREFIX + 
+	private static final String C_USAGE = "Use: MethylDbToWig -tablePrefix " + MethylDbQuerier.DEFAULT_TABLE_PREFIX + 
 	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
-    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbParams.DEFAULT_TABLE_PREFIX + ")")
+    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_TABLE_PREFIX + ")")
     protected String tablePrefix = null;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
@@ -84,7 +84,7 @@ public class MethylDbToWig {
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
 		
 		
-		MethylDbParams params = new MethylDbParams();
+		MethylDbQuerier params = new MethylDbQuerier();
 		if (this.tablePrefix != null) params.tablePrefix = this.tablePrefix;
 		params.minCTreads = this.minCTreads;
 		params.useNonconversionFilter = !this.noNonconvFilter;
