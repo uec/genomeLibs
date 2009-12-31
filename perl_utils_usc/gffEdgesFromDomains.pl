@@ -40,13 +40,14 @@ foreach my $fn (@ARGV)
 	        for (my $i = 0; $i <= 1; $i++)
 	        {
 				# i = 0 => 5', i=1 => 3'
-				my $label = ($i==0) ? "5prime" : "3prime";
+				my $label = ($i==0) ? "-5prime" : "-3prime";
+				$label = "";
 				
 				my @newflds = @flds; # Make a copy
 				$newflds[6] = ($i==0) ? "+" : "-";
 				$newflds[3] = ($i==0) ? $rangeS : $rangeE;	
 				$newflds[4] = ($i==0) ? $rangeS : $rangeE;	
-				$newflds[8] =~ s/\"([^\"]+)\"/\"$1-$label\"/g if ($flds[8]);
+				$newflds[8] =~ s/\"([^\"]+)\"/\"$1$label\"/g if ($flds[8]);
 				
 				# Do we want to actually include this one?
 				my $correctStrand = ($instrand eq (($i==0) ? "+" : "-"));

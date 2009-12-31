@@ -151,6 +151,7 @@ public class FeatAlignerAveraging extends FeatAligner {
 		catch (Exception e)
 		{
 			System.err.println("Could not make chart: " + e.toString());
+			e.printStackTrace(System.err);
 		}
 
         
@@ -245,8 +246,9 @@ public class FeatAlignerAveraging extends FeatAligner {
 		}
 		else
 		{
-			lastMin = 0.0; // StatUtils.min(plotArrSmall);
+			lastMin = ((StatUtils.min(plotArrSmall)) > 0.0) ? 0.0 : StatUtils.min(plotArrSmall);
 			lastMax = StatUtils.max(plotArrSmall);
+			System.err.println("min="+lastMin+"\tmax="+lastMax);
 		}
 		data = DataUtil.scaleWithinRange(lastMin, lastMax, plotArrSmall);
 

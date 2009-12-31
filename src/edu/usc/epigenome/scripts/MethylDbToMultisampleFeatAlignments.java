@@ -33,14 +33,16 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class MethylDbToMultisampleFeatAlignments {
 
-	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments -maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
+	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments -noDeltas -maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
 	"-outputPrefix outputTag sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
 	
 	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 	protected boolean skipUnoriented = false;
 	@Option(name="-combineStrands",usage="If set, combine strands into a single line")
 	protected boolean combineStrands = false;
-     @Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
+	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
+	protected boolean noDeltas = false;
+	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
     protected int maxFeatSize = Integer.MAX_VALUE;
     @Option(name="-flankSize",usage="bp flanking each side of the feature center (default 2000)")
     protected int flankSize = 2000;
@@ -164,7 +166,7 @@ public class MethylDbToMultisampleFeatAlignments {
 			writer.printf("<H1>%s</H1>\n<P></P>\n", featsFnBase);
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info("On feature " + onFeatType + "/" + nFeatTypes + " " + featsFnBase);
 		
-			
+
 			// M-levels
 			for (int i = 0; i < nS; i++)
 			{
@@ -172,25 +174,28 @@ public class MethylDbToMultisampleFeatAlignments {
 				writer.printf("<H4>%s</H4>\n", tablePrefix);
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
 			}
-			
-			// Pairwise deltas
-			int onMat = 0;
-			for (int i = 0; i < nS; i++)
-			{
-				String aPrefix = tablePrefixes.get(i);
-				for (int j = (i+1); j < nS; j++)
-				{
-					String bPrefix = tablePrefixes.get(j);
 
-					writer.printf("<H4>Abs diff %s vs. %s</H4>\n", aPrefix, bPrefix);
-					writer.println(this.fDeltaMats[onMat++].htmlChart(!this.combineStrands, true, false));
+			if (!this.noDeltas)
+			{
+				// Pairwise deltas
+				int onMat = 0;
+				for (int i = 0; i < nS; i++)
+				{
+					String aPrefix = tablePrefixes.get(i);
+					for (int j = (i+1); j < nS; j++)
+					{
+						String bPrefix = tablePrefixes.get(j);
+
+						writer.printf("<H4>Abs diff %s vs. %s</H4>\n", aPrefix, bPrefix);
+						writer.println(this.fDeltaMats[onMat++].htmlChart(!this.combineStrands, true, false));
+					}
 				}
+
+				// Variance
+				writer.printf("<H4>Variance</H4>\n");
+				writer.println(this.fVarianceMat.htmlChart(!this.combineStrands, true, false));
 			}
-			
-			// Variance
-			writer.printf("<H4>Variance</H4>\n");
-			writer.println(this.fVarianceMat.htmlChart(!this.combineStrands, true, false));
-			
+
 			
 
 
@@ -256,31 +261,33 @@ public class MethylDbToMultisampleFeatAlignments {
 									(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
 											featName, chrStr, rec.getStart(), featStrand);
 				}
-				
-				
-				// Then variance
-				double mVar = MatUtils.nanVariance(mLevels);
-				this.fVarianceMat.addAlignmentPos(
-						chromPos,
-						(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mVar,
-								(cpgStrand == StrandedFeature.NEGATIVE) ? mVar: Double.NaN,
-										featName, chrStr, rec.getStart(), featStrand);
-				
-				// Then pairwise.
-				int onMat = 0;
-				for (int i = 0; i < nS; i++)
+
+				if (!this.noDeltas)
 				{
-					for (int j = (i+1); j < nS; j++)
+					// Then variance
+					double mVar = MatUtils.nanVariance(mLevels);
+					this.fVarianceMat.addAlignmentPos(
+							chromPos,
+							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mVar,
+									(cpgStrand == StrandedFeature.NEGATIVE) ? mVar: Double.NaN,
+											featName, chrStr, rec.getStart(), featStrand);
+
+					// Then pairwise.
+					int onMat = 0;
+					for (int i = 0; i < nS; i++)
 					{
-						double absDiff = Math.abs(mLevels[i]-mLevels[j]);
-						this.fDeltaMats[onMat++].addAlignmentPos(
-								chromPos,
-								(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : absDiff,
-										(cpgStrand == StrandedFeature.NEGATIVE) ? absDiff : Double.NaN,
-												featName, chrStr, rec.getStart(), featStrand);
+						for (int j = (i+1); j < nS; j++)
+						{
+							double absDiff = Math.abs(mLevels[i]-mLevels[j]);
+							this.fDeltaMats[onMat++].addAlignmentPos(
+									chromPos,
+									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : absDiff,
+											(cpgStrand == StrandedFeature.NEGATIVE) ? absDiff : Double.NaN,
+													featName, chrStr, rec.getStart(), featStrand);
+						}
 					}
 				}
-				
+
 
 
 			}

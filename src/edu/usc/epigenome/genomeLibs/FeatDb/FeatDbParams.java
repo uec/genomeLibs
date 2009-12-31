@@ -1,4 +1,4 @@
-package edu.usc.epigenome.genomeLibs.MethylDb;
+package edu.usc.epigenome.genomeLibs.FeatDb;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -12,9 +12,9 @@ import java.util.logging.Logger;
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
-public class MethylDbParams {
+public class FeatDbParams {
 
-	public final static String DEFAULT_TABLE_PREFIX = "methylCGsRich_tumor10x_";
+	public final static String DEFAULT_TABLE_PREFIX = "features_";
 	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/cr?user=benb";
 	
 	
@@ -24,23 +24,12 @@ public class MethylDbParams {
 	
 	// Ranges
 	protected Set<GenomicRange> rangeFilters = new HashSet<GenomicRange>(1);
-	protected Set<String> featFilters = new HashSet<String>(1);
+	protected Set<String> featFilters = new HashSet<String>(10);
 
-	
-	// Filtering
-	public int minCTreads = 0;
-	public boolean useNonconversionFilter = true;
-	public double maxOppstrandAfrac = 0.2; // Double.MAX_VALUE;
 	
 	public void addFeatFilter(String featType)
 	{
-	
-	}
-	
-	
-	public void addFeatFilter(String featType, int flankSize)
-	{
-		
+		featFilters.add(featType);
 	}
 	
 	public void addRangeFilter(String chrom)
@@ -105,7 +94,13 @@ public class MethylDbParams {
 
 
 	
-	/******* DB STUFF ********/
+	/******* PUBLIC DB STUFF ********/
+	
+	
+	/**
+	 * @param asName This is the table alias, i.e. SELECT ... FROM tab1 t1, tab2 t2 ... 
+	 * @return
+	 */
 	public String sqlWhereSec(String asName)
 	{
 		String out = null;
@@ -128,6 +123,8 @@ public class MethylDbParams {
 		sqlWhereSecHelper(prep, asName);
 	}
 
+	
+	// Private building of the where sec
 	
 	/**
 	 * @param prep If supplied, we not only return the SQL but fill in the prep with its correct values
@@ -153,51 +150,40 @@ public class MethylDbParams {
 			List<String> grClauses = new ArrayList<String>(this.rangeFilters.size());
 			for (GenomicRange gr : this.rangeFilters)
 			{
-				String clause = String.format("(%schromPos>=? AND %schromPos<=?)", asSec, asSec);
+				// This is the best way to pick anything that OVERLAPS the range.
+				// Notice than CONTAINED WITHIN the range would be a different query
+				String clause = String.format("(!(%schromPosStart<? AND %schromPosEnd<?) AND !(%schromPosStart>? AND %schromPosEnd>?))", asSec, asSec,asSec,asSec);
 				grClauses.add(clause);
 				if (prep!=null)
 				{
 					prep.setInt(curInd++, gr.getStart());
+					prep.setInt(curInd++, gr.getStart());
+					prep.setInt(curInd++, gr.getEnd());
 					prep.setInt(curInd++, gr.getEnd());
 				}
 			}
-			ListUtils.setDelim(" OR ");
+			ListUtils.setDelim(" OR "); // Notice that it's a UNION of range filters
 			clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
 		}
-
+		
 		// feat filters
 		if (this.featFilters.size()>0)
 		{
+			List<String> fClauses = new ArrayList<String>(this.featFilters.size());
 			for (String featFilter : this.featFilters)
 			{
-
+				String clause = String.format("(featType = ?)");
+				fClauses.add(clause);
+				if (prep!=null)
+				{
+					prep.setString(curInd++, featFilter);
+				}
 			}
+			ListUtils.setDelim(" OR "); // Notice that it's a UNION of feat filters
+			clauses.add("(" + ListUtils.excelLine(fClauses.toArray(new String[1])) + ")");
 		}
 
-		// minCTreads
-		if (this.minCTreads > 0)
-		{
-			String cSec = (this.useNonconversionFilter) ? String.format("%scReads", asSec) :
-				String.format("(%scReads+%scReadsNonconversionFilt)",asSec,asSec);
-			String clause = String.format("((%s+%stReads) >= ?)",cSec, asSec);
-			clauses.add(clause);
-			if (prep != null)
-			{
-				prep.setInt(curInd++, this.minCTreads);
-			}
-		}
 		
-		
-		// oppstrand gtoa ratio
-		if (this.maxOppstrandAfrac < 1.0)
-		{
-			String clause = String.format("((%stotalReadsOpposite=0) OR ((%saReadsOpposite/%stotalReadsOpposite)<=?))",asSec, asSec, asSec);
-			clauses.add(clause);
-			if (prep != null)
-			{
-				prep.setDouble(curInd++, (double)this.maxOppstrandAfrac);
-			}
-		}
 		
 		ListUtils.setDelim(" AND ");
 		String sql = ListUtils.excelLine(clauses.toArray(new String[1]));
