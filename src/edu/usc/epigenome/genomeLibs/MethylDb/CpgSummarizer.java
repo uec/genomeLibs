@@ -249,6 +249,7 @@ public abstract class CpgSummarizer {
 	/**** HTML tables , non-static ****/
 	public String htmlTableRow()
 	{
+		
 		StringWriter sw = new StringWriter(30000);
 		PrintWriter pw = new PrintWriter(sw);
 
