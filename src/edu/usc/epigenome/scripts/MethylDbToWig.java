@@ -21,13 +21,15 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 public class MethylDbToWig {
 
-	private static final String C_USAGE = "Use: MethylDbToWig -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
+	private static final String C_USAGE = "Use: MethylDbToWig -withinFeat featType -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
 	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
     @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
     protected String tablePrefix = null;
+    @Option(name="-withinFeat",usage="A featType from the features table")
+    protected String withinFeat = null;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
@@ -89,6 +91,8 @@ public class MethylDbToWig {
 		params.setMinCTreads(this.minCTreads);
 		params.setUseNonconversionFilter(!this.noNonconvFilter);
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
+		
 		if (arguments.size()>1)
 		{
 			params.addRangeFilter(chr, chrSt, chrEnd);

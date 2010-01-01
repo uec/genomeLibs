@@ -142,7 +142,7 @@ public class FeatDbReorientGtfFeats {
 				target.setStrand(newStrand);
 				
 				
-				Logger.getAnonymousLogger().info(String.format("GFF %s\t%d overlapping recs\tsawFw=%s\tsawRev=%s\tnewStrand=%s\n", 
+				Logger.getAnonymousLogger().fine(String.format("GFF %s\t%d overlapping recs\tsawFw=%s\tsawRev=%s\tnewStrand=%s\n", 
 						GFFUtils.gffBetterString(target),nOvs,""+ overlapsFw,"" + overlapsRev, ""+newStrand));
 
 				outFeats.add_feature(target);

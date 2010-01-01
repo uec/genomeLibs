@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
+import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
 public class MethylDbQuerier {
@@ -47,9 +48,16 @@ public class MethylDbQuerier {
 		featFilters.add(new MethylDbQuerier.FeatClass(featType, flankSize));
 	}
 	
+	public void clearRangeFilters()
+	{
+		this.rangeFilters = new HashSet<GenomicRange>(1);
+	}
+	
 	public void addRangeFilter(String chrom)
 	{
-		GenomicRange gr = GenomicRange.fullChromRange(chrom, "hg18");
+		// Set this up in a way we can detect this later, because we will want
+		// to remove it for database efficiency.
+		GenomicRange gr = GenomicRange.infiniteChromRange(chrom);
 		this.addRangeFilter(gr);
 	}
 	
@@ -98,7 +106,7 @@ public class MethylDbQuerier {
 		return chrom;
 	}
 	
-	public String getTable()
+	public String getMethylTable()
 	throws Exception
 	{
 		String chrom = this.getChrom();
@@ -107,44 +115,30 @@ public class MethylDbQuerier {
 		return table;
 	}
 
-
-	
-	
-	
-	
-	/******* PUBLIC DB STUFF ********/
-
-	
-
-
-	/**
-	 * @param asName This is the table alias, i.e. SELECT ... FROM tab1 t1, tab2 t2 ... 
-	 * @return
-	 */
-	public String sqlWhereSec(String asName)
+	public String getFeatTable()
+	throws Exception
 	{
-		String out = null;
-		try
-		{
-			// I don't think this can really throw an exception if it's not 
-			// setting a prepared statement.
-			out = sqlWhereSecHelper(null, asName);
-		}
-		catch (Exception e)
-		{
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Shouldn't have gotten here");
-		}
-		return out;
+		String chrom = this.getChrom();
+		String table = this.featureTablePrefix + chrom;
+
+		return table;
 	}
 
-	public void sqlWhereSecFillPrep(PreparedStatement prep, String asName)
-	throws SQLException
-	{
-		sqlWhereSecHelper(prep, asName);
-	}
+	
+	
+	
+	
+
 
 
 	/******* GETTERS AND SETTERS ************/
+	
+	public boolean usesFeatTable()
+	{
+		return (this.featFilters.size() > 0);
+	}
+	
+	
 	public String getMethylTablePrefix() {
 		return methylTablePrefix;
 	}
@@ -194,19 +188,56 @@ public class MethylDbQuerier {
 		this.maxOppstrandAfrac = maxOppstrandAfrac;
 	}
 	
+	/******* PUBLIC DB STUFF ********/
+
+	/**
+	 * @param asName This is the table alias, i.e. SELECT ... FROM tab1 t1, tab2 t2 ... 
+	 * @return
+	 */
+	public String sqlWhereSec(String asName)
+	{
+		String out = null;
+		try
+		{
+			// I don't think this can really throw an exception if it's not 
+			// setting a prepared statement.
+			MethylDbQuerier.HelperOutput output = sqlWhereSecHelper(null, asName);
+			out = output.sql;
+		}
+		catch (Exception e)
+		{
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Shouldn't have gotten here");
+		}
+		return out;
+	}
+
+	/**
+	 * @param prep If supplied, we not only return the SQL but fill in the prep with its correct values
+	 * @param asName the <alias name> of the table in the FROM section of the query
+	 * @return the new current index
+	 * @throws SQLException
+	 */
+	public int sqlWhereSecFillPrep(PreparedStatement prep, String asName)
+	throws SQLException
+	{
+		MethylDbQuerier.HelperOutput output = sqlWhereSecHelper(prep, asName);
+		return output.newCurInd;
+	}
+	
+	
 	/******* BEHIND THE SCENES PRIVATE DB STUFF ********/
 
 	/**
 	 * @param prep If supplied, we not only return the SQL but fill in the prep with its correct values
 	 * @return
 	 */
-	protected String sqlWhereSecHelper(PreparedStatement prep, String asName)
+	protected MethylDbQuerier.HelperOutput sqlWhereSecHelper(PreparedStatement prep, String asName)
 	throws SQLException
 	{
 		return this.sqlWhereSecHelper(prep, asName, 1);
 	}
 	
-	protected String sqlWhereSecHelper(PreparedStatement prep, String asName, int curInd)
+	protected MethylDbQuerier.HelperOutput sqlWhereSecHelper(PreparedStatement prep, String asName, int curInd)
 	throws SQLException
 	{
 		String asSec = (asName==null) ? "" : (asName+".");
@@ -217,43 +248,92 @@ public class MethylDbQuerier {
 		// Range filters
 		if (this.rangeFilters.size()>0)
 		{
+			// Testing with the indices in my table shows that if you're doing a whole chromosome, you 
+			// NEVER want to put artificial filters on (like the "whole chromosome" filter we sometimes
+			// use.  So let's detect this.
+//			mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=0 AND cpg.chromPos<=5531960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) AND (chromPosEnd>0) AND (chromPosStart<5531960706) ORDER BY chromPos ;
+//			+----------+
+//			| count(*) |
+//			+----------+
+//			|    49327 |
+//			+----------+
+//			1 row in set (1 min 51.58 sec)
+//
+//			mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) ORDER BY chromPos ;
+//			+----------+
+//			| count(*) |
+//			+----------+
+//			|    49327 |
+//			+----------+
+//			1 row in set (0.11 sec)
+			
 			List<String> grClauses = new ArrayList<String>(this.rangeFilters.size());
 			for (GenomicRange gr : this.rangeFilters)
 			{
-				String clause = String.format("(%schromPos>=? AND %schromPos<=?)", asSec, asSec);
-				grClauses.add(clause);
-				if (prep!=null)
+				// Rule out infinite ones
+				if (!gr.isInfiniteChromRange())
 				{
-					prep.setInt(curInd++, gr.getStart());
-					prep.setInt(curInd++, gr.getEnd());
+					String clause = String.format("(%schromPos>=? AND %schromPos<=?)", asSec, asSec);
+					grClauses.add(clause);
+					if (prep!=null)
+					{
+						prep.setInt(curInd++, gr.getStart());
+						prep.setInt(curInd++, gr.getEnd());
+					}
 				}
 			}
-			ListUtils.setDelim(" OR ");
-			clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
+			
+			if (grClauses.size()>0)
+			{
+				ListUtils.setDelim(" OR ");
+				clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
+			}
 		}
 
 		// feat filters
 		if (this.featFilters.size()>0)
 		{
-//			for (MethylDbQuerier.FeatClass featFilter : this.featFilters)
-//			{
-//				// This is the best way to pick anything that OVERLAPS the range.
-//				// Notice than CONTAINED WITHIN the range would be a different query
-//				
-//				// Add the flank to the SQL itself or as a param?  Seems like one script
-//				// would use 1 or very few flank sizes, so i'll put it in SQL
-//				
-//				String clause = String.format("(!(%schromPosStart<? AND %schromPosEnd<?) AND !(%schromPosStart>? AND %schromPosEnd>?))", 
-//						asSec, asSec,asSec,asSec);
-//				clauses.add(clause);
-//				if (prep!=null)
-//				{
-//					prep.setInt(curInd++, gr.getStart());
-//					prep.setInt(curInd++, gr.getStart());
-//					prep.setInt(curInd++, gr.getEnd());
-//					prep.setInt(curInd++, gr.getEnd());
-//				}
-//			}
+			for (MethylDbQuerier.FeatClass featFilter : this.featFilters)
+			{
+				// When we have a feature filter, we generally use that index first since the 
+				// number of rows is much smaller in the feature table than the meth table.
+				// So if we add a redundant coordinate filter for the features, we can often
+				// speed up the query incredibly:
+
+//				mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=30683099 AND cpg.chromPos<=31960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2))  ORDER BY chromPos ;
+//				+----------+
+//				| count(*) |
+//				+----------+
+//				|     2210 |
+//				+----------+
+//				1 row in set (0.82 sec)
+//
+//				mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=30683099 AND cpg.chromPos<=31960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) AND (chromPosEnd>30683099) AND (chromPosStart<31960706) ORDER BY chromPos ;
+//				+----------+
+//				| count(*) |
+//				+----------+
+//				|     2210 |
+//				+----------+
+//				1 row in set (0.02 sec)
+
+				
+				// Since this is the case, the easiest thing to do is to add in the section from the feat DB helper.
+				FeatDbQuerier featQuery = new FeatDbQuerier();
+				featQuery.addFeatFilter(featFilter.featType);
+				for (GenomicRange gr : this.rangeFilters)
+				{
+					if (!gr.isInfiniteChromRange()) featQuery.addRangeFilter(gr);
+				}
+				FeatDbQuerier.HelperOutput featOutput = featQuery.sqlWhereSecHelper(prep, null, curInd);
+				//System.err.printf("Adding featOutput to query.  curInd before:%d, curInd after:%d\n",curInd,featOutput.newCurInd);
+				curInd = featOutput.newCurInd;
+				clauses.add(featOutput.sql);
+				
+				// Then join to meth table.
+				String clause = String.format(" ((%schromPos>=(chromPosStart-%d)) AND (%schromPos<=(chromPosEnd+%d))) ",
+						asSec, featFilter.flank, asSec, featFilter.flank);
+				clauses.add(clause);
+			}
 		}
 
 		// minCTreads
@@ -284,7 +364,7 @@ public class MethylDbQuerier {
 		ListUtils.setDelim(" AND ");
 		String sql = ListUtils.excelLine(clauses.toArray(new String[1]));
 		
-		return sql;
+		return new MethylDbQuerier.HelperOutput(sql, curInd);
 	}
 	
 	public class FeatClass
@@ -303,6 +383,22 @@ public class MethylDbQuerier {
 		}
 		
 		
+	}
+
+	
+	public class HelperOutput
+	{
+		/**
+		 * @param sql
+		 * @param newCurInd
+		 */
+		public HelperOutput(String sql, int newCurInd) {
+			super();
+			this.sql = sql;
+			this.newCurInd = newCurInd;
+		}
+		public String sql = null;
+		public int newCurInd = 0;
 	}
 	
 	

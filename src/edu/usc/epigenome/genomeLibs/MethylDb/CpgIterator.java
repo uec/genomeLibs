@@ -23,11 +23,11 @@ public class CpgIterator implements Iterator<Cpg> {
 	// Class vars
 	protected static Connection cConn = null; 
 	protected static Map<String,PreparedStatement> cPreps = new HashMap<String,PreparedStatement>();
-	private static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME); // "edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator");
 	
 	// Object vars
 	protected MethylDbQuerier params = null;
 	protected ResultSet curRS = null;
+	protected int curNumRows = -1;
 	
 
 	/**
@@ -43,6 +43,13 @@ public class CpgIterator implements Iterator<Cpg> {
 
 
 	
+	public int getCurNumRows() {
+		return curNumRows;
+	}
+
+
+
+
 	public CpgIterator(String chrom, int startCoord, int endCoord, String inTablePrefix)
 	throws Exception 
 	{
@@ -65,7 +72,7 @@ public class CpgIterator implements Iterator<Cpg> {
 
 	}
 
-	public void init(MethylDbQuerier inParams)
+	public int init(MethylDbQuerier inParams)
 	throws Exception
 	{
 		this.params = inParams;
@@ -74,7 +81,15 @@ public class CpgIterator implements Iterator<Cpg> {
 		if (cConn == null) setupDb();
 		PreparedStatement prep = CpgIterator.getPrep(inParams);
 		CpgIterator.fillPrep(params, prep);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Starting query execute");
 		curRS = prep.executeQuery();		
+		curRS.last();
+		int numRows = curRS.getRow();
+		curRS.beforeFirst();
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Finished query execute");
+		
+		this.curNumRows = numRows;
+		return numRows;
 	}
 	
 	
@@ -107,7 +122,7 @@ public class CpgIterator implements Iterator<Cpg> {
 		}
 		catch (Exception e)
 		{
-			logger.log(Level.SEVERE, "hasNext() error: " + e.getMessage());
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("hasNext() error: " + e.getMessage());
 			System.exit(1);
 		}
 		
@@ -140,7 +155,7 @@ public class CpgIterator implements Iterator<Cpg> {
 		}
 		catch (Exception e)
 		{
-			logger.log(Level.SEVERE, "next() error: " + e.getMessage());
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("next() error: " + e.getMessage());
 			System.exit(1);
 		}
 		
@@ -182,7 +197,7 @@ public class CpgIterator implements Iterator<Cpg> {
 		{
 			prep = cConn.prepareStatement(sql);
 			cPreps.put(sql, prep);
-			logger.log(Level.SEVERE, "Making prepared statement: " + sql );
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Making prepared statement: " + sql );
 		}
 		return prep;
 	}
@@ -196,9 +211,33 @@ public class CpgIterator implements Iterator<Cpg> {
 	private static String sqlHelper(MethylDbQuerier params, PreparedStatement prep)
 	throws Exception
 	{
-		String table = params.getTable();
-		String sql = String.format("select * from %s cpg WHERE ", table);
-		sql += params.sqlWhereSecHelper(prep, "cpg");
+		// If there is a feature join, usually the feature table is MUCH smaller, so 
+		// we put it first and do a straight_join so that it uses the feature index
+		// first.  Here is an example
+//		mysql> select count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=0 AND cpg.chromPos<=5531960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) AND (chromPosEnd>0) AND (chromPosStart<5531960706) ORDER BY chromPos ;
+//		+----------+
+//		| count(*) |
+//		+----------+
+//		|    49327 |
+//		+----------+
+//		1 row in set (6 min 7.95 sec)
+//
+//		mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=0 AND cpg.chromPos<=5531960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) AND (chromPosEnd>0) AND (chromPosStart<5531960706) ORDER BY chromPos ;
+//		+----------+
+//		| count(*) |
+//		+----------+
+//		|    49327 |
+//		+----------+
+//		1 row in set (1 min 51.58 sec)
+
+		
+		String featTabSec = (params.usesFeatTable()) ? (params.getFeatTable() + ", " ) : "";
+		String joinSec = (params.usesFeatTable()) ? "straight_join" : "";
+		
+		String methTable = params.getMethylTable();
+		String sql = String.format("select %s * from %s %s cpg WHERE ", joinSec, featTabSec, methTable);
+		MethylDbQuerier.HelperOutput output = params.sqlWhereSecHelper(prep, "cpg");
+		sql += output.sql;
 		sql += " ORDER BY chromPos ;";
 		return sql;
 	}

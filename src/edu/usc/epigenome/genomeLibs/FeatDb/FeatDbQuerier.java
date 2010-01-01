@@ -118,7 +118,8 @@ public class FeatDbQuerier {
 		{
 			// I don't think this can really throw an exception if it's not 
 			// setting a prepared statement.
-			out = sqlWhereSecHelper(null, asName);
+			FeatDbQuerier.HelperOutput output = sqlWhereSecHelper(null, asName);
+			out = output.sql;
 		}
 		catch (Exception e)
 		{
@@ -127,26 +128,57 @@ public class FeatDbQuerier {
 		return out;
 	}
 
-	public void sqlWhereSecFillPrep(PreparedStatement prep, String asName)
+	/**
+	 * @param prep If supplied, we not only return the SQL but fill in the prep with its correct values
+	 * @param asName the <alias name> of the table in the FROM section of the query
+	 * @return the new current index
+	 * @throws SQLException
+	 */
+	public int sqlWhereSecFillPrep(PreparedStatement prep, String asName)
 	throws SQLException
 	{
-		sqlWhereSecHelper(prep, asName);
+		FeatDbQuerier.HelperOutput output = sqlWhereSecHelper(prep, asName);
+		return output.newCurInd;
+	}
+
+	/**
+	 * @param prep If supplied, we not only return the SQL but fill in the prep with its correct values
+	 * @param asName the <alias name> of the table in the FROM section of the query
+	 * @return the new current index
+	 * @throws SQLException
+	 */
+	public int sqlWhereSecFillPrep(PreparedStatement prep, String asName, int curInd)
+	throws SQLException
+	{
+		FeatDbQuerier.HelperOutput output = sqlWhereSecHelper(prep, asName, curInd);
+		return output.newCurInd;
 	}
 
 	
 	// Private building of the where sec
 	
 	/**
+	 * I'm making this public so that it can be used by MethylDbQuerier, but it generally should
+	 * not be used.
 	 * @param prep If supplied, we not only return the SQL but fill in the prep with its correct values
+	 * @param asName the <alias name> of the table in the FROM section of the query
 	 * @return
 	 */
-	protected String sqlWhereSecHelper(PreparedStatement prep, String asName)
+	public FeatDbQuerier.HelperOutput sqlWhereSecHelper(PreparedStatement prep, String asName)
 	throws SQLException
 	{
 		return this.sqlWhereSecHelper(prep, asName, 1);
 	}
 	
-	protected String sqlWhereSecHelper(PreparedStatement prep, String asName, int curInd)
+	/**
+	 * I'm making this public so that it can be used by MethylDbQuerier, but it generally should
+	 * not be used.
+	 * @param prep If supplied, we not only return the SQL but fill in the prep with its correct values
+	 * @param asName the <alias name> of the table in the FROM section of the query
+	 * @param curInd the offset of the current index number in the preparedStatement 
+	 * @return
+	 */
+	public FeatDbQuerier.HelperOutput sqlWhereSecHelper(PreparedStatement prep, String asName, int curInd)
 	throws SQLException
 	{
 		String asSec = (asName==null) ? "" : (asName+".");
@@ -162,15 +194,26 @@ public class FeatDbQuerier {
 			{
 				// This is the best way to pick anything that OVERLAPS the range.
 				// Notice than CONTAINED WITHIN the range would be a different query
-				String clause = String.format("(!(%schromPosStart<? AND %schromPosEnd<?) AND !(%schromPosStart>? AND %schromPosEnd>?))", asSec, asSec,asSec,asSec);
+				String clause = String.format("((?<=%schromPosEnd) AND (?>=%schromPosStart))",asSec, asSec);
 				grClauses.add(clause);
 				if (prep!=null)
 				{
 					prep.setInt(curInd++, gr.getStart());
-					prep.setInt(curInd++, gr.getStart());
-					prep.setInt(curInd++, gr.getEnd());
 					prep.setInt(curInd++, gr.getEnd());
 				}
+
+//   OLD WAY.  FOR SOME REASON I THOUGHT THIS WAS BETTER?
+//				// This is the best way to pick anything that OVERLAPS the range.
+//				// Notice than CONTAINED WITHIN the range would be a different query
+//				String clause = String.format("(!(%schromPosStart<? AND %schromPosEnd<?) AND !(%schromPosStart>? AND %schromPosEnd>?))", asSec, asSec,asSec,asSec);
+//				grClauses.add(clause);
+//				if (prep!=null)
+//				{
+//					prep.setInt(curInd++, gr.getStart());
+//					prep.setInt(curInd++, gr.getStart());
+//					prep.setInt(curInd++, gr.getEnd());
+//					prep.setInt(curInd++, gr.getEnd());
+//				}
 			}
 			ListUtils.setDelim(" OR "); // Notice that it's a UNION of range filters
 			clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
@@ -198,7 +241,23 @@ public class FeatDbQuerier {
 		ListUtils.setDelim(" AND ");
 		String sql = ListUtils.excelLine(clauses.toArray(new String[1]));
 		
-		return sql;
+		return new FeatDbQuerier.HelperOutput(sql, curInd);
 	}
+	
+	public class HelperOutput
+	{
+		/**
+		 * @param sql
+		 * @param newCurInd
+		 */
+		public HelperOutput(String sql, int newCurInd) {
+			super();
+			this.sql = sql;
+			this.newCurInd = newCurInd;
+		}
+		public String sql = null;
+		public int newCurInd = 0;
+	}
+	
 	
 }

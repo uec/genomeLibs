@@ -26,12 +26,12 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	// Class vars
 	protected static Connection cConn = null; 
 	protected static Map<String,PreparedStatement> cPreps = new HashMap<String,PreparedStatement>();
-	private static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME); // "edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator");
 	
 	// Object vars
 	protected MethylDbQuerier params = null;
 	protected List<String> sampleTablePrefixes = null;
 	protected ResultSet curRS = null;
+	protected int curNumRows = -1;
 	
 
 	/**
@@ -44,10 +44,14 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		this.init(inParams, inSampleTablePrefixes);
 	}
 
+	
+	public int getCurNumRows() {
+		return curNumRows;
+	}
 
 
 
-	public void init(MethylDbQuerier inParams, List<String> inSampleTablePrefixes)
+	public int init(MethylDbQuerier inParams, List<String> inSampleTablePrefixes)
 	throws Exception
 	{
 		this.params = inParams;
@@ -57,7 +61,15 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		if (cConn == null) setupDb();
 		PreparedStatement prep = this.getPrep(inParams);
 		this.fillPrep(params, prep);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Starting query execute");
 		curRS = prep.executeQuery();		
+		curRS.last();
+		int numRows = curRS.getRow();
+		curRS.beforeFirst();
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Finished query execute");
+		
+		this.curNumRows = numRows;
+		return numRows;
 	}
 	
 	
@@ -90,7 +102,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		}
 		catch (Exception e)
 		{
-			logger.log(Level.SEVERE, "hasNext() error: " + e.getMessage());
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("hasNext() error: " + e.getMessage());
 			System.exit(1);
 		}
 		
@@ -130,7 +142,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		}
 		catch (Exception e)
 		{
-			logger.log(Level.SEVERE, "next() error: " + e.getMessage());
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("next() error: " + e.getMessage());
 			System.exit(1);
 		}
 		
@@ -172,7 +184,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		{
 			prep = cConn.prepareStatement(sql);
 			cPreps.put(sql, prep);
-			logger.log(Level.SEVERE, "Making prepared statement: " + sql );
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Making prepared statement: " + sql );
 		}
 		return prep;
 	}
@@ -188,6 +200,30 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	{
 		int nS = this.sampleTablePrefixes.size();
 
+		
+		// If there is a feature join, usually the feature table is MUCH smaller, so 
+		// we put it first and do a straight_join so that it uses the feature index
+		// first.  Here is an example
+//		mysql> select count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=0 AND cpg.chromPos<=5531960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) AND (chromPosEnd>0) AND (chromPosStart<5531960706) ORDER BY chromPos ;
+//		+----------+
+//		| count(*) |
+//		+----------+
+//		|    49327 |
+//		+----------+
+//		1 row in set (6 min 7.95 sec)
+//
+//		mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=0 AND cpg.chromPos<=5531960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) AND (chromPosEnd>0) AND (chromPosStart<5531960706) ORDER BY chromPos ;
+//		+----------+
+//		| count(*) |
+//		+----------+
+//		|    49327 |
+//		+----------+
+//		1 row in set (1 min 51.58 sec)
+
+		
+		String featTabSec = (params.usesFeatTable()) ? (params.getFeatTable() + ", " ) : "";
+		String joinSec = (params.usesFeatTable()) ? " straight_join " : "";
+		
 		// Table sec
 		String chrom = params.getChrom();
 		String[] selectSecs = new String[nS];
@@ -199,8 +235,10 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		}
 		ListUtils.setDelim(", ");
 		String sql = "SELECT ";
+		sql += joinSec;
 		sql += ListUtils.excelLine(selectSecs);
 		sql += " FROM ";
+		sql += featTabSec;
 		sql += ListUtils.excelLine(tableSecs);
 		sql += " WHERE ";
 
@@ -209,7 +247,9 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		int curInd = 1;
 		for (int i = 0; i < nS; i++)
 		{
-			secs[i] = params.sqlWhereSecHelper(prep, "cpg"+i, curInd);
+			MethylDbQuerier.HelperOutput output = params.sqlWhereSecHelper(prep, "cpg"+i, curInd); 
+			secs[i] = output.sql;
+			int newCurInd = output.newCurInd;
 			
 			// Weird way to get the number of params.  Stupid Regex functions in eclipse at
 			// least can't use "/?" sequences
@@ -219,8 +259,8 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 			{
 				numParams++;
 			}
-			//System.err.println("Found " + numParams + " params");
 			curInd += numParams;
+			System.err.println("Found " + numParams + " params with old method, " + newCurInd + " with new method.");
 		}		
 		ListUtils.setDelim(" AND ");
 		sql += ListUtils.excelLine(secs);

@@ -235,7 +235,8 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	{
 		String table = params.getTable();
 		String sql = String.format("select * from %s feat WHERE ", table);
-		sql += params.sqlWhereSecHelper(prep, "feat");
+		FeatDbQuerier.HelperOutput output = params.sqlWhereSecHelper(prep, "feat");
+		sql += output.sql;
 		sql += " ORDER BY chromPosStart ;";
 		return sql;
 	}

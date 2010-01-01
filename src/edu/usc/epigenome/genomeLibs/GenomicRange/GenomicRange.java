@@ -49,6 +49,19 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 		this.setStrand(inStrand);
 	}
 
+
+	// Make a non-coordinate, "fake" chrom that can be easily recognized.
+	public static GenomicRange infiniteChromRange(String inChrom)
+	{
+		return new GenomicRange(inChrom, Integer.MIN_VALUE, Integer.MAX_VALUE);
+	}
+	
+	public boolean isInfiniteChromRange()
+	{
+		return ((this.start==Integer.MIN_VALUE) && (this.end==Integer.MAX_VALUE));
+	}
+
+
 	
 	public static GenomicRange fullChromRange(String inChrom, String genomeAssembly)
 	{

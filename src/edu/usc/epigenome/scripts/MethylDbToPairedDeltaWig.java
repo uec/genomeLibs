@@ -24,9 +24,11 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 public class MethylDbToPairedDeltaWig {
 
 	private static final String C_USAGE = "Use: MethylDbToPairedDeltaWig " +  
-	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos] table1prefix table2prefix";
+	" -withinFeat featType -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos] table1prefix table2prefix";
 	
-    @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
+    @Option(name="-withinFeat",usage="A featType from the features table")
+    protected String withinFeat = null;
+   @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
@@ -89,6 +91,7 @@ public class MethylDbToPairedDeltaWig {
 		params.setMinCTreads(this.minCTreads);
 		params.setUseNonconversionFilter(!this.noNonconvFilter);
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat,0);
 		if (chrSt >= 0)
 		{
 			params.addRangeFilter(chr, chrSt, chrEnd);
