@@ -4,10 +4,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -242,13 +245,16 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	}
 	
 	
-	protected void setupDb()
+	protected static void setupDb()
 	throws Exception
 	{
-		String connStr = this.params.connStr;
-		Class.forName("com.mysql.jdbc.Driver").newInstance();
-		System.err.println("Getting connection for " + connStr);
-		cConn = DriverManager.getConnection(connStr);
+		if (cConn == null)
+		{
+			String connStr = FeatDbQuerier.connStr;
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			System.err.println("Getting connection for " + connStr);
+			cConn = DriverManager.getConnection(connStr);
+		}
 		
 	}
 	
@@ -258,6 +264,35 @@ public class FeatIterator implements Iterator<GFFRecord> {
 		cConn.close();
 	}
 
+	/******
+	 * STATIC UTILITY FUNCTIONS
+	 */
+	public static List<String> AllFeatTablePrefixes()
+	throws Exception
+	{
+		return AllFeatTablePrefixes(FeatDbQuerier.DEFAULT_TABLE_PREFIX + "chr11");
+	}
 	
+	public static List<String> AllFeatTablePrefixes(String table)
+	throws Exception
+	{
+		setupDb();
+		
+		String sql = String.format("select distinct(featType) from %s;",table);
+
+		Statement st = cConn.createStatement();
+		ResultSet rs = st.executeQuery(sql);
+
+		List<String> out = new ArrayList<String>(30);
+		while (rs.next())
+		{
+			out.add(rs.getString(1));
+		}
+		
+		rs.close();
+		st.close();
+		return out;
+	}
+
 	
 }

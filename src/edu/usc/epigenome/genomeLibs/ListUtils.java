@@ -101,6 +101,7 @@ public class ListUtils {
 		return out;
 	}
 	
+
 	public static String excelLine(double[] l)
 	{
 		StringBuffer sb = new StringBuffer(l.length*5);
@@ -140,9 +141,9 @@ public class ListUtils {
 		return out;
 	}
 		
-	public static String excelLine(List<Object> l)
+	public static <T> String excelLine(List<T> l)
 	{
-		ListIterator<Object> li = l.listIterator();
+		ListIterator<T> li = l.listIterator();
 		String out = "";
 		while (li.hasNext())
 		{
@@ -204,9 +205,9 @@ public class ListUtils {
 		return result;
 	}
 
-	public static String tabbedLine(List<Object> l)
+	public static <T> String tabbedLine(List<T> l)
 	{
-		ListIterator<Object> li = l.listIterator();
+		ListIterator<T> li = l.listIterator();
 		String out = "";
 		while (li.hasNext())
 		{

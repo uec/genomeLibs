@@ -243,13 +243,16 @@ public class CpgIterator implements Iterator<Cpg> {
 	}
 	
 	
-	protected void setupDb()
+	protected static void setupDb()
 	throws Exception
 	{
-		String connStr = this.params.connStr;
-		Class.forName("com.mysql.jdbc.Driver").newInstance();
-		System.err.println("Getting connection for " + connStr);
-		cConn = DriverManager.getConnection(connStr);
+		if (CpgIterator.cConn == null)
+		{
+			String connStr = MethylDbQuerier.connStr;
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			System.err.println("Getting connection for " + connStr);
+			cConn = DriverManager.getConnection(connStr);
+		}
 		
 	}
 	

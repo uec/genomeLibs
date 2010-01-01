@@ -15,14 +15,16 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
 public class MethylDbQuerier {
 
+
 	public final static String DEFAULT_METHYL_TABLE_PREFIX = "methylCGsRich_tumor10x_";
 	public final static String DEFAULT_FEAT_TABLE_PREFIX = "features_";
 	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/cr?user=benb";
+
+	public final static String connStr = DEFAULT_CONN_STR;
 	
 	
 	public String methylTablePrefix = DEFAULT_METHYL_TABLE_PREFIX;
 	public String featureTablePrefix = DEFAULT_FEAT_TABLE_PREFIX;
-	public String connStr = DEFAULT_CONN_STR;
 	
 	
 	// Ranges
@@ -138,6 +140,24 @@ public class MethylDbQuerier {
 		return (this.featFilters.size() > 0);
 	}
 	
+	public List<String> getFeatTableNames()
+	{
+		//int nF = this.featFilters.size();
+		List<String> out = new ArrayList<String>();
+		for (MethylDbQuerier.FeatClass feat : this.featFilters)
+		{
+			out.add(feat.featType);
+		}
+
+		return out;
+	}
+	
+	public String getFeatTableNameList()
+	{
+		List<String> tables = this.getFeatTableNames();
+		ListUtils.setDelim(", ");
+		return ListUtils.excelLine(tables);
+	}
 	
 	public String getMethylTablePrefix() {
 		return methylTablePrefix;

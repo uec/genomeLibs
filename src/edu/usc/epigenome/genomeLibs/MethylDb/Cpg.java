@@ -83,7 +83,7 @@ public class Cpg implements Comparable {
 		int cs = (useNonconvFilt) ? this.cReads : (this.cReads + this.cReadsNonconversionFilt); 
 		return (double)cs / ((double)cs + (double)this.tReads);
 	}
-
+	
 	public String variableStepWigLine(boolean useNonconvFilter)
 	{
 		return String.format("%d\t%f",chromPos, this.fracMeth(useNonconvFilter));

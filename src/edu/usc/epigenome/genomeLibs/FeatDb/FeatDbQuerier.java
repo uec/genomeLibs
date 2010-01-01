@@ -17,9 +17,9 @@ public class FeatDbQuerier {
 	public final static String DEFAULT_TABLE_PREFIX = "features_";
 	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/cr?user=benb";
 	
+	public final static String connStr = DEFAULT_CONN_STR;
 	
 	protected String tablePrefix = DEFAULT_TABLE_PREFIX;
-	public String connStr = DEFAULT_CONN_STR;
 	
 	
 	// Ranges
@@ -258,6 +258,8 @@ public class FeatDbQuerier {
 		public String sql = null;
 		public int newCurInd = 0;
 	}
+	
+
 	
 	
 }
