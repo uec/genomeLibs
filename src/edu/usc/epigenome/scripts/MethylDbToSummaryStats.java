@@ -36,6 +36,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgDeaminationSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgMethLevelSummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgNonconversionSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
@@ -45,6 +46,8 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 public class MethylDbToSummaryStats {
 
 	private static final String C_USAGE = "Use: MethylDbToSummaryStats table1prefix table2prefix .. ";
+	
+	private static List<Color> colors = Arrays.asList(Color.BLUE, Color.RED, Color.GREEN, Color.ORANGE, Color.BEIGE, Color.BLACK, Color.AQUAMARINE);
 	
 //    @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
 //    protected boolean noNonconvFilter = false;
@@ -137,10 +140,10 @@ public class MethylDbToSummaryStats {
 				MatUtils.nansToVal(valMeans, -0.1);
 				Data data= DataUtil.scaleWithinRange(natMin, natMax, valMeans);
 				//Data data= DataUtil.scale(valMeans);
-				Color c = ((j==0) ? Color.GOLD : Color.BLUE);
+				Color c = colors.get(j);
 				
 				String sampleName = summarizerLists[0][j][s].getSampleName();
-				sampleName = sampleName.replaceAll("methylCGsRich_", "").substring(0,10);
+				sampleName = sampleName.replaceAll("methylCGsRich_", "");
 				BarChartPlot plot = Plots.newBarChartPlot(data, c, sampleName);
 				samplePlots.add(plot);
 			}
@@ -149,7 +152,7 @@ public class MethylDbToSummaryStats {
 			String summarizerLabel = summarizerLists[0][0][s].getLabel();
 			
 			BarChart chart = GCharts.newBarChart(samplePlots);
-			chart.setSize(600, 200);
+			chart.setSize(950, 200); // Make sure to make it wide enough, it doesn't autoscale
 	        chart.setDataEncoding(DataEncoding.SIMPLE);
 
 	        AxisLabels xAxis = AxisLabelsFactory.newNumericRangeAxisLabels(1, nF);
@@ -201,7 +204,7 @@ public class MethylDbToSummaryStats {
 		// Don't filter
 		MethylDbQuerier querier = new MethylDbQuerier();
 		querier.setMinCTreads(0);
-		querier.setUseNonconversionFilter(true);
+		querier.setUseNonconversionFilter(false);
 		querier.setMaxOppstrandAfrac(Double.POSITIVE_INFINITY);
 
 		querier.setMethylTablePrefix(sampleTablePrefix);
@@ -210,6 +213,7 @@ public class MethylDbToSummaryStats {
 		// Setup summarizers
 		List<CpgSummarizer> summs = new ArrayList<CpgSummarizer>(10);
 		summs.add(new CpgMethLevelSummarizer(querier));
+		summs.add(new CpgNonconversionSummarizer(querier));
 		summs.add(new CpgCoverageSummarizer(querier));
 		summs.add(new CpgDeaminationSummarizer(querier));
 
