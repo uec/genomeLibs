@@ -22,6 +22,9 @@ import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.StrandedFeature.Strand;
 import org.usckeck.genome.GFFUtils;
 
+import edu.usc.epigenome.genomeLibs.ListUtils;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
+
 
 /**
  * @author benb
@@ -293,6 +296,69 @@ public class FeatIterator implements Iterator<GFFRecord> {
 		st.close();
 		return out;
 	}
+	
+	public static int TotalFeatSize(List<String> featTypes, Set<GenomicRange> rangeFilters, boolean intersection)
+	throws Exception
+	{
+		int totalLen = 0;
+		if ((rangeFilters==null) || (rangeFilters.size()==0))
+		{
+			// Special case
+			totalLen = TotalFeatSize(featTypes, intersection);
+		}
+		else
+		{
+			FeatDbQuerier querier = new FeatDbQuerier();
+			for (String featType : featTypes) { querier.addFeatFilter(featType); }
+			for (GenomicRange range : rangeFilters) { querier.addRangeFilter(range); }
+			FeatIterator it = new FeatIterator(querier);
+			
+			while (it.hasNext())
+			{
+				GFFRecord rec = it.next();
+				totalLen += (rec.getEnd() - rec.getStart() + 1);
+			}
+		}
+		
+		return totalLen;
+	}
+
+	
+	public static int TotalFeatSize(List<String> featTypes, boolean intersection)
+	throws Exception
+	{
+		setupDb();
+		
+		String[] clauses = new String[featTypes.size()];
+		for (int i = 0; i < featTypes.size(); i++)
+		{
+			clauses[i] = String.format("featType = '%s'", featTypes.get(i));
+		}
+		ListUtils.setDelim( (intersection) ? " AND " : " OR ");
+		String whereClause = ListUtils.excelLine(clauses);
+		
+		String sql = String.format("SELECT SUM(chromPosEnd-chromPosStart) FROM %s WHERE %s;",
+				FeatDbQuerier.DEFAULT_TABLE_PREFIX + "chr11", whereClause);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(sql);
+
+		Statement st = cConn.createStatement();
+		ResultSet rs = st.executeQuery(sql);
+
+		int out = 0;
+		if (rs.next())
+		{
+			out = rs.getInt(1);
+		}
+		else
+		{
+			throw new Exception("Following SQL doesn't return a result:\n" + sql);
+		}
+		
+		rs.close();
+		st.close();
+		return out;
+	}
+
 
 	
 }

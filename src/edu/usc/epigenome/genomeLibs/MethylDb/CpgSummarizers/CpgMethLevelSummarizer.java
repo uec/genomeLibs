@@ -1,6 +1,9 @@
-package edu.usc.epigenome.genomeLibs.MethylDb;
+package edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers;
 
 import com.googlecode.charts4j.Color;
+
+import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 public class CpgMethLevelSummarizer extends CpgSummarizer {
 
@@ -41,11 +44,10 @@ public class CpgMethLevelSummarizer extends CpgSummarizer {
 		super.streamCpg(cpg);
 		
 		// Impose the filters just in case.
-		
-		
-		double val = cpg.fracMeth(querier.getUseNonconversionFilter());
-		this.streamValue(val);
+		if (cpg.passesOppositeAFilterDefault())
+		{
+			double val = cpg.fracMeth(true);
+			this.streamValue(val);
+		}
 	}
-
-
 }

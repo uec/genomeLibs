@@ -30,6 +30,8 @@ public class MethylDbQuerier {
 	// Ranges
 	protected Set<GenomicRange> rangeFilters = new HashSet<GenomicRange>(1);
 	protected Set<MethylDbQuerier.FeatClass> featFilters = new HashSet<MethylDbQuerier.FeatClass>(1);
+	/***** TO DO - NOT YET IMPLEMENTED ****/
+	//protected boolean featFiltersIntersection = false; // Otherwise implies union
 
 	
 	// Filtering
@@ -74,6 +76,11 @@ public class MethylDbQuerier {
 		this.rangeFilters.add(inGr);
 	}
 	
+	public Set<GenomicRange> getRangeFilters()
+	{
+		return this.rangeFilters;
+	}
+
 	public Set<String> getRangeFilterChroms()
 	{
 		Set<String> out = new HashSet<String>(rangeFilters.size());
@@ -140,7 +147,7 @@ public class MethylDbQuerier {
 		return (this.featFilters.size() > 0);
 	}
 	
-	public List<String> getFeatTableNames()
+	public List<String> getFeatFilterTypes()
 	{
 		//int nF = this.featFilters.size();
 		List<String> out = new ArrayList<String>();
@@ -152,9 +159,9 @@ public class MethylDbQuerier {
 		return out;
 	}
 	
-	public String getFeatTableNameList()
+	public String getFeatFilterTypesList()
 	{
-		List<String> tables = this.getFeatTableNames();
+		List<String> tables = this.getFeatFilterTypes();
 		ListUtils.setDelim(", ");
 		return ListUtils.excelLine(tables);
 	}
@@ -313,6 +320,10 @@ public class MethylDbQuerier {
 		// feat filters
 		if (this.featFilters.size()>0)
 		{
+			/*********** TO DO
+			 * TO DO
+			 * Check if we want union or intersection
+			 */
 			for (MethylDbQuerier.FeatClass featFilter : this.featFilters)
 			{
 				// When we have a feature filter, we generally use that index first since the 

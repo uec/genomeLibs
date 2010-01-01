@@ -10,6 +10,9 @@ import org.biojava.bio.seq.StrandedFeature;
 
 public class Cpg implements Comparable {
 
+	private static final double DEFAULT_FAIL_MIN_FRAC_A = 0.2;
+	private static final int DEFAULT_FAIL_MIN_ABS_A = 2;
+	
 	// Object vars
 	public int chromPos = 0;
 	public boolean negStrand = false;
@@ -77,6 +80,25 @@ public class Cpg implements Comparable {
 		return 	(this.compareTo(obj) == 0);
 	}
 	
+	
+	public double fracOppositeA()
+	{
+		return (double)this.aReadsOpposite / ((double)this.aReadsOpposite + (double)this.totalReadsOpposite);
+	}
+	
+	public boolean passesOppositeAFilterDefault()
+	{
+		return passesOppositeAFilter(DEFAULT_FAIL_MIN_FRAC_A, DEFAULT_FAIL_MIN_ABS_A);
+	}
+	
+	public boolean passesOppositeAFilter(double failMinFracA, int failMinAbsA)
+	{
+		double fracOppA = this.fracOppositeA();
+		boolean failFrac = (!Double.isNaN(fracOppA)) && (fracOppA>=failMinFracA);
+		boolean failAbs = (this.aReadsOpposite>=failMinAbsA);
+		return !(failFrac && failAbs);
+	}
+
 	
 	public double fracMeth(boolean useNonconvFilt)
 	{

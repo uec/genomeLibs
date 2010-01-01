@@ -1,6 +1,9 @@
-package edu.usc.epigenome.genomeLibs.MethylDb;
+package edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers;
 
 import com.googlecode.charts4j.Color;
+
+import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 public class CpgCoverageSummarizer extends CpgSummarizer {
 

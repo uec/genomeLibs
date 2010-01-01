@@ -15,6 +15,10 @@
 	<classpathentry exported="true" kind="lib" path="commons-math-1.1.jar"/>
 	<classpathentry kind="lib" path="jfreechar-1.0.9-libs/jcommon-1.0.12.jar"/>
 	<classpathentry kind="lib" path="jfreechar-1.0.9-libs/jfreechart-1.0.9.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/ChIP"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/picard"/>
+	<classpathentry kind="lib" path="/Users/benb/Documents/Java/mysql-connector-java-5.1.10/mysql-connector-java-5.1.10-bin.jar"/>
+	<classpathentry kind="lib" path="UscKeck.jar" sourcepath="/ChIP"/>
+	<classpathentry kind="lib" path="charts4j-1.2.jar"/>
+	<classpathentry kind="lib" path="junit-4.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

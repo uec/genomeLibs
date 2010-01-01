@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.usc.epigenome.genomeLibs.MethylDb;
+package edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -10,6 +10,9 @@ import java.util.List;
 import javax.swing.text.html.HTML;
 
 import com.googlecode.charts4j.Color;
+
+import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 
 /**
@@ -140,7 +143,7 @@ public abstract class CpgSummarizer {
 //	}
 
 	public String getFeatName() {
-		return querier.getFeatTableNameList();
+		return querier.getFeatFilterTypesList();
 	}
 
 //	public void setFeatName(String featName) {
@@ -249,7 +252,6 @@ public abstract class CpgSummarizer {
 	/**** HTML tables , non-static ****/
 	public String htmlTableRow()
 	{
-		
 		StringWriter sw = new StringWriter(30000);
 		PrintWriter pw = new PrintWriter(sw);
 

@@ -31,15 +31,16 @@ import com.sun.tools.javac.code.Attribute.Array;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgCoverageSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgDeaminationSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgMethLevelSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgNonconversionSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgCoverageSummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgDeaminationSummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgDensitySummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgNonconversionSummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
 
 
 
@@ -211,8 +212,10 @@ public class MethylDbToSummaryStats {
 		if (feat!=null) querier.addFeatFilter(feat);
 
 		// Setup summarizers
+		CpgDensitySummarizer densSummarizer = new CpgDensitySummarizer(querier);
 		List<CpgSummarizer> summs = new ArrayList<CpgSummarizer>(10);
 		summs.add(new CpgMethLevelSummarizer(querier));
+		summs.add(densSummarizer);
 		summs.add(new CpgNonconversionSummarizer(querier));
 		summs.add(new CpgCoverageSummarizer(querier));
 		summs.add(new CpgDeaminationSummarizer(querier));
@@ -224,7 +227,9 @@ public class MethylDbToSummaryStats {
 
 //			querier.clearRangeFilters();
 //			querier.addRangeFilter(chrom,17322212,17877427);
-//			
+			
+			densSummarizer.addRanges(querier);
+			
 			CpgIterator cpgit = new CpgIterator(querier);
 			int numRows = cpgit.getCurNumRows();
 			Logger.getAnonymousLogger().severe("Found " + numRows + " cpgs");
