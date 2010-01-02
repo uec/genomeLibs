@@ -260,7 +260,9 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 				numParams++;
 			}
 			curInd += numParams;
-			System.err.println("Found " + numParams + " params with old method, " + newCurInd + " with new method.");
+			if ((prep!= null) && (newCurInd != curInd)) throw new Exception ("Found " + curInd + " params with old method, " + newCurInd + " with new method: "
+					+ output.sql);
+			curInd = newCurInd;
 		}		
 		ListUtils.setDelim(" AND ");
 		sql += ListUtils.excelLine(secs);
