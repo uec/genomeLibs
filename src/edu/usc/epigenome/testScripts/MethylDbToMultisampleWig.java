@@ -1,8 +1,11 @@
-package edu.usc.epigenome.scripts;
+package edu.usc.epigenome.testScripts;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,19 +16,21 @@ import org.kohsuke.args4j.Option;
 
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
+import edu.usc.epigenome.genomeLibs.SampleOrdering.SampleOrderingAlphabet;
 
 
 
-public class MethylDbToWig {
+public class MethylDbToMultisampleWig {
 
-	private static final String C_USAGE = "Use: MethylDbToWig -withinFeat featType -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
+	private static final String C_USAGE = "Use: MethylDbToWig -withinFeat featType -tablePrefix A -tablePrefix B -tablePrefixes C" + 
 	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
-    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
-    protected String tablePrefix = null;
+    @Option(name="-tablePrefix",multiValued=true,usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
+    protected List<String> tablePrefixes = null;
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected String withinFeat = null;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
@@ -40,7 +45,7 @@ public class MethylDbToWig {
 	public static void main(String[] args)
 	throws Exception	
 	{
-		new MethylDbToWig().doMain(args);
+		new MethylDbToMultisampleWig().doMain(args);
 	}
 
 	public void doMain(String[] args)
@@ -85,7 +90,6 @@ public class MethylDbToWig {
 		
 		
 		MethylDbQuerier params = new MethylDbQuerier();
-		if (this.tablePrefix != null) params.methylTablePrefix = this.tablePrefix;
 		params.setMinCTreads(this.minCTreads);
 		params.setUseNonconversionFilter(!this.noNonconvFilter);
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
@@ -100,21 +104,39 @@ public class MethylDbToWig {
 			params.addRangeFilter(chr);
 		}
 
-		Iterator<Cpg> it;
-		it = new CpgIterator(params);
+//		tablePrefixes = Arrays.asList("methylCGsRich_tumor123009_","methylCGsRich_normal123009_");
 		
 		int count = 0;
 		System.out.printf("track type=wiggle_0 name=%s description=%s\n", "test", "test");
 		System.out.printf("variableStep chrom=%s\n",chr);
 		
-		while (it.hasNext())
+		char[] tableCodes = new char[tablePrefixes.size()];
+		Set<Character> tableCodeSet = new HashSet<Character>(tablePrefixes.size());
+		for (int i = 0; i < tablePrefixes.size(); i++)
 		{
-			Cpg cpg = it.next();
-			if (!Double.isNaN(cpg.fracMeth(!this.noNonconvFilter)))
+			String prefix = tablePrefixes.get(i);
+			
+			tableCodes[i] = prefix.replace("methylCGsRich_", "").charAt(0);
+			tableCodeSet.add(tableCodes[i]);
+			System.err.printf("Table code %d=%c\n",i,tableCodes[i]);
+		}
+
+		SampleOrderingAlphabet orders = new SampleOrderingAlphabet("ordering",tableCodeSet);
+		
+		double [] vals = new double[tablePrefixes.size()];  
+		Iterator<Cpg[]> it;
+		CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
+		while (cpgit.hasNext())
+		{
+			Cpg[] cpgs = cpgit.next();
+			for (int i = 0; i < tablePrefixes.size(); i++)
 			{
-				System.out.println(cpg.variableStepWigLine(!this.noNonconvFilter));
-				//System.err.println(cpg.toString());
+				vals[i] = cpgs[i].fracMeth(!this.noNonconvFilter);
 			}
+			
+			int code = orders.getSymbolNumber(tableCodes, vals, 0.15);
+			System.out.printf("%d\t%d\n",cpgs[0].chromPos, code);
+			
 			count++;
 		}
 		
