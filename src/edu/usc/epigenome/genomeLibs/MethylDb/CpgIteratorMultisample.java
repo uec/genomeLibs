@@ -279,7 +279,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		sql += ListUtils.excelLine(secs);
 		
 		// And finish
-		sql += " ORDER BY cpg1.chromPos;";
+		sql += " ORDER BY cpg0.chromPos;";
 		return sql;
 	}
 	
