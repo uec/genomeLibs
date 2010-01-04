@@ -20,6 +20,7 @@ import org.usckeck.genome.ChromFeatures;
 
 import sun.tools.tree.ThisExpression;
 
+import edu.usc.epigenome.genomeLibs.GFFUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
@@ -33,7 +34,8 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class MethylDbToMultisampleFeatAlignments {
 
-	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments -noDeltas -maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
+	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments -censor -alignToStart -noDeltas " + 
+	"-maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
 	"-outputPrefix outputTag sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
 	
 	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
@@ -42,6 +44,10 @@ public class MethylDbToMultisampleFeatAlignments {
 	protected boolean combineStrands = false;
 	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
 	protected boolean noDeltas = false;
+	@Option(name="-censor",usage="If set, do not include points within the flank region but inside the feature region")
+	protected boolean censor = false;
+	@Option(name="-alignToStart",usage="If set, align to the left end (or 5' if available) of the feature.  Default is to align to center")
+	protected boolean alignToStart = false;
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
     protected int maxFeatSize = Integer.MAX_VALUE;
     @Option(name="-flankSize",usage="bp flanking each side of the feature center (default 2000)")
@@ -71,7 +77,7 @@ public class MethylDbToMultisampleFeatAlignments {
 	public static void main(String[] args)
 	throws Exception	
 	{
-		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.INFO);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
 		new MethylDbToMultisampleFeatAlignments().doMain(args);
 	}
 
@@ -128,12 +134,12 @@ public class MethylDbToMultisampleFeatAlignments {
 	
 		// Start the actual work.  Go through each GFF file.
 		int onFeatType = 0;
+		String[][] chartMat = new String[nS][nFeatTypes];
 		for (String featFn : featFns)
 		{
 			onFeatType++;
 			ChromFeatures feats = new ChromFeatures(featFn, true);
 			feats = feats.filterBySize(0, this.maxFeatSize);
-			feats = feats.centered_regions(1, null);
 			//int nFeats = feats.num_features(11); // ***** CHANGE THIS IF GOING ACROSS CHROMS ***
 			
 			
@@ -172,10 +178,10 @@ public class MethylDbToMultisampleFeatAlignments {
 			{
 				String tablePrefix = tablePrefixes.get(i);
 				writer.printf("<H4>%s</H4>\n", tablePrefix);
-				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
+				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true, tablePrefix, featsFnBase));
 			}
 
-			if (!this.noDeltas)
+			if ((nS>1) && !this.noDeltas)
 			{
 				// Pairwise deltas
 				int onMat = 0;
@@ -211,6 +217,7 @@ public class MethylDbToMultisampleFeatAlignments {
 		int chr = feats.chrom_from_public_str(chrStr); 
 		int nS = tablePrefixes.size();
 
+	
 		Iterator featit = feats.featureIterator(chr);
 		System.err.println("Processing " + chrStr);
 		while (featit.hasNext())
@@ -230,16 +237,60 @@ public class MethylDbToMultisampleFeatAlignments {
 			}
 				
 
-			int start = rec.getStart() - flankSize;
-			int end = rec.getStart() + flankSize;
+			// Do we want to center align?  Do we want to censor
+			int featS = rec.getStart();
+			int featE = rec.getEnd();
+			int featCenter = (int)Math.round(((double)featE+(double)featS) / 2.0);
 
+			// Get the alignment point.
+			int alignmentPoint;
+			if (!this.alignToStart)
+			{
+				alignmentPoint = featCenter;
+			}
+			else
+			{
+				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featS : featE;
+			}
+			
+			// And the flank endpoints depends on censoring
+			int flankStart, flankEnd;
+			if (!this.censor)
+			{
+				flankStart = alignmentPoint-flankSize;
+				flankEnd = alignmentPoint+flankSize;
+			}
+			else
+			{
+				flankStart = Math.max(featS, alignmentPoint-flankSize);
+				flankEnd = Math.min(featE, alignmentPoint+flankSize);
+				
+				// Censoring is relative to feature strand ONLY if we aligne to 
+				// start.  If we align to center, we censor on both sides.
+				if (this.alignToStart)
+				{
+					if (featStrand == StrandedFeature.NEGATIVE)
+					{
+						flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
+					}
+					else
+					{
+						flankStart = alignmentPoint - flankSize; // Don't censor 3'
+					}
+				}
+			}
+			
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
+					"Fetching coords: censor=%s\talignToStart=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\t\n",
+					""+this.censor, ""+this.alignToStart, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd));
+					
 	
 			
 			// Meth
 			MethylDbQuerier params = new MethylDbQuerier();
 			params.setMinCTreads(this.minCTreads);
 			params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
-			params.addRangeFilter(chrStr,start,end);
+			params.addRangeFilter(chrStr,flankStart,flankEnd);
 			CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
 			while (cpgit.hasNext()) 
 			{
@@ -259,10 +310,10 @@ public class MethylDbToMultisampleFeatAlignments {
 							chromPos,
 							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
-											featName, chrStr, rec.getStart(), featStrand);
+											featName, chrStr, alignmentPoint, featStrand);
 				}
 
-				if (!this.noDeltas)
+				if ((nS>1) && !this.noDeltas)
 				{
 					// Then variance
 					double mVar = MatUtils.nanVariance(mLevels);
@@ -270,7 +321,7 @@ public class MethylDbToMultisampleFeatAlignments {
 							chromPos,
 							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mVar,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? mVar: Double.NaN,
-											featName, chrStr, rec.getStart(), featStrand);
+											featName, chrStr, alignmentPoint, featStrand);
 
 					// Then pairwise.
 					int onMat = 0;
@@ -283,7 +334,7 @@ public class MethylDbToMultisampleFeatAlignments {
 									chromPos,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : absDiff,
 											(cpgStrand == StrandedFeature.NEGATIVE) ? absDiff : Double.NaN,
-													featName, chrStr, rec.getStart(), featStrand);
+													featName, chrStr, alignmentPoint, featStrand);
 						}
 					}
 				}

@@ -27,7 +27,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
-public class MethylDbToFeatAlignments {
+public class MethylDbToFeatAlignments_DEPR_USE_MULTISAMPLE {
 
 	private static final String C_USAGE = "Use: MethylDbToFeatAlignments -maxFeatSize 10 -skipUnoriented -flankSize 2000 -outputPrefix outputTag feats1.gtf feats2.gtf ...";
 	
@@ -59,7 +59,7 @@ public class MethylDbToFeatAlignments {
 	throws Exception	
 	{
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
-		new MethylDbToFeatAlignments().doMain(args);
+		new MethylDbToFeatAlignments_DEPR_USE_MULTISAMPLE().doMain(args);
 	}
 
 	public void doMain(String[] args)

@@ -22,6 +22,14 @@ public class FeatAlignerAveraging extends FeatAligner {
 	// arr[0] fwTotalScores, arr[1] fwTotalFeats, arr[2] revTotalScores, arr[3] revTotalFeats
 	double[][] arr;
 	Set<GenomicRange> featsSeen;
+
+	
+	protected final int MAX_NUMPOINTS = 500;
+	protected final int NUMPOINTS_STEP = 2;
+	protected final int MINCOUNTS = 100;
+//	double MIN_FRACTION_PASSING = 0.5;
+	protected final double MIN_FRACTION_CONTIGUOUS_STRETCH = 0.6;
+
 	
 	double lastMin;
 	double lastMax;
@@ -99,9 +107,18 @@ public class FeatAlignerAveraging extends FeatAligner {
 	
 
 	@Override
-	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1) 
+	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1, String sample, String feature) 
 	throws Exception {
 
+		
+		// sorry, special cases
+		sample = sample.replaceAll("methylCGsRich_", "");
+		sample = sample.replaceAll("_", "");
+		feature = feature.replaceAll("wgEncodeBroadChipSeqPeaks", "");
+		feature = feature.replaceAll(".broadPeak.hg18.nodups.gtf", "");
+		feature = feature.replaceAll("xie.*_Encode", "");
+		feature = feature.replaceAll(".hg18.gtf", "");
+		
 		StringBuilder sb = new StringBuilder(10000);
 		
 		try
@@ -139,6 +156,8 @@ public class FeatAlignerAveraging extends FeatAligner {
         	System.err.printf("min=%f, max=%f\n", min, max);
         }
         chart.addYAxisLabels(yAxis);
+        
+        chart.setTitle(String.format("feat=%s, me=%s", feature, sample));
         
         sb.append(String.format("<P>strandSpec=<EM>%s</EM> normalizedByCounts=<EM>%s</EM>, range0to1=<EM>%s</EM></P>",
 				strandSpecific, normalizedByCounts, range0to1));
@@ -181,7 +200,19 @@ public class FeatAlignerAveraging extends FeatAligner {
 			c = Color.CORNFLOWERBLUE; break;
 		}
 
-//		plot.addShapeMarkers(Shape.DIAMOND, Color.BLACK, 4);
+		// Bug in charts4j makes it so this doesn't work with 
+		// charts with lots of data points.  There is a proposed 
+		// workaround which i added to the project.
+		if (data.getSize() < 250)
+		{
+			plot.addShapeMarkers(Shape.DIAMOND, Color.BLACK, 4);
+		}
+		
+		// Add a line halfway
+		int midpoint = (int)Math.round((double)data.getSize()/2.0);
+		plot.addShapeMarker(Shape.VERTICAL_LINE_FULL, Color.BLACK,1,midpoint);
+		
+		
 		plot.setColor(c);
 		
 		return plot;
@@ -190,7 +221,6 @@ public class FeatAlignerAveraging extends FeatAligner {
 	private Data makeData(FeatAligner.PlotType type, boolean normalizedByCounts, boolean range0to1)
 	throws Exception
 	{
-		int NUMPOINTS = 500;
 
 		double[] totalsArr;
 		double[] countsArr;
@@ -225,17 +255,57 @@ public class FeatAlignerAveraging extends FeatAligner {
 			plotArr = MatUtils.divVect(totalsArr, (double)this.numFeats());
 		}
 
-		double[] plotArrSmall = plotArr;
-		if (plotArrSmall.length > NUMPOINTS)
+		// Do lower resolution until we get enough bins with high enough numbers
+		// of counts.  Check 
+		int numpointsCur = MAX_NUMPOINTS;
+		double fracPassing = 0.0;
+		double maxFracContiguous = 0.0;
+		double[] plotArrSmall = null;
+		while ((numpointsCur > 0) && (maxFracContiguous < MIN_FRACTION_CONTIGUOUS_STRETCH))
 		{
-			plotArrSmall = new double[NUMPOINTS];
-			MatUtils.downscaleArray(plotArrSmall, plotArr);
+			plotArrSmall = plotArr;
+			if (plotArrSmall.length > numpointsCur)
+			{
+				plotArrSmall = new double[numpointsCur];
+				MatUtils.downscaleArray(plotArrSmall, plotArr);
+			}
+
+			// Impose a minimum number of points to display
+			double[] avgCounts = new double[numpointsCur];
+			MatUtils.downscaleArray(avgCounts, countsArr);
+			fracPassing = 0.0;
+			maxFracContiguous = 0.0;
+			int beginStretch = 0;
+			for(int i = 0; i < numpointsCur; i++)
+			{
+				double totalCounts = (double)avgCounts[i] * ((double)countsArr.length/(double)numpointsCur);
+				if (totalCounts >= MINCOUNTS)
+				{
+					fracPassing += 1.0/(double)numpointsCur;
+					
+					int numContig = i - beginStretch;
+					maxFracContiguous = Math.max(maxFracContiguous, (double)numContig/(double)numpointsCur);
+				}
+				else
+				{
+					beginStretch = i;
+					plotArrSmall[i] = Double.NaN;
+				}
+			}
+			
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
+					"Checked chart with %d points, found %f passing (maxcontig=%f)\n", numpointsCur, fracPassing, maxFracContiguous));
+
+			// Increment
+			numpointsCur -= NUMPOINTS_STEP; 
 		}
-		MatUtils.nansToVal(plotArrSmall, -1.0);
+
+		
 		
 //		System.err.println("type= " + type + ", totalsArr=" + ListUtils.excelLine(totalsArr));
 //		System.err.println("type= " + type + ", countsArr=" + ListUtils.excelLine(countsArr));
-//		System.err.println("type= " + type + ", plotArrSmall=" + ListUtils.excelLine(plotArr));
+//		System.err.println("type= " + type + ", plotArr=" + ListUtils.excelLine(plotArr));
+//		System.err.println("type= " + type + ", plotArr=" + ListUtils.excelLine(plotArrSmall));
 
 		
 		Data data;
@@ -250,6 +320,9 @@ public class FeatAlignerAveraging extends FeatAligner {
 			lastMax = StatUtils.max(plotArrSmall);
 			System.err.println("min="+lastMin+"\tmax="+lastMax);
 		}
+
+		// Not allowed to have NANs in array
+		MatUtils.nansToVal(plotArrSmall, lastMin-1.0);
 		data = DataUtil.scaleWithinRange(lastMin, lastMax, plotArrSmall);
 
 		return data;

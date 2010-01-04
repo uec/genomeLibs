@@ -134,8 +134,9 @@ public class MethylDbToMultisampleWig {
 				vals[i] = cpgs[i].fracMeth(!this.noNonconvFilter);
 			}
 			
-			int code = orders.getSymbolNumber(tableCodes, vals, 0.15);
-			System.out.printf("%d\t%d\n",cpgs[0].chromPos, code);
+			int code = orders.getSymbolNumber(tableCodes, vals, 0.05);
+			String str = orders.getSymbolString(tableCodes, vals, 0.05);
+			System.out.printf("%d\t%d\t%s\n",cpgs[0].chromPos, code, str);
 			
 			count++;
 		}

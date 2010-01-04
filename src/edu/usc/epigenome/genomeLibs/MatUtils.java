@@ -389,12 +389,6 @@ public class MatUtils {
 		return rowMeans(m_trans, n_rows);
 	}
 	
-	public static double[] colSums(double[][] m)
-	{
-		double[][] m_trans = MatUtils.transposedMat(m);
-		return rowSums(m_trans);
-	}
-
 	public static double[] colStdevs(double[][] m)
 	{
 		double[][] m_trans = MatUtils.transposedMat(m);
@@ -428,6 +422,12 @@ public class MatUtils {
 		return MatUtils.colSums(rowMat);
 	}
 	
+	public static double[] colSums(double[][] m)
+	{
+		double[][] m_trans = MatUtils.transposedMat(m);
+		return rowSums(m_trans);
+	}
+
 	public static double[] rowSums(double[][] m)
 	{
 		int n_rows = m.length;

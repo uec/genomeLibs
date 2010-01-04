@@ -46,11 +46,18 @@ public abstract class FeatAligner {
 	abstract public FeatAlignerAveraging toAverageFeatAligner();
 	abstract public void matlabCsv(PrintWriter pw, boolean strandSpecific);
 
-	abstract public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1) throws Exception;
+		
+	abstract public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1, String sample, String feature) throws Exception;
 
 	
 	/*** Non-abstract ***/
 	
+	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1)
+	throws Exception
+	{
+		return this.htmlChart(strandSpecific, normalizedByCounts, range0to1, null, null);
+	}
+
 	public void addAlignment (double[] fwStrandScores, double[] revStrandScores, 
 			String featName, String featChr, int featCoord, StrandedFeature.Strand featStrand)
 	{

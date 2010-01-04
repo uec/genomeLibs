@@ -106,7 +106,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 //		return av.htmlChart(strandSpecific, normalizedByCounts, range0to1);
 
 	@Override
-	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1) throws Exception
+	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1, String sample, String feature) throws Exception
 	{
 
 		StringBuilder sb = new StringBuilder(10000);
