@@ -17,6 +17,52 @@ public class MatUtils {
 		return nanMean(arr, 0, arr.length);
 	}
 	
+	public static double nanMin(double[] arr)
+	{
+		double val = Double.NaN;
+		for (int i = 0; i < arr.length; i++)
+		{
+			if (Double.isNaN(val))
+			{
+				val = arr[i];
+			}
+			else if (Double.isNaN(arr[i]))
+			{
+				// Do nothing	
+			}
+			else
+			{
+				if (arr[i]<val) val = arr[i];
+			}
+		}
+		
+		return val;
+	}
+
+	public static double nanMax(double[] arr)
+	{
+		double val = Double.NaN;
+		for (int i = 0; i < arr.length; i++)
+		{
+			if (Double.isNaN(val))
+			{
+				val = arr[i];
+			}
+			else if (Double.isNaN(arr[i]))
+			{
+				// Do nothing	
+			}
+			else
+			{
+				if (arr[i]>val) val = arr[i];
+			}
+		}
+		
+		return val;
+		
+	}
+
+	
 	public static double nanMean(double[] arr, int startInd, int len)
 	{
 		double total = 0.0;

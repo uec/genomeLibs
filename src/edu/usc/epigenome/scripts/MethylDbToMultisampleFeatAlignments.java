@@ -34,7 +34,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class MethylDbToMultisampleFeatAlignments {
 
-	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments -censor -alignToStart -noDeltas " + 
+	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments --readCounts --cpgCounts -censor -alignToStart -noDeltas " + 
 	"-maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
 	"-outputPrefix outputTag sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
 	
@@ -46,6 +46,10 @@ public class MethylDbToMultisampleFeatAlignments {
 	protected boolean noDeltas = false;
 	@Option(name="-censor",usage="If set, do not include points within the flank region but inside the feature region")
 	protected boolean censor = false;
+	@Option(name="-readCounts",usage="Output read counts")
+	protected boolean readCounts = false;
+	@Option(name="-cpgCounts",usage="Output CpG counts")
+	protected boolean cpgCounts = false;
 	@Option(name="-alignToStart",usage="If set, align to the left end (or 5' if available) of the feature.  Default is to align to center")
 	protected boolean alignToStart = false;
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
@@ -161,7 +165,7 @@ public class MethylDbToMultisampleFeatAlignments {
 				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS11)
+			for (String chrStr : MethylDbUtils.CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -178,6 +182,15 @@ public class MethylDbToMultisampleFeatAlignments {
 			{
 				String tablePrefix = tablePrefixes.get(i);
 				writer.printf("<H4>%s</H4>\n", tablePrefix);
+				if (this.cpgCounts)
+				{
+					writer.println(this.fStatMats[i][1].htmlChart(!this.combineStrands, false, false, tablePrefix, featsFnBase));
+				}
+				if (this.readCounts)
+				{
+					writer.println(this.fStatMats[i][0].htmlChart(!this.combineStrands, true, true, tablePrefix, featsFnBase));
+				}
+				
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true, tablePrefix, featsFnBase));
 			}
 
@@ -304,6 +317,7 @@ public class MethylDbToMultisampleFeatAlignments {
 				double mLevels[] = new double[nS];
 				for (int i = 0; i < nS; i++)
 				{
+					// mlevel
 					double mLevel = cpgs[i].fracMeth(params.getUseNonconversionFilter());
 					mLevels[i] = mLevel;
 					this.fStatMats[i][2].addAlignmentPos(
@@ -311,6 +325,15 @@ public class MethylDbToMultisampleFeatAlignments {
 							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
 											featName, chrStr, alignmentPoint, featStrand);
+					
+					// Cpg counts
+					this.fStatMats[i][1].addAlignmentPos(
+							chromPos,
+							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : 1.0,
+									(cpgStrand == StrandedFeature.NEGATIVE) ? 1.0: Double.NaN,
+											featName, chrStr, alignmentPoint, featStrand);
+					
+					
 				}
 
 				if ((nS>1) && !this.noDeltas)

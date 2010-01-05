@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 use Getopt::Long;
 
-my $USAGE = "splitColsByChrom.pl --omitChromFldInOutput --chromCol 1 --delim , --outPrefix fileout file1.txt file2.csv\nchromCol numbering starts at 1";
+my $USAGE = "splitColsByChrom.pl --omitChromFldInOutput --chromCol 1 --delim , (or omit for tab delimited) --outPrefix fileout file1.txt file2.csv\nchromCol numbering starts at 1";
 
 my $delim = "\t";
 my $outPrefix = 0;

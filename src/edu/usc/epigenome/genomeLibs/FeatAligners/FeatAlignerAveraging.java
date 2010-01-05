@@ -308,7 +308,6 @@ public class FeatAlignerAveraging extends FeatAligner {
 //		System.err.println("type= " + type + ", plotArr=" + ListUtils.excelLine(plotArrSmall));
 
 		
-		Data data;
 		if (range0to1)
 		{
 			lastMin = 0.0;
@@ -316,14 +315,22 @@ public class FeatAlignerAveraging extends FeatAligner {
 		}
 		else
 		{
-			lastMin = ((StatUtils.min(plotArrSmall)) > 0.0) ? 0.0 : StatUtils.min(plotArrSmall);
-			lastMax = StatUtils.max(plotArrSmall);
+			lastMin = ((MatUtils.nanMin(plotArrSmall)) > 0.0) ? 0.0 : MatUtils.nanMin(plotArrSmall);
+			lastMax = MatUtils.nanMax(plotArrSmall);
 			System.err.println("min="+lastMin+"\tmax="+lastMax);
 		}
 
+		// If it's still nan, we had no values!
+		if (Double.isNaN(lastMin))
+		{
+			lastMin = 0.0;
+			lastMax = 1.0;
+		}
+		
+		
 		// Not allowed to have NANs in array
 		MatUtils.nansToVal(plotArrSmall, lastMin-1.0);
-		data = DataUtil.scaleWithinRange(lastMin, lastMax, plotArrSmall);
+		Data data = DataUtil.scaleWithinRange(lastMin, lastMax, plotArrSmall);
 
 		return data;
 	}
