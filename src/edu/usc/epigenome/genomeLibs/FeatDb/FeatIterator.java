@@ -24,6 +24,7 @@ import org.usckeck.genome.GFFUtils;
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
 /**
@@ -324,7 +325,26 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	}
 
 	
+
+
 	public static int TotalFeatSize(List<String> featTypes, boolean intersection)
+	throws Exception
+	{
+		return TotalFeatSize(featTypes, intersection, MethylDbUtils.CHROMS);
+	}
+	
+	public static int TotalFeatSize(List<String> featTypes, boolean intersection, List<String> chroms)
+	throws Exception
+	{
+		int total = 0;
+		for (String chr : chroms)
+		{
+			total += TotalFeatSize(featTypes, intersection, chr);
+		}
+		return total;
+	}
+	
+	public static int TotalFeatSize(List<String> featTypes, boolean intersection, String chr)
 	throws Exception
 	{
 		setupDb();
@@ -338,7 +358,7 @@ public class FeatIterator implements Iterator<GFFRecord> {
 		String whereClause = ListUtils.excelLine(clauses);
 		
 		String sql = String.format("SELECT SUM(chromPosEnd-chromPosStart) FROM %s WHERE %s;",
-				FeatDbQuerier.DEFAULT_TABLE_PREFIX + "chr11", whereClause);
+				FeatDbQuerier.DEFAULT_TABLE_PREFIX + chr, whereClause);
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(sql);
 
 		Statement st = cConn.createStatement();
