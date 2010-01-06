@@ -3,12 +3,17 @@
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use strict;
+use Getopt::Long;
 
-my $USAGE = "generateMaqToBam.pl newname refGenome.fa f1.map f2.map f3.map ...";
+my $USAGE = "generateMaqToBam.pl [--noremoveTemps] [--nopropagateOnlyRegions] newname refGenome.fa f1.map f2.map f3.map ...";
 my $region = "chr11";
+my $PROPAGATE_ONLY_REGIONS = 1;
 my $SAMDIR = "/home/uec-00/bberman/bin";
 my $RMTMPS = 1;
 my $BATCHSIZE = 50;
+GetOptions ('removeTemps!' => \$RMTMPS, 'propagateOnlyRegions!' => \$PROPAGATE_ONLY_REGIONS) || die "$USAGE\n";
+
+print STDERR "removeTemps=${RMTMPS}\tpropagate=${PROPAGATE_ONLY_REGIONS}\n";
 
 # Input params
 die "$USAGE\n" unless (@ARGV>=3);
@@ -25,12 +30,14 @@ my $tmpDir;
 my $batchname = "";
 foreach my $mapFn (@mapFns)
 {
+    my $regionSec = ($PROPAGATE_ONLY_REGIONS) ? ".${region}" : "";
     if (($onJob % $BATCHSIZE) == 0)
     {
 	# End old batch
 	if (scalar(@dependJobs)>1)
 	{
-	    my ($mergeJobid, $mergeBamFn) = mergeBams($batchname, \@dependJobs, \@bamFns);
+	    my $batchnameMerge = $batchname.$regionSec;
+	    my ($mergeJobid, $mergeBamFn) = mergeBams($batchnameMerge, \@dependJobs, \@bamFns);
 	    push(@topDependJobs, $mergeJobid);
 	    push(@topBamFns, $mergeBamFn);
 	}
@@ -52,15 +59,17 @@ foreach my $mapFn (@mapFns)
 }
 
 # Finish final batch
+my $regionSec = ($PROPAGATE_ONLY_REGIONS) ? ".${region}" : "";
 if (scalar(@dependJobs)>1)
 {
-    my ($mergeJobid, $mergeBamFn) = mergeBams($batchname, \@dependJobs, \@bamFns);
+    my $batchnameMerge = $batchname.$regionSec;
+    my ($mergeJobid, $mergeBamFn) = mergeBams($batchnameMerge, \@dependJobs, \@bamFns);
     push(@topDependJobs, $mergeJobid);
     push(@topBamFns, $mergeBamFn);
 }
 
 # And merge top level
-mergeBams($newname, \@topDependJobs, \@topBamFns);
+mergeBams($newname.${regionSec}, \@topDependJobs, \@topBamFns);
 
 
 # - - - - - - OUTPUTS
@@ -106,18 +115,18 @@ sub mergeBams
     $curJobids = [runCmd(0, $cmd, "M2B_index", $curJobids)];
 
 
-    # Pull region
-    if ($region)
+    # Pull region.  If we're propagating only regions, we don't have to do this since
+    # our inputs already have the region.
+    if (!$PROPAGATE_ONLY_REGIONS && $region)
     {
 	$curIn = $finalBamOut;
 	$curOut = "${prefix}.NODUPS.sorted.calmd.${region}.NODUPS.bam";
 	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
 	$curJobids = [runCmd(0,$cmd, "M2B_pullRegion", $curJobids)];
 
-	# Don't do this. Make the region a side effect and actually merge
-	# full bam going up
-	# Set final BAM name
-	#$finalBamFn = $curOut;
+	# Decide whether or not we want to propagate up the full genome
+	# or just the regional bam.  Regions are much faster
+	$finalBamOut = $curOut if ($PROPAGATE_ONLY_REGIONS);
 
 	# Index bam
 	$curIn = $curOut;
@@ -139,7 +148,14 @@ sub runMapPipeline
     my $finalProcId = 0;
     my $finalBamFn = 0;
 
+    if ($mapFn !~ /\.map$/)
+    {
+	print STDERR "pipeline only works with .map input files!\n";
+	exit;
+    }
+
     my $mapFnBase = basename($mapFn, qr/\.map/);
+    print STDER "mapFnBase=$mapFnBase\n";
 
     # Since we're going into a temp dir one level deeper, we have to adjust for relative FNs
     my $curIn = $mapFn;
@@ -211,10 +227,9 @@ sub runMapPipeline
 	my $cmd = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
 	$curJobids = [runCmd($tmpdir,$cmd, "M2B_pullRegion", $curJobids)];
 
-	# Don't do this. Make the region a side effect and actually merge
-	# full bam going up
-	# # Set final BAM name
-	# $finalBamFn = $curOut;
+	# Decide whether or not we want to propagate up the full genome
+	# or just the regional bam.  Regions are much faster
+	$finalBamFn = $curOut if ($PROPAGATE_ONLY_REGIONS);
 
 	# Index bam
 	$curIn = $curOut;
