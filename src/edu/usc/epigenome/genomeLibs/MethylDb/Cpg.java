@@ -164,6 +164,15 @@ public class Cpg implements Comparable {
 		short cs = totalReadsC(useNonconvFilt);
 		return (short)(cs + this.tReads);
 	}
+
+	public Cpg downsample(double downsamplingFactor) {
+		// TODO Auto-generated method stub
+		
+		System.err.println("Cpg::downsample not yet supported");
+		System.exit(1);
+		
+		return null;
+	}
 	
 	
 	

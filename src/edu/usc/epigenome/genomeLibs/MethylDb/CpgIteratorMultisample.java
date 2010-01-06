@@ -56,7 +56,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	{
 		this.params = inParams;
 		this.sampleTablePrefixes = inSampleTablePrefixes;
-
+		
 		// Check if we've started DB connection
 		if (cConn == null) setupDb();
 		PreparedStatement prep = this.getPrep(inParams);
@@ -134,7 +134,14 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 						curRS.getShort("cpg" + i + ".agReads"),
 						curRS.getShort("cpg" + i + ".totalReadsOpposite"),
 						curRS.getShort("cpg" + i + ".aReadsOpposite"));
-				
+
+				// Downsample data.
+				double downsamplingFactor = this.params.getSamplingFactor();
+				if (downsamplingFactor != 0.0)
+				{
+					cpg = cpg.downsample(downsamplingFactor);
+				}
+
 				out[i] = cpg;
 				//System.err.printf("out[%d] = %s\n",i,cpg.toString());
 			}

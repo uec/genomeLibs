@@ -133,9 +133,16 @@ public class GtfToFeatDbOffline {
 		double score = feat.getScore();
 		flds.add( (Double.isInfinite(score) || Double.isNaN(score)) ? "." : Double.toString(score));
 		
+		String refseqId = "NULL";
+		String refseqVers = "NULL";
+		String name = "NULL";
 		String featName = GFFUtils.getGffRecordName(feat);
-		if (featName==null) featName = "NULL";
-		flds.add(featName);
+
+		if (featName != null) name = featName;
+	
+		flds.add(refseqId);
+		flds.add(refseqVers);
+		flds.add(name);
 		
 		writer.println( ListUtils.excelLine(flds.toArray(new String[1])));
 	}

@@ -98,7 +98,7 @@ public class MethylDbToSummaryStats {
 		
 
 		// Go though features , then samples
-		List<String> featTabs = FeatIterator.AllFeatTablePrefixes(); 
+		List<String> featTabs = MethylDbUtils.SUMMARY_FEATURES1;//FeatIterator.AllFeatTablePrefixes(); 
 		int nS = tablePrefixes.size();
 		int nF = featTabs.size();
 		
@@ -220,7 +220,7 @@ public class MethylDbToSummaryStats {
 		summs.add(new CpgCoverageSummarizer(querier));
 		summs.add(new CpgDeaminationSummarizer(querier));
 
-		for (String chrom : MethylDbUtils.CHROMS11)
+		for (String chrom : MethylDbUtils.CHROMS)
 		{
 			querier.clearRangeFilters();
 			querier.addRangeFilter(chrom);

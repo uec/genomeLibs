@@ -19,6 +19,7 @@ $::openFhs = {};
 
 my $fieldmap = {};
 my $lineNum = 0;
+my $seen = {};
 LINE: while (my $line = <STDIN>)
 {
 	$lineNum++;
@@ -59,6 +60,8 @@ LINE: while (my $line = <STDIN>)
 	my $exonEndsStr = $f[$fieldmap->{"hg18.knownGene.exonEnds"}];
 	my $geneSymbol = $f[$fieldmap->{"hg18.kgXref.geneSymbol"}];
 	my $refseqId = $f[$fieldmap->{"hg18.kgXref.refseq"}];
+	
+	
 	
 	my $refseqVers = 0;
 	if ($refseqId =~ /^(.*)(\.[0-9]+)$/)

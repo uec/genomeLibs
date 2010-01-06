@@ -37,10 +37,12 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class FeatDbReorientGtfFeats {
 
-	private static final String C_USAGE = "Use: FeatDbReorientGtfFeats featsToBeReoriented.gtf referenceFeatType";
+	private static final String C_USAGE = "Use: FeatDbReorientGtfFeats -chrom chr1 -chrom chr2 featsToBeReoriented.gtf referenceFeatType";
 	
 //	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 //	protected boolean skipUnoriented = false;
+	@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. -chrom chr1 -chrom chr5")
+	protected List<String> chrs = new ArrayList<String>(25);
 
 	// receives other command line parameters than options
 	@Argument
@@ -87,19 +89,26 @@ public class FeatDbReorientGtfFeats {
 			parser.printUsage(System.err);
 			return;
 		}
+		
+		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 		String targetFn = arguments.get(0);
 		String featType = arguments.get(1);
 		
 		String outFn = (new File(targetFn)).getName().replaceFirst(".[^.]*$", "") + ".reorientedBy." +
-		featType.substring(0,15) + ".gtf";
+		((featType.length()>15) ? featType.substring(0,15) : featType) + ".gtf";
 		Logger.getAnonymousLogger().severe(String.format("%s,%s => %s\n", targetFn,featType,outFn));
 
 		ChromFeatures outFeats = new ChromFeatures();
 		
 		// Go through target feats one by one
 		ChromFeatures targetFeats = new ChromFeatures(targetFn, true);
-		for (String chrStr : MethylDbUtils.CHROMS11)
+		for (String chrStr : chrs)
 		{
+			// Some of my files have these forms.
+			if (chrStr.equalsIgnoreCase("chrX")) chrStr = "chrX";
+			if (chrStr.equalsIgnoreCase("chry")) chrStr = "chrY";
+			if (chrStr.equalsIgnoreCase("chrm")) chrStr = "chrM";
+			
 			Iterator targetit = targetFeats.featureIterator((new ChromFeatures()).chrom_from_public_str(chrStr));
 			while (targetit.hasNext())
 			{

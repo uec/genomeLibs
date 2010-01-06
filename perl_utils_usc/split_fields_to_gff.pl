@@ -115,20 +115,20 @@ $::DELIM = "\\s+";
 #     9 => 0 # name
 #     };
 
-# # simple chr, s, e
-# $::DELIM = "\t";
-# my $fld_map = 
-# {
-#     1 => 1, # Chrom
-#     2 => "FeiReducedRep", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 3, #end
-#     6 => 0, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 0 # name
-#     };
+ # simple chr, s, e CSE
+ $::DELIM = "\t";
+ my $fld_map = 
+ {
+     1 => 1, # Chrom
+     2 => "Lister2009", # source
+     3 => "exon", # type
+     4 => 2, # start
+     5 => 3, #end
+     6 => 0, # score
+     7 => 0, # strand
+     8 => 0, # phase
+     9 => 0 # name
+     };
 
 # # simple chr, s
 # $::DELIM = "\t";
@@ -208,22 +208,22 @@ $::DELIM = "\\s+";
 #     9 => 0 # name
 #     };
 
-## Illumina positions
-$::NO_IDS = 0;
-$::DELIM = ",";
-$::SAME_ORDER = 1;
-my $fld_map = 
-{
-    1 => 2, # Chrom
-    2 => "Infinium", # source
-    3 => "exon", # type
-    4 => 3, # start
-    5 => 3, #end  (if < 0, we interpret field as width)
-    6 => 8, # score
-    7 => 0, # strand
-    8 => 0, # phase
-    9 => 1 # name
-    };
+### Illumina positions
+#$::NO_IDS = 0;
+#$::DELIM = ",";
+#$::SAME_ORDER = 1;
+#my $fld_map = 
+#{
+#    1 => 2, # Chrom
+#    2 => "Infinium", # source
+#    3 => "exon", # type
+#    4 => 3, # start
+#    5 => 3, #end  (if < 0, we interpret field as width)
+#    6 => 8, # score
+#    7 => 0, # strand
+#    8 => 0, # phase
+#    9 => 1 # name
+#    };
 
 my $fld_map_default = 
 {

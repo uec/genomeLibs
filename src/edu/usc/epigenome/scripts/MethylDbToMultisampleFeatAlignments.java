@@ -34,7 +34,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class MethylDbToMultisampleFeatAlignments {
 
-	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments --readCounts --cpgCounts -censor -alignToStart -noDeltas " + 
+	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments --featFilter tss --readCounts --cpgCounts -censor -alignToStart -noDeltas " + 
 	"-maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
 	"-outputPrefix outputTag sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
 	
@@ -44,6 +44,8 @@ public class MethylDbToMultisampleFeatAlignments {
 	protected boolean combineStrands = false;
 	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
 	protected boolean noDeltas = false;
+	@Option(name="-featFilter",usage="We will take the intersection with this feature. Must be a featType in the features table")
+	protected List<String> featFilters = new ArrayList<String>(5);
 	@Option(name="-censor",usage="If set, do not include points within the flank region but inside the feature region")
 	protected boolean censor = false;
 	@Option(name="-readCounts",usage="Output read counts")
@@ -301,6 +303,10 @@ public class MethylDbToMultisampleFeatAlignments {
 			
 			// Meth
 			MethylDbQuerier params = new MethylDbQuerier();
+			for (String featFilter : this.featFilters)
+			{
+				params.addFeatFilter(featFilter,flankSize);
+			}
 			params.setMinCTreads(this.minCTreads);
 			params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 			params.addRangeFilter(chrStr,flankStart,flankEnd);

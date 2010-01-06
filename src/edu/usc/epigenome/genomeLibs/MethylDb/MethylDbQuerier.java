@@ -33,6 +33,8 @@ public class MethylDbQuerier {
 	/***** TO DO - NOT YET IMPLEMENTED ****/
 	//protected boolean featFiltersIntersection = false; // Otherwise implies union
 
+	// Sampling
+	protected double samplingFactor = 0.0; // Rang from 0-1, the fraction of reads to (down)sample the data by
 	
 	// Filtering
 	protected int minCTreads = 0;
@@ -158,7 +160,18 @@ public class MethylDbQuerier {
 
 		return out;
 	}
+
 	
+	public double getSamplingFactor() {
+		return samplingFactor;
+	}
+
+
+	public void setSamplingFactor(double samplingFactor) {
+		this.samplingFactor = samplingFactor;
+	}
+
+
 	public String getFeatFilterTypesList()
 	{
 		List<String> tables = this.getFeatFilterTypes();
