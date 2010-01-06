@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,8 @@ public class SamToMethyldbOffline {
 	/**
 	 * @param args
 	 */
+	@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. --chrom chr1 --chrom chr5")
+	protected List<String> chrs = new ArrayList<String>(25);
 	@Option(name="-minConv",usage="minimum number of converted cytosines required")
 	protected int minConv = 1;
 //	@Option(name="-numCycles",usage="Number of cycles to track")
@@ -101,7 +104,8 @@ public class SamToMethyldbOffline {
 		int filteredOutCounter = 0;
 
 		// Iterate through chroms
-		for (final String chr : MethylDbUtils.CHROMS11)
+		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
+		for (final String chr : chrs)
 		{
 			Map<Integer,Cpg> cpgs = new TreeMap<Integer,Cpg>();
 
@@ -111,7 +115,9 @@ public class SamToMethyldbOffline {
 
 				final SAMFileReader inputSam = new SAMFileReader(inputSamOrBamFile);
 				inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
+				
 				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
+				
 
 				record: while (chrIt.hasNext())
 				{
