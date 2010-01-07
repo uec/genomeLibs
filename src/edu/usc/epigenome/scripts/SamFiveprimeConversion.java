@@ -253,9 +253,11 @@ public class SamFiveprimeConversion {
 		{
 			// Get plots
 			int contextCount = 1;
+			int numCycles = 0;
 			for (String context : contextsToDisplay)
 			{
 				ByCycleCounter counter = counters.get(context);
+				numCycles = Math.max(numCycles, counter.numCycles);
 				
 				// Once with filter, once without
 				Plot noFilter = counter.toPlot(false, minVal,maxVal);
@@ -278,12 +280,16 @@ public class SamFiveprimeConversion {
 			chart.setSize(600, 200);
 			chart.setDataEncoding(DataEncoding.EXTENDED);
 
-			//AxisLabels xAxis = AxisLabelsFactory.newNumericRangeAxisLabels(-this.flankSize, this.flankSize);
-			//chart.addXAxisLabels(xAxis);
+			AxisLabels xAxis = AxisLabelsFactory.newNumericRangeAxisLabels(1, numCycles);
+			chart.addXAxisLabels(xAxis);
+			chart.addXAxisLabels(AxisLabelsFactory.newAxisLabels("Cycle number", 50.0));
 
 			AxisLabels yAxis;
 			yAxis = AxisLabelsFactory.newNumericRangeAxisLabels(minVal, maxVal);
 			chart.addYAxisLabels(yAxis);
+			chart.addRightAxisLabels(yAxis);
+			chart.addYAxisLabels(AxisLabelsFactory.newAxisLabels("% conv", 50.0));
+			
 
 			chart.setTitle(ListUtils.excelLine(contextsToDisplay));
 			out = chart.toURLString();
