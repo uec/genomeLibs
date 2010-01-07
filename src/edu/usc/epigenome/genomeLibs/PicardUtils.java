@@ -221,6 +221,35 @@ public class PicardUtils {
 		return out;
 	}
 		
+	public static char nextBaseRef(int pos, String refStr)
+	{
+		return nextBaseRef(pos, refStr, false);
+	}
+	
+	/**
+	 * @param pos  This is relative to refStr strand regardless of value of revStrand
+	 * @param refStr
+	 * @param revStrand  If this is true, we give the prior base, reverse complemented.
+	 * @return
+	 */
+	public static char nextBaseRef(int pos, String refStr, boolean revStrand)
+	{
+		char refCnext = '0';
+
+		if (revStrand) 
+		{
+			if (pos == 0) return '0'; // At the last character
+			refCnext = MiscUtils.revCompNuc(refStr.charAt(pos-1));
+		}
+		else
+		{
+			if (pos >= (refStr.length()-1)) return '0'; // At the last character
+			refCnext = refStr.charAt(pos+1);
+		}
+		
+		return refCnext;
+	}
+	
 	public static boolean isCpg(int pos, String refStr)
 	{
 		if (pos >= (refStr.length()-1)) return false; // At the last character

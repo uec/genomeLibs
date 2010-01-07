@@ -23,6 +23,9 @@ public class Cpg implements Comparable {
 	public short agReads = 0;
 	public short totalReadsOpposite = 0;
 	public short aReadsOpposite = 0;
+	
+	// This is actually for non-cpgs
+	protected char nextBaseRefUpperCase = '0';
 
 
 
@@ -114,23 +117,52 @@ public class Cpg implements Comparable {
 	public static void outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr)
 	throws IOException
 	{
+		outputChromToFile(cpgMap, prefix, sampleName, chr, 0, 0.0);
+	}
+	
+	public static void outputCpgsToFile(PrintWriter pw, Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, int minCphCoverage, double minCphMethFrac)
+	throws IOException
+	{
+		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
+		Iterator<Cpg> cpgIt = cpgMap.values().iterator();
+		CPG: while (cpgIt.hasNext())
+		{
+			Cpg cpg = cpgIt.next();
+			if ((cpg.getNextBaseRef() != 'G'))// && (cpg.getNextBaseRef() != '0'))
+			{
+				if ((cpg.totalReads < minCphCoverage) || (cpg.fracMeth(true)<minCphMethFrac))
+				{
+					continue CPG;
+				}
+			}
+			
+			String line = cpg.toString();
+			pw.println(line);
+		}
+	}
+	
+	public static PrintWriter outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, int minCphCoverage, double minCphMethFrac)
+	throws IOException
+	{
 		
 		String fn = prefix + sampleName + "_" + chr + ".txt";
 		PrintWriter writer = new PrintWriter(new File(fn));
 		
-		Iterator<Cpg> cpgIt = cpgMap.values().iterator();
-		while (cpgIt.hasNext())
-		{
-			Cpg cpg = cpgIt.next();
-			String line = cpg.toString();
-			writer.println(line);
-		}
-		writer.close();
+		outputCpgsToFile(writer, cpgMap, prefix, sampleName, chr, minCphCoverage, minCphMethFrac);
+		
+		//writer.close();
+		return writer;
 	}
 
 	@Override
 	public String toString() {
 
+		if (true)
+		{
+			return this.toStringExpanded();
+		}
+		else
+		{
 		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d", 
 				chromPos,
 				(negStrand) ? '-' : '+',
@@ -140,9 +172,37 @@ public class Cpg implements Comparable {
 				tReads,
 				agReads,
 				totalReadsOpposite,
-				aReadsOpposite);
+				aReadsOpposite
+				);
+		}
 	}
 	
+	public String toStringExpanded() 
+	{
+
+		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f", 
+				chromPos,
+				(negStrand) ? '-' : '+',
+				totalReads,
+				cReads,
+				cReadsNonconversionFilt,
+				tReads,
+				agReads,
+				totalReadsOpposite,
+				aReadsOpposite,
+				nextBaseRefUpperCase,
+				100*this.fracMeth(true)
+				);
+	}
+
+	public char getNextBaseRef() {
+		return nextBaseRefUpperCase;
+	}
+
+	public void setNextBaseRef(char nextBaseRef) {
+		this.nextBaseRefUpperCase = Character.toUpperCase(nextBaseRef);
+	}
+
 	public StrandedFeature.Strand getStrand()
 	{
 		return (this.negStrand) ? StrandedFeature.NEGATIVE : StrandedFeature.POSITIVE;

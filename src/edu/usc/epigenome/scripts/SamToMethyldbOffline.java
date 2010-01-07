@@ -4,10 +4,13 @@ import net.sf.samtools.*;
 import net.sf.samtools.util.CloseableIterator;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -24,6 +27,8 @@ public class SamToMethyldbOffline {
 	final private static String prefix = "methylCGsRich_";
 	final private static String USAGE = "SamToMethyldbOffling [opts] sampleName file1.bam file2.bam ...";
 
+	final private static int PURGE_INTERVAL = 5000; // We purge our stored Cpgs once we get this many bases past them.
+	
 	
 	/**
 	 * object vars
@@ -43,8 +48,14 @@ public class SamToMethyldbOffline {
 //	protected boolean outputReads = false;
 	@Option(name="-useCpgsToFilter",usage=" Use CpGs and CpHs to filter if true, otherwise just CpHs (default false)")
 	protected boolean useCpgsToFilter = false;
+	@Option(name="-outputCphs",usage=" Output CpH cytosines (can't use more than 1 input file)")
+	protected boolean outputCphs = false;
 	@Option(name="-minMapQ",usage="minimum mapping quality (default 0)")
 	protected int minMapQ = 0;
+	@Option(name="-minCphCoverage",usage="the minimum number of total reads to include a Cph (default 10)")
+	protected int minCphCoverage = 10;
+	@Option(name="-minCphFrac",usage="minimum methylation fraction to include a Cph")
+	protected double minCphFrac = 0.2;
 	@Option(name="-debug",usage=" Debugging statements (default false)")
 	protected boolean debug = false;
 
@@ -75,6 +86,8 @@ public class SamToMethyldbOffline {
 		{
 			parser.parseArgument(args);
 			if (stringArgs.size() < 2) throw new CmdLineException(USAGE);
+			
+			if (this.outputCphs && (stringArgs.size()>2)) throw new CmdLineException("Can't use -outputCphs with multiple input bam files");
 		}
 		catch (CmdLineException e)
 		{
@@ -95,8 +108,10 @@ public class SamToMethyldbOffline {
 		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 		for (final String chr : chrs)
 		{
-			Map<Integer,Cpg> cpgs = new TreeMap<Integer,Cpg>();
+			SortedMap<Integer,Cpg> cytosines = new TreeMap<Integer,Cpg>();
+			PrintWriter outWriter = Cpg.outputChromToFile(cytosines, prefix, sampleName, chr, this.minCphCoverage, this.minCphFrac);
 
+			
 			for (final String fn : stringArgs)
 			{
 				File inputSamOrBamFile = new File(fn);
@@ -106,9 +121,23 @@ public class SamToMethyldbOffline {
 				
 				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
 				
-
+				// We can only purge if we are the only input file and we are sorted.
+				boolean canPurge = ((inputSam.hasIndex()) && (stringArgs.size() == 1));
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Able to purge at interval %d? %s\n", 
+						PURGE_INTERVAL, (canPurge) ? "Yes" : "Purging not available - either unsorted BAM or multiple BAMs for the same chrom"));
+				int lastBaseSeen = 0;
+				int lastPurge = 0;
 				record: while (chrIt.hasNext())
 				{
+					if (canPurge && (lastBaseSeen > (lastPurge+PURGE_INTERVAL)))
+					{
+						//System.err.printf("On base %d, purging everything before %d\n", lastBaseSeen,lastPurge);
+						Cpg.outputCpgsToFile(outWriter, cytosines.headMap(new Integer(lastPurge)), prefix, sampleName, chr, this.minCphCoverage, this.minCphFrac);
+						cytosines = cytosines.tailMap(new Integer(lastPurge));
+						
+						lastPurge = lastBaseSeen;
+					}
+					
 					SAMRecord samRecord = chrIt.next();
 
 					// Filter low qual
@@ -138,8 +167,17 @@ public class SamToMethyldbOffline {
 						//System.err.println(seq + "\n" + ref);
 
 						boolean negStrand = samRecord.getReadNegativeStrandFlag();
-						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : samRecord.getAlignmentStart();
+						int alignmentS = samRecord.getAlignmentStart();
+						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; 
 
+						if ((this.outputCphs) && (alignmentS < lastBaseSeen))
+						{
+							System.err.printf("BAM must be ordered in order to handle -outputCphs: %d<%d\n",alignmentS, lastBaseSeen);
+							System.exit(1);
+						}
+						lastBaseSeen = alignmentS;
+							
+							
 
 						int numConverted = 0;
 						int convStart = Integer.MAX_VALUE;
@@ -148,11 +186,20 @@ public class SamToMethyldbOffline {
 						{
 							char refi = ref.charAt(i);
 							char seqi = seq.charAt(i);
+							char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 
-							if ((seqi != '0') && PicardUtils.isCytosine(i,ref))
+//							if ((seqi != '0') && PicardUtils.isCytosine(i,ref))
+							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref)) // The last one is too tricky to deal with since we don't know context
 							{
 								boolean iscpg = PicardUtils.isCpg(i,ref);
 								boolean conv = PicardUtils.isConverted(i,ref,seq);
+								
+//								if (iscpg && (nextBaseRef != 'G'))
+//								{
+//									System.err.printf("Cpg status and next base don't match:\nref=%s\nseq=%s\nref_%d=%c, seq_%d=%c\n",
+//											ref, seq, i, refi, i, seqi);
+//								}
+								
 
 								if (conv && (this.useCpgsToFilter || !iscpg)) numConverted++;
 
@@ -163,7 +210,7 @@ public class SamToMethyldbOffline {
 								}
 
 
-								if (iscpg)
+								if (iscpg || this.outputCphs)
 								{
 									if (i<convStart)
 									{
@@ -177,7 +224,10 @@ public class SamToMethyldbOffline {
 										usedCounter++;
 									}
 
-									Cpg cpg = findOrCreateCpg(cpgs, onRefCoord, negStrand);
+									Cpg cpg = findOrCreateCpg(cytosines, onRefCoord, negStrand, nextBaseRef);
+									// See if we can fix the context for this CpG
+									if (cpg.getNextBaseRef() == '0') cpg.setNextBaseRef(nextBaseRef);
+									
 									this.incrementCpg(cpg, seqi, i<convStart);
 								}
 
@@ -189,7 +239,10 @@ public class SamToMethyldbOffline {
 							if (oppositeCpg)
 							{
 								// Look for cpg on opposite strand
-								Cpg cpg = findOrCreateCpg(cpgs, onRefCoord, !negStrand);
+								// Be careful, the "nextBaseRef" is now on the opposite strand!!
+								char nextBaseRefRev = PicardUtils.nextBaseRef(i, ref, true);
+								Cpg cpg = findOrCreateCpg(cytosines, onRefCoord, !negStrand, nextBaseRefRev);
+								
 								this.incrementOppositeCpg(cpg, seqi);
 							}
 
@@ -226,7 +279,8 @@ public class SamToMethyldbOffline {
 			}
 
 			// And output the chrom
-			if (cpgs != null) Cpg.outputChromToFile(cpgs, prefix, sampleName, chr);
+			if (cytosines != null) 	Cpg.outputCpgsToFile(outWriter, cytosines, prefix, sampleName, chr, this.minCphCoverage, this.minCphFrac);
+			outWriter.close();
 
 		}
 		double frac = (double)filteredOutCounter/((double)usedCounter+(double)filteredOutCounter);
@@ -235,12 +289,14 @@ public class SamToMethyldbOffline {
 		System.err.printf("Found %d reads total\n", recCounter);
 	}
 
-	protected static Cpg findOrCreateCpg(Map<Integer,Cpg> cpgs, int onRefCoord, boolean negStrand)
+
+	protected static Cpg findOrCreateCpg(Map<Integer,Cpg> cpgs, int onRefCoord, boolean negStrand, char nextBaseRef)
 	{
 		Cpg cpg = cpgs.get(new Integer(onRefCoord));
 		if (cpg == null)
 		{
 			cpg = new Cpg(onRefCoord,negStrand);
+			cpg.setNextBaseRef(nextBaseRef);
 			cpgs.put(new Integer(onRefCoord), cpg);
 		}
 		return cpg;
