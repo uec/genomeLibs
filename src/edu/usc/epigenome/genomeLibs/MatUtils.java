@@ -904,6 +904,16 @@ public class MatUtils {
 		}
 	}
 
+	public static double[][][] intMatToDouble(int[][][] mat)
+	{
+		double[][][] out = new double[mat.length][][];
+		for (int i = 0; i < mat.length; i++)
+		{
+			out[i] = MatUtils.intMatToDouble(mat[i]);
+		}
+		return out;
+	}
+	
 	public static double[][] intMatToDouble(int[][] mat)
 	{
 	   	int nrow = mat.length;
