@@ -212,7 +212,6 @@ public class FeatAlignerAveraging extends FeatAligner {
 		int midpoint = (int)Math.round((double)data.getSize()/2.0);
 		plot.addShapeMarker(Shape.VERTICAL_LINE_FULL, Color.BLACK,1,midpoint);
 		
-		
 		plot.setColor(c);
 		
 		return plot;

@@ -194,7 +194,11 @@ public class FeatDbQuerier {
 			{
 				// This is the best way to pick anything that OVERLAPS the range.
 				// Notice than CONTAINED WITHIN the range would be a different query
+				
+				
 				String clause = String.format("((?<=%schromPosEnd) AND (?>=%schromPosStart))",asSec, asSec);
+				
+				
 				grClauses.add(clause);
 				if (prep!=null)
 				{

@@ -19,11 +19,12 @@ public class MethylDbUtils {
 		Arrays.asList("TJ_GG_nonPrmtrExons","TJ_NonPrmtrNonExon","TJ_Prmtrs_oriented");
 	public static final List<String> SUMMARY_FEATURES3 = 
 		Arrays.asList("exon_normHigh", "exon_normLow", "exon_tumHigh", "exon_tumLow", "exonTumUp", "exonTumDown");
-	public static final List<String> SUMMARY_FEATURES1 = 
-		Arrays.asList("LINE","exon","IMR90_PMDs","TJ_Prmtrs_oriented","K27me3_Ku2008_Prmtrs_oriented","K27me3_Ku2008");
 	public static final List<String> SUMMARY_FEATURES4 = 
+		Arrays.asList("LINE","exon","IMR90_PMDs","TJ_Prmtrs_oriented","K27me3_Ku2008_Prmtrs_oriented","K27me3_Ku2008");
+	public static final List<String> SUMMARY_FEATURES5 = 
 		Arrays.asList("tss_500bp_flank_normHigh","tss_500bp_flank_normLow", "tss_500bp_flank_tumHigh","tss_500bp_flank_tumLow","tss_500bp_flank_tumUp","tumDown");
-
+	public static final List<String> SUMMARY_FEATURES1 = 
+		Arrays.asList("tx_normHigh","tx_normLow", "tx_tumHigh","tx_tumLow");
 	
 	//	echo "select count(*),featType from features_chr1 GROUP BY featType;" |mysql cr > featTypes.txt
 //	61841   exon

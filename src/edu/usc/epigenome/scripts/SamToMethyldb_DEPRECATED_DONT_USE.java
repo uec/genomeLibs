@@ -22,7 +22,7 @@ import org.kohsuke.args4j.Option;
 import edu.usc.epigenome.genomeLibs.PicardUtils;
 
 
-public class SamToMethyldb {
+public class SamToMethyldb_DEPRECATED_DONT_USE {
 
 	final private static String TABLE = "methylCGsRich_tumor_chr11";
 	// Any way to have ENUM wildcards?
@@ -73,7 +73,7 @@ public class SamToMethyldb {
 	public static void main(String[] args)
 	throws Exception
 	{
-		new SamToMethyldb().doMain(args);
+		new SamToMethyldb_DEPRECATED_DONT_USE().doMain(args);
 	}
 
 	public void doMain(String[] args)

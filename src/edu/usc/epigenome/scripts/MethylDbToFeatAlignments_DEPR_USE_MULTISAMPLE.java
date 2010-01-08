@@ -106,7 +106,7 @@ public class MethylDbToFeatAlignments_DEPR_USE_MULTISAMPLE {
 		this.fMats[3] = new FeatAlignerAveraging(flankSize, false);
 	
 		
-		for (String chrStr : MethylDbUtils.CHROMS11)
+		for (String chrStr : MethylDbUtils.CHROMS)
 		{
 			processChrom(chrStr, feats, skipUnoriented);
 		}

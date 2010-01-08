@@ -163,7 +163,7 @@ public class MethylDbToMultisampleFeatAlignmentsSwing {
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS11)
+			for (String chrStr : MethylDbUtils.CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
