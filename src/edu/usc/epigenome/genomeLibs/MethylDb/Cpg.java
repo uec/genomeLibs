@@ -24,6 +24,9 @@ public class Cpg implements Comparable {
 	public short totalReadsOpposite = 0;
 	public short aReadsOpposite = 0;
 	
+	public short nextBaseTotalReads = 0;
+	public short nextBaseGreads = 0;
+	
 	// This is actually for non-cpgs
 	protected char nextBaseRefUpperCase = '0';
 
@@ -84,6 +87,11 @@ public class Cpg implements Comparable {
 	}
 	
 	
+	public double fracNextBaseG()
+	{
+		return (double)this.nextBaseGreads / ((double)this.nextBaseTotalReads);
+	}
+
 	public double fracOppositeA()
 	{
 		return (double)this.aReadsOpposite / ((double)this.aReadsOpposite + (double)this.totalReadsOpposite);
@@ -180,7 +188,7 @@ public class Cpg implements Comparable {
 	public String toStringExpanded() 
 	{
 
-		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f", 
+		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f\t%.2f", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,
@@ -190,8 +198,11 @@ public class Cpg implements Comparable {
 				agReads,
 				totalReadsOpposite,
 				aReadsOpposite,
+				nextBaseGreads,
+				nextBaseTotalReads,
 				nextBaseRefUpperCase,
-				100*this.fracMeth(true)
+				100*this.fracMeth(true),
+				100*this.fracNextBaseG()
 				);
 	}
 

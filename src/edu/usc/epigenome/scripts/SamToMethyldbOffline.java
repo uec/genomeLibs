@@ -187,6 +187,7 @@ public class SamToMethyldbOffline {
 							char refi = ref.charAt(i);
 							char seqi = seq.charAt(i);
 							char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
+							char nextBaseSeq = PicardUtils.nextBaseSeq(i, seq);
 
 //							if ((seqi != '0') && PicardUtils.isCytosine(i,ref))
 							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref)) // The last one is too tricky to deal with since we don't know context
@@ -228,7 +229,7 @@ public class SamToMethyldbOffline {
 									// See if we can fix the context for this CpG
 									if (cpg.getNextBaseRef() == '0') cpg.setNextBaseRef(nextBaseRef);
 									
-									this.incrementCpg(cpg, seqi, i<convStart);
+									this.incrementCpg(cpg, seqi, i<convStart, nextBaseSeq);
 								}
 
 
@@ -303,10 +304,10 @@ public class SamToMethyldbOffline {
 	}
 	
 	
-	protected void incrementCpg(Cpg cpg, char seqChar, boolean nonconvFilter) 
+	protected void incrementCpg(Cpg cpg, char seqChar, boolean nonconvFilter, char nextBaseSeq) 
 	throws Exception
 	{
-		int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0;
+		int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0, nextBaseGreads = 0, nextBaseTotalReads = 0;
 		
 		switch (seqChar)
 		{
@@ -329,12 +330,21 @@ public class SamToMethyldbOffline {
 		default:
 			throw new Exception("Can't recognize seq char: " + seqChar);
 		}
+		
+		if (nextBaseSeq != '0')
+		{
+			nextBaseTotalReads = 1;
+			if (nextBaseSeq == 'G') nextBaseGreads = 1;
+		}
 
 		cpg.totalReads += totalReads;
 		cpg.cReads += cReads;
 		cpg.tReads += tReads;
 		cpg.cReadsNonconversionFilt += cReadsNonconvFilt;
 		cpg.agReads += agReads;
+		
+		cpg.nextBaseGreads += nextBaseGreads;
+		cpg.nextBaseTotalReads += nextBaseTotalReads;
 	}
 	
 	protected void incrementOppositeCpg(Cpg cpg, char seqChar) 

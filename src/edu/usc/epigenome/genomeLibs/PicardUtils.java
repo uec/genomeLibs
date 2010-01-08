@@ -221,6 +221,18 @@ public class PicardUtils {
 		return out;
 	}
 		
+	public static char nextBaseSeq(int pos, String seqStr)
+	{
+		if (pos >= (seqStr.length()-1))
+		{
+			return '0';
+		}
+		else
+		{
+			return seqStr.charAt(pos+1); 
+		}
+	}
+	
 	public static char nextBaseRef(int pos, String refStr)
 	{
 		return nextBaseRef(pos, refStr, false);
