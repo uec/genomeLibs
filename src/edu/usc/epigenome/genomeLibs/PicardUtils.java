@@ -268,7 +268,7 @@ public class PicardUtils {
 		
 		char refCnext = refStr.charAt(pos+1);
 		
-		return ( isCytosine(pos,refStr) && (refCnext == 'G') );
+		return ( isCytosine(pos,refStr,false) && (refCnext == 'G') );
 	}	
 
 	// The G opposit the CpG
@@ -282,11 +282,22 @@ public class PicardUtils {
 	}	
 
 	
-	public static boolean isCytosine(int pos, String refStr)
+	public static boolean isCytosine(int pos, String seqStr, boolean bisulfiteConversionSpace)
 	{
-		char refC = refStr.charAt(pos);
+		char refC = seqStr.charAt(pos);
 		
-		return (refC == 'C') ;
+		boolean out;
+		
+		if (bisulfiteConversionSpace)
+		{
+			out = ((refC == 'C') || (refC == 'T'));
+		}
+		else
+		{
+			out = (refC == 'C');
+		}
+		
+		return out; 
 	}
 	
 	public static boolean isGuanine(int pos, String refStr)
