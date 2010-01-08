@@ -19,6 +19,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import sun.tools.tree.ThisExpression;
+
 import com.googlecode.charts4j.AxisLabels;
 import com.googlecode.charts4j.AxisLabelsFactory;
 import com.googlecode.charts4j.Color;
@@ -38,7 +40,7 @@ import edu.usc.epigenome.genomeLibs.PicardUtils;
 
 public class SamFiveprimeConversion {
 
-	static final String USAGE = "SamFiveprimeConversion -outputFilePrefix FiveprimeConversion -minConv 1 input1.sam input2.sam ...";
+	static final String USAGE = "SamFiveprimeConversion -relativeFreqs -outputFilePrefix FiveprimeConversion -minConv 1 input1.sam input2.sam ...";
 
 	static final int BUFFERLEN = 1000;
 	static StringBuilder sb = new StringBuilder(BUFFERLEN);
@@ -60,6 +62,8 @@ public class SamFiveprimeConversion {
 //	protected boolean outputReads = false;
 	@Option(name="-useCpgsToFilter",usage=" Use CpGs and CpHs to filter if true, otherwise just CpHs (default false)")
 	protected boolean useCpgsToFilter = false;
+	@Option(name="-relativeFreqs",usage=" If set, we don't do filtering and we instead plot the position relative to all other positions")
+	protected boolean relativeFreqs = false;
 
 	// receives other command line parameters than options
 	@Argument
@@ -149,7 +153,7 @@ public class SamFiveprimeConversion {
 					int numConverted = 0;
 					int convStart = Integer.MAX_VALUE;
 					int seqLen = Math.min(seq.length(), ref.length());
-					for (int i = 0; i < seqLen; i++)
+					for (int i = 0; i < this.numCycles; i++)
 					{
 						if (isCytosine(i,ref,seq))
 						{
@@ -158,15 +162,16 @@ public class SamFiveprimeConversion {
 
 							if (conv && (useCpgsToFilter || !cpg)) numConverted++;
 
-							// The first one is ok to use for actual data, but not
-							// ok to use for these statistics, because it throws
-							// off the ratios (100% of CpGs at the first base with
-							// filtering will be converted, which is not useful information)
 							if ((convStart==Integer.MAX_VALUE) && (numConverted>=minConv) )
 							{
 								convStart = i;
 							}
-							else
+
+							// The first one is ok to use for actual data, but not
+							// ok to use for these statistics, because it throws
+							// off the ratios (100% of CpGs at the first base with
+							// filtering will be converted, which is not useful information)
+							if (this.relativeFreqs || (convStart != i))
 							{
 								// Get counter
 								String key = cytosineContext(i, ref, seq);
@@ -177,7 +182,8 @@ public class SamFiveprimeConversion {
 									cycleCounters.put(key, counter);
 								}
 
-								counter.increment(i<convStart, conv, i);
+								boolean filter = (i<convStart);
+								counter.increment(filter, conv, i);
 							}
 
 							//if (cpg && (i<convStart)) System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
@@ -211,12 +217,15 @@ public class SamFiveprimeConversion {
 		{
 			pw.printf("%s<BR>\n",fn);
 		}
-		pw.print("</P>\n");
-		pw.print("<H4>CpG</H4>\n");
-		pw.print("<P><IMG SRC=\"");
-		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CG"),0.0,1.0));
-		pw.print("\">\n");
-		pw.print("</P>\n");
+		
+		if (!this.relativeFreqs)
+		{
+			pw.print("</P>\n");
+			pw.print("<H4>CpG</H4>\n");
+			pw.print("<P><IMG SRC=\"");
+			pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CG"),0.0,1.0));
+			pw.print("\">\n");
+			pw.print("</P>\n");
 		
 		pw.print("<H4>CpH</H4>\n");
 		pw.print("<P><IMG SRC=\"");
@@ -229,6 +238,17 @@ public class SamFiveprimeConversion {
 		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CC","CT"),0.95,1.0));
 		pw.print("\">\n");
 		pw.print("</P>\n");
+		}
+		else
+		{
+			pw.print("</P>\n");
+			pw.print("<H4>% methylCs by cycle</H4>\n");
+			pw.print("<P><IMG SRC=\"");
+			pw.print(HtmlChartUrl(cycleCounters, null,0.005*(70/this.numCycles), 0.02*(70/this.numCycles)));
+			pw.print("\">\n");
+			pw.print("</P>\n");
+
+		}
 
 		pw.close();
 
@@ -241,7 +261,7 @@ public class SamFiveprimeConversion {
 
 	}
 
-	static String HtmlChartUrl(Map<String,ByCycleCounter> counters, List<String> contextsToDisplay,
+	protected String HtmlChartUrl(Map<String,ByCycleCounter> counters, List<String> contextsToDisplay,
 			double minVal, double maxVal)
 	throws Exception
 	{
@@ -249,6 +269,8 @@ public class SamFiveprimeConversion {
 
 		List<Plot> plots = new ArrayList<Plot>(20);
 
+		if (contextsToDisplay == null) contextsToDisplay = new ArrayList<String>(counters.keySet());
+		
 		try
 		{
 			// Get plots
@@ -258,20 +280,23 @@ public class SamFiveprimeConversion {
 			{
 				ByCycleCounter counter = counters.get(context);
 				numCycles = Math.max(numCycles, counter.numCycles);
-				
+
 				// Once with filter, once without
-				Plot noFilter = counter.toPlot(false, minVal,maxVal);
+				Plot noFilter = counter.toPlot(false, minVal,maxVal, this.relativeFreqs);
 				noFilter.setColor(GetContextColor(context, false));
 				noFilter.setLegend(String.format("%s no filter", context));
 				//noFilter.addShapeMarkers(Shape.CIRCLE, Color.BLACK, 3);
 				plots.add(noFilter);
 
-				Plot withFilter = counter.toPlot(true, minVal,maxVal);
-				withFilter.setColor(GetContextColor(context, true));
-				withFilter.setLegend(String.format("%s with filter", context));
-				//withFilter.addShapeMarkers(Shape.SQUARE, Color.BLACK, 3);
-				plots.add(withFilter);
-				
+				if (!this.relativeFreqs)
+				{	
+					Plot withFilter = counter.toPlot(true, minVal,maxVal, this.relativeFreqs);
+					withFilter.setColor(GetContextColor(context, true));
+					withFilter.setLegend(String.format("%s with filter", context));
+					//withFilter.addShapeMarkers(Shape.SQUARE, Color.BLACK, 3);
+					plots.add(withFilter);
+				}
+
 				contextCount++;
 
 			}
@@ -309,19 +334,19 @@ public class SamFiveprimeConversion {
 		Color out = Color.ORANGE;
 		if (context.equalsIgnoreCase("CG"))
 		{
-			out = (filtered) ? Color.BLACK : Color.GRAY;
+			out = (!filtered) ? Color.BLACK : Color.GRAY;
 		}
 		else if (context.equalsIgnoreCase("CA"))
 		{
-			out = (filtered) ? Color.GREEN : Color.LIGHTGREEN;
+			out = (!filtered) ? Color.GREEN : Color.LIGHTGREEN;
 		}
 		else if (context.equalsIgnoreCase("CT"))
 		{
-			out = (filtered) ? Color.RED : Color.PINK;
+			out = (!filtered) ? Color.RED : Color.PINK;
 		}
 		else if (context.equalsIgnoreCase("CC"))
 		{
-			out = (filtered) ? Color.BROWN : Color.BEIGE;
+			out = (!filtered) ? Color.BROWN : Color.BEIGE;
 		}
 		
 		// TODO Auto-generated method stub
@@ -402,10 +427,10 @@ public class SamFiveprimeConversion {
 			}
 		}
 
-		public Plot toPlot(boolean withFilter, double minScale, double maxScale)
+		public Plot toPlot(boolean withFilter, double minScale, double maxScale, boolean relativeFreqs)
 		throws Exception
 		{
-			Data data = this.toData(withFilter, minScale, maxScale);
+			Data data = this.toData(withFilter, minScale, maxScale, relativeFreqs);
 			Plot plot = Plots.newPlot(data);
 			
 
@@ -437,7 +462,7 @@ public class SamFiveprimeConversion {
 			return plot;		
 		}
 		
-		public Data toData(boolean withFilter, double minScale, double maxScale)
+		public Data toData(boolean withFilter, double minScale, double maxScale, boolean relativeFreqs)
 		throws Exception
 		{
 			double[][][] dblCount = MatUtils.intMatToDouble(counter);
@@ -445,12 +470,21 @@ public class SamFiveprimeConversion {
 			double[][] convNonconv = (withFilter) ? dblCount[boolToInd(false)] : MatUtils.sumMats(dblCount[0], dblCount[1]);
 			double[] data = MatUtils.divVects(convNonconv[boolToInd(true)], MatUtils.vectSum(convNonconv[0], convNonconv[1]));
 			
+			if (relativeFreqs)
+			{
+				double[] meCounts = convNonconv[boolToInd(true)];
+				double totalMe = MatUtils.nanSum(meCounts);
+				data = MatUtils.divVect(meCounts, totalMe);
+			}
+			
 			// Nans not allowed
 			MatUtils.nansToVal(data, minScale-1);
 			System.err.println("Making data: " + ListUtils.excelLine(data));
 
 			
-			return DataUtil.scaleWithinRange(minScale, maxScale, data);
+			Data out = DataUtil.scaleWithinRange(minScale, maxScale, data);
+			
+			return out;
 		}
 
 		public String toString()
