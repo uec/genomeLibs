@@ -330,13 +330,26 @@ public class SamToMethyldbOffline {
 		default:
 			throw new Exception("Can't recognize seq char: " + seqChar);
 		}
-		
-		if (nextBaseSeq != '0')
+	
+		// And the next base
+		switch (nextBaseSeq)
 		{
+		case 'N':
+		case '0':
+			break;
+		case 'G':
 			nextBaseTotalReads = 1;
-			if (nextBaseSeq == 'G') nextBaseGreads = 1;
+			nextBaseGreads = 1;
+			break;
+		case 'T':
+		case 'A':
+		case 'C':
+			nextBaseTotalReads = 1;
+			break;
+		default:
+			throw new Exception("Can't recognize seq char: " + seqChar);
 		}
-
+	
 		cpg.totalReads += totalReads;
 		cpg.cReads += cReads;
 		cpg.tReads += tReads;
