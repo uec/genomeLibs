@@ -189,8 +189,8 @@ public class SamToMethyldbOffline {
 							char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 							char nextBaseSeq = PicardUtils.nextBaseSeq(i, seq);
 
-//							if ((seqi != '0') && PicardUtils.isCytosine(i,ref))
-							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref)) // The last one is too tricky to deal with since we don't know context
+							//if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref)) // The last one is too tricky to deal with since we don't know context
+							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref) && PicardUtils.isCytosine(i, seq)) // The last one is too tricky to deal with since we don't know context
 							{
 								boolean iscpg = PicardUtils.isCpg(i,ref);
 								boolean conv = PicardUtils.isConverted(i,ref,seq);
