@@ -27,7 +27,7 @@ public class SamToMethyldbOffline {
 	final private static String prefix = "methylCGsRich_";
 	final private static String USAGE = "SamToMethyldbOffling [opts] sampleName file1.bam file2.bam ...";
 
-	final private static int PURGE_INTERVAL = 5000; // We purge our stored Cpgs once we get this many bases past them.
+	final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
 	
 	
 	/**
@@ -119,7 +119,7 @@ public class SamToMethyldbOffline {
 				final SAMFileReader inputSam = new SAMFileReader(inputSamOrBamFile);
 				inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
 				
-				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
+				CloseableIterator<SAMRecord> chrIt = inputSam.iterator();// inputSam.query(chr, 0, 0, false);
 				
 				// We can only purge if we are the only input file and we are sorted.
 				boolean canPurge = ((inputSam.hasIndex()) && (stringArgs.size() == 1));
@@ -133,7 +133,11 @@ public class SamToMethyldbOffline {
 					{
 						//System.err.printf("On base %d, purging everything before %d\n", lastBaseSeen,lastPurge);
 						Cpg.outputCpgsToFile(outWriter, cytosines.headMap(new Integer(lastPurge)), prefix, sampleName, chr, this.minCphCoverage, this.minCphFrac);
-						cytosines = cytosines.tailMap(new Integer(lastPurge));
+						
+						// Weird, if i just set cytosines to be the tailMap (as in 1, below) garbage collection doesn't actually clean up
+						// the old part (just backed by the original data structure). So i actually have to copy it to a new map. (as in 2)
+						//(1) cytosines = cytosines.tailMap(new Integer(lastPurge));
+						cytosines = new TreeMap<Integer,Cpg>(cytosines.tailMap(new Integer(lastPurge))); // (2)
 						
 						lastPurge = lastBaseSeen;
 					}
@@ -152,7 +156,11 @@ public class SamToMethyldbOffline {
 					String seq = PicardUtils.getReadString(samRecord, true);
 
 					recCounter++;
-					if ((recCounter % 1E5)==0) System.err.println("On new record #" + recCounter); 
+					if ((recCounter % 1E5)==0)
+					{
+						System.err.printf("On new record #%d, purged tree size:%d\n",recCounter,cytosines.size());
+						if (canPurge) System.gc();
+					}
 
 
 					try
