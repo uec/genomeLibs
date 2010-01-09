@@ -31,9 +31,9 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
-public class MethylDbToMultisampleFeatAlignmentsSwing {
+public class MethylDbToMultisampleFeatAlignmentsStratified {
 
-	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignments -censor -alignToStart  -maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
+	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignmentsStratified -censor -alignToStart  -maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
 	"-outputPrefix outputTag sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
 	
 	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
@@ -76,7 +76,7 @@ public class MethylDbToMultisampleFeatAlignmentsSwing {
 	throws Exception	
 	{
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.INFO);
-		new MethylDbToMultisampleFeatAlignmentsSwing().doMain(args);
+		new MethylDbToMultisampleFeatAlignmentsStratified().doMain(args);
 	}
 
 	public void doMain(String[] args)
@@ -141,7 +141,7 @@ public class MethylDbToMultisampleFeatAlignmentsSwing {
 			feats = feats.filterBySize(0, this.maxFeatSize);
 			System.err.println("About to center regions");
 			feats = feats.centered_regions(1, null);
-			int nFeats = feats.num_features(11); // ***** CHANGE THIS IF GOING ACROSS CHROMS ***
+			int nFeats = feats.num_features(); 
 			
 			
 			
@@ -283,12 +283,14 @@ public class MethylDbToMultisampleFeatAlignmentsSwing {
 				}
 			}
 			
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
-					"Fetching coords: censor=%s\talignToStart=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\t\n",
-					""+this.censor, ""+this.alignToStart, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd));
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
+					"Fetching coords: censor=%s\talignToStart=%s\tchr=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\t\n",
+					""+this.censor, ""+this.alignToStart, chrStr, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd));
 					
 	
-			
+			try 
+			{
+
 			// Meth
 			MethylDbQuerier params = new MethylDbQuerier();
 			params.setMinCTreads(this.minCTreads);
@@ -342,9 +344,18 @@ public class MethylDbToMultisampleFeatAlignmentsSwing {
 //					}
 //				}
 
-
-
 			}
+			}
+			catch (Exception e)
+			{
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(String.format(
+						"PROBLEM WITH FEATURE coords: censor=%s\talignToStart=%s\tchr=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\n%s\n",
+						""+this.censor, ""+this.alignToStart, chrStr, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd, e.toString()));
+				e.printStackTrace();
+				System.exit(1);
+				
+			}
+
 			
 			// Increment feat ind
 			this.fCurFeatInd++;
