@@ -39,11 +39,13 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, 
 	// j = featNum: arr[0][5] = fwTotalScores for feat 6
 	// k = coordinate: arr[0][5][350] = coord (350 - flank) relative to feature center.
-	double[][][] arr;
-	String[] featNames;
-	GenomicRange[] featCoords;
-	Map<GenomicRange,Integer> featinds = new TreeMap<GenomicRange,Integer>();
-	int nFeatsSeen = 0;
+	protected double[][][] arr;
+	protected String[] featNames;
+	protected GenomicRange[] featCoords;
+	protected Map<GenomicRange,Integer> featinds = new TreeMap<GenomicRange,Integer>();
+	protected int nFeatsSeen = 0;
+	
+	protected int downscaleCols = 0;
 	
 	/**
 	 * @param flankSize
@@ -55,7 +57,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		int nC = (flankSize*2) + 1;
 		int nEls = 2*nFeats*nC;
 		
-		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("About to allocate memory ("+nEls+" doubles) for alignerEachfeat()\n");
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("About to allocate memory ("+nEls+" doubles) for alignerEachfeat() (" + nFeats + ") features\n");
 		
 		if ((nEls*4) > 1E9)
 		{
@@ -114,7 +116,13 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		try
 		{
 
-			double[][] data = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+			// DOWNSCALING
+			
+			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+			
+			// Did we actually see as many features as expected?
+			double[][]data = new double[this.nFeatsSeen][];
+			for (int i = 0; i < this.nFeatsSeen; i++) data[i] = dataFull[i];
 			
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
 					"num nans: this.arr[0]=%d, this.arr[1]=%d, sum(this.arr[0..1])=%d\n",
@@ -126,8 +134,12 @@ public class FeatAlignerEachfeat extends FeatAligner {
 //			data[3][0] = 3;
 			
 
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Sorting %d rows\n",data.length));
 			data = MatUtils.sortRows(data,-0.3333,10);
+			// Do rows first since cols has to transpose 
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d cols to 200\n",data[0].length));
 			data = MatUtils.downscaleMatRows(data, 200, 4.0);
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d rows to 5\n",data.length));
 			data = MatUtils.downscaleMatCols(data,5, 0.0);
 
 			// NO NANs allowed

@@ -123,6 +123,13 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			parser.printUsage(System.err);
 			return;
 		}
+		if (this.censor && !this.skipUnoriented)
+		{
+			System.err.println("With censoring, you should add -skipUnoriented");
+			parser.printUsage(System.err);
+			return;
+		}
+		
 		int nS = tablePrefixes.size();
 		int nFeatTypes = featFns.size();
 
@@ -139,8 +146,6 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			ChromFeatures feats = new ChromFeatures(featFn, true);
 			System.err.println("About to filter regions by size");
 			feats = feats.filterBySize(0, this.maxFeatSize);
-			System.err.println("About to center regions");
-			feats = feats.centered_regions(1, null);
 			int nFeats = feats.num_features(); 
 			
 			
@@ -163,7 +168,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS)
+			for (String chrStr : MethylDbUtils.TEST_CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}

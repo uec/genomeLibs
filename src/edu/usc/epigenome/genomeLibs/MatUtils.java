@@ -309,7 +309,7 @@ public class MatUtils {
 			Double key = (Double.isNaN(mean)) ? new Double(-1 * 1E-5) : new Double(mean);
 			while (sorter.containsKey(key))
 			{
-				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info("Got duplicate key " + key + "... incrementing\n");
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Got duplicate key " + key + "... incrementing\n");
 				key += 1E-8;
 			}
 			
