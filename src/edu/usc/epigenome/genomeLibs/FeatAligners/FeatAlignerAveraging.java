@@ -156,7 +156,8 @@ public class FeatAlignerAveraging extends FeatAligner {
         	System.err.printf("min=%f, max=%f\n", min, max);
         }
         chart.addYAxisLabels(yAxis);
-        
+		chart.addRightAxisLabels(yAxis);
+       
         chart.setTitle(String.format("feat=%s, me=%s", feature, sample));
         
         sb.append(String.format("<P>strandSpec=<EM>%s</EM> normalizedByCounts=<EM>%s</EM>, range0to1=<EM>%s</EM></P>",

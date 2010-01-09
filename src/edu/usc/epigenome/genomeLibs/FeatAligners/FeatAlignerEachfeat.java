@@ -182,6 +182,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 				System.err.printf("min=%f, max=%f\n", min, max);
 			}
 			chart.addYAxisLabels(yAxis);
+			chart.addRightAxisLabels(yAxis);
 
 			sb.append(String.format("<P>strandSpec=<EM>%s</EM> normalizedByCounts=<EM>%s</EM>, range0to1=<EM>%s</EM></P>",
 					strandSpecific, normalizedByCounts, range0to1));
