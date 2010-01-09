@@ -34,7 +34,9 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
 public class FeatAlignerEachfeat extends FeatAligner {
 
-	public List<Color> ColorCycle = Arrays.asList(Color.DARKBLUE, Color.BLUE, Color.BLUEVIOLET, Color.VIOLET, Color.LIGHTSALMON, Color.RED);
+	public List<Color> ColorCycle = Arrays.asList(Color.DARKBLUE, Color.BLUE, Color.BLUEVIOLET, Color.VIOLET, Color.PINK, Color.LIGHTSALMON, Color.RED);
+	
+	protected final static int NBINS = 7;
 	
 	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, 
 	// j = featNum: arr[0][5] = fwTotalScores for feat 6
@@ -45,31 +47,33 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	protected Map<GenomicRange,Integer> featinds = new TreeMap<GenomicRange,Integer>();
 	protected int nFeatsSeen = 0;
 	
-	protected int downscaleCols = 0;
 	
 	/**
 	 * @param flankSize
 	 * @param zeroInit
+	 * @param nFeats: If it's more than the actual number, it's ok
+	 * @param downsampleCols: If it's zero, we just use (2*flankSize)+1
 	 */
-	public FeatAlignerEachfeat(int flankSize, boolean zeroInit, int nFeats) {
-		super(flankSize, zeroInit);
+	public FeatAlignerEachfeat(int inFlankSize, boolean zeroInit, int nFeats, int inDownscaleCols) {
+		super(inFlankSize, zeroInit);
 
-		int nC = (flankSize*2) + 1;
-		int nEls = 2*nFeats*nC;
+		this.flankSize = inFlankSize;
+		this.downscaleCols = (inDownscaleCols>0) ? inDownscaleCols : ((flankSize*2)+1); 
+		int nEls = 2*nFeats*this.downscaleCols;
 		
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("About to allocate memory ("+nEls+" doubles) for alignerEachfeat() (" + nFeats + ") features\n");
 		
 		if ((nEls*4) > 1E9)
 		{
 			System.err.printf("Trying to allocated an array of %d elements (2 strands, %d cols, %d feats) - too big\n",
-					nEls, nC, nFeats);
+					nEls, this.downscaleCols, nFeats);
 			System.exit(1);
 		}
 		
 		// i = type: arr[0] fwTotalScores, arr[1] revTotalScores
 		// j = featNum: arr[0][5] = fwTotalScores for feat 6
 		// k = coordinate: arr[0][5][350] = coord (350 - flank) relative to feature center.
-		this.arr = new double[2][nFeats][nC];
+		this.arr = new double[2][nFeats][this.downscaleCols];
 		this.featCoords = new GenomicRange[nFeats];
 		this.featNames = new String[nFeats];
 		
@@ -92,7 +96,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 		GenomicRange gr = new GenomicRange(featChr, featCoord, featCoord, featStrand);
 		int featInd = this.getInd(gr, featName);
-		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand);
+		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand, true);
 
 		// Flip the strand of the scores if features are flipped
 		arr[0][featInd][colInd] = (featStrand==StrandedFeature.NEGATIVE) ? revStrandScore : fwStrandScore;
@@ -138,9 +142,10 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			data = MatUtils.sortRows(data,-0.3333,10);
 			// Do rows first since cols has to transpose 
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d cols to 200\n",data[0].length));
-			data = MatUtils.downscaleMatRows(data, 200, 4.0);
+			int downsampleTo = Math.min(this.downscaleCols, 100); // Harder to go above 500
+			data = MatUtils.downscaleMatRows(data, downsampleTo, 0.0);
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d rows to 5\n",data.length));
-			data = MatUtils.downscaleMatCols(data,5, 0.0);
+			data = MatUtils.downscaleMatCols(data,NBINS, 0.0);
 
 			// NO NANs allowed
 			MatUtils.nansToVal(data, 0.0);
@@ -248,8 +253,12 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	public HeatMap heatMap(double[] colorMinMax)
 	throws Exception
 	{
-		double[][] data = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+		double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
 		
+		// Did we actually see as many features as expected?
+		double[][]data = new double[this.nFeatsSeen][];
+		for (int i = 0; i < this.nFeatsSeen; i++) data[i] = dataFull[i];
+
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
 				"num nans: this.arr[0]=%d, this.arr[1]=%d, sum(this.arr[0..1])=%d\n",
 				MatUtils.countNans(this.arr[0]), MatUtils.countNans(this.arr[1]), MatUtils.countNans(data)));
@@ -261,8 +270,9 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		
 
 		data = MatUtils.sortRows(data,-0.3333,10);
-		data = MatUtils.downscaleMatRows(data, 500, 20.0);
-		data = MatUtils.downscaleMatCols(data, 30, 2.0);
+		int downsampleTo = Math.min(this.downscaleCols, 500); // Harder to go above 500
+		data = MatUtils.downscaleMatRows(data, downsampleTo, 0.0);
+		data = MatUtils.downscaleMatCols(data, 30, 0.0);
 
 		// NO NANs allowed
 		MatUtils.nansToVal(data, 0.0);

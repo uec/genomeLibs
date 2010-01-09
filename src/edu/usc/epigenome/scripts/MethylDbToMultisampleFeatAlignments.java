@@ -54,6 +54,8 @@ public class MethylDbToMultisampleFeatAlignments {
 	protected boolean cpgCounts = false;
 	@Option(name="-alignToStart",usage="If set, align to the left end (or 5' if available) of the feature.  Default is to align to center")
 	protected boolean alignToStart = false;
+	@Option(name="-alignToEnd",usage="If set, align to the right end (or 3' if available) of the feature.  Default is to align to center")
+	protected boolean alignToEnd = false;
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
     protected int maxFeatSize = Integer.MAX_VALUE;
     @Option(name="-flankSize",usage="bp flanking each side of the feature center (default 2000)")
@@ -259,13 +261,17 @@ public class MethylDbToMultisampleFeatAlignments {
 
 			// Get the alignment point.
 			int alignmentPoint;
-			if (!this.alignToStart)
+			if (this.alignToStart)
 			{
-				alignmentPoint = featCenter;
+				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featS : featE;
+			}
+			else if (this.alignToEnd)
+			{
+				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featE : featS;
 			}
 			else
 			{
-				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featS : featE;
+				alignmentPoint = featCenter;
 			}
 			
 			// And the flank endpoints depends on censoring
@@ -291,6 +297,17 @@ public class MethylDbToMultisampleFeatAlignments {
 					else
 					{
 						flankStart = alignmentPoint - flankSize; // Don't censor 3'
+					}
+				}
+				else if (this.alignToEnd)
+				{
+					if (featStrand == StrandedFeature.NEGATIVE)
+					{
+						flankStart = alignmentPoint - flankSize; // Don't censor 3'
+					}
+					else
+					{
+						flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
 					}
 				}
 			}

@@ -10,13 +10,12 @@ public class MethylDbUtils {
         		"chr19", "chr20", "chr21", "chr22"); // "chr3", "chrX", "chrY", "chrM");  Why is chrom 3 missing??
 	
 	public static final List<String> TEST_CHROMS =
-	Arrays.asList("chr11","chr12","chr13","chr14","chr15");
+	Arrays.asList("chr11","chr12");
 
-//	public static final List<String> CHROMS11 =
+//	public static final List<String> TEST_CHROMS =
 //        Arrays.asList("chr11");
-//
-//	public static final List<String> CHROMS11_12 =
-//        Arrays.asList("chr11", "chr12");
+
+
 	
 	public static final List<String> SUMMARY_FEATURES2 = 
 		Arrays.asList("TJ_GG_nonPrmtrExons","TJ_NonPrmtrNonExon","TJ_Prmtrs_oriented");

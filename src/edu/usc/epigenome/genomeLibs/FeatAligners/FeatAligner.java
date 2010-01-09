@@ -1,6 +1,7 @@
 package edu.usc.epigenome.genomeLibs.FeatAligners;
 
 import java.io.PrintWriter;
+import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
 
@@ -9,7 +10,9 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 public abstract class FeatAligner {
 
 	public int flankSize;
+	protected int downscaleCols;
 	protected boolean zeroInit = false;
+	protected double downscaleFact = -1.0;
 
 	public enum PlotType {
 		   FW, REV, COMBINED
@@ -90,25 +93,51 @@ public abstract class FeatAligner {
 	public int getColumnInd(int genomeRelPos, int featCoord, StrandedFeature.Strand featStrand,
 			int rangeStart, int rangeEnd)
 	{
-		int out;
+		return this.getColumnInd(genomeRelPos, featCoord, featStrand, rangeStart, rangeEnd, false);
+	}
+	
+	public int getColumnInd(int genomeRelPos, int featCoord, StrandedFeature.Strand featStrand,
+			int rangeStart, int rangeEnd, boolean downscale)
+	{
+		int relPos;
 		if (featStrand == StrandedFeature.NEGATIVE)
 		{
-			out = rangeEnd - genomeRelPos;
+			relPos = rangeEnd - genomeRelPos;
 		}
 		else
 		{
-			out = genomeRelPos - rangeStart;
+			relPos = genomeRelPos - rangeStart;
 		}
 		
-		return out;				
+		if (downscale)
+		{
+			// Cache the downscale factor so we don't recompute
+			if (this.downscaleFact < 0)
+			{
+				this.downscaleFact  = (double)this.downscaleCols / (double)(1+(rangeEnd-rangeStart));
+			}
+			int newRelPos = (int)Math.min(Math.round((double)relPos*this.downscaleFact), this.downscaleCols-1);
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
+					"Downscaling from %d to %d (downscaleCols=%d, downscaleFact=%f)\n",
+					relPos, newRelPos,downscaleCols,downscaleFact));
+			relPos = newRelPos;
+		}
+		
+		return relPos;				
 	}
 
 	public int getColumnInd(int genomeRelPos, int featCoord, StrandedFeature.Strand featStrand)
 	{
+		return this.getColumnInd(genomeRelPos, featCoord, featStrand, false);
+	}
+	
+	public int getColumnInd(int genomeRelPos, int featCoord, StrandedFeature.Strand featStrand,
+			boolean downscale)
+	{
 		int rangeStart = featCoord - this.flankSize; 
 		int rangeEnd = featCoord + this.flankSize; 
 		
-		int out = this.getColumnInd(genomeRelPos, featCoord, featStrand, rangeStart, rangeEnd);
+		int out = this.getColumnInd(genomeRelPos, featCoord, featStrand, rangeStart, rangeEnd, downscale);
 		//System.err.printf("getColumnInd(%d, %d, %s) = %d\n",genomeRelPos,featCoord,featStrand.toString(),out);
 		return out;
 	}

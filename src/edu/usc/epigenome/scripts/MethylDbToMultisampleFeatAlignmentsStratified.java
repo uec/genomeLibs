@@ -18,14 +18,9 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.usckeck.genome.ChromFeatures;
 
-import sun.tools.tree.ThisExpression;
 
-import edu.usc.epigenome.genomeLibs.MatUtils;
-import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
-import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
@@ -34,22 +29,28 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignmentsStratified -censor -alignToStart  -maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
-	"-outputPrefix outputTag sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
+	"-outputPrefix outputTag -downsampleCols 500 -heatmap sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
 	
 	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 	protected boolean skipUnoriented = false;
 	@Option(name="-combineStrands",usage="If set, combine strands into a single line")
 	protected boolean combineStrands = false;
+	@Option(name="-heatmap",usage="If set, make a java heatmap")
+	protected boolean heatmap = false;
 //	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
 //	protected boolean noDeltas = false;
 	@Option(name="-censor",usage="If set, do not include points within the flank region but inside the feature region")
 	protected boolean censor = false;
 	@Option(name="-alignToStart",usage="If set, align to the left end (or 5' if available) of the feature.  Default is to align to center")
 	protected boolean alignToStart = false;
+	@Option(name="-alignToEnd",usage="If set, align to the right end (or 3' if available) of the feature.  Default is to align to center")
+	protected boolean alignToEnd = false;
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
     protected int maxFeatSize = Integer.MAX_VALUE;
     @Option(name="-flankSize",usage="bp flanking each side of the feature center (default 2000)")
     protected int flankSize = 2000;
+    @Option(name="-downscaleCols",usage="Number of cols in ouput (downscaled from flank width)")
+    protected int downscaleCols = 500;
     @Option(name="-outputPrefix",usage="Prefix for output files (default methylDb)")
     protected String outputPrefix = "methylDb";
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
@@ -159,16 +160,16 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			for (int i = 0; i < nS; i++)
 			{
 				// 0=readCount, 1=nCpGs, 2=mLevel
-//				fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,false, nFeats);
-//				fStatMats[i][1] = new FeatAlignerEachfeat(flankSize,true, nFeats);
-				fStatMats[i][2] = new FeatAlignerEachfeat(flankSize,false, nFeats);
+//				fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,false, nFeats,500);
+//				fStatMats[i][1] = new FeatAlignerEachfeat(flankSize,true, nFeats,500);
+				fStatMats[i][2] = new FeatAlignerEachfeat(flankSize,false, nFeats,this.downscaleCols);
 //				for (int j = (i+1); j < nS; j++)
 //				{
 //					fDeltaMats[onDeltaMat++] = new FeatAlignerAveraging(flankSize,false);
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.TEST_CHROMS)
+			for (String chrStr : MethylDbUtils.CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -188,7 +189,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
 				
 				double[] colorMinMax = {0.0,1.0};
-				//this.fStatMats[i][2].launchSwingHeatmap(colorMinMax);
+				if (this.heatmap) this.fStatMats[i][2].launchSwingHeatmap(colorMinMax);
 			}
 
 //			if (!this.noDeltas)
@@ -229,8 +230,11 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 		Iterator featit = feats.featureIterator(chr);
 		System.err.println("Processing " + chrStr);
+		int featNum = 0;
 		while (featit.hasNext())
 		{
+			featNum++;
+			
 			GFFRecord rec = (GFFRecord)featit.next();
 			StrandedFeature.Strand featStrand = rec.getStrand();
 			String featName = null; // rec.getSeqName();
@@ -252,13 +256,17 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 			// Get the alignment point.
 			int alignmentPoint;
-			if (!this.alignToStart)
+			if (this.alignToStart)
 			{
-				alignmentPoint = featCenter;
+				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featS : featE;
+			}
+			else if (this.alignToEnd)
+			{
+				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featE : featS;
 			}
 			else
 			{
-				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featS : featE;
+				alignmentPoint = featCenter;
 			}
 			
 			// And the flank endpoints depends on censoring
@@ -284,6 +292,17 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					else
 					{
 						flankStart = alignmentPoint - flankSize; // Don't censor 3'
+					}
+				}
+				else if (this.alignToEnd)
+				{
+					if (featStrand == StrandedFeature.NEGATIVE)
+					{
+						flankStart = alignmentPoint - flankSize; // Don't censor 3'
+					}
+					else
+					{
+						flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
 					}
 				}
 			}
@@ -354,8 +373,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			catch (Exception e)
 			{
 				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(String.format(
-						"PROBLEM WITH FEATURE coords: censor=%s\talignToStart=%s\tchr=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\n%s\n",
-						""+this.censor, ""+this.alignToStart, chrStr, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd, e.toString()));
+						"PROBLEM WITH FEATURE %d coords: censor=%s\talignToStart=%s\tchr=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\n%s\n",
+						featNum, ""+this.censor, ""+this.alignToStart, chrStr, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd, e.toString()));
 				e.printStackTrace();
 				System.exit(1);
 				
