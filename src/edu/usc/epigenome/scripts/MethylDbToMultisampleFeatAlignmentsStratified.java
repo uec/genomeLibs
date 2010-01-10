@@ -18,8 +18,10 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.usckeck.genome.ChromFeatures;
+import org.usckeck.genome.GFFUtils;
 
 
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRangeWithRefpoint;
@@ -32,7 +34,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 	private static final String C_USAGE = "Use: MethylDbToMultisampleFeatAlignmentsStratified -censor -alignToStart  -maxFeatSize 10 -skipUnoriented -flankSize 2000 " +
-	"-outputPrefix outputTag -downsampleCols 500 -heatmap sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
+	"-outputPrefix outputTag -downsampleCols 500 -heatmap -sortByExpression 'T14838A-N14838B' sample1_tablePrefix sample2_tablePrefix ... , feats1.gtf feats2.gtf ...";
 	
 	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 	protected boolean skipUnoriented = false;
@@ -42,6 +44,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean heatmap = false;
 //	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
 //	protected boolean noDeltas = false;
+	@Option(name="-featFilter",usage="We will take the intersection with this feature. Must be a featType in the features table")
+	protected List<String> featFilters = new ArrayList<String>(5);
 	@Option(name="-censor",usage="If set, do not include points within the flank region but inside the feature region")
 	protected boolean censor = false;
 	@Option(name="-alignToStart",usage="If set, align to the left end (or 5' if available) of the feature.  Default is to align to center")
@@ -56,6 +60,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
     protected int downscaleCols = 500;
     @Option(name="-outputPrefix",usage="Prefix for output files (default methylDb)")
     protected String outputPrefix = "methylDb";
+    @Option(name="-sortByExpression",usage="An expression from the gene expression table, used to sort all features that can be linked by RefSeq")
+    protected String sortByExpression = null;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
@@ -139,7 +145,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 		// Setup writer
 		PrintWriter writer = new PrintWriter(new FileOutputStream(String.format("%s.charts.html", outputPrefix)));
-		writer.println("<P>" + parser.toString() + "</P>");
+		writer.println("<P>" + ListUtils.excelLine(args) + "</P>");
 
 	
 		// Start the actual work.  Go through each GFF file.
@@ -188,7 +194,12 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			Double[] sortVals = null;
 			for (int i = 0; i < nS; i++)
 			{
-				if (sortVals == null)
+
+				if (this.sortByExpression != null)
+				{
+					this.fStatMats[i][2].sortRowsBySortVals();
+				}
+				else if (sortVals == null)
 				{
 					int nCols = this.fStatMats[i][2].numCols();
 					int colsStart = 0;
@@ -204,7 +215,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 						{
 							colsEnd = midPoint;
 						}
-						
+
 					}
 					sortVals = this.fStatMats[i][2].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
 				}
@@ -214,8 +225,9 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				}
 				
 				
+				
 				String tablePrefix = tablePrefixes.get(i);
-				writer.printf("<H4>%s</H4>\n", tablePrefix);
+				writer.printf("<H4>%s (%d features)</H4>\n", tablePrefix, fStatMats[i][2].numFeats());
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
 				
 				double[] colorMinMax = {0.0,1.0};
@@ -261,7 +273,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 		Iterator featit = feats.featureIterator(chr);
 		System.err.println("Processing " + chrStr);
 		int featNum = 0;
-		while (featit.hasNext())
+		FEAT: while (featit.hasNext())
 		{
 			featNum++;
 			
@@ -270,6 +282,18 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			String featName = null; // rec.getSeqName();
 			int featS = rec.getStart();
 			int featE = rec.getEnd();
+			
+			double sortVal = Double.NaN;
+			if (this.sortByExpression != null)
+			{
+				sortVal = MethylDbUtils.fetchMeanExpression(chrStr, GFFUtils.getGffRecordName(rec), 
+						this.sortByExpression);
+				if (Double.isNaN(sortVal)) 
+				{
+					//System.err.println("Feature has no expression value.");
+					continue FEAT;
+				}
+			}
 
 			if (skipUnoriented)
 			{
@@ -299,6 +323,10 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 				// Meth
 				MethylDbQuerier params = new MethylDbQuerier();
+				for (String featFilter : this.featFilters)
+				{
+					params.addFeatFilter(featFilter,flankSize);
+				}
 				params.setMinCTreads(this.minCTreads);
 				params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 				params.addRangeFilter(chrStr,flankStart,flankEnd);
@@ -321,7 +349,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 								chromPos,
 								(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
 										(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
-												featName, chrStr, alignmentPoint, featStrand, 0.0);
+												featName, chrStr, alignmentPoint, featStrand, sortVal);
 					}
 
 					//				if (!this.noDeltas)

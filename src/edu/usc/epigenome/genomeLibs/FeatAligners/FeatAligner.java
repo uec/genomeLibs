@@ -45,13 +45,13 @@ public abstract class FeatAligner {
 	 */
 	
 	
+	abstract public int numCols();
 	abstract public void addAlignmentPos (int genomeRelPos, double fwStrandScore, double revStrandScore,
-			String featName, String featChr, int featCoord, StrandedFeature.Strand featStrand);
+			String featName, String featChr, int featCoord, StrandedFeature.Strand featStrand, double sortVal);
 	
 	abstract public FeatAlignerAveraging toAverageFeatAligner();
 	abstract public void matlabCsv(PrintWriter pw, boolean strandSpecific);
 
-		
 	abstract public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1, String sample, String feature) throws Exception;
 
 	
@@ -73,7 +73,7 @@ public abstract class FeatAligner {
 					(featCoord - this.flankSize + i);
 			double fwScore = fwStrandScores[i];
 			double revScore = (revStrandScores==null) ? Double.NaN : revStrandScores[i];
-			this.addAlignmentPos(genomeRelPos, fwScore, revScore, featName, featChr, featCoord, featStrand);
+			this.addAlignmentPos(genomeRelPos, fwScore, revScore, featName, featChr, featCoord, featStrand, 0.0);
 		}
 	}
 
@@ -87,7 +87,7 @@ public abstract class FeatAligner {
 	public void addAlignmentPos (int genomeRelPos, double fwStrandScore,
 			String featName, String featChr, int featCoord, StrandedFeature.Strand featStrand)
 	{
-		this.addAlignmentPos(genomeRelPos, fwStrandScore, Double.NaN, featName, featChr, featCoord, featStrand);
+		this.addAlignmentPos(genomeRelPos, fwStrandScore, Double.NaN, featName, featChr, featCoord, featStrand, 0.0);
 	}
 	
 	/** Utility functions, takes care of strand reversal and nan vs. 0 stuff **/

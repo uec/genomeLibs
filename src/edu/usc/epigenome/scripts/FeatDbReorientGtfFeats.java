@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -22,6 +23,7 @@ import org.usckeck.genome.ChromFeatures;
 import sun.tools.tree.ThisExpression;
 
 import edu.usc.epigenome.genomeLibs.GFFUtils;
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
@@ -124,6 +126,7 @@ public class FeatDbReorientGtfFeats {
 				boolean overlapsFw = false;
 				boolean overlapsRev = false;
 				int nOvs = 0;
+				HashSet<String> newNames = new HashSet<String>(20);
 				while (feats.hasNext())
 				{
 					nOvs++;
@@ -137,6 +140,9 @@ public class FeatDbReorientGtfFeats {
 					{
 						overlapsFw = true;
 					}
+					
+					String newName = GFFUtils.getGffRecordName(ref);
+					if (newName != null) newNames.add(newName);
 				}
 				
 				StrandedFeature.Strand newStrand = StrandedFeature.UNKNOWN;
@@ -149,6 +155,18 @@ public class FeatDbReorientGtfFeats {
 					newStrand = StrandedFeature.POSITIVE;
 				}
 				target.setStrand(newStrand);
+				
+				// Transfer name
+				if (newStrand != StrandedFeature.UNKNOWN)
+				{
+					if (newNames.size()>1) System.err.printf("CGI found %d names: %s\n", 
+							newNames.size(),ListUtils.excelLine(newNames.toArray(new String[1])));
+				}
+				
+				if (newNames.size()==1)
+				{
+					GFFUtils.setGffRecordName(target, newNames.toArray(new String[1])[0]);
+				}
 				
 				
 				Logger.getAnonymousLogger().fine(String.format("GFF %s\t%d overlapping recs\tsawFw=%s\tsawRev=%s\tnewStrand=%s\n", 

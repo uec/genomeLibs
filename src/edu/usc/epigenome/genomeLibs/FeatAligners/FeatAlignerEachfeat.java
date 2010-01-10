@@ -151,7 +151,10 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	
 	public void sortRowsBySortVals()
 	{
-		sortRowsByList(this.sortVals);
+		// Only those that we've actually seen.
+		Double[] sortList = Arrays.copyOf(this.sortVals, this.nFeatsSeen);
+		
+		sortRowsByList(sortList);
 	}
 	
 //	@Override

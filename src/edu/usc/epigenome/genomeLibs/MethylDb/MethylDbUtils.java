@@ -1,17 +1,27 @@
 package edu.usc.epigenome.genomeLibs.MethylDb;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 
 public class MethylDbUtils {
 	public static final List<String> CHROMS =
 		Arrays.asList("chr1","chr2","chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
         		"chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
-        		"chr19", "chr20", "chr21", "chr22"); // "chr3", "chrX", "chrY", "chrM");  Why is chrom 3 missing??
+        		"chr19", "chr20", "chr21", "chr22", "chrX");// "chr3", "chrY", "chrM");//  Why is chrom 3 missing??
 	
 	public static final List<String> TEST_CHROMS =
 	Arrays.asList("chr11","chr12", "chr13");
-
 
 
 	
@@ -25,6 +35,77 @@ public class MethylDbUtils {
 		Arrays.asList("tss_500bp_flank_normHigh","tss_500bp_flank_normLow", "tss_500bp_flank_tumHigh","tss_500bp_flank_tumLow","tss_500bp_flank_tumUp","tumDown");
 	public static final List<String> SUMMARY_FEATURES1 = 
 		Arrays.asList("tx_normHigh","tx_normLow", "tx_tumHigh","tx_tumLow");
+	
+	protected static Connection cConn = null; 
+	protected static Map<String,PreparedStatement> cPreps = new HashMap<String,PreparedStatement>();
+
+
+	public static double fetchMeanExpression(String chr, String refseqId, String sqlExpression)
+	throws Exception
+	{
+		setupDb();
+		
+		String table = "infiniumExpr_" + chr;
+		String sql = String.format("SELECT %s FROM %s exp WHERE exp.refseqId = ?;", sqlExpression, table);
+		PreparedStatement prep = MethylDbUtils.getPrep(sql);
+		prep.setString(1, refseqId);
+		ResultSet rs = prep.executeQuery();
+		
+		int numFound = 0;
+		double out = 0.0;
+		while (rs.next())
+		{
+			out = rs.getDouble(1);
+			numFound++;
+		}
+		
+		//System.err.println("numFound = " + numFound);
+		if (numFound == 0)
+		{
+			out = Double.NaN;
+		}
+		else if (numFound>1)
+		{
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).log(Level.SEVERE,
+					String.format("Found multiple expr rows with refseq %s: %d rows\n", refseqId,numFound));
+			out = out / (double)numFound;
+		}
+		
+		return out;
+	}
+	
+	protected static void setupDb()
+	throws Exception
+	{
+		if (cConn == null)
+		{
+			String connStr = FeatDbQuerier.connStr;
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			System.err.println("Getting connection for " + connStr);
+			cConn = DriverManager.getConnection(connStr);
+		}
+		
+	}
+	
+	protected static void cleanupDb()
+	throws Exception
+	{
+		cConn.close();
+	}
+
+	protected static PreparedStatement getPrep(String sql)
+	throws SQLException
+	{
+		PreparedStatement prep = cPreps.get(sql);
+		if (prep==null)
+		{
+			prep = cConn.prepareStatement(sql);
+			cPreps.put(sql, prep);
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).log(Level.SEVERE, "Making prepared statement: " + sql );
+		}
+		return prep;
+	}
+
 	
 	//	echo "select count(*),featType from features_chr1 GROUP BY featType;" |mysql cr > featTypes.txt
 //	61841   exon

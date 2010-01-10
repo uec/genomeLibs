@@ -37,7 +37,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class FeatDbToGtf {
 
-	private static final String C_USAGE = "Use: FeatDbInvertedFeats featType1 featType2 ...";
+	private static final String C_USAGE = "Use: FeatDbToGtf featType1 featType2 ...";
 
 	//	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 	//	protected boolean skipUnoriented = false;

@@ -326,7 +326,7 @@ public class MatUtils {
 	public static double[][] sortRowsByList(double[][] in, Double[] list)
 	{
 		int nr = Math.min(in.length, list.length);
-		System.err.println("Soring " + nr + " vals by list");
+		System.err.println("Sorting " + nr + " vals by list");
 		
 		SortedMap<Object,double[]> sorter = new TreeMap<Object,double[]>();
 		for (int i = 0; i < nr; i++)
