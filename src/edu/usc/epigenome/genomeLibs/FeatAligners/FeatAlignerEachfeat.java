@@ -37,6 +37,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	public List<Color> ColorCycle = Arrays.asList(Color.DARKBLUE, Color.BLUE, Color.BLUEVIOLET, Color.VIOLET, Color.PINK, Color.LIGHTSALMON, Color.RED);
 	
 	protected final static int NBINS = 7;
+	protected final static int BP_SMOOTHING = 100;
 	
 	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, 
 	// j = featNum: arr[0][5] = fwTotalScores for feat 6
@@ -196,16 +197,23 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			
 			
 			// Do rows first since cols has to transpose 
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d cols to 200\n",data[0].length));
-			int downsampleTo = Math.min(this.downscaleCols, 100); // Harder to go above 500
-			data = MatUtils.downscaleMatRows(data, downsampleTo, 0.0);
+			int downsampleTo = Math.min(this.downscaleCols, 200); // Harder to go above 500
+			double smoothFact = Math.ceil(((2.0*(double)this.flankSize)/(double)this.downscaleCols)/(2.0*(double)BP_SMOOTHING));
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d cols to %d (smoothing %f)\n",
+					data[0].length,downsampleTo, smoothFact));
+			data = MatUtils.downscaleMatRows(data, downsampleTo, smoothFact);
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d rows to 5\n",data.length));
 			data = MatUtils.downscaleMatCols(data,NBINS, 0.0);
 
 			// NO NANs allowed
 			MatUtils.nansToVal(data, 0.0);
 
-			List<Data> chartData = DataUtil.scale(data);
+			List<Data> chartData = new ArrayList<Data>(data.length);
+			for (int i = 0; i < data.length; i++)
+			{
+				Data newData = (range0to1) ? DataUtil.scaleWithinRange(0.0, 1.0, data[i]) : DataUtil.scale(data[i]);
+				chartData.add(newData);
+			}
 			List<Plot> plots = new ArrayList<Plot>(chartData.size());
 			for (int i = 0; i < chartData.size(); i++)
 			{
@@ -327,8 +335,9 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 	//	data = MatUtils.sortRows(data,-0.3333,10);
 		int downsampleTo = Math.min(this.downscaleCols, 500); // Harder to go above 500
-		data = MatUtils.downscaleMatRows(data, downsampleTo, 0.0);
-		data = MatUtils.downscaleMatCols(data, 30, 0.0);
+		double smoothFact = Math.ceil(((2.0*(double)this.flankSize)/(double)this.downscaleCols)/(2.0*(double)BP_SMOOTHING));
+		data = MatUtils.downscaleMatRows(data, downsampleTo,smoothFact);; 
+		data = MatUtils.downscaleMatCols(data, 30, 2.0);
 
 		// NO NANs allowed
 		MatUtils.nansToVal(data, 0.0);
