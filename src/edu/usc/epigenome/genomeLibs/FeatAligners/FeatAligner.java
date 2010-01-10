@@ -3,9 +3,11 @@ package edu.usc.epigenome.genomeLibs.FeatAligners;
 import java.io.PrintWriter;
 import java.util.logging.Logger;
 
+import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.seq.StrandedFeature;
 
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRangeWithRefpoint;
 
 public abstract class FeatAligner {
 
@@ -142,6 +144,73 @@ public abstract class FeatAligner {
 		return out;
 	}
 	
+	
+	public static GenomicRangeWithRefpoint getAlignmentpointAndFlank(GFFRecord rec, int flankSize,
+			boolean alignToStart, boolean alignToEnd, boolean censor)
+	{
+		// Do we want to center align?  Do we want to censor
+		int featS = rec.getStart();
+		int featE = rec.getEnd();
+		String chr = rec.getSeqName();
+		StrandedFeature.Strand featStrand = rec.getStrand();
+		int featCenter = (int)Math.round(((double)featE+(double)featS) / 2.0);
+
+		// Get the alignment point.
+		int alignmentPoint;
+		if (alignToStart)
+		{
+			alignmentPoint = (featStrand == StrandedFeature.NEGATIVE) ? featE : featS;
+		}
+		else if (alignToEnd)
+		{
+			alignmentPoint = (featStrand == StrandedFeature.NEGATIVE) ? featS : featE;
+		}
+		else
+		{
+			alignmentPoint = featCenter;
+		}
+
+		// And the flank endpoints depends on censoring
+		int flankStart, flankEnd;
+		if (!censor)
+		{
+			flankStart = alignmentPoint-flankSize;
+			flankEnd = alignmentPoint+flankSize;
+		}
+		else
+		{
+			flankStart = Math.max(featS, alignmentPoint-flankSize);
+			flankEnd = Math.min(featE, alignmentPoint+flankSize);
+
+			// Censoring is relative to feature strand ONLY if we aligne to 
+			// start.  If we align to center, we censor on both sides.
+			if (alignToStart)
+			{
+				if (featStrand == StrandedFeature.NEGATIVE)
+				{
+					flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
+				}
+				else
+				{
+					flankStart = alignmentPoint - flankSize; // Don't censor 3'
+				}
+			}
+			else if (alignToEnd)
+			{
+				if (featStrand == StrandedFeature.NEGATIVE)
+				{
+					flankStart = alignmentPoint - flankSize; // Don't censor 3'
+				}
+				else
+				{
+					flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
+				}
+			}
+		}	
+		
+		GenomicRangeWithRefpoint out = new GenomicRangeWithRefpoint(chr, flankStart, flankEnd, alignmentPoint);
+		return out;
+	}
 
 	
 }

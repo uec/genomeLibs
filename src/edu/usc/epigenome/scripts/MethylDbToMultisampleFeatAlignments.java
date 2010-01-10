@@ -25,6 +25,7 @@ import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRangeWithRefpoint;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
@@ -242,6 +243,8 @@ public class MethylDbToMultisampleFeatAlignments {
 			GFFRecord rec = (GFFRecord)featit.next();
 			StrandedFeature.Strand featStrand = rec.getStrand();
 			String featName = null; // rec.getSeqName();
+			int featS = rec.getStart();
+			int featE = rec.getEnd();
 
 			if (skipUnoriented)
 			{
@@ -254,63 +257,12 @@ public class MethylDbToMultisampleFeatAlignments {
 			}
 				
 
-			// Do we want to center align?  Do we want to censor
-			int featS = rec.getStart();
-			int featE = rec.getEnd();
-			int featCenter = (int)Math.round(((double)featE+(double)featS) / 2.0);
-
-			// Get the alignment point.
-			int alignmentPoint;
-			if (this.alignToStart)
-			{
-				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featS : featE;
-			}
-			else if (this.alignToEnd)
-			{
-				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featE : featS;
-			}
-			else
-			{
-				alignmentPoint = featCenter;
-			}
+			GenomicRangeWithRefpoint flankRange = FeatAligner.getAlignmentpointAndFlank(rec, 
+					this.flankSize, this.alignToStart, this.alignToEnd, this.censor);
+			int alignmentPoint = flankRange.getRefPoint();
+			int flankStart = flankRange.getStart();
+			int flankEnd = flankRange.getEnd();
 			
-			// And the flank endpoints depends on censoring
-			int flankStart, flankEnd;
-			if (!this.censor)
-			{
-				flankStart = alignmentPoint-flankSize;
-				flankEnd = alignmentPoint+flankSize;
-			}
-			else
-			{
-				flankStart = Math.max(featS, alignmentPoint-flankSize);
-				flankEnd = Math.min(featE, alignmentPoint+flankSize);
-				
-				// Censoring is relative to feature strand ONLY if we aligne to 
-				// start.  If we align to center, we censor on both sides.
-				if (this.alignToStart)
-				{
-					if (featStrand == StrandedFeature.NEGATIVE)
-					{
-						flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
-					}
-					else
-					{
-						flankStart = alignmentPoint - flankSize; // Don't censor 3'
-					}
-				}
-				else if (this.alignToEnd)
-				{
-					if (featStrand == StrandedFeature.NEGATIVE)
-					{
-						flankStart = alignmentPoint - flankSize; // Don't censor 3'
-					}
-					else
-					{
-						flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
-					}
-				}
-			}
 			
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
 					"Fetching coords: censor=%s\talignToStart=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\t\n",

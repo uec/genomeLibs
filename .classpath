@@ -4,7 +4,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/biojava-live.jar" sourcepath="biojava-live_1.6/src">
 		<attributes>
-			<attribute name="javadoc_location" value="file:/Users/benb/Documents/research/eclipse_workspace/genomeLibs/biojava-live_1.6/doc/biojava/"/>
+			<attribute name="javadoc_location" value="http://www.biojava.org/docs/api16/"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/bytecode.jar"/>
@@ -13,12 +13,13 @@
 	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/commons-dbcp-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/commons-pool-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="commons-math-1.1.jar"/>
-	<classpathentry kind="lib" path="jfreechar-1.0.9-libs/jcommon-1.0.12.jar"/>
-	<classpathentry kind="lib" path="jfreechar-1.0.9-libs/jfreechart-1.0.9.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/picard"/>
-	<classpathentry kind="lib" path="/Users/benb/Documents/Java/mysql-connector-java-5.1.10/mysql-connector-java-5.1.10-bin.jar"/>
-	<classpathentry kind="lib" path="UscKeck.jar" sourcepath="/ChIP"/>
-	<classpathentry kind="lib" path="charts4j-1.2.jar"/>
-	<classpathentry kind="lib" path="junit-4.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="jfreechar-1.0.9-libs/jcommon-1.0.12.jar"/>
+	<classpathentry exported="true" kind="lib" path="jfreechar-1.0.9-libs/jfreechart-1.0.9.jar"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/picard"/>
+	<classpathentry exported="true" kind="lib" path="/Users/benb/Documents/Java/mysql-connector-java-5.1.10/mysql-connector-java-5.1.10-bin.jar"/>
+	<classpathentry exported="true" kind="lib" path="UscKeck.jar" sourcepath="/ChIP"/>
+	<classpathentry exported="true" kind="lib" path="charts4j-1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="junit-4.4.jar"/>
+	<classpathentry kind="lib" path="heatMap.jar" sourcepath="/heatMap"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

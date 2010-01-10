@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.biojava.bio.program.gff.GFFRecord;
+import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.StrandedFeature;
 
 import org.kohsuke.args4j.Argument;
@@ -19,7 +20,9 @@ import org.kohsuke.args4j.Option;
 import org.usckeck.genome.ChromFeatures;
 
 
+import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRangeWithRefpoint;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
@@ -169,7 +172,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS)
+			for (String chrStr : MethylDbUtils.TEST_CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -235,9 +238,11 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 		{
 			featNum++;
 			
-			GFFRecord rec = (GFFRecord)featit.next();
+			SimpleGFFRecord rec = (SimpleGFFRecord)featit.next();
 			StrandedFeature.Strand featStrand = rec.getStrand();
 			String featName = null; // rec.getSeqName();
+			int featS = rec.getStart();
+			int featE = rec.getEnd();
 
 			if (skipUnoriented)
 			{
@@ -246,66 +251,16 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			}
 			else
 			{
-				if (featStrand == StrandedFeature.UNKNOWN) featStrand = StrandedFeature.POSITIVE;
+				if (featStrand == StrandedFeature.UNKNOWN) rec.setStrand(StrandedFeature.POSITIVE);
+				featStrand = rec.getStrand();
 			}
-				
-			// Do we want to center align?  Do we want to censor
-			int featS = rec.getStart();
-			int featE = rec.getEnd();
-			int featCenter = (int)Math.round(((double)featE+(double)featS) / 2.0);
 
-			// Get the alignment point.
-			int alignmentPoint;
-			if (this.alignToStart)
-			{
-				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featS : featE;
-			}
-			else if (this.alignToEnd)
-			{
-				alignmentPoint = (featStrand == StrandedFeature.POSITIVE) ? featE : featS;
-			}
-			else
-			{
-				alignmentPoint = featCenter;
-			}
-			
-			// And the flank endpoints depends on censoring
-			int flankStart, flankEnd;
-			if (!this.censor)
-			{
-				flankStart = alignmentPoint-flankSize;
-				flankEnd = alignmentPoint+flankSize;
-			}
-			else
-			{
-				flankStart = Math.max(featS, alignmentPoint-flankSize);
-				flankEnd = Math.min(featE, alignmentPoint+flankSize);
-				
-				// Censoring is relative to feature strand ONLY if we aligne to 
-				// start.  If we align to center, we censor on both sides.
-				if (this.alignToStart)
-				{
-					if (featStrand == StrandedFeature.NEGATIVE)
-					{
-						flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
-					}
-					else
-					{
-						flankStart = alignmentPoint - flankSize; // Don't censor 3'
-					}
-				}
-				else if (this.alignToEnd)
-				{
-					if (featStrand == StrandedFeature.NEGATIVE)
-					{
-						flankStart = alignmentPoint - flankSize; // Don't censor 3'
-					}
-					else
-					{
-						flankEnd = alignmentPoint + flankSize;  // Don't censor 5'
-					}
-				}
-			}
+			GenomicRangeWithRefpoint flankRange = FeatAligner.getAlignmentpointAndFlank(rec, 
+					this.flankSize, this.alignToStart, this.alignToEnd, this.censor);
+			int alignmentPoint = flankRange.getRefPoint();
+			int flankStart = flankRange.getStart();
+			int flankEnd = flankRange.getEnd();
+
 			
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
 					"Fetching coords: censor=%s\talignToStart=%s\tchr=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\t\n",
@@ -315,60 +270,60 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			try 
 			{
 
-			// Meth
-			MethylDbQuerier params = new MethylDbQuerier();
-			params.setMinCTreads(this.minCTreads);
-			params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
-			params.addRangeFilter(chrStr,flankStart,flankEnd);
-			CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
-			while (cpgit.hasNext()) 
-			{
-				Cpg[] cpgs = cpgit.next();
-				
-				int chromPos = cpgs[0].chromPos;
-				StrandedFeature.Strand cpgStrand = cpgs[0].getStrand();
-				
-				
-				// First individual stats
-				double mLevels[] = new double[nS];
-				for (int i = 0; i < nS; i++)
+				// Meth
+				MethylDbQuerier params = new MethylDbQuerier();
+				params.setMinCTreads(this.minCTreads);
+				params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+				params.addRangeFilter(chrStr,flankStart,flankEnd);
+				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
+				while (cpgit.hasNext()) 
 				{
-					double mLevel = cpgs[i].fracMeth(params.getUseNonconversionFilter());
-					mLevels[i] = mLevel;
-					this.fStatMats[i][2].addAlignmentPos(
-							chromPos,
-							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
-									(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
-											featName, chrStr, alignmentPoint, featStrand);
+					Cpg[] cpgs = cpgit.next();
+
+					int chromPos = cpgs[0].chromPos;
+					StrandedFeature.Strand cpgStrand = cpgs[0].getStrand();
+
+
+					// First individual stats
+					double mLevels[] = new double[nS];
+					for (int i = 0; i < nS; i++)
+					{
+						double mLevel = cpgs[i].fracMeth(params.getUseNonconversionFilter());
+						mLevels[i] = mLevel;
+						this.fStatMats[i][2].addAlignmentPos(
+								chromPos,
+								(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
+										(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
+												featName, chrStr, alignmentPoint, featStrand);
+					}
+
+					//				if (!this.noDeltas)
+					//				{
+					//					// Then variance
+					//					double mVar = MatUtils.nanVariance(mLevels);
+					//					this.fVarianceMat.addAlignmentPos(
+					//							chromPos,
+					//							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mVar,
+					//									(cpgStrand == StrandedFeature.NEGATIVE) ? mVar: Double.NaN,
+					//											featName, chrStr, alignmentPoint, featStrand);
+					//
+					//					// Then pairwise.
+					//					int onMat = 0;
+					//					for (int i = 0; i < nS; i++)
+					//					{
+					//						for (int j = (i+1); j < nS; j++)
+					//						{
+					//							double absDiff = Math.abs(mLevels[i]-mLevels[j]);
+					//							this.fDeltaMats[onMat++].addAlignmentPos(
+					//									chromPos,
+					//									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : absDiff,
+					//											(cpgStrand == StrandedFeature.NEGATIVE) ? absDiff : Double.NaN,
+					//													featName, chrStr, alignmentPoint, featStrand);
+					//						}
+					//					}
+					//				}
+
 				}
-
-//				if (!this.noDeltas)
-//				{
-//					// Then variance
-//					double mVar = MatUtils.nanVariance(mLevels);
-//					this.fVarianceMat.addAlignmentPos(
-//							chromPos,
-//							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mVar,
-//									(cpgStrand == StrandedFeature.NEGATIVE) ? mVar: Double.NaN,
-//											featName, chrStr, alignmentPoint, featStrand);
-//
-//					// Then pairwise.
-//					int onMat = 0;
-//					for (int i = 0; i < nS; i++)
-//					{
-//						for (int j = (i+1); j < nS; j++)
-//						{
-//							double absDiff = Math.abs(mLevels[i]-mLevels[j]);
-//							this.fDeltaMats[onMat++].addAlignmentPos(
-//									chromPos,
-//									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : absDiff,
-//											(cpgStrand == StrandedFeature.NEGATIVE) ? absDiff : Double.NaN,
-//													featName, chrStr, alignmentPoint, featStrand);
-//						}
-//					}
-//				}
-
-			}
 			}
 			catch (Exception e)
 			{
@@ -377,14 +332,14 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 						featNum, ""+this.censor, ""+this.alignToStart, chrStr, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd, e.toString()));
 				e.printStackTrace();
 				System.exit(1);
-				
+
 			}
 
-			
+
 			// Increment feat ind
 			this.fCurFeatInd++;
 		}
-		
+
 		
 
 	}
