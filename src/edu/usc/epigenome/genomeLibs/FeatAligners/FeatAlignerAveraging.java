@@ -52,6 +52,13 @@ public class FeatAlignerAveraging extends FeatAligner {
 
 	
 	
+	@Override
+	public int numCols() {
+		return arr[0].length;
+	}
+
+
+
 	// Assumes that everything's already been flipped to the correct strand
 	public void addAlignmentFast (double[] fwStrandScores, double[] revStrandScores)
 	{
@@ -338,7 +345,7 @@ public class FeatAlignerAveraging extends FeatAligner {
 	@Override
 	public void addAlignmentPos(int genomeRelPos, double fwStrandScore,
 			double revStrandScore, String featName, String featChr,
-			int featCoord, Strand featStrand) {
+			int featCoord, Strand featStrand, double sortVal) {
 		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand);
 		
 		this.addAlignmentPosFast(colInd,

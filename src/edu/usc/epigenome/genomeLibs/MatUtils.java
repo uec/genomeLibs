@@ -85,6 +85,13 @@ public class MatUtils {
 	// exp=-1/3 and distMin=10 are good
 	public static double nanMeanExponentialWeighting(double[] arr, double exponentialFactor, int distMin)
 	{
+		int nC = arr.length;
+		return nanMeanExponentialWeighting(arr, exponentialFactor, distMin, 0, nC-1);
+	}
+	
+	public static double nanMeanExponentialWeighting(double[] arr, double exponentialFactor, int distMin,
+			int colStart, int colEnd)
+	{
 		int startInd = 0;
 		int len = arr.length;
 		double total = 0.0;
@@ -110,7 +117,7 @@ public class MatUtils {
 			MatUtils.cachedExponentialWeights.put(key, weights);
 		}
 		
-		for (int i = startInd; i < (startInd+len) ; i++)
+		for (int i = colStart; i <= colEnd ; i++)
 		{
 			double val = arr[i];
 			//System.err.printf("\t\tFound val=%f\n",val);
@@ -294,19 +301,37 @@ public class MatUtils {
 	
 	public static double[][] sortRows(double[][] in, double exponentialFactor, int minDist)
 	{
+		int nCol = in[0].length;
+		return sortRows(in, exponentialFactor, minDist, 0, nCol-1);
+	}
+			
+
+	public static double[][] sortRows(double[][] in, double exponentialFactor, int minDist,
+			int startCol, int endCol)
+	{
 		int nr = in.length;
-		int nc = in[0].length;
 		
-		double[][] out = new double[nr][];
-		SortedMap<Double,double[]> sorter = new TreeMap<Double,double[]>();
+		Double[] sortVals = new Double[nr];
 		for (int i = 0; i < nr; i++)
 		{
 			double mean = (exponentialFactor!=0.0) ?  
-					MatUtils.nanMeanExponentialWeighting(in[i], exponentialFactor,minDist) : MatUtils.nanMean(in[i]);
-			
-			// A map will lose rows with identical means.  So we have to do some
-			// tricks to keep keys unique
-			Double key = (Double.isNaN(mean)) ? new Double(-1 * 1E-5) : new Double(mean);
+					MatUtils.nanMeanExponentialWeighting(in[i], exponentialFactor,minDist, startCol, endCol) : 
+						MatUtils.nanMean(in[i], startCol, endCol);
+			sortVals[i] = new Double(mean);
+		}
+
+		return sortRowsByList(in, sortVals);
+	}
+	
+	public static double[][] sortRowsByList(double[][] in, Double[] list)
+	{
+		int nr = Math.min(in.length, list.length);
+		System.err.println("Soring " + nr + " vals by list");
+		
+		SortedMap<Object,double[]> sorter = new TreeMap<Object,double[]>();
+		for (int i = 0; i < nr; i++)
+		{
+			Double key = ((list[i] == null) || Double.isNaN(list[i])) ? new Double(-1 * 1E-5) : list[i];
 			while (sorter.containsKey(key))
 			{
 				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Got duplicate key " + key + "... incrementing\n");
@@ -317,6 +342,7 @@ public class MatUtils {
 		}
 		
 		int i = 0;
+		double[][] out = new double[in.length][];
 		for (double[] row : sorter.values()) // Guaranteed to be sorted
 		{
 			out[i] = row;
@@ -330,6 +356,13 @@ public class MatUtils {
 			System.exit(1);
 		}
 		
+		// And leave the remainder alone
+		while (i < in.length)
+		{
+			out[i] = in[i];
+			i++;
+		}
+
 		return out;
 	}
 	

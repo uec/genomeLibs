@@ -43,11 +43,12 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	// k = coordinate: arr[0][5][350] = coord (350 - flank) relative to feature center.
 	protected double[][][] arr;
 	protected String[] featNames;
+	protected Double[] sortVals;
 	protected GenomicRange[] featCoords;
 	protected Map<GenomicRange,Integer> featinds = new TreeMap<GenomicRange,Integer>();
 	protected int nFeatsSeen = 0;
 	
-	
+
 	/**
 	 * @param flankSize
 	 * @param zeroInit
@@ -76,12 +77,17 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		this.arr = new double[2][nFeats][this.downscaleCols];
 		this.featCoords = new GenomicRange[nFeats];
 		this.featNames = new String[nFeats];
+		this.sortVals = new Double[nFeats];
 		
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("About to initMat()\n");
 		MatUtils.initMat(arr, (zeroInit)  ? 0.0 : Double.NaN);
 	}
 
-	
+	@Override
+	public int numCols() {
+		return arr[0][0].length;
+	}
+
 	public int numFeats()
 	{
 		return nFeatsSeen;
@@ -92,11 +98,12 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	 */
 	@Override
 	public void addAlignmentPos(int genomeRelPos, double fwStrandScore, double revStrandScore,
-			String featName, String featChr, int featCoord, Strand featStrand) {
+			String featName, String featChr, int featCoord, Strand featStrand, double sortVal) {
 
 		GenomicRange gr = new GenomicRange(featChr, featCoord, featCoord, featStrand);
 		int featInd = this.getInd(gr, featName);
 		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand, true);
+		this.sortVals[featInd] = new Double(sortVal);
 
 		// Flip the strand of the scores if features are flipped
 		arr[0][featInd][colInd] = (featStrand==StrandedFeature.NEGATIVE) ? revStrandScore : fwStrandScore;
@@ -105,7 +112,48 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 
 
+	public Double[] sortRowsExponential(double exponentialFactor, int minDist)
+	{
+		int nCols = this.arr[0][0].length;
+		return this.sortRowsExponential(exponentialFactor, minDist, 0, nCols-1);
+	}
+	
+	public Double[] sortRowsExponential(double exponentialFactor, int minDist, int colStart, int colEnd)
+	{
+		double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+		
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(
+				String.format("Sorting %d rows EXPONENTIAL %f, %d\n",this.nFeatsSeen, exponentialFactor, minDist));
+		// Did we actually see as many features as expected?
+		Double[] sortVals = new Double[this.nFeatsSeen];
+		for (int i = 0; i < this.nFeatsSeen; i++)
+		{
+			double mean = (exponentialFactor!=0.0) ? 
+					MatUtils.nanMeanExponentialWeighting(dataFull[i], exponentialFactor,minDist,colStart,colEnd) : 
+						MatUtils.nanMean(dataFull[i], colStart, colEnd);	
+					sortVals[i] = new Double(mean);
+		}
+			
+		
+		this.sortRowsByList(sortVals);
+		return sortVals;
+	}
 
+	public void sortRowsByList(Double[] sortVals)
+	{
+		for (int i = 0; i < this.arr.length; i++)
+		{
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(
+					String.format("Sorting %d rows by list arr[%d]\n",this.nFeatsSeen,i));
+			this.arr[i] = MatUtils.sortRowsByList(this.arr[i], sortVals);
+		}
+	}
+	
+	public void sortRowsBySortVals()
+	{
+		sortRowsByList(this.sortVals);
+	}
+	
 //	@Override
 //	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1) throws Exception{
 //		FeatAlignerAveraging av = this.toAverageFeatAligner();
@@ -122,24 +170,28 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 			// DOWNSCALING
 			
-			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+//			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+//			
+//			// Did we actually see as many features as expected?
+//			double[][]data = new double[this.nFeatsSeen][];
+//			for (int i = 0; i < this.nFeatsSeen; i++) data[i] = dataFull[i];
+//			
+//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
+//					"num nans: this.arr[0]=%d, this.arr[1]=%d, sum(this.arr[0..1])=%d\n",
+//					MatUtils.countNans(this.arr[0]), MatUtils.countNans(this.arr[1]), MatUtils.countNans(data)));
+//
+//
+//			
+//
+//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Sorting %d rows\n",data.length));
+//			data = MatUtils.sortRows(data,-0.3333,10);
 			
-			// Did we actually see as many features as expected?
+//			this.sortRowsExponential(-0.3333, 10);
+			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
 			double[][]data = new double[this.nFeatsSeen][];
 			for (int i = 0; i < this.nFeatsSeen; i++) data[i] = dataFull[i];
 			
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
-					"num nans: this.arr[0]=%d, this.arr[1]=%d, sum(this.arr[0..1])=%d\n",
-					MatUtils.countNans(this.arr[0]), MatUtils.countNans(this.arr[1]), MatUtils.countNans(data)));
-		
-//			data = new double[10][30];
-//			MatUtils.initMat(data, Double.NaN);
-//			data[0][5] = 5;
-//			data[3][0] = 3;
 			
-
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Sorting %d rows\n",data.length));
-			data = MatUtils.sortRows(data,-0.3333,10);
 			// Do rows first since cols has to transpose 
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d cols to 200\n",data[0].length));
 			int downsampleTo = Math.min(this.downscaleCols, 100); // Harder to go above 500
@@ -270,7 +322,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 //		data[3][0] = 3;
 		
 
-		data = MatUtils.sortRows(data,-0.3333,10);
+	//	data = MatUtils.sortRows(data,-0.3333,10);
 		int downsampleTo = Math.min(this.downscaleCols, 500); // Harder to go above 500
 		data = MatUtils.downscaleMatRows(data, downsampleTo, 0.0);
 		data = MatUtils.downscaleMatCols(data, 30, 0.0);

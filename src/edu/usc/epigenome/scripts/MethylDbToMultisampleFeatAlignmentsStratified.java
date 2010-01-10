@@ -172,7 +172,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.TEST_CHROMS)
+			for (String chrStr : MethylDbUtils.CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -185,8 +185,35 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 		
 
 			// M-levels
+			Double[] sortVals = null;
 			for (int i = 0; i < nS; i++)
 			{
+				if (sortVals == null)
+				{
+					int nCols = this.fStatMats[i][2].numCols();
+					int colsStart = 0;
+					int colsEnd = nCols-1;
+					if (this.censor)
+					{
+						int midPoint = (int)Math.round((double)nCols/2);
+						if (this.alignToStart)
+						{
+							colsStart = midPoint;
+						}
+						else if (this.alignToEnd)
+						{
+							colsEnd = midPoint;
+						}
+						
+					}
+					sortVals = this.fStatMats[i][2].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
+				}
+				else
+				{
+					this.fStatMats[i][2].sortRowsByList(sortVals);
+				}
+				
+				
 				String tablePrefix = tablePrefixes.get(i);
 				writer.printf("<H4>%s</H4>\n", tablePrefix);
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
@@ -294,7 +321,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 								chromPos,
 								(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
 										(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
-												featName, chrStr, alignmentPoint, featStrand);
+												featName, chrStr, alignmentPoint, featStrand, 0.0);
 					}
 
 					//				if (!this.noDeltas)
