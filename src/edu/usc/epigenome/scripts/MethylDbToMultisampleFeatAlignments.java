@@ -299,14 +299,14 @@ public class MethylDbToMultisampleFeatAlignments {
 							chromPos,
 							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
-											featName, chrStr, alignmentPoint, featStrand);
+											featName, chrStr, alignmentPoint, featStrand, 0.0);
 					
 					// Cpg counts
 					this.fStatMats[i][1].addAlignmentPos(
 							chromPos,
 							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : 1.0,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? 1.0: Double.NaN,
-											featName, chrStr, alignmentPoint, featStrand);
+											featName, chrStr, alignmentPoint, featStrand, 0.0);
 					
 					
 				}
@@ -319,7 +319,7 @@ public class MethylDbToMultisampleFeatAlignments {
 							chromPos,
 							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mVar,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? mVar: Double.NaN,
-											featName, chrStr, alignmentPoint, featStrand);
+											featName, chrStr, alignmentPoint, featStrand, 0.0);
 
 					// Then pairwise.
 					int onMat = 0;
@@ -332,7 +332,7 @@ public class MethylDbToMultisampleFeatAlignments {
 									chromPos,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : absDiff,
 											(cpgStrand == StrandedFeature.NEGATIVE) ? absDiff : Double.NaN,
-													featName, chrStr, alignmentPoint, featStrand);
+													featName, chrStr, alignmentPoint, featStrand, 0.0);
 						}
 					}
 				}
