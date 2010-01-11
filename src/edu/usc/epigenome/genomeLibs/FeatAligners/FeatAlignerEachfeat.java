@@ -150,13 +150,15 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		}
 	}
 	
-	public void sortRowsBySortVals()
+	public Double[] sortRowsBySortVals()
 	{
 		// Only those that we've actually seen.
 		Double[] sortList = Arrays.copyOf(this.sortVals, this.nFeatsSeen);
 		
 		sortRowsByList(sortList);
+		return sortList;
 	}
+	
 	
 //	@Override
 //	public String htmlChart(boolean strandSpecific, boolean normalizedByCounts, boolean range0to1) throws Exception{

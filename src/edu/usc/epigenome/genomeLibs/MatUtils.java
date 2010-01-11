@@ -563,7 +563,7 @@ public class MatUtils {
 		
 		int m1 = numColsNew;
 		
-		if (m == m1) return in;
+		if ((m == m1) && (smoothingFact==0.0)) return in;
 		
 		double[][] out = new double[n][];
 		for (int i = 0; i < n; i++)

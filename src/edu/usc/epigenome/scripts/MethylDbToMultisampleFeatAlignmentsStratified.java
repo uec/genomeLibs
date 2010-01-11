@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -158,6 +159,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			feats = feats.filterBySize(0, this.maxFeatSize);
 			int nFeats = feats.num_features(); 
 			
+			PrintWriter sortWriter = new PrintWriter(new FileOutputStream(
+					String.format("%s.featType%d.sortVals.csv", outputPrefix, onFeatType)));
 			
 			
 			// Create arrays
@@ -178,7 +181,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS)
+			for (String chrStr : MethylDbUtils.TEST_CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -197,7 +200,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 				if (this.sortByExpression != null)
 				{
-					this.fStatMats[i][2].sortRowsBySortVals();
+					sortVals = this.fStatMats[i][2].sortRowsBySortVals();
+					
 				}
 				else if (sortVals == null)
 				{
@@ -225,7 +229,6 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				}
 				
 				
-				
 				String tablePrefix = tablePrefixes.get(i);
 				writer.printf("<H4>%s (%d features)</H4>\n", tablePrefix, fStatMats[i][2].numFeats());
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
@@ -233,6 +236,13 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				double[] colorMinMax = {0.0,1.0};
 				if (this.heatmap) this.fStatMats[i][2].launchSwingHeatmap(colorMinMax);
 			}
+
+			Arrays.sort(sortVals);
+			ListUtils.setDelim("\n");
+			sortWriter.println(ListUtils.excelLine(Arrays.asList(sortVals)));
+			
+			sortWriter.close();
+			
 
 //			if (!this.noDeltas)
 //			{
