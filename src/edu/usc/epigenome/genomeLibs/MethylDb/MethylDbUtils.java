@@ -25,16 +25,10 @@ public class MethylDbUtils {
 
 
 	
-	public static final List<String> SUMMARY_FEATURES2 = 
-		Arrays.asList("TJ_GG_nonPrmtrExons","TJ_NonPrmtrNonExon","TJ_Prmtrs_oriented");
-	public static final List<String> SUMMARY_FEATURES3 = 
-		Arrays.asList("exon_normHigh", "exon_normLow", "exon_tumHigh", "exon_tumLow", "exonTumUp", "exonTumDown");
-	public static final List<String> SUMMARY_FEATURES4 = 
-		Arrays.asList("LINE","exon","IMR90_PMDs","TJ_Prmtrs_oriented","K27me3_Ku2008_Prmtrs_oriented","K27me3_Ku2008");
-	public static final List<String> SUMMARY_FEATURES5 = 
-		Arrays.asList("tss_500bp_flank_normHigh","tss_500bp_flank_normLow", "tss_500bp_flank_tumHigh","tss_500bp_flank_tumLow","tss_500bp_flank_tumUp","tumDown");
 	public static final List<String> SUMMARY_FEATURES1 = 
-		Arrays.asList("tx_normHigh","tx_normLow", "tx_tumHigh","tx_tumLow");
+		Arrays.asList("IMR90_PMDs","TJ_Prmtrs_oriented","K27me3_Ku2008_Prmtrs_oriented","K27me3_Ku2008");
+	public static final List<String> SUMMARY_FEATURES2 = 
+		Arrays.asList("LINE","exon","IMR90_PMDs","TJ_Prmtrs_oriented","K27me3_Ku2008_Prmtrs_oriented","K27me3_Ku2008");
 	
 	protected static Connection cConn = null; 
 	protected static Map<String,PreparedStatement> cPreps = new HashMap<String,PreparedStatement>();
@@ -107,7 +101,7 @@ public class MethylDbUtils {
 	}
 
 	
-	//	echo "select count(*),featType from features_chr1 GROUP BY featType;" |mysql cr > featTypes.txt
+//	//	echo "select count(*),featType from features_chr1 GROUP BY featType;" |mysql cr > featTypes.txt
 //	61841   exon
 //	16659   exon_normHigh
 //	12843   exon_normLow
@@ -115,17 +109,18 @@ public class MethylDbUtils {
 //	15314   exon_tumHigh
 //	12843   exon_tumLow
 //	787     exon_tumUp
-//	1614    FANTOM4_HCP
-//	2064    FANTOM4_LCP
-//	603     IMR90_PMDs
-//	762     K27me3_Ku2008
-//	208     K27me3_Ku2008_Prmtrs_oriented
-//	114252  LINE
-//	125     RING1B_Ku2008
-//	161724  SINE
-//	435     TJ_GG_nonPrmtrExons
-//	627     TJ_NonPrmtrNonExon
-//	1070    TJ_Prmtrs_oriented
+//	3228    FANTOM4_HCP
+//	4128    FANTOM4_LCP
+//	602     IMR90_NotPMDs
+//	1206    IMR90_PMDs
+//	1524    K27me3_Ku2008
+//	416     K27me3_Ku2008_Prmtrs_oriented
+//	228504  LINE
+//	250     RING1B_Ku2008
+//	323448  SINE
+//	870     TJ_GG_nonPrmtrExons
+//	1254    TJ_NonPrmtrNonExon
+//	2140    TJ_Prmtrs_oriented
 //	6633    tss
 //	6633    tss_1kb_flank
 //	1495    tss_1kb_flank_normHigh
@@ -161,6 +156,7 @@ public class MethylDbUtils {
 //	1376    tx_tumHigh
 //	1203    tx_tumLow
 //	91      tx_tumUp
+
 
 	
 }

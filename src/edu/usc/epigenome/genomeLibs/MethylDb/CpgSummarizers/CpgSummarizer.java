@@ -32,6 +32,8 @@ public abstract class CpgSummarizer {
 	// Arbitrary summary statistics for a single value.
 	protected double numVals = 0.0;
 	protected double valsTotal = 0.0;
+	protected double valsWeightingTotal = 0.0;
+	protected double weightingTotal = 0.0;
 	protected double valsSquareTotal = 0.0;
 	protected double valsMin = Double.NaN;
 	protected double valsMax = Double.NaN;
@@ -42,6 +44,9 @@ public abstract class CpgSummarizer {
 	protected double naturalMin = Double.NaN;
 	protected double naturalMax = Double.NaN;
 	protected Color color = Color.BLACK;
+	
+	protected Cpg lastCpgSeen = null;
+	int curWeight = -1;
 	
 	/**
 	 * We need the querier criteria for certain output
@@ -99,6 +104,28 @@ public abstract class CpgSummarizer {
 	public void streamCpg(Cpg cpg)
 	{
 		nCpgsSeen++;
+		
+		// We'll use this weighting when a value is captured
+		int curWeight = 1; 
+		if (this.lastCpgSeen != null)
+		{
+			this.curWeight = cpg.chromPos - this.lastCpgSeen.chromPos;
+			
+			if (this.curWeight > 10000)
+			{
+				// If it's >10000, it's a jump between elements generally.  Just count it as one
+				this.curWeight = 1; 
+				//System.err.printf("%d\tDistance between two CpGs>100000\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+			}
+			else if (this.curWeight < 0)
+			{
+				// This happens at the beginning of the chromosome when the last cpg is from the last chrom
+				this.curWeight = 1;
+				//System.err.printf("%d\tDistance between two CpGs<0\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+			}
+			
+		}
+		this.lastCpgSeen = cpg;
 	}
 	
 	
@@ -117,6 +144,17 @@ public abstract class CpgSummarizer {
 			this.valsSquareTotal += Math.pow(val, 2.0);
 			if (Double.isNaN(this.valsMin) || (val < this.valsMin)) this.valsMin = val;
 			if (Double.isNaN(this.valsMax) || (val > this.valsMax)) this.valsMax = val;
+			
+			// Keep track of one version weighted by base pairs covered by the CpG
+			if (this.curWeight > 0)
+			{
+				this.weightingTotal += (double)this.curWeight;
+				this.valsWeightingTotal += ((double)this.curWeight * val);
+				if (Double.isNaN(this.weightingTotal) || Double.isNaN(this.valsWeightingTotal))
+				{
+					System.err.printf("Running totals weighting: %f\tvalsWeightingTotal=%f\n", this.weightingTotal, this.valsWeightingTotal);
+				}
+			}
 		}
 	}
 
@@ -156,7 +194,17 @@ public abstract class CpgSummarizer {
 
 	public double getValMean()
 	{
-		return this.valsTotal / this.numVals;
+		return getValMean(false);
+	}
+	
+	/**
+	 * @param useSpaceWeightedMean If this is set, the value for each Cpg is weighted by the amount of 
+	 *  sequence covered by the CpG.
+	 * @return
+	 */
+	public double getValMean(boolean useSpaceWeightedMean)
+	{
+		return (useSpaceWeightedMean) ? (this.valsWeightingTotal / this.weightingTotal) : (this.valsTotal / this.numVals);
 	}
 	
 	public double getValStdev()
@@ -261,6 +309,7 @@ public abstract class CpgSummarizer {
 		pw.printf("<TD>%s</TD>\n", this.getFeatName());
 		pw.printf("<TD>%d</TD>\n", this.getnCpgsSeen());
 		pw.printf("<TD>%.3f</TD>\n", this.getValMean());
+		pw.printf("<TD>%.3f</TD>\n", this.getValMean(true));
 		pw.printf("<TD>%.3f</TD>\n", this.getValStdev());
 		pw.printf("<TD>%s</TD>\n", this.getDesc());
 		pw.print("</TR>");

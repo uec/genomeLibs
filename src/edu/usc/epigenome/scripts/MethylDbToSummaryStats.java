@@ -121,6 +121,8 @@ public class MethylDbToSummaryStats {
 		
 		// Make charts
 		int nSumms = summarizerLists[0][0].length;
+		for (int weighted = 0; weighted<=1 ; weighted++)
+		{
 		for (int s = 0; s<nSumms; s++)
 		{
 			double natMin = summarizerLists[0][0][s].getNaturalMin();
@@ -134,7 +136,7 @@ public class MethylDbToSummaryStats {
 				double[] valMeans = new double[nF];
 				for (int i =0; i<nF; i++)
 				{
-					valMeans[i] = summarizerLists[i][j][s].getValMean();
+					valMeans[i] = summarizerLists[i][j][s].getValMean((weighted==1)?true:false);
 				}
 				System.err.printf("Data series for %s has %d samples.  natmin=%f, natmax=%f\n",
 						summarizerLists[0][j][s].getSampleName(), valMeans.length, natMin, natMax);
@@ -192,6 +194,7 @@ public class MethylDbToSummaryStats {
 	
 		
 		pw.println(CpgSummarizer.htmlTableFinish());
+		}
 		
 		
 		System.out.print(sw.toString());
@@ -220,7 +223,7 @@ public class MethylDbToSummaryStats {
 		summs.add(new CpgCoverageSummarizer(querier));
 		summs.add(new CpgDeaminationSummarizer(querier));
 
-		for (String chrom : MethylDbUtils.CHROMS)
+		for (String chrom : MethylDbUtils.TEST_CHROMS)
 		{
 			querier.clearRangeFilters();
 			querier.addRangeFilter(chrom);
