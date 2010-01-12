@@ -181,7 +181,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.TEST_CHROMS)
+			for (String chrStr : MethylDbUtils.CHROMS)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
