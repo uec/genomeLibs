@@ -34,7 +34,7 @@ public class CpgDensitySummarizer extends CpgSummarizer {
 	}
 
 	@Override
-	protected void init(MethylDbQuerier inQuerier) {
+	public void init(MethylDbQuerier inQuerier) {
 		// TODO Auto-generated method stub
 		super.init(inQuerier);
 		

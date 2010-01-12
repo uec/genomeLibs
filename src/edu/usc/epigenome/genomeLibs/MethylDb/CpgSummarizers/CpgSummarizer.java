@@ -77,7 +77,7 @@ public abstract class CpgSummarizer {
 //	}
 
 	// This should be called by all constructors
-	protected void init(MethylDbQuerier inQuerier)
+	public void init(MethylDbQuerier inQuerier)
 	{
 		this.querier = inQuerier;
 		

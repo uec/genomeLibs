@@ -1,6 +1,7 @@
 package edu.usc.epigenome.genomeLibs;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -209,6 +210,21 @@ public class MatUtils {
 		}
 	}
 
+	public static void clipToMax(double[] mat, double inMax)
+	{
+		clipToExtremes(mat, Double.NEGATIVE_INFINITY, inMax);
+	}
+	
+	public static void clipToExtremes(double[] mat, double inMin, double inMax)
+	{
+		for (int i = 0; i < mat.length; i++)
+		{
+			if (mat[i]<inMin) mat[i] = inMin;
+			if (mat[i]>inMax) mat[i] = inMax;
+		}
+	}
+
+	
 	public static int countNans(double[][] mat)
 	{
 		int total = 0;
@@ -981,6 +997,75 @@ public class MatUtils {
     		}
     	}
     	return out;
+	}
+	
+	/**
+	 * @param vals
+	 * @param min Set to 0.0 to determine min and max automatically
+	 * @param max Set to 0.0 to determine min and max automatically
+	 * @param nBins
+	 * @param normalized Gives value as fraction of total.
+	 * @return
+	 */
+	public static double[] histogramBins(double []vals, double min, double max, int nBins, boolean normalized)
+	{
+		int nV = vals.length;
+
+		// Make sure it's sorted
+		double [] sortedVals = Arrays.copyOf(vals, nV);
+		Arrays.sort(sortedVals);
+		
+		int arrInd = 0;
+		double total = 0.0;
+		double[] out = new double[nBins];
+		for (int i = 0; i < nBins; i++)
+		{
+			double binWidth = (max-min)/nBins;
+			double binS = (i==0) ? Double.NEGATIVE_INFINITY : (min + ((double)i*binWidth));
+			double binE = (i==(nBins-1)) ? Double.POSITIVE_INFINITY : (min + ((double)(i+1)*binWidth));
+			
+			// Traverse array
+			// Need if normalized
+			int numInBin = 0;
+			boolean doneBin = false;
+			while (!doneBin && (arrInd<nV))
+			{
+				double curVal = sortedVals[arrInd];
+				if (Double.isNaN(curVal))
+				{
+					arrInd++;
+				}
+				else if (curVal>binE)
+				{
+					// Don't advance arrInd since it's in the next bin
+					doneBin = true;
+				}
+				else
+				{
+					// Valid value in bin
+					numInBin++;
+					arrInd++;
+					total++;
+				}
+			}
+			
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
+					"Bin %d (%f-%f) has count %d\n",i,binS,binE,numInBin));
+			
+			double binVal = (double)numInBin;
+			out[i] = binVal;
+		}
+		
+		if (normalized)
+		{
+			for (int i = 0; i < nBins; i++)
+			{
+				out[i] = out[i]/total;
+			}			
+		}
+		
+		
+		return out;
 	}
 
 	

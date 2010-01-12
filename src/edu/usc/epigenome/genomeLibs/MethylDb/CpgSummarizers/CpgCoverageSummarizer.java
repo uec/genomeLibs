@@ -27,7 +27,7 @@ public class CpgCoverageSummarizer extends CpgSummarizer {
 	}
 
 	@Override
-	protected void init(MethylDbQuerier inQuerier) {
+	public void init(MethylDbQuerier inQuerier) {
 		// TODO Auto-generated method stub
 		super.init(inQuerier);
 		
@@ -46,8 +46,8 @@ public class CpgCoverageSummarizer extends CpgSummarizer {
 		
 		// Impose the filters just in case.
 		
-		
-		double val = (double)(cpg.totalReads + cpg.totalReadsOpposite);
+		// FORWARD STRAND ONLY
+		double val = (double)(cpg.totalReads);
 		this.streamValue(val);
 	}
 
