@@ -62,7 +62,7 @@ public class MethylDbUtils {
 		}
 		else if (numFound>1)
 		{
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).log(Level.SEVERE,
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).log(Level.FINE,
 					String.format("Found multiple expr rows with refseq %s: %d rows\n", refseqId,numFound));
 			out = out / (double)numFound;
 		}

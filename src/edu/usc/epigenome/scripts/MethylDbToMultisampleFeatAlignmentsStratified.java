@@ -303,6 +303,11 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					//System.err.println("Feature has no expression value.");
 					continue FEAT;
 				}
+				if (sortVal < 7) 
+				{
+					System.err.println("Sortval = " + sortVal);
+					System.exit(1);
+				}
 			}
 
 			if (skipUnoriented)

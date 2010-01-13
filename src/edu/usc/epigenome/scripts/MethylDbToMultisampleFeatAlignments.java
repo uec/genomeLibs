@@ -21,6 +21,7 @@ import org.usckeck.genome.ChromFeatures;
 import sun.tools.tree.ThisExpression;
 
 import edu.usc.epigenome.genomeLibs.GFFUtils;
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
@@ -135,6 +136,7 @@ public class MethylDbToMultisampleFeatAlignments {
 			return;
 		}
 		int nS = tablePrefixes.size();
+		System.err.println("Prefixes ("+nS+"): " + ListUtils.excelLine(tablePrefixes));
 		int nFeatTypes = featFns.size();
 
 		// Setup writer
@@ -186,6 +188,7 @@ public class MethylDbToMultisampleFeatAlignments {
 			for (int i = 0; i < nS; i++)
 			{
 				String tablePrefix = tablePrefixes.get(i);
+				System.err.println("on sample " + i + ", " + tablePrefix);
 				writer.printf("<H4>%s</H4>\n", tablePrefix);
 				if (this.cpgCounts)
 				{

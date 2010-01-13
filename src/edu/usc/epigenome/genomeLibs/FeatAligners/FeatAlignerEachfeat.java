@@ -37,7 +37,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	public List<Color> ColorCycle = Arrays.asList(Color.DARKBLUE, Color.BLUE, Color.BLUEVIOLET, Color.VIOLET, Color.PINK, Color.LIGHTSALMON, Color.RED);
 	
 	protected final static int NBINS = 7;
-	protected final static int BP_SMOOTHING = 50;
+	protected final static int BP_SMOOTHING = 400;
 	protected final static int HEATMAP_ROWS = 100;
 	
 	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, 
@@ -204,6 +204,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			double smoothFact = Math.ceil(((2.0*(double)this.flankSize)/(double)this.downscaleCols)/(2.0*(double)BP_SMOOTHING));
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d cols to %d (smoothing %f)\n",
 					data[0].length,downsampleTo, smoothFact));
+			smoothFact = 0.0;
 			data = MatUtils.downscaleMatRows(data, downsampleTo, smoothFact);
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d rows to 5\n",data.length));
 			data = MatUtils.downscaleMatCols(data,NBINS, 0.0);
@@ -230,7 +231,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 			LineChart chart = GCharts.newLineChart(plots);
 			chart.setSize(600, 200);
-			chart.setDataEncoding(DataEncoding.SIMPLE);
+			chart.setDataEncoding(DataEncoding.EXTENDED);
 
 			AxisLabels xAxis = AxisLabelsFactory.newNumericRangeAxisLabels(-this.flankSize, this.flankSize);
 			chart.addXAxisLabels(xAxis);

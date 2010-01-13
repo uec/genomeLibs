@@ -119,6 +119,7 @@ public class FeatAlignerAveraging extends FeatAligner {
 
 		
 		// sorry, special cases
+		System.err.println("Got sample" + sample);
 		sample = sample.replaceAll("methylCGsRich_", "");
 		sample = sample.replaceAll("_", "");
 		feature = feature.replaceAll("wgEncodeBroadChipSeqPeaks", "");
