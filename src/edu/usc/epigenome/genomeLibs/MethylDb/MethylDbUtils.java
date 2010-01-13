@@ -45,11 +45,13 @@ public class MethylDbUtils {
 		prep.setString(1, refseqId);
 		ResultSet rs = prep.executeQuery();
 		
+		//System.err.println("Fetching expr for : " + refseqId);
 		int numFound = 0;
 		double out = 0.0;
 		while (rs.next())
 		{
-			out = rs.getDouble(1);
+			//System.err.println("\tGot expression val: " + rs.getDouble(1));
+			out += rs.getDouble(1);
 			numFound++;
 		}
 		
