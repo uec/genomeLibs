@@ -37,7 +37,8 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	public List<Color> ColorCycle = Arrays.asList(Color.DARKBLUE, Color.BLUE, Color.BLUEVIOLET, Color.VIOLET, Color.PINK, Color.LIGHTSALMON, Color.RED);
 	
 	protected final static int NBINS = 7;
-	protected final static int BP_SMOOTHING = 100;
+	protected final static int BP_SMOOTHING = 50;
+	protected final static int HEATMAP_ROWS = 100;
 	
 	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, 
 	// j = featNum: arr[0][5] = fwTotalScores for feat 6
@@ -339,7 +340,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		int downsampleTo = Math.min(this.downscaleCols, 500); // Harder to go above 500
 		double smoothFact = Math.ceil(((2.0*(double)this.flankSize)/(double)this.downscaleCols)/(2.0*(double)BP_SMOOTHING));
 		data = MatUtils.downscaleMatRows(data, downsampleTo,smoothFact);; 
-		data = MatUtils.downscaleMatCols(data, 30, 2.0);
+		data = MatUtils.downscaleMatCols(data, HEATMAP_ROWS, 2.0);
 
 		// NO NANs allowed
 		MatUtils.nansToVal(data, 0.0);
