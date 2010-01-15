@@ -37,7 +37,9 @@ public class MethylDbUtils {
 	public static double fetchMeanExpression(String chr, String refseqId, String sqlExpression)
 	throws Exception
 	{
-		if ((refseqId == null) || refseqId.equalsIgnoreCase("NULL"));
+		if ((refseqId == null) || !refseqId.matches("^[A-Z][A-Z]_")) return Double.NaN;
+		
+		//System.err.println("RefseqId=" + refseqId);
 		
 		setupDb();
 		
