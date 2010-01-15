@@ -1,5 +1,8 @@
 package edu.usc.epigenome.genomeLibs;
 
+import org.biojava.bio.program.gff.GFFRecord;
+import org.biojava.bio.program.gff.SimpleGFFRecord;
+
 
 public class MiscUtils {
 
@@ -112,5 +115,23 @@ public class MiscUtils {
         else
             return n * factorial( n - 1 );
     }
+
+
+	public static boolean GffRecordsOverlap(GFFRecord a,	GFFRecord b) 
+	{
+		int aS = a.getStart();
+		int bS = b.getStart();
+		int aE = a.getEnd();
+		int bE = b.getEnd();
+		
+		if ((aE<bS) || (bE<aS))
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
     
 }

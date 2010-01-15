@@ -37,6 +37,8 @@ public class MethylDbUtils {
 	public static double fetchMeanExpression(String chr, String refseqId, String sqlExpression)
 	throws Exception
 	{
+		if ((refseqId == null) || refseqId.equalsIgnoreCase("NULL"));
+		
 		setupDb();
 		
 		String table = "infiniumExpr_" + chr;

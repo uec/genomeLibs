@@ -36,7 +36,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 	public List<Color> ColorCycle = Arrays.asList(Color.DARKBLUE, Color.BLUE, Color.BLUEVIOLET, Color.VIOLET, Color.PINK, Color.LIGHTSALMON, Color.RED);
 	
-	protected final static int NBINS = 7;
+	protected final static int NBINS = 3;
 	protected final static int BP_SMOOTHING = 400;
 	protected final static int HEATMAP_ROWS = 100;
 	
