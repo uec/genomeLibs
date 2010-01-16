@@ -16,6 +16,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
 public class MethylDbToCoverageSummaries {
@@ -80,7 +81,7 @@ public class MethylDbToCoverageSummaries {
 		long totalMeasurements = 0;
 		SortedMap<Integer,Integer> counts = new TreeMap<Integer,Integer>();
 
-		for (String chrom : Arrays.asList("chr11"))// MethylDbUtils.CHROMS) // 
+		for (String chrom : MethylDbUtils.CHROMS) 
 		{
 			// Stupid JDBC tries to load entire chromosome into memory at once,
 			// which is too much.
