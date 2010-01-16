@@ -18,7 +18,7 @@ my $totalUnique = 0;
 my $totalBases = 0;
 foreach my $fn (@ARGV)
 {
-	my $cmd = "samtools view -ub -q 30 ./tumor_61AY8AAXX_s2345678.NODUPS.sorted.calmd.q20.IGF2_80kb.bam | samtools pileup -s - ";
+	my $cmd = "samtools view -ub -q 30 ${fn} | samtools pileup -s - ";
 	die "Couldn't pipe $cmd\n" unless (open(PILE, "${cmd} |"));
 	
 	while (my $line = <PILE>)
