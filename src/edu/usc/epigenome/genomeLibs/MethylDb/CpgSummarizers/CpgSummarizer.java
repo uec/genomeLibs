@@ -94,6 +94,10 @@ public abstract class CpgSummarizer {
 		valsSquareTotal = 0.0;
 		valsMin = Double.POSITIVE_INFINITY;
 		valsMax = Double.POSITIVE_INFINITY;
+
+		this.lastCpgSeen = null;
+		this.valsWeightingTotal = 0.0;
+		this.weightingTotal = 0.0;
 	}
 	
 	

@@ -35,6 +35,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgCoverageSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
 
@@ -65,6 +66,8 @@ public class MethylDbToFeatStatFiles {
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
 
+	protected CpgSummarizer[] methSummarizers = new CpgSummarizer[10]; 
+	protected CpgSummarizer[] coverageSummarizers = new CpgSummarizer[10];
 
 
 	/**
@@ -137,6 +140,7 @@ public class MethylDbToFeatStatFiles {
 			// Setup writer
 			String outFn = String.format("%s.stats", featsFnBase);
 			if (this.onechrom) outFn += ".onechrom";
+			if (this.centeredSize>0) outFn += ".centered" + this.centeredSize;
 			if (this.featShoreEnd>0) outFn += String.format(".featShoreStart%d-featShoreEnd%d", this.featShoreStart, this.featShoreEnd);
 			ListUtils.setDelim("-");
 			if (this.featFilters.size()>0) outFn += "." + ListUtils.excelLine(this.featFilters);
@@ -147,13 +151,14 @@ public class MethylDbToFeatStatFiles {
 			onFeatType++;
 			ChromFeatures feats = new ChromFeatures(featFn, true);
 			System.err.println("About to filter regions by size");
-			feats = feats.filterBySize(0, this.maxFeatSize);
+			if (this.maxFeatSize < Integer.MAX_VALUE) feats = feats.filterBySize(0, this.maxFeatSize);
 			
 			System.err.println("About to sort features");
 			feats.sortFeatures();
 			
 			
 			// The main work
+			int featNum = 1;
 			List<String> chroms = (this.onechrom) ? Arrays.asList("chr1") : MethylDbUtils.CHROMS;
 			for (String chrStr : chroms)
 			{
@@ -165,24 +170,33 @@ public class MethylDbToFeatStatFiles {
 				SimpleGFFRecord prevRec = (featit.hasNext()) ? (SimpleGFFRecord)featit.next() : null;
 				SimpleGFFRecord thisRec = (featit.hasNext()) ? (SimpleGFFRecord)featit.next() : null;
 				SimpleGFFRecord nextRec = (featit.hasNext()) ? (SimpleGFFRecord)featit.next() : null;
-				FEAT: while (featit.hasNext())
+				// Process the first one 
+				if (prevRec != null) processFeat(null, prevRec, thisRec, writer, tablePrefixes, chrStr, chrInt, feats);
+				FEAT: do
 				{
+					//writer.println("On record " + featNum);
 					try
 					{
-						processFeat(prevRec, thisRec, nextRec, writer, tablePrefixes, chrStr, chrInt, feats);
+						if (thisRec != null) processFeat(prevRec, thisRec, nextRec, writer, tablePrefixes, chrStr, chrInt, feats);
 						
 						// Increment
 						prevRec = thisRec;
 						thisRec = nextRec;
-						nextRec = (SimpleGFFRecord)featit.next();
+						nextRec = (featit.hasNext()) ? (SimpleGFFRecord)featit.next() : null; 
 					}
 					catch (Exception e)
 					{
 						System.err.println("Couldn't complete feature " + featFn + ":\n" + e.toString());
 						e.printStackTrace();
 					}
+					
+					featNum++;
 
-				}
+				} while (nextRec != null);
+
+				// And the last one 
+				if (thisRec != null) processFeat(prevRec, thisRec, null, writer, tablePrefixes, chrStr, chrInt, feats);
+			
 			}
 
 
@@ -230,7 +244,8 @@ public class MethylDbToFeatStatFiles {
 			SimpleGFFRecord shoreRec = new SimpleGFFRecord(thisRec);
 			shoreRec.setStart(flankS);
 			shoreRec.setEnd(flankE);
-			if (MiscUtils.GffRecordsOverlap(shoreRec, nextRec) || MiscUtils.GffRecordsOverlap(shoreRec, prevRec))
+			if (((prevRec!=null) && MiscUtils.GffRecordsOverlap(shoreRec, prevRec)) ||
+					(nextRec!=null) && MiscUtils.GffRecordsOverlap(shoreRec, nextRec))
 			{
 //				System.err.printf("Shore overlaps next feat, returning\n\tprev=%s\n\tthis=%s\n\tnext=%s\n",
 //						GFFUtils.gffBetterString(prevRec),
@@ -265,30 +280,35 @@ public class MethylDbToFeatStatFiles {
 		// And stream through summarizers
 		CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, methylTables);
 		int numCpgs = cpgit.getCurNumRows();
-		double[][] mLevels = new double[nM][numCpgs];
-		double[][] readLevels = new double[nM][numCpgs];
-		int c = 0;
+
+		for (int m = 0; m < nM; m++)
+		{
+			// Initialize the first time
+			if (this.methSummarizers[m] == null) 
+			{
+				this.methSummarizers[m] = new CpgMethLevelSummarizer(params);
+				this.coverageSummarizers[m] = new CpgCoverageSummarizer(params);
+			}
+			this.methSummarizers[m].reset();
+			this.coverageSummarizers[m].reset();
+		}
+		
 		while (cpgit.hasNext()) 
 		{
 			Cpg[] cpgs = cpgit.next();
 
 			for (int m = 0; m < nM; m++)
 			{
-				double meth = cpgs[m].fracMeth(true);
-				mLevels[m][c] = meth;
-				int reads = cpgs[m].totalReads+cpgs[m].totalReads;
-				readLevels[m][c] = (double)reads;
+				this.methSummarizers[m].streamCpg(cpgs[m]);
+				this.coverageSummarizers[m].streamCpg(cpgs[m]);
 			}
-
-			// Increment
-			c++;
 		}
 		
 		// Take averages
 		for (int m = 0; m < nM; m++)
 		{
-			double meanM = MatUtils.nanMean(mLevels[m]);
-			double meanReads = MatUtils.nanMean(readLevels[m]);
+			double meanM = this.methSummarizers[m].getValMean(true);
+			double meanReads = this.coverageSummarizers[m].getValMean(true);
 			cols.add(Integer.toString(numCpgs));
 			cols.add(Double.toString(meanM));
 			cols.add(Double.toString(meanReads));

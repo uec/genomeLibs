@@ -8,7 +8,8 @@ use File::Temp qw/ tempfile /;
 my $USAGE = "encodePeakFilesToMethylStats.pl peaks1.peaks peaks2.peaks ...";
 
 
-# GetOptions ('clobberTable!'=>\$clobberTable, 'pipeConverterScript=s'=>\$pipe, 'templateFile=s' => \$templateFn, 'replaceStr=s' => \$replaceStr) || die "$USAGE\n";
+my $centeredSize = 0;
+GetOptions ('centeredSize=i'=>\$centeredSize)|| die "$USAGE\n";
 
 die "$USAGE\n" unless (@ARGV>0);
 
@@ -40,7 +41,7 @@ foreach my $peakFn (@ARGV)
 		$cmd = "encodePeakFilesToGtf.pl ${inFn}";
 		runCmd($cmd,0);
 	}
-	buildMethFile($outFn);
+	buildMethFile($outFn, $centeredSize);
 	
 	# Get Rid of TSS
 	$inFn = $outFn;
@@ -53,7 +54,7 @@ foreach my $peakFn (@ARGV)
 	$outFn = "${name}.hg18.nodups.NOTSS2KB.NOCGI.gtf";
 	my $cmd = "java -d64 -Xmx6000m GtfFilterNonoverlapping  ${inFn}   ~/genomic-data-misc/CGIs/Takai_Jones_plus_GG.merged.hg18.gtf > ${outFn}";
 	runCmd($cmd,0);
-	buildMethFile($outFn);
+	buildMethFile($outFn, $centeredSize);
 
 }
 
