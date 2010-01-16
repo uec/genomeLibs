@@ -334,19 +334,19 @@ public class SamFiveprimeConversion {
 		Color out = Color.ORANGE;
 		if (context.equalsIgnoreCase("CG"))
 		{
-			out = (!filtered) ? Color.BLACK : Color.GRAY;
+			out = (filtered) ? Color.BLACK : Color.GRAY;
 		}
 		else if (context.equalsIgnoreCase("CA"))
 		{
-			out = (!filtered) ? Color.GREEN : Color.LIGHTGREEN;
+			out = (filtered) ? Color.GREEN : Color.LIGHTGREEN;
 		}
 		else if (context.equalsIgnoreCase("CT"))
 		{
-			out = (!filtered) ? Color.RED : Color.PINK;
+			out = (filtered) ? Color.RED : Color.PINK;
 		}
 		else if (context.equalsIgnoreCase("CC"))
 		{
-			out = (!filtered) ? Color.BROWN : Color.BEIGE;
+			out = (filtered) ? Color.BROWN : Color.BEIGE;
 		}
 		
 		// TODO Auto-generated method stub
@@ -469,6 +469,7 @@ public class SamFiveprimeConversion {
 			
 			double[][] convNonconv = (withFilter) ? dblCount[boolToInd(false)] : MatUtils.sumMats(dblCount[0], dblCount[1]);
 			double[] data = MatUtils.divVects(convNonconv[boolToInd(true)], MatUtils.vectSum(convNonconv[0], convNonconv[1]));
+			data = MatUtils.vectSum(convNonconv[0], convNonconv[1]);
 			
 			if (relativeFreqs)
 			{

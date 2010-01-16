@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 use Getopt::Long;
 
-my $USAGE = "broadPeakFilesToGtf.pl in1.gtf in2.gtf ..";
+my $USAGE = "encodePeakFilesToGtf.pl in1.peaks in2.peaks ..";
 
 #my $delim = "\t";
 #my $outPrefix = 0;
@@ -31,7 +31,7 @@ foreach my $fn (@ARGV)
 		my @f = split(/\t/, $line);
 
 		print OUTF join("\t",
-			$f[0], "broadPeaks", "exon", $f[1], $f[2], $f[7], ".", ".", "gene_id \"peak${onPeak}\"; transcript_id \"peak${onPeak}\"") . "\n";
+			$f[0], "encodePeaks", "exon", $f[1], $f[2], $f[7], ".", ".", "gene_id \"peak${onPeak}\"; transcript_id \"peak${onPeak}\"") . "\n";
 
 		$onPeak++;
 

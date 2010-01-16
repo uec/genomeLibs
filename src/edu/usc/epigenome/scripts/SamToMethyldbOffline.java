@@ -276,8 +276,8 @@ public class SamToMethyldbOffline {
 						System.err.println(seq);
 						e.printStackTrace(System.err);
 						System.err.println("-----------------------------------------");
-						chrIt.close();
-						System.exit(1);
+//						chrIt.close();
+//						System.exit(1);
 					}
 
 				} // record
