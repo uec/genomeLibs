@@ -1,10 +1,7 @@
 package edu.usc.epigenome.scripts;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -14,43 +11,16 @@ import java.util.logging.Logger;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
 
-import com.googlecode.charts4j.AxisLabels;
-import com.googlecode.charts4j.AxisLabelsFactory;
-import com.googlecode.charts4j.BarChart;
-import com.googlecode.charts4j.BarChartPlot;
-import com.googlecode.charts4j.Color;
-import com.googlecode.charts4j.Data;
-import com.googlecode.charts4j.DataEncoding;
-import com.googlecode.charts4j.DataUtil;
-import com.googlecode.charts4j.GCharts;
-import com.googlecode.charts4j.Plot;
-import com.googlecode.charts4j.Plots;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
-import com.sun.tools.javac.code.Attribute.Array;
 
-import edu.usc.epigenome.genomeLibs.MatUtils;
-import edu.usc.epigenome.genomeLibs.FeatDb.FeatIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
-import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgCoverageSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgDeaminationSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgDensitySummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgNonconversionSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
-
 
 
 public class MethylDbToCoverageSummaries {
 
 	private static final String C_USAGE = "Use: MethylDbToSummaryStats tablePrefix > stats.csv";
-	
-	private static List<Color> colors = Arrays.asList(Color.BLUE, Color.RED, Color.GREEN, Color.ORANGE, Color.BEIGE, Color.BLACK, Color.AQUAMARINE);
 	
 //    @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
 //    protected boolean noNonconvFilter = false;
@@ -92,14 +62,14 @@ public class MethylDbToCoverageSummaries {
 		}
 		
 
-		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.FINE);
 		
 		int nS = tablePrefixes.size();
 		
 		// Go through features than samples
 		// Don't filter
 		MethylDbQuerier querier = new MethylDbQuerier();
-		querier.setMinCTreads(1);
+		querier.setMinCTreads(0);
 		querier.setUseNonconversionFilter(false);
 		querier.setMaxOppstrandAfrac(Double.POSITIVE_INFINITY);
 
@@ -110,24 +80,36 @@ public class MethylDbToCoverageSummaries {
 		long totalMeasurements = 0;
 		SortedMap<Integer,Integer> counts = new TreeMap<Integer,Integer>();
 
-		for (String chrom : MethylDbUtils.CHROMS)
+		for (String chrom : Arrays.asList("chr11"))// MethylDbUtils.CHROMS) // 
 		{
+			// Stupid JDBC tries to load entire chromosome into memory at once,
+			// which is too much.
+			final int STEP = (int)5E7;
+			final int MAXCOORD = (int)2.8E8;
+			for (int c = 0; c < MAXCOORD; c += STEP)
+			{
+			
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Starting chrom " + chrom + "\n");
 		
 			querier.clearRangeFilters();
-			querier.addRangeFilter(chrom);
+			querier.addRangeFilter(chrom, c+1, c+STEP);
 			
-			CpgIterator cpgit = new CpgIterator(querier);
+			// This will use too much memory if we don't set "allowNumRows" to false
+			CpgIteratorMultisample cpgit = new CpgIteratorMultisample(querier, tablePrefixes);
 			int numRows = cpgit.getCurNumRows();
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Found " + numRows + " cpgs");
 			int i = 0;
 			while (cpgit.hasNext())
 			{
-				Cpg cpg = cpgit.next();
+				Cpg[] cpg = cpgit.next();
 				i++;
-				if ((i%1E5)==0) System.err.println("On " + i + "/" + numRows + ":\t" + cpg.toString());
+				if ((i%1E5)==0) 
+				{
+					System.err.println("On " + i + "/" + numRows + ":\t" + cpg.toString());
+					System.err.printf("\tTree has %d items\n", counts.size());
+				}
 
-				int count = cpg.totalReads + cpg.totalReadsOpposite;
+				int count = cpg[0].totalReads + cpg[0].totalReadsOpposite;
 				totalUniqueCpgs++;
 				totalMeasurements += count;
 				
@@ -140,7 +122,9 @@ public class MethylDbToCoverageSummaries {
 				}
 				cvg = cvg + 1;
 				//System.err.printf("New val for counts->{%d} = %d\n", count, cvg);
+				
 				counts.put(new Integer(count), cvg);
+			}
 			}
 		}
 		
