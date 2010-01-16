@@ -110,12 +110,12 @@ public class MethylDbToCoverageSummaries {
 		long totalMeasurements = 0;
 		SortedMap<Integer,Integer> counts = new TreeMap<Integer,Integer>();
 
-		for (String chrom :Arrays.asList("chr11"))
+		for (String chrom : MethylDbUtils.CHROMS)
 		{
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Starting chrom " + chrom + "\n");
 		
 			querier.clearRangeFilters();
-			querier.addRangeFilter(chrom, 1000000, 1050000);
+			querier.addRangeFilter(chrom);
 			
 			CpgIterator cpgit = new CpgIterator(querier);
 			int numRows = cpgit.getCurNumRows();
