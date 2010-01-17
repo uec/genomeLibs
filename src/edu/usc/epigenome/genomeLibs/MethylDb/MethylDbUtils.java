@@ -16,9 +16,9 @@ import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 
 public class MethylDbUtils {
 	public static final List<String> CHROMS =
-		Arrays.asList("chr1","chr2","chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
+		Arrays.asList("chr1","chr2","chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
         		"chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
-        		"chr19", "chr20", "chr21", "chr22", "chrX"); // "chr3");//, "chrY", "chrM");//  Why is chrom 3 missing??
+        		"chr19", "chr20", "chr21", "chr22", "chrX"); //, "chrY", "chrM");//  Fixed chr3
 	
 	public static final List<String> TEST_CHROMS =
 	Arrays.asList("chr11","chr12");
@@ -37,7 +37,10 @@ public class MethylDbUtils {
 	public static double fetchMeanExpression(String chr, String refseqId, String sqlExpression)
 	throws Exception
 	{
-		if ((refseqId == null) || !refseqId.matches("^[A-Z][A-Z]_")) return Double.NaN;
+		
+		boolean refseqFormat = ((refseqId != null) && refseqId.matches("^[A-Z][A-Z]_.*"));
+		//System.err.printf("RefseqId=%s, matches format=%s\n", refseqId, ""+refseqFormat);
+		if (!refseqFormat) return Double.NaN;
 		
 		//System.err.println("RefseqId=" + refseqId);
 		
