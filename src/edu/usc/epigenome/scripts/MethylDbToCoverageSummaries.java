@@ -85,50 +85,50 @@ public class MethylDbToCoverageSummaries {
 		{
 			// Stupid JDBC tries to load entire chromosome into memory at once,
 			// which is too much.
-			final int STEP = (int)5E7;
+			final int STEP = (int)1E7;
 			final int MAXCOORD = (int)2.8E8;
 			for (int c = 0; c < MAXCOORD; c += STEP)
 			{
-			
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Starting chrom " + chrom + "\n");
-		
-			querier.clearRangeFilters();
-			querier.addRangeFilter(chrom, c+1, c+STEP);
-			
-			// This will use too much memory if we don't set "allowNumRows" to false
-			CpgIteratorMultisample cpgit = new CpgIteratorMultisample(querier, tablePrefixes);
-			int numRows = cpgit.getCurNumRows();
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Found " + numRows + " cpgs");
-			int i = 0;
-			while (cpgit.hasNext())
-			{
-				Cpg[] cpg = cpgit.next();
-				i++;
-				if ((i%1E5)==0) 
-				{
-					System.err.println("On " + i + "/" + numRows + ":\t" + cpg.toString());
-					System.err.printf("\tTree has %d items\n", counts.size());
-				}
 
-				int count = cpg[0].totalReads + cpg[0].totalReadsOpposite;
-				totalUniqueCpgs++;
-				totalMeasurements += count;
-				
-				
-				Integer cvg = counts.get(count);
-				if (cvg == null)
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Starting chrom " + chrom + " from " + c+1 + " to " + c+STEP + "\n");
+
+				querier.clearRangeFilters();
+				querier.addRangeFilter(chrom, c+1, c+STEP);
+
+				// This will use too much memory if we don't set "allowNumRows" to false
+				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(querier, tablePrefixes);
+				int numRows = cpgit.getCurNumRows();
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Found " + numRows + " cpgs");
+				int i = 0;
+				while (cpgit.hasNext())
 				{
-					cvg = new Integer(0);
+					Cpg[] cpg = cpgit.next();
+					i++;
+					if ((i%1E5)==0) 
+					{
+						System.err.println("On " + i + "/" + numRows + ":\t" + cpg.toString());
+						System.err.printf("\tTree has %d items\n", counts.size());
+					}
+
+					int count = cpg[0].totalReads + cpg[0].totalReadsOpposite;
+					totalUniqueCpgs++;
+					totalMeasurements += count;
+
+
+					Integer cvg = counts.get(count);
+					if (cvg == null)
+					{
+						cvg = new Integer(0);
+						counts.put(new Integer(count), cvg);
+					}
+					cvg = cvg + 1;
+					//System.err.printf("New val for counts->{%d} = %d\n", count, cvg);
+
 					counts.put(new Integer(count), cvg);
 				}
-				cvg = cvg + 1;
-				//System.err.printf("New val for counts->{%d} = %d\n", count, cvg);
-				
-				counts.put(new Integer(count), cvg);
-			}
 			}
 		}
-		
+
 		// Output
 		System.out.printf("Total unique CpG=%d, total CpG measurements=%d\n",totalUniqueCpgs, totalMeasurements);
 		int maxCvg = counts.lastKey();

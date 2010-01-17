@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use File::Basename;
@@ -7,223 +7,21 @@ use List::Util qw(min max);
 $::HUMAN = 1;
 $::DELIM = "\\s+";
 
-# # Simple BED
-# my $fld_map = 
-# {
-#     1 => 1, # Chrom
-# #    2 => "Affy_HWG2hs", # source
-#     2 => "carroll2005_little_induced", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 3, #end
-#     6 => 0, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 4 # name
-#     };
-
-
-# # Casey's drosophila TE data
-# my $fld_map = 
-# {
-#     1 => 3, # Chrom
-#     2 => "Quesneville", # source
-#     3 => "TE", # type
-#     4 => 4, # start
-#     5 => 5, #end
-#     6 => 0, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 2 # name
-#     };
-
-
-# # from hapmap FTP site
-# my $fld_map = 
-# {
-#     1 => 3, # Chrom
-#     2 => "hapmap_r20_filtered_CEU", # source
-#     3 => "snp", # type
-#     4 => 4, # start
-#     5 => 4, #end
-#     6 => 0, # score
-#     7 => 5, # strand
-#     8 => 0, # phase
-#     9 => 1 # name
-#     };
-
-
-# #tss download from UCSC
-# my $fld_map = 
-# {
-#     1 => 2, # Chrom
-#     2 => "dm2_knownTSS", # source
-#     3 => "tss", # type
-#     4 => 4, # start
-#     5 => 4, #end
-#     6 => 0, # score
-#     7 => 3, # strand
-#     8 => 0, # phase
-#     9 => 1 # name
-#     };
-
-
-# # chris OPA data
-# $::SCORE_ADJUST_FACTOR = 10;
-# $::DELIM = "\t";
-# my $fld_map = 
-# {
-#     1 => "chr8", # Chrom
-#     2 => "8q24-haiman-020907", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 2, #end
-#     6 => 3, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 1 # name
-#     };
-
-# ## xiting probe level data
-# $::NO_IDS = 1;
-# $::DELIM = ",";
-# my $fld_map = 
-# {
-#     1 => 1, # Chrom
-#     2 => "prb", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 2, #end
-#     6 => 4, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 0 # name
-#     };
-
-# ## simple:  chr, s, e, score
-# $::DELIM = "\t";
-# my $fld_map = 
-# {
-#     1 => 1, # Chrom
-#     2 => "XieEtAlCTCF", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 3, #end
-#     6 => 4, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 0 # name
-#     };
-
- # simple chr, s, e CSE
- $::DELIM = "\t";
+ # Simple BED
+$::DELIM = "\t";
  my $fld_map = 
  {
      1 => 1, # Chrom
-     2 => "Lister2009", # source
-     3 => "exon", # type
+     2 => 0,
+     3 => "exon",
      4 => 2, # start
      5 => 3, #end
      6 => 0, # score
      7 => 0, # strand
      8 => 0, # phase
-     9 => 0 # name
+     9 => 4 # name
      };
 
-# # simple chr, s
-# $::DELIM = "\t";
-# my $fld_map = 
-# {
-#     1 => 1, # Chrom
-#     2 => "chr-st", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 2, #end
-#     6 => 0, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 0 # name
-#     };
-
-# #Xiting AcH3 file
-# $::DELIM = "\t";
-# my $fld_map = 
-# {
-#     1 => 1, # Chrom
-#     2 => "fake", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 3, #end
-#     6 => 6, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 0 # name
-#     };
-
-# #Nimblegen pos file
-# $::NO_IDS = 0;
-# $::DELIM = "\t";
-# my $fld_map = 
-# {
-#     1 => 3, # Chrom
-#     2 => "Nimb", # source
-#     3 => "exon", # type
-#     4 => 4, # start
-#     5 => -6, #end  (if < 0, we interpret field as width)
-#     6 => 7, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 2 # name
-#     };
-
-# ## Epigenomics pos file
-# $::NO_IDS = 0;
-# $::DELIM = "\t";
-# my $fld_map = 
-# {
-#     1 => 2, # Chrom
-#     2 => "Epigenomics", # source
-#     3 => "exon", # type
-#     4 => 3, # start
-#     5 => 3, #end  (if < 0, we interpret field as width)
-#     6 => 0, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 1 # name
-#     };
-
-# ## Illumina positions
-# $::NO_IDS = 0;
-# $::DELIM = ",";
-# my $fld_map = 
-# {
-#     1 => 1, # Chrom
-#     2 => "GGMethylation", # source
-#     3 => "exon", # type
-#     4 => 2, # start
-#     5 => 2, #end  (if < 0, we interpret field as width)
-#     6 => 0, # score
-#     7 => 0, # strand
-#     8 => 0, # phase
-#     9 => 0 # name
-#     };
-
-### Illumina positions
-#$::NO_IDS = 0;
-#$::DELIM = ",";
-#$::SAME_ORDER = 1;
-#my $fld_map = 
-#{
-#    1 => 2, # Chrom
-#    2 => "Infinium", # source
-#    3 => "exon", # type
-#    4 => 3, # start
-#    5 => 3, #end  (if < 0, we interpret field as width)
-#    6 => 8, # score
-#    7 => 0, # strand
-#    8 => 0, # phase
-#    9 => 1 # name
-#    };
 
 my $fld_map_default = 
 {

@@ -5,7 +5,7 @@ use File::Basename;
 use Getopt::Long;
 use File::Temp qw/ tempfile /;
 
-my $USAGE = "encodePeakFilesToMethylStats.pl peaks1.peaks peaks2.peaks ...";
+my $USAGE = "encodePeakFilesToMethylStats.pl -centeredSize 500 peaks1.peaks peaks2.peaks ...";
 
 
 my $centeredSize = 0;

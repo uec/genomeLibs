@@ -32,6 +32,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	protected List<String> sampleTablePrefixes = null;
 	protected ResultSet curRS = null;
 	protected int curNumRows = -1;
+	protected boolean allowNumRows = true; // If we set this to false, we use A LOT less memory
 	
 
 	/**
@@ -44,6 +45,19 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		this.init(inParams, inSampleTablePrefixes);
 	}
 
+	/**
+	 * @param inParams
+	 * @param inSampleTablePrefixes
+	 * @param inAllowNumRows If we set this to false, we use A LOT less memory, but can't use "getNumRows" in advance
+	 * @throws Exception
+	 */
+	public CpgIteratorMultisample(MethylDbQuerier inParams, List<String> inSampleTablePrefixes, boolean inAllowNumRows)
+	throws Exception 
+	{
+		super();
+		this.allowNumRows = inAllowNumRows;
+		this.init(inParams, inSampleTablePrefixes);
+	}
 	
 	public int getCurNumRows() {
 		return curNumRows;
@@ -62,13 +76,23 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		PreparedStatement prep = this.getPrep(inParams);
 		this.fillPrep(params, prep);
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Starting query execute");
+//		if (!this.allowNumRows)
+//		{
+//			System.err.println("Setting Featch size to 8192");
+//			prep.setFetchSize(8192);
+//		}
 		curRS = prep.executeQuery();		
-		curRS.last();
-		int numRows = curRS.getRow();
-		curRS.beforeFirst();
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Finished query execute");
-		
-		this.curNumRows = numRows;
+		int numRows = -1;
+		if (this.allowNumRows)
+		{
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("About to advance to end to count Cpgs");
+			curRS.last();
+			numRows = curRS.getRow();
+			curRS.beforeFirst();
+			this.curNumRows = numRows;
+		}
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Finished query");
 		return numRows;
 	}
 	
