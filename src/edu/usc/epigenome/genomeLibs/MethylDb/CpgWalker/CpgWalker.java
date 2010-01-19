@@ -1,5 +1,9 @@
 package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 
+import java.io.PrintWriter;
+
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
+
 /**
  * @author benb
  *
@@ -7,6 +11,7 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
  */
 
 public class CpgWalker {
+
 
 /*
  * 
@@ -22,6 +27,21 @@ public class CpgWalker {
  * Do deltas in coverage and meth.
  * 	
  */
+	public CpgWalkerParams walkParams = null;
+	protected PrintWriter outStream = null;
 	
+	// List management
+	
+	
+	
+	/**
+	 * 
+	 */
+	public CpgWalker(CpgWalkerParams inWalkParams,
+			PrintWriter outStream) {
+		super();
+		this.walkParams = inWalkParams;
+	}
+
 	
 }

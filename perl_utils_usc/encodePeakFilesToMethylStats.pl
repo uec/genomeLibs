@@ -48,6 +48,7 @@ foreach my $peakFn (@ARGV)
 	$outFn = "${name}.hg18.nodups.NOTSS2KB.gtf";
 	my $cmd = "java -d64 -Xmx6000m GtfFilterNonoverlapping  ${inFn}  ~/genomic-data-misc/promoters/knownGene-tss.hg18.2000bp_centered.gtf > ${outFn}";
 	runCmd($cmd,0);
+	buildMethFile($outFn, $centeredSize);
 	
 	# Get rid of CGI
 	$inFn = $outFn;

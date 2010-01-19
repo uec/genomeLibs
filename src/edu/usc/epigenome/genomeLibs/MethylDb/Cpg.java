@@ -205,6 +205,7 @@ public class Cpg implements Comparable {
 				100*this.fracNextBaseG()
 				);
 	}
+	
 
 	public char getNextBaseRef() {
 		return nextBaseRefUpperCase;

@@ -58,7 +58,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
     @Option(name="-flankSize",usage="bp flanking each side of the feature center (default 2000)")
     protected int flankSize = 2000;
     @Option(name="-downscaleCols",usage="Number of cols in ouput (downscaled from flank width)")
-    protected int downscaleCols = 500;
+    protected int downscaleCols = 2000;
     @Option(name="-outputPrefix",usage="Prefix for output files (default methylDb)")
     protected String outputPrefix = "methylDb";
     @Option(name="-sortByExpression",usage="An expression from the gene expression table, used to sort all features that can be linked by RefSeq")
@@ -78,7 +78,6 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 //	FeatAligner[] fDeltaMats = null; // n -> (nS*(nS-1))/2  (all pairwise)
 //	FeatAligner fVarianceMat = null;
 	int fCurFeatInd = 0;
-
 
 	/**
 	 * @param args
@@ -233,15 +232,25 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				writer.printf("<H4>%s (%d features)</H4>\n", tablePrefix, fStatMats[i][2].numFeats());
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
 				
+				PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
+						String.format("%s.%s.featType%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType)));
+				this.fStatMats[i][2].matlabCsv(alignmentWriter, false);
+				alignmentWriter.close();
+
+				
 				double[] colorMinMax = {0.0,1.0};
 				if (this.heatmap) this.fStatMats[i][2].launchSwingHeatmap(colorMinMax);
-			}
+			} // Sample
 
+			System.err.println("About to sort expression vals");
 			Arrays.sort(sortVals);
-			ListUtils.setDelim("\n");
-			sortWriter.println(ListUtils.excelLine(Arrays.asList(sortVals)));
-			
+			System.err.println("About to print expression vals");
+			for (int i = 0; i < sortVals.length; i++)
+			{
+				sortWriter.println(sortVals[i].toString());
+			}
 			sortWriter.close();
+			System.err.println("Done printing expression vals");
 			
 
 //			if (!this.noDeltas)

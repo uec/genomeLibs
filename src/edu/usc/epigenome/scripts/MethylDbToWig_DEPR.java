@@ -17,7 +17,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 
 
-public class MethylDbToWig {
+public class MethylDbToWig_DEPR {
 
 	private static final String C_USAGE = "Use: MethylDbToWig -withinFeat featType -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
 	" -minCTreads 10 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
@@ -40,7 +40,7 @@ public class MethylDbToWig {
 	public static void main(String[] args)
 	throws Exception	
 	{
-		new MethylDbToWig().doMain(args);
+		new MethylDbToWig_DEPR().doMain(args);
 	}
 
 	public void doMain(String[] args)

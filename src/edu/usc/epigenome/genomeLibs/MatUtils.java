@@ -420,6 +420,7 @@ public class MatUtils {
 		int n_c = mat[0].length;
 		if (nJ>0 && nJ<=n_c) n_c = nJ;
 		
+		System.err.println("MatUtils::matlabCsv , n_r = " + n_r);
 		for (int i=0 ; i<n_r; i++)
 		{
 			for (int j=0; j<n_c; j++)
@@ -428,6 +429,7 @@ public class MatUtils {
 				writer.print(mat[i][j]);
 				//System.err.println("mat["+i+"]["+j+"]="+ mat[i][j]);
 			}
+			//System.err.println("Writing matlab line: " + (i+1));
 			writer.print("\n");
 		}
 	}

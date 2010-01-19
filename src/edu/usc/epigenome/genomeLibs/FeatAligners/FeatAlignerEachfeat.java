@@ -36,7 +36,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 	public List<Color> ColorCycle = Arrays.asList(Color.DARKBLUE, Color.BLUE, Color.BLUEVIOLET, Color.VIOLET, Color.PINK, Color.LIGHTSALMON, Color.RED);
 	
-	protected final static int NBINS = 3;
+	protected final static int NBINS = 2;
 	protected final static int BP_SMOOTHING = 400;
 	protected final static int HEATMAP_ROWS = 100;
 	
@@ -200,12 +200,13 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			
 			
 			// Do rows first since cols has to transpose 
-			int downsampleTo = Math.min(this.downscaleCols, 200); // Harder to go above 500
+			int downsampleTo = Math.min(this.downscaleCols, 1000); // Harder to go above 500
 			double smoothFact = Math.ceil(((2.0*(double)this.flankSize)/(double)this.downscaleCols)/(2.0*(double)BP_SMOOTHING));
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d cols to %d (smoothing %f)\n",
 					data[0].length,downsampleTo, smoothFact));
 			smoothFact = 0.0;
-			data = MatUtils.downscaleMatRows(data, downsampleTo, smoothFact);
+//			data = MatUtils.downscaleMatRows(data, downsampleTo, smoothFact);
+			data = MatUtils.downscaleMatRows(data, downsampleTo, 2);
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Downscaling %d rows to 5\n",data.length));
 			data = MatUtils.downscaleMatCols(data,NBINS, 0.0);
 
@@ -231,7 +232,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 			LineChart chart = GCharts.newLineChart(plots);
 			chart.setSize(600, 200);
-			chart.setDataEncoding(DataEncoding.EXTENDED);
+			chart.setDataEncoding(DataEncoding.SIMPLE);
 
 			AxisLabels xAxis = AxisLabelsFactory.newNumericRangeAxisLabels(-this.flankSize, this.flankSize);
 			chart.addXAxisLabels(xAxis);
@@ -314,7 +315,9 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		}
 		else
 		{
-			
+			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+			System.err.println("Making matlab for " + dataFull.length + " rows (numFeats=" + this.numFeats());
+			MatUtils.matlabCsv(pw, dataFull, this.numFeats(), 0);
 		}
 	}
 	
@@ -340,7 +343,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	//	data = MatUtils.sortRows(data,-0.3333,10);
 		int downsampleTo = Math.min(this.downscaleCols, 500); // Harder to go above 500
 		double smoothFact = Math.ceil(((2.0*(double)this.flankSize)/(double)this.downscaleCols)/(2.0*(double)BP_SMOOTHING));
-		data = MatUtils.downscaleMatRows(data, downsampleTo,smoothFact);; 
+//		data = MatUtils.downscaleMatRows(data, downsampleTo,smoothFact);; 
 		data = MatUtils.downscaleMatCols(data, HEATMAP_ROWS, 2.0);
 
 		// NO NANs allowed

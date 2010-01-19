@@ -186,6 +186,12 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	public void remove() {
 	}
 	
+	public void destroy()
+	throws SQLException
+	{
+		this.curRS.close();
+	}
+	
 	protected String getSql(MethylDbQuerier params)
 	throws Exception
 	{
