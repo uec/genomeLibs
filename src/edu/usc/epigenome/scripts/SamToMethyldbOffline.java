@@ -104,6 +104,12 @@ public class SamToMethyldbOffline {
 		int usedCounter = 0;
 		int filteredOutCounter = 0;
 
+		// Cph counters
+		int numCphConvertedWithFilt = 0;
+		int numCphTotalWithFilt = 0;
+		int numCphConvertedNoFilt = 0;
+		int numCphTotalNoFilt = 0;
+
 		// Iterate through chroms
 		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 		for (final String chr : chrs)
@@ -239,6 +245,19 @@ public class SamToMethyldbOffline {
 									
 									this.incrementCpg(cpg, seqi, i<convStart, nextBaseSeq);
 								}
+								
+								// Count CpHs as a byproduct
+								if (!iscpg)
+								{
+									numCphTotalNoFilt++;
+									if (conv) numCphConvertedNoFilt++;
+									
+									if (i>=convStart)
+									{
+										numCphTotalWithFilt++;
+										if (conv) numCphConvertedWithFilt++;
+									}
+								}
 
 
 
@@ -296,6 +315,9 @@ public class SamToMethyldbOffline {
 		System.err.printf("Lost %f%% due to non-converion filter\n%d CpGs filtered for non-conversion, %d CpGs used (MinConv=%d,UseCpgs=%s)\n",
 				frac*100.0, filteredOutCounter, usedCounter, this.minConv, String.valueOf(this.useCpgsToFilter));
 		System.err.printf("Found %d reads total\n", recCounter);
+		System.err.printf("Cph conversion rate: before filter=%f, after filter=%f\n",
+				100.0 * ((double)numCphConvertedNoFilt/(double)numCphTotalNoFilt),
+				100.0 * ((double)numCphConvertedWithFilt/(double)numCphTotalWithFilt));
 	}
 
 
