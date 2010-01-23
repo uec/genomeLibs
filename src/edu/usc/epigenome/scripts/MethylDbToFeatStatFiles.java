@@ -55,6 +55,8 @@ public class MethylDbToFeatStatFiles {
 	protected boolean onechrom = false;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
+    @Option(name="-threePrimeShores",usage="If set, we do 3' shores instead of 5'")
+    protected boolean threePrimeShores = false;
     @Option(name="-featShoreStart",usage="If set, (only) the shore of the feature is used, from featShoreStart bases away to out to featShoreEnd bp")
     protected int featShoreStart = 0;
     @Option(name="-featShoreEnd",usage="If set, (only) the shore of the feature is used, from featShoreStart bases away to out to featShoreEnd bp")
@@ -142,6 +144,7 @@ public class MethylDbToFeatStatFiles {
 			if (this.onechrom) outFn += ".onechrom";
 			if (this.centeredSize>0) outFn += ".centered" + this.centeredSize;
 			if (this.featShoreEnd>0) outFn += String.format(".featShoreStart%d-featShoreEnd%d", this.featShoreStart, this.featShoreEnd);
+			if (this.threePrimeShores) outFn += ".threePrimeShores";
 			ListUtils.setDelim("-");
 			if (this.featFilters.size()>0) outFn += "." + ListUtils.excelLine(this.featFilters);
 			outFn += ".csv";
@@ -229,7 +232,9 @@ public class MethylDbToFeatStatFiles {
 		
 		if (this.featShoreEnd>0)
 		{
-			if (featStrand==StrandedFeature.NEGATIVE)
+			boolean rightShore = ((featStrand==StrandedFeature.NEGATIVE && !this.threePrimeShores) ||
+					(featStrand==StrandedFeature.POSITIVE && this.threePrimeShores));
+			if (rightShore)
 			{
 				flankS = flankE + this.featShoreStart;
 				flankE = flankE + this.featShoreEnd;

@@ -28,6 +28,8 @@ public class MethylDbToWigs {
 	private static final String C_USAGE = "Use: MethylDbToWigs -outPrefix -withinFeat featType -table1 methylCGsRich_normal010310_ " + 
 		" -stepSize 50 -windSize 100 -minCpgs 6 -maxWindStretch 5000 -table2 methylCGsRich_tumor011010_ -minCTreads 2 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
 	
+    @Option(name="-bare",usage="Create the large bare wiggle files")
+    protected boolean bare = false;
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
     @Option(name="-table1",usage="Prefix for DB table (default methylCGsRich_normal010310_)")
@@ -115,6 +117,20 @@ public class MethylDbToWigs {
 		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
 		
 		// Setup output files.
+		String rawspanline = String.format("variableStep chrom=%s\n",chr);
+
+		String outfnAs = this.outPrefix + "." + this.table1 + ".bare.wig";
+		PrintWriter pwAs = new PrintWriter(new FileOutputStream(outfnAs));
+		pwAs.printf("track type=wiggle_0 name=%sbare description=%sbare  color=204,153,102 visibility=full " +
+				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
+		pwAs.append(rawspanline);
+	
+		String outfnBs = this.outPrefix + "." + this.table2 + ".bare.wig";
+		PrintWriter pwBs = new PrintWriter(new FileOutputStream(outfnBs));
+		pwBs.printf("track type=wiggle_0 name=%sbare description=%sbare color=204,102,0 visibility=full " +
+				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
+		pwBs.append(rawspanline);
+		
 		String outfnA = this.outPrefix + "." + this.table1 + ".wig";
 		PrintWriter pwA = new PrintWriter(new FileOutputStream(outfnA));
 		pwA.printf("track type=wiggle_0 name=%s description=%s  color=204,153,102 visibility=full " +
@@ -144,7 +160,7 @@ public class MethylDbToWigs {
 		
 		// This is wildly ineffeficient, but i'm in a hurry right now.  Implement a
 		// walker class in the future.
-		int JUMP_INTERVAL = (int)Math.round((double)this.windSize/4.0);
+		int JUMP_INTERVAL = (int)Math.round((double)this.windSize/1.0);
 		int MAXCPGS = 10000;
 		List<String> tables = Arrays.asList(this.table1,this.table2);
 		int mpCount = 0;
@@ -157,6 +173,7 @@ public class MethylDbToWigs {
 		final double LOG2 = Math.log(2.0);
 
 		boolean inSpan = false;
+		boolean[] posSeen = new boolean[250000000];
 		for (int mp = chrSt; mp <= chrEnd; mp += this.stepSize, mpCount++)
 		{
 			if ((mpCount % 1E2)==0) System.err.printf("On mp=%d (#%d)\n",mp, mpCount);
@@ -229,6 +246,15 @@ public class MethylDbToWigs {
 							cvgabuffer[numCpgsCounted] = cpgs[0].totalReads+cpgs[0].totalReadsOpposite;
 							cvgbbuffer[numCpgsCounted] = cpgs[1].totalReads+cpgs[1].totalReadsOpposite;
 							numCpgsCounted++;
+							
+							// And add the raw ones straight away
+							int pos = cpgs[0].chromPos;
+							if (this.bare && !posSeen[pos])
+							{
+								pwAs.printf("%d\t%d\n",pos,(int)Math.round(100.0*metha));
+								pwBs.printf("%d\t%d\n",pos,(int)Math.round(100.0*methb));
+								posSeen[pos] = true;
+							}
 						}
 					} // foreach Cpgs
 					
@@ -243,9 +269,11 @@ public class MethylDbToWigs {
 					pwDminus.println( (dval<0) ? dval : "0");
 					
 					// 0.9 is to correct for our actual disparity in coverage right now
-					double cvgRatio = Math.log(MatUtils.nanMean(cvgbbuffer, 0, numCpgsCounted) / 
-							(0.9 * MatUtils.nanMean(cvgabuffer, 0, numCpgsCounted)))/LOG2; 
-					pwCvg.printf("%.3f\n",cvgRatio);
+//					double cvgRatio = Math.log(MatUtils.nanMean(cvgbbuffer, 0, numCpgsCounted) / 
+//							(0.9 * MatUtils.nanMean(cvgabuffer, 0, numCpgsCounted)))/LOG2; 
+					
+					double cvg = MatUtils.nanMean(cvgbbuffer, 0, numCpgsCounted);
+					pwCvg.printf("%.3f\n",cvg);
 					
 				} // (numCpgs>=minCpgs)
 				
@@ -275,6 +303,8 @@ public class MethylDbToWigs {
 		
 		pwA.close();
 		pwB.close();
+		pwAs.close();
+		pwBs.close();
 		pwDplus.close();
 		pwDminus.close();
 		pwCvg.close();

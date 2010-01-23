@@ -125,7 +125,7 @@ public class SamToMethyldbOffline {
 				final SAMFileReader inputSam = new SAMFileReader(inputSamOrBamFile);
 				inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
 				
-				CloseableIterator<SAMRecord> chrIt = inputSam.iterator();// inputSam.query(chr, 0, 0, false);
+				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
 				
 				// We can only purge if we are the only input file and we are sorted.
 				boolean canPurge = ((inputSam.hasIndex()) && (stringArgs.size() == 1));

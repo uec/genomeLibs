@@ -304,7 +304,7 @@ public class SamToBed {
 
 	protected static String methToColor(double meth)
 	{
-		String color="255,255,204";
+		String color="255,255,204"; // 
 
 		if (Double.isNaN(meth))
 		{
