@@ -23,7 +23,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 
 
-public class MethylDbToWigs {
+public class MethylDbToWigsOrig {
 
 	private static final String C_USAGE = "Use: MethylDbToWigs -outPrefix -withinFeat featType -table1 methylCGsRich_normal010310_ " + 
 		" -stepSize 50 -windSize 100 -minCpgs 6 -maxWindStretch 5000 -table2 methylCGsRich_tumor011010_ -minCTreads 2 -maxOppStrandAfrac 0.10 -noNonconvFilter chr [startPos] [endPos]";
@@ -60,7 +60,7 @@ public class MethylDbToWigs {
 	public static void main(String[] args)
 	throws Exception	
 	{
-		new MethylDbToWigs().doMain(args);
+		new MethylDbToWigsOrig().doMain(args);
 	}
 
 	public void doMain(String[] args)
@@ -156,9 +156,6 @@ public class MethylDbToWigs {
 		PrintWriter pwCvg = new PrintWriter(new FileOutputStream(outCvg));
 		pwCvg.printf("track type=wiggle_0 name=%s description=%s visibility=full " + 
 				" autoScale=off alwaysZero=off maxHeightPixels=64:48:10 viewLimits=-2:2\n", "CoverageDelta", "CoverageDelta");
-		
-		// Use CpG walker.
-		
 		
 		
 		// This is wildly ineffeficient, but i'm in a hurry right now.  Implement a

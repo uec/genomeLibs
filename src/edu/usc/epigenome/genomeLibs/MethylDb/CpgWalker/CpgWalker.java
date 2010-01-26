@@ -1,8 +1,7 @@
 package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 
-import java.io.PrintWriter;
-
-import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
+import java.util.LinkedList;
+import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 
 /**
  * @author benb
@@ -10,7 +9,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
  * Walks over a sliding window of adjacent Cpgs
  */
 
-public class CpgWalker {
+public abstract class CpgWalker {
 
 
 /*
@@ -28,20 +27,60 @@ public class CpgWalker {
  * 	
  */
 	public CpgWalkerParams walkParams = null;
-	protected PrintWriter outStream = null;
 	
 	// List management
-	
+	public LinkedList<Cpg> window = new LinkedList<Cpg>();
+
 	
 	
 	/**
 	 * 
 	 */
-	public CpgWalker(CpgWalkerParams inWalkParams,
-			PrintWriter outStream) {
+	public CpgWalker(CpgWalkerParams inWalkParams) {
 		super();
 		this.walkParams = inWalkParams;
 	}
+	
+	public void reset()
+	{
+		window = new LinkedList<Cpg>();
+	}
+	
+	/**
+	 * @param cpg
+	 */
+	public void streamCpg(Cpg cpg)
+	{
+		int newPos = cpg.chromPos;
+		
+		// Add this Cpg to the head of the queue
+		window.add(cpg);
+		
+		// Remove cpgs from the tail
+		boolean done = false;
+		Cpg endCpg;
+		while (!done && ((endCpg = window.peek()) != null))
+		{
+			if ((newPos - endCpg.chromPos) < this.walkParams.maxWindSize)
+			{
+				done = true;
+			}
+			else
+			{
+				window.remove();
+			}
+		}
+		
+		// And process the window
+		if (window.size()>0)
+		{
+			this.processWindow();
+		}
+		
+	}
+
+	// OVERRIDE THESE
+	abstract protected void processWindow();
 
 	
 }
