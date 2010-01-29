@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -163,7 +164,7 @@ public class MethylDbToMultisampleFeatAlignments {
 			for (int i = 0; i < nS; i++)
 			{
 				// 0=readCount, 1=nCpGs, 2=mLevel
-				fStatMats[i][0] = new FeatAlignerAveraging(flankSize,false);
+				fStatMats[i][0] = new FeatAlignerAveraging(flankSize,true);
 				fStatMats[i][1] = new FeatAlignerAveraging(flankSize,true);
 				fStatMats[i][2] = new FeatAlignerAveraging(flankSize,false);
 				for (int j = (i+1); j < nS; j++)
@@ -172,7 +173,9 @@ public class MethylDbToMultisampleFeatAlignments {
 				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS)
+			List<String> chroms = Arrays.asList("chr11");
+			//List<String> chroms = MethylDbUtils.CHROMS;
+			for (String chrStr : chroms)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -196,7 +199,7 @@ public class MethylDbToMultisampleFeatAlignments {
 				}
 				if (this.readCounts)
 				{
-					writer.println(this.fStatMats[i][0].htmlChart(!this.combineStrands, true, true, tablePrefix, featsFnBase));
+					writer.println(this.fStatMats[i][0].htmlChart(!this.combineStrands, false, false, tablePrefix, featsFnBase));
 				}
 				
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true, tablePrefix, featsFnBase));
@@ -310,6 +313,14 @@ public class MethylDbToMultisampleFeatAlignments {
 							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : 1.0,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? 1.0: Double.NaN,
 											featName, chrStr, alignmentPoint, featStrand, 0.0);
+					
+					// Read counts
+					this.fStatMats[i][0].addAlignmentPos(
+							chromPos,
+							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : 1.0,
+									(cpgStrand == StrandedFeature.NEGATIVE) ? 1.0: Double.NaN,
+											featName, chrStr, alignmentPoint, featStrand, 0.0);
+
 					
 					
 				}
