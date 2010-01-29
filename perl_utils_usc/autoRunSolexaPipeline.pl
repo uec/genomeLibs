@@ -7,7 +7,12 @@ use File::Basename;
 use Cwd;
 use strict;
 
-my $SERVER = "gastorage1";
+my $testRun = $ARGV[0];
+if($testRun eq "test")
+{
+        print "dryrun, nothing will be executed\n";
+}
+my $SERVER = "gastorage2";
 
 my $content = get("http://www.epigenome.usc.edu/gareports/flowcell.php?xml") || die "Couldn't get it!";
 my $xml = XMLin($content, KeyAttr=>["serial","lane"]);
@@ -29,17 +34,11 @@ foreach my $dir (@readyDirs)
         &doPipeline($dir);
 }
 
-sub doPipeline
+sub createSEConfig
 {
-        print "\n\n";
         use vars qw($xml);
-        my $dir = shift @_;
-        $dir =~ /(\w\w\w\w\wAAXX)/;
-
-        my $curDir = getcwd();
-
+        my $flowcell = shift @_ || die "flowcell name not known";
         my %organismList;
-        my $flowcell = $1 || die "flowcell name not in dir name";
         foreach my $i (1..8)
         {
                 $organismList{$xml->{flowcell}->{"$flowcell"}->{sample}->{$i}->{organism}} .= $i;
@@ -66,8 +65,32 @@ sub doPipeline
                 my $genome;
                 if($org =~  /^phi/i) { $genome = "/srv/data/slxa/GENOMES/phi-X174/" ; }
                 elsif($org =~ /^Homo/i) { $genome = "/srv/data/slxa/GENOMES/hg18_unmasked/"; }
-                else { print "Unknown Organism or geneus data not found, skipping $dir\n";return; }
+                else { print "Unknown Organism or geneus data not found, skipping $flowcell\n";return; }
                 $config .= "$analysisList{$org}:ELAND_GENOME $genome\n"
+        }
+
+        return $config;
+
+}
+
+sub doPipeline
+{
+        print "\n\n";
+        use vars qw($xml);
+        my $dir = shift @_;
+        $dir =~ /(\w\w\w\w\wAAXX)/;
+
+        my $curDir = getcwd();
+
+        my $flowcell = $1 || die "flowcell name not in dir name";
+        my $config = "";
+        if($xml->{flowcell}->{"$flowcell"}->{protocol} eq "ILMN Single End")
+        {
+                $config = createSEConfig($flowcell);
+                if(!$config)
+                {
+                        return;
+                }
         }
 
         #write config
@@ -80,7 +103,7 @@ sub doPipeline
         #create MakeFile
         my $geraldCmd = "/opt/GAPipeline-1.6.0a9/bin/GERALD.pl $configFileName --ok_to_use_legacy_gerald  --EXPT_DIR ./Data/Intensities/BaseCalls --make >\& MAKELOG1";
         print "running:\n$geraldCmd\n";
-        system($geraldCmd);
+        system($geraldCmd) unless $testRun eq "test";
 
         #run MakeFile
         my @geraldDir = glob("Data/Intensities/BaseCalls/GER*");
@@ -89,11 +112,11 @@ sub doPipeline
                 my $makeCmd = "nohup make -j 8 recursive&";
                 chdir($geraldDir[0]);
                 print("running:\n$makeCmd\n");
-                system($makeCmd);
+                system($makeCmd) unless $testRun eq "test";
         }
         else
         {
-                print "couldn't locate GERALD Makefile";
+                print "couldn't locate GERALD Makefile\n";
         }
         chdir($curDir);
 }
