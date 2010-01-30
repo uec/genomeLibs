@@ -2,6 +2,8 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 
 import java.util.LinkedList;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
 
 /**
  * @author benb
@@ -14,22 +16,15 @@ public abstract class CpgWalker {
 
 /*
  * 
- * Uses a CpgWalkerParams class to store parameters
- * stepSize: We do a simple wiggle track with values every n bp (50 or 100)
- * windSize: 
- * minCpgs: The window averages this many Cpgs, centered on the step position.
- *   If there are more than minCpgs withing the windSize, we use all of them.
- * maxWindStretch: We only stretch the window this far in either direction to
- *   look for Cpgs to average.  If there are none, we put a NaN value.
- *   
- * Do coverage as well as meth
- * Do deltas in coverage and meth.
  * 	
  */
 	public CpgWalkerParams walkParams = null;
 	
 	// List management
 	public LinkedList<Cpg> window = new LinkedList<Cpg>();
+	
+	// Some useful summarizers for the window
+	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
 
 	
 	
@@ -55,6 +50,7 @@ public abstract class CpgWalker {
 		
 		// Add this Cpg to the head of the queue
 		window.add(cpg);
+		methSummarizer.streamCpg(cpg);
 		
 		// Remove cpgs from the tail
 		boolean done = false;
@@ -68,11 +64,12 @@ public abstract class CpgWalker {
 			else
 			{
 				window.remove();
+				methSummarizer.removeCpg(endCpg);
 			}
 		}
 		
 		// And process the window
-		if (window.size()>0)
+		if (window.size()>walkParams.minCpgs)
 		{
 			this.processWindow();
 		}

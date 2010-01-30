@@ -40,7 +40,6 @@ public class CpgMethLevelSummarizer extends CpgSummarizer {
 
 	@Override
 	public void streamCpg(Cpg cpg) {
-		// TODO Auto-generated method stub
 		super.streamCpg(cpg);
 		
 		// Impose the filters just in case.
@@ -50,4 +49,19 @@ public class CpgMethLevelSummarizer extends CpgSummarizer {
 			this.streamValue(val);
 		}
 	}
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer#removeCpg(edu.usc.epigenome.genomeLibs.MethylDb.Cpg)
+	 */
+	@Override
+	public void removeCpg(Cpg cpg) {
+		// Follow the same rules as the streamer
+		if (cpg.passesOppositeAFilterDefault())
+		{
+			double val = cpg.fracMeth(true);
+			this.removeValue(val);
+		}
+	}
+	
+	
 }

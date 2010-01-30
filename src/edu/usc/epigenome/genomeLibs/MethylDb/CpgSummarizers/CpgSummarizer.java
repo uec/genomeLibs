@@ -132,7 +132,7 @@ public abstract class CpgSummarizer {
 		this.lastCpgSeen = cpg;
 	}
 	
-	
+	abstract public void removeCpg(Cpg cpg);
 		
 	
 	/**
@@ -162,8 +162,27 @@ public abstract class CpgSummarizer {
 		}
 	}
 
-	
-	
+	protected void removeValue(double val)
+	{
+		if (!Double.isNaN(val))
+		{
+			this.numVals--;
+			this.valsTotal -= val;
+			this.valsSquareTotal -= Math.pow(val, 2.0);
+			
+			// Keep track of one version weighted by base pairs covered by the CpG
+			if (this.curWeight > 0)
+			{
+				this.weightingTotal -= (double)this.curWeight;
+				this.valsWeightingTotal -= ((double)this.curWeight * val);
+				if (Double.isNaN(this.weightingTotal) || Double.isNaN(this.valsWeightingTotal))
+				{
+					System.err.printf("Running totals weighting: %f\tvalsWeightingTotal=%f\n", this.weightingTotal, this.valsWeightingTotal);
+				}
+			}
+		}
+	}
+
 	public String getDesc() {
 		return desc;
 	}

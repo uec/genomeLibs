@@ -156,7 +156,14 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 		return score;
 	}
 
-
+	public boolean overlaps(GenomicRange other)
+	{
+		// They have to be on the same chrom
+		if (!this.getChrom().equalsIgnoreCase(other.getChrom())) return false;
+		
+		boolean overlap = !( (this.getStart()>other.getEnd()) || (other.getStart()>this.getEnd()) );
+		return overlap;
+	}
 
 	/**
 	 * @param score the score to set
