@@ -41,6 +41,7 @@ public class CpgMethLevelSummarizer extends CpgSummarizer {
 	@Override
 	public void streamCpg(Cpg cpg) {
 		super.streamCpg(cpg);
+		//System.err.println("Did cpg weight get set? " + cpg.getCpgWeight());
 		
 		// Impose the filters just in case.
 		if (cpg.passesOppositeAFilterDefault())
@@ -59,7 +60,8 @@ public class CpgMethLevelSummarizer extends CpgSummarizer {
 		if (cpg.passesOppositeAFilterDefault())
 		{
 			double val = cpg.fracMeth(true);
-			this.removeValue(val);
+			//System.err.println("Removing cpg with weight: " + cpg.getCpgWeight());
+			this.removeValue(val, cpg.getCpgWeight());
 		}
 	}
 	

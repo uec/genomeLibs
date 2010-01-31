@@ -71,6 +71,11 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		this.params = inParams;
 		this.sampleTablePrefixes = inSampleTablePrefixes;
 		
+		if (inSampleTablePrefixes.size()<1)
+		{
+			throw new Exception("CpgIteratorMultisample was created without any DB tables");
+		}
+		
 		// Check if we've started DB connection
 		if (cConn == null) setupDb();
 		PreparedStatement prep = this.getPrep(inParams);

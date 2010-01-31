@@ -74,7 +74,14 @@ public class MethylDbToDomains {
 		{
 			parser.parseArgument(args);
 
-			if(arguments.size() != 0 ) {
+			if( tables.size() < 1)
+			{
+				System.err.println("Must specify at least one table");
+				System.err.println(C_USAGE);
+				System.exit(1);
+			}
+
+			if( arguments.size() != 0 ) {
 				System.err.println(C_USAGE);
 				System.exit(1);
 			}
@@ -94,6 +101,7 @@ public class MethylDbToDomains {
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
 		
 		int nTables = this.tables.size();
+		
 		
 
 		// Setup domain finders
@@ -125,7 +133,7 @@ public class MethylDbToDomains {
 		
 			
 			params.clearRangeFilters();
-			params.addRangeFilter(chr,7000000,9000000); // *** TESTING , REPLACE ****
+			params.addRangeFilter(chr,8300000,8900000); // *** TESTING , REPLACE ****
 			CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
 			//int numCpgs = cpgit.getCurNumRows();
 			while (cpgit.hasNext())
@@ -142,9 +150,12 @@ public class MethylDbToDomains {
 		
 		// Setup output files and domain finders
 		List<PrintWriter> pws = new ArrayList<PrintWriter>();
-		for (String tab : tables)
+		for (int i = 0; i < nTables; i++)
 		{
-			String outFn = String.format("%s.%s.wind%d.minCpg%d.meth%f-%f.gtf", 
+			String tab = this.tables.get(i);
+			CpgWalkerDomainFinder domainFinder = domainFinders[i];
+			
+			String outFn = String.format("%s.%s.wind%d.minCpg%d.meth%.2f-%.2f.gtf", 
 					this.outPrefix, tab, this.windSize, this.minCpgs, this.minMeth, this.maxMeth);
 			PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 			pws.add(pw);

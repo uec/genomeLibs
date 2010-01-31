@@ -5,6 +5,7 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.text.html.HTML;
@@ -32,6 +33,7 @@ public abstract class CpgSummarizer {
 	// Arbitrary summary statistics for a single value.
 	protected double numVals = 0.0;
 	protected double valsTotal = 0.0;
+	
 	protected double valsWeightingTotal = 0.0;
 	protected double weightingTotal = 0.0;
 	protected double valsSquareTotal = 0.0;
@@ -98,6 +100,8 @@ public abstract class CpgSummarizer {
 		this.lastCpgSeen = null;
 		this.valsWeightingTotal = 0.0;
 		this.weightingTotal = 0.0;
+		
+		
 	}
 	
 	
@@ -110,26 +114,41 @@ public abstract class CpgSummarizer {
 		nCpgsSeen++;
 		
 		// We'll use this weighting when a value is captured
-		int curWeight = 1; 
 		if (this.lastCpgSeen != null)
 		{
-			this.curWeight = cpg.chromPos - this.lastCpgSeen.chromPos;
 			
-			if (this.curWeight > 10000)
+			// If the last CpG is simply the opposite strand one,
+			// the dist will be 1.  In this case, use the weighting to
+			// the previous one.
+			int dist = cpg.chromPos - this.lastCpgSeen.chromPos;
+			if (dist == 1)
 			{
-				// If it's >10000, it's a jump between elements generally.  Just count it as one
-				this.curWeight = 1; 
-				//System.err.printf("%d\tDistance between two CpGs>100000\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+				// Do nothing
 			}
-			else if (this.curWeight < 0)
+			else
 			{
-				// This happens at the beginning of the chromosome when the last cpg is from the last chrom
-				this.curWeight = 1;
-				//System.err.printf("%d\tDistance between two CpGs<0\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+				this.curWeight = dist;
+
+				if (this.curWeight > 10000)
+				{
+					// If it's >10000, it's a jump between elements generally.  Just count it as one
+					this.curWeight = 1; 
+					//System.err.printf("%d\tDistance between two CpGs>100000\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+				}
+				else if (this.curWeight < 0)
+				{
+					// This happens at the beginning of the chromosome when the last cpg is from the last chrom
+					this.curWeight = 1;
+					//System.err.printf("%d\tDistance between two CpGs<0\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+				}
 			}
-			
+
+			//System.err.println("Setting cpg weight: " + this.curWeight);
+			cpg.setCpgWeight(this.curWeight);
+
 		}
 		this.lastCpgSeen = cpg;
+		
 	}
 	
 	abstract public void removeCpg(Cpg cpg);
@@ -152,17 +171,24 @@ public abstract class CpgSummarizer {
 			// Keep track of one version weighted by base pairs covered by the CpG
 			if (this.curWeight > 0)
 			{
+				//System.err.println("\t\tAdding weight: " + curWeight);
 				this.weightingTotal += (double)this.curWeight;
 				this.valsWeightingTotal += ((double)this.curWeight * val);
 				if (Double.isNaN(this.weightingTotal) || Double.isNaN(this.valsWeightingTotal))
 				{
 					System.err.printf("Running totals weighting: %f\tvalsWeightingTotal=%f\n", this.weightingTotal, this.valsWeightingTotal);
 				}
+				
 			}
 		}
 	}
 
 	protected void removeValue(double val)
+	{
+		removeValue(val, Double.NaN);
+	}
+	
+	protected void removeValue(double val, double weight)
 	{
 		if (!Double.isNaN(val))
 		{
@@ -170,15 +196,11 @@ public abstract class CpgSummarizer {
 			this.valsTotal -= val;
 			this.valsSquareTotal -= Math.pow(val, 2.0);
 			
-			// Keep track of one version weighted by base pairs covered by the CpG
-			if (this.curWeight > 0)
+			if (!Double.isNaN(weight) && (weight > 0))
 			{
-				this.weightingTotal -= (double)this.curWeight;
-				this.valsWeightingTotal -= ((double)this.curWeight * val);
-				if (Double.isNaN(this.weightingTotal) || Double.isNaN(this.valsWeightingTotal))
-				{
-					System.err.printf("Running totals weighting: %f\tvalsWeightingTotal=%f\n", this.weightingTotal, this.valsWeightingTotal);
-				}
+				//System.err.println("\t\tRemoving weight: " + weight);
+				this.weightingTotal -= weight;
+				this.valsWeightingTotal -= (weight * val);
 			}
 		}
 	}

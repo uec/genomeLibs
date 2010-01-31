@@ -10,6 +10,7 @@ public class CpgWalkerDomainFinderMethRange extends CpgWalkerDomainFinder {
 		super(inWalkParams, chr);
 		this.minMeth = inMinMeth;
 		this.maxMeth = inMaxMeth;
+		
 	}
 
 	@Override

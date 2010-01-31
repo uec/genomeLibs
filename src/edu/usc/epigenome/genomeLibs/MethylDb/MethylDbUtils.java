@@ -12,6 +12,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.biojava.bio.seq.StrandedFeature;
+
+import net.sf.samtools.SAMRecord;
+
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 
 public class MethylDbUtils {
@@ -109,6 +113,112 @@ public class MethylDbUtils {
 		return prep;
 	}
 
+	/**
+	 * @param rec
+	 * @param consensusCpg
+	 * @return return null if not enough cpgs
+	 */
+	public static String bedLine(String chr, int s, int e, String strand, double meth)
+	{
+		
+
+		int score;
+		String color = methToColor(meth);
+		if (Double.isNaN(meth) || Double.isInfinite(meth))
+		{
+			score = 0;
+		}
+		else
+		{
+			score = (int)Math.round(100.0 * meth);
+		}
+//		else if (meth > 0.5)
+//		{
+//			score = (int)Math.round(100.0 * ((meth-0.5)*2.0));
+//		}
+//		else
+//		{
+//			score = (int)Math.round(100.0 * ((0.5-meth)*2.0));
+//		}
+
+		String out = String.format("%s\t%d\t%d\t%s\t%d\t%s\t%d\t%d\t%s\t", 
+				chr,
+				s,
+				e,
+				String.format("r%d%s", s,strand),
+				score,
+				strand,  // strand information gets in the way of display
+				s,
+				e,
+				color
+				);
+		return out;
+	}
+
+	public static String methToColor(double meth)
+	{
+		String color="255,255,204"; // 
+
+		if (Double.isNaN(meth))
+		{
+		}
+		else if (meth > 0.5)
+		{
+			int dec = (int)Math.floor(10.0 * ((meth-0.5)*2.0));
+			// Red
+//			switch (dec)
+//			{
+//			case 0: color = "49,49,49"; break;
+//			case 1: color = "55,44,44"; break;
+//			case 2: color = "61,38,38"; break;
+//			case 3: color = "66,33,33"; break;
+//			case 4: color = "72,27,27"; break;
+//			case 5: color = "78,22,22"; break;
+//			case 6: color = "83,16,16"; break;
+//			case 7: color = "89,11,11"; break;
+//			case 8: color = "94,5,5"; break;
+//			case 9: case 10: color = "100,0,0"; break;
+//			default: System.err.println("Got illegal color decile: " + dec); System.exit(1); break;
+//			}
+			switch (dec)
+			{
+			case 0: color = "153,153,153"; break;
+			case 1: case 2: case 3: color = "255,153,153"; break;
+			case 4: case 5: case 6: case 7: color = "255,102,102"; break;
+			case 8: case 9: case 10: color = "255,0,0"; break;
+			default: System.err.println("Got illegal color decile: " + dec); System.exit(1); break;
+			}
+		}
+		else
+		{
+			int dec = (int)Math.floor(10.0 * ((0.5-meth)*2.0));
+			// Green
+//			switch (dec)
+//			{
+//			case 0: color = "49,49,49"; break;
+//			case 1: color = "44,55,44"; break;
+//			case 2: color = "38,61,38"; break;
+//			case 3: color = "33,66,33"; break;
+//			case 4: color = "27,72,27"; break;
+//			case 5: color = "22,78,22"; break;
+//			case 6: color = "16,83,16"; break;
+//			case 7: color = "11,89,11"; break;
+//			case 8: color = "5,94,5"; break;
+//			case 9: case 10: color = "0,100,0"; break;
+//			default: System.err.println("Got illegal color decile: " + dec); System.exit(1); break;
+//			}
+			switch (dec)
+			{
+			case 0: color = "153,153,153"; break;
+			case 1: case 2: case 3: color = "153,255,153"; break;
+			case 4: case 5: case 6: case 7: color = "102,255,102"; break;
+			case 8: case 9: case 10: color = "0,255,0"; break;
+			default: System.err.println("Got illegal color decile: " + dec); System.exit(1); break;
+			}
+		}
+	
+		return color;
+	}
 	
 //	//	echo "select count(*),featType from features_chr1 GROUP BY featType;" |mysql cr > featTypes.txt
 //	61841   exon

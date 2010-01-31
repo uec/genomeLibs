@@ -29,6 +29,9 @@ public class Cpg implements Comparable {
 	
 	// This is actually for non-cpgs
 	protected char nextBaseRefUpperCase = '0';
+	
+	// This is for weighted averages
+	protected double cpgWeight = Double.NaN;
 
 
 
@@ -206,6 +209,14 @@ public class Cpg implements Comparable {
 				);
 	}
 	
+
+	public double getCpgWeight() {
+		return cpgWeight;
+	}
+
+	public void setCpgWeight(double cpgWeight) {
+		this.cpgWeight = cpgWeight;
+	}
 
 	public char getNextBaseRef() {
 		return nextBaseRefUpperCase;
