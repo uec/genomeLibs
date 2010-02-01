@@ -31,8 +31,8 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
 public class MethylDbToDomains {
 
-	final int STEP = (int)1E6;
-	final int MAXCOORD = (int)2.8E8;
+	public int STEP = (int)1E6;
+	public int MAXCOORD = (int)2.8E8;
 	
 	
 	private static final String C_USAGE = "Use: MethylDbToDomains -outPrefix out -table methylCGsRich_normal010310_ -table methylCGsRich_tumor011010_ " + 

@@ -30,6 +30,7 @@ public abstract class CpgWalker {
 	
 	// Some useful summarizers for the window
 	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
+	public String lastChrom = "noChrom";
 
 	
 	
@@ -44,9 +45,15 @@ public abstract class CpgWalker {
 
 	}
 	
+	public void newChrom()
+	{
+		reset();
+	}
+	
 	public void reset()
 	{
 		window = new LinkedList<Cpg>();
+		methSummarizer = new CpgMethLevelSummarizer();
 	}
 	
 	/**

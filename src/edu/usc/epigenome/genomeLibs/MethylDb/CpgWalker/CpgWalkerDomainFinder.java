@@ -14,6 +14,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 
 	String curChr = null;
 	PrintWriter pw = null;
+	String lastChrom = "noChrom";
 	
 	List<GenomicRange> domains = new LinkedList<GenomicRange>();
 	
@@ -37,6 +38,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	 */
 	public void setCurChr(String curChr) {
 		this.curChr = curChr;
+		super.newChrom();
 	}
 
 
@@ -46,21 +48,25 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	@Override
 	public void reset() {
 		super.reset();
-		this.setCurChr(null);
 	}
 
 
 	@Override
 	protected void processWindow()
 	{
+		boolean sameChrom = this.lastChrom.equalsIgnoreCase(this.getCurChr());
+
+		
 		// Does this window constitute a domain?
 		int nCpgs = this.window.size();
 		int s=-1, e=-1;
+
 		if (nCpgs>0)
 		{
 			s = this.window.get(0).chromPos;
 			e = this.window.get(nCpgs-1).chromPos;
 		}
+		
 		
 		boolean goodWind = ((nCpgs>0) && (nCpgs >= this.walkParams.minCpgs)); 
 		goodWind &= this.windPasses();
@@ -74,7 +80,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 			
 			// Do we need to merge it with our last domain, or start a new one?
 			boolean merged = false;
-			if (domains.size()>0)
+			if (sameChrom && (domains.size()>0))
 			{
 				GenomicRange last = domains.get(domains.size()-1);
 				if (gr.overlaps(last))
@@ -100,6 +106,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 			}
 		}
 
+		this.lastChrom = this.curChr;
 	}
 	
 	public List<GenomicRange> getDomains() {
