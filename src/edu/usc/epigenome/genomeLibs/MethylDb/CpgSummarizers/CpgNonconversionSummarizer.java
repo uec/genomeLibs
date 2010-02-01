@@ -55,5 +55,19 @@ public class CpgNonconversionSummarizer extends CpgSummarizer {
 		}
 	}
 
+	@Override
+	public void removeCpg(Cpg cpg) {
+		// Follow the same rules as the streamer
+		if (cpg.passesOppositeAFilterDefault())
+		{
+			if (cpg.totalReadsOpposite >= 5)
+			{
+				double val = 100.0 * (double)cpg.cReadsNonconversionFilt/((double)cpg.cReadsNonconversionFilt+(double)cpg.cReads+(double)cpg.tReads);
+				//System.err.println("Removing cpg with weight: " + cpg.getCpgWeight());
+				this.removeValue(val, cpg.getCpgWeight());
+			}
+		}
+	}
+
 
 }

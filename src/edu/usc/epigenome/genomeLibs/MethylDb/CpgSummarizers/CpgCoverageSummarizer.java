@@ -51,5 +51,13 @@ public class CpgCoverageSummarizer extends CpgSummarizer {
 		this.streamValue(val);
 	}
 
+	@Override
+	public void removeCpg(Cpg cpg) {
+		double val = (double)(cpg.totalReads);
+		//System.err.println("Removing cpg with weight: " + cpg.getCpgWeight());
+		this.removeValue(val, cpg.getCpgWeight());
+		
+	}
+
 
 }

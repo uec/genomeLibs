@@ -82,5 +82,12 @@ public class CpgDensitySummarizer extends CpgSummarizer {
 		this.valsSquareTotal++;
 	}
 
+	@Override
+	public void removeCpg(Cpg cpg) {
+		double val = 1;
+		//System.err.println("Removing cpg with weight: " + cpg.getCpgWeight());
+		this.removeValue(val, cpg.getCpgWeight());
+	}
+
 
 }

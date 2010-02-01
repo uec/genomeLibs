@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.biojava.bio.seq.StrandedFeature;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -16,6 +17,7 @@ import org.kohsuke.args4j.Option;
 
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.MatUtils;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
@@ -29,6 +31,10 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
 public class MethylDbToDomains {
 
+	final int STEP = (int)1E6;
+	final int MAXCOORD = (int)2.8E8;
+	
+	
 	private static final String C_USAGE = "Use: MethylDbToDomains -outPrefix out -table methylCGsRich_normal010310_ -table methylCGsRich_tumor011010_ " + 
 		" -windSize 100000 -minCpgs 6 -minMeth 0.4 -maxMeth 0.6 -minCTreads 2 -maxOppStrandAfrac 0.10 -noNonconvFilter";
 	
@@ -104,14 +110,24 @@ public class MethylDbToDomains {
 		
 		
 
-		// Setup domain finders
+		// Setup output files and print domain finders
+		List<PrintWriter> pws = new ArrayList<PrintWriter>();
 		CpgWalkerParams walkerParams = new CpgWalkerParams();
 		walkerParams.maxWindSize = this.windSize;
 		walkerParams.minCpgs = this.minCpgs;
 		CpgWalkerDomainFinder[] domainFinders = new CpgWalkerDomainFinder[nTables];
 		for (int i = 0; i < nTables; i++)
 		{
-			domainFinders[i] = new CpgWalkerDomainFinderMethRange(walkerParams, null,
+			String tab = this.tables.get(i);
+			String outFn = String.format("%s.%s.wind%d.minCpg%d.meth%.2f-%.2f.bed", 
+					this.outPrefix, tab, this.windSize, this.minCpgs, this.minMeth, this.maxMeth);
+			PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
+			pws.add(pw);
+	
+			// Header
+			pw.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
+					outFn, outFn);
+			domainFinders[i] = new CpgWalkerDomainFinderMethRange(walkerParams, null, pw,
 					this.minMeth, this.maxMeth);
 		}
 		
@@ -123,46 +139,65 @@ public class MethylDbToDomains {
 
 
 
-		for (String chr : Arrays.asList("chr11")) // MethylDbUtils.TEST_CHROMS)
+		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //  
 		{
+			
+			
 			// Set chromosomes on the domain finders
 			for (int i = 0; i < nTables; i++)
 			{
 				domainFinders[i].setCurChr(chr);
 			}
 		
-			
-			params.clearRangeFilters();
-			params.addRangeFilter(chr,8300000,8900000); // *** TESTING , REPLACE ****
-			CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
-			//int numCpgs = cpgit.getCurNumRows();
-			while (cpgit.hasNext())
+
+			// Iterator uses DB connection and can use a ton of memory because
+			// it loads all rows at once.  This stuff should really be added to iterator
+			// class, but until it is , just iterate here over the chromosome
+			int onCpg = 0;
+			for (int c = 0; c < MAXCOORD; c += STEP)
 			{
-				Cpg[] cpgs = cpgit.next();
-				
-				// Stream Cpgs
-				for (int i = 0; i < nTables; i++)
+				System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
+
+				params.clearRangeFilters();
+				params.addRangeFilter(chr, c, c+STEP-1); // *** TESTING , REPLACE ****
+				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
+				//int numCpgs = cpgit.getCurNumRows();
+				while (cpgit.hasNext())
 				{
-					domainFinders[i].streamCpg(cpgs[i]);
-				}				
+					Cpg[] cpgs = cpgit.next();
+
+					// Stream Cpgs
+					for (int i = 0; i < nTables; i++)
+					{
+						domainFinders[i].streamCpg(cpgs[i]);
+					}
+
+					//
+					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, domainFinders[0].windStr());
+					onCpg++;
+				}
+
+
 			}
 		}
 		
-		// Setup output files and domain finders
-		List<PrintWriter> pws = new ArrayList<PrintWriter>();
-		for (int i = 0; i < nTables; i++)
-		{
-			String tab = this.tables.get(i);
-			CpgWalkerDomainFinder domainFinder = domainFinders[i];
-			
-			String outFn = String.format("%s.%s.wind%d.minCpg%d.meth%.2f-%.2f.gtf", 
-					this.outPrefix, tab, this.windSize, this.minCpgs, this.minMeth, this.maxMeth);
-			PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
-			pws.add(pw);
-			
-			
-		}
-		
+//		for (int i = 0; i < nTables; i++)
+//		{
+//			String tab = this.tables.get(i);
+//			CpgWalkerDomainFinder domainFinder = domainFinders[i];
+//			
+//
+//
+//			
+//			List<GenomicRange> domains = domainFinders[i].getDomains();
+//			for (GenomicRange gr : domains)
+//			{
+//				String strandStr = (gr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
+//				pw.append(MethylDbUtils.bedLine(gr.getChrom(), gr.getStart(), gr.getEnd(), strandStr, gr.getScore()));
+//				pw.println();
+//			}
+//		}
+//		
 			
 		for (PrintWriter pwi : pws)
 		{

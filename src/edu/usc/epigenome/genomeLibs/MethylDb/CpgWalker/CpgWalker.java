@@ -39,8 +39,8 @@ public abstract class CpgWalker {
 	public CpgWalker(CpgWalkerParams inWalkParams) {
 		super();
 		this.walkParams = inWalkParams;
-		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
-				"test", "test");
+//		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
+//				"test", "test");
 
 	}
 	
@@ -99,17 +99,25 @@ public abstract class CpgWalker {
 
 	public String windStr()
 	{
+		return windStr(false);
+	}
+	
+	public String windStr(boolean longVers)
+	{
 		StringBuffer sb = new StringBuffer(10000);
 		
 		int e = windEnd();
 		int s = windStart();
 		sb.append(String.format("Wind %d-%d (%d bp) has %d elements: ",
 				s, e, e-s+1, this.window.size()));
-		for (int i = 0; i < window.size(); i++)
+		if (longVers)
 		{
-			if (i>0) sb.append(", ");
-			Cpg cpg = window.get(i);
-			sb.append(cpg.chromPos);
+			for (int i = 0; i < window.size(); i++)
+			{
+				if (i>0) sb.append(", ");
+				Cpg cpg = window.get(i);
+				sb.append(cpg.chromPos);
+			}
 		}
 		
 		

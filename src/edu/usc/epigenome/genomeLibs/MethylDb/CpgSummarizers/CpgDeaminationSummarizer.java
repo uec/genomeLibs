@@ -48,5 +48,13 @@ public class CpgDeaminationSummarizer extends CpgSummarizer {
 		this.streamValue( (cpg.passesOppositeAFilterDefault()) ? 0.0 : 100.0);
 	}
 
+	@Override
+	public void removeCpg(Cpg cpg) {
+		double val = (cpg.passesOppositeAFilterDefault()) ? 0.0 : 100.0;
+		//System.err.println("Removing cpg with weight: " + cpg.getCpgWeight());
+		this.removeValue(val, cpg.getCpgWeight());
+
+	}
+
 
 }
