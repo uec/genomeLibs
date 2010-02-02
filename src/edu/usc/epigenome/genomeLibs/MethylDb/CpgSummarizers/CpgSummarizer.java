@@ -181,6 +181,9 @@ public abstract class CpgSummarizer {
 				
 			}
 		}
+		
+//		System.err.printf("Summarizer streaming, val =%.2f\n",this.getValMean(false));
+
 	}
 
 	protected void removeValue(double val)

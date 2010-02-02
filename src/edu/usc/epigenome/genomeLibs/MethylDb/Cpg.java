@@ -4,11 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.biojava.bio.seq.StrandedFeature;
 
-public class Cpg implements Comparable {
+public class Cpg implements Comparable, Cloneable {
 
 	private static final double DEFAULT_FAIL_MIN_FRAC_A = 0.2;
 	private static final int DEFAULT_FAIL_MIN_ABS_A = 2;
@@ -34,6 +35,13 @@ public class Cpg implements Comparable {
 	protected double cpgWeight = Double.NaN;
 
 
+
+	/**
+	 * 
+	 */
+	public Cpg() {
+		super();
+	}
 
 	/**
 	 * @param chromPos
@@ -89,6 +97,32 @@ public class Cpg implements Comparable {
 		return 	(this.compareTo(obj) == 0);
 	}
 	
+	public static Cpg compositeCpg(List<Cpg> inCpgs) throws CloneNotSupportedException
+	{
+		Cpg out = null;
+		
+		for (Cpg inCpg : inCpgs)
+		{
+			if (out == null)
+			{
+				// First one
+				out = (Cpg)inCpg.clone();
+			}
+			else
+			{
+				out.totalReads += inCpg.totalReads;
+				out.cReads += inCpg.cReads;
+				out.cReadsNonconversionFilt += inCpg.cReadsNonconversionFilt;
+				out.tReads += inCpg.tReads;
+				out.agReads += inCpg.agReads;
+				out.totalReadsOpposite += inCpg.totalReadsOpposite;
+				out.aReadsOpposite += inCpg.aReadsOpposite;
+			}
+		
+		}
+		
+		return out;
+	}
 	
 	public double fracNextBaseG()
 	{
@@ -191,7 +225,7 @@ public class Cpg implements Comparable {
 	public String toStringExpanded() 
 	{
 
-		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f\t%.2f", 
+		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f\t%.2f\t%.2f", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,
@@ -205,10 +239,19 @@ public class Cpg implements Comparable {
 				nextBaseTotalReads,
 				nextBaseRefUpperCase,
 				100*this.fracMeth(true),
-				100*this.fracNextBaseG()
+				100*this.fracNextBaseG(),
+				this.cpgWeight
 				);
 	}
 	
+
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		Cpg out = (Cpg)super.clone();
+		
+		System.err.printf("Cloning cpg, old tReads=%d, new tReads=%d\n",  this.tReads, out.tReads);
+		return out;
+	}
 
 	public double getCpgWeight() {
 		return cpgWeight;

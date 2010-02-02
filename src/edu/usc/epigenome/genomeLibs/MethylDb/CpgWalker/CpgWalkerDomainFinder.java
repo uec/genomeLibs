@@ -8,6 +8,7 @@ import java.util.List;
 import org.biojava.bio.seq.StrandedFeature;
 
 import edu.usc.epigenome.genomeLibs.GenomicRange.*;
+import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 abstract public class CpgWalkerDomainFinder extends CpgWalker {
@@ -71,7 +72,12 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		boolean goodWind = ((nCpgs>0) && (nCpgs >= this.walkParams.minCpgs)); 
 		goodWind &= this.windPasses();
 		
-		if (goodWind)
+		boolean dumpLast = false;
+		if (!goodWind)
+		{
+			if (domains.size()>0) dumpLast = true;
+		}
+		else
 		{
 			double thisScore = this.windScore();
 			// Create a new domain
@@ -97,13 +103,31 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 				// Print out the last domain and get rid of it
 				if (domains.size()>1)
 				{
-					GenomicRange lastGr = domains.get(0);
-					String strandStr = (lastGr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
-					pw.append(MethylDbUtils.bedLine(lastGr.getChrom(), lastGr.getStart(), lastGr.getEnd(), strandStr, lastGr.getScore()));
-					pw.println();
-					domains.remove(0);
+					// Don't dump last if this is the first one
+					dumpLast = true;
 				}
 			}
+		}
+		
+//		System.err.printf("Processed window %s-%s, goodWind=%s, dumpLast=%s\n", 
+//				s,e,goodWind,dumpLast);
+//		if (goodWind)
+//		{
+//			for (Cpg c : this.window)
+//			{
+//				System.err.printf("\t%s\n", c.toStringExpanded());
+//			}
+//		}
+		
+		
+		// Do we need to dump the last domain?
+		if (dumpLast)
+		{
+			GenomicRange lastGr = domains.get(0);
+			String strandStr = (lastGr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
+			pw.append(MethylDbUtils.bedLine(lastGr.getChrom(), lastGr.getStart(), lastGr.getEnd(), strandStr, lastGr.getScore()));
+			pw.println();
+			domains.remove(0);
 		}
 
 		this.lastChrom = this.curChr;
