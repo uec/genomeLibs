@@ -20,6 +20,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
 
@@ -66,32 +67,32 @@ public class MethylDbToWigs {
 	public void doMain(String[] args)
 	throws Exception
 	{
+		boolean chrEndSet = false;
 		CmdLineParser parser = new CmdLineParser(this);
 		// if you have a wider console, you could increase the value;
 		// here 80 is also the default
-		int chrSt = 0, chrEnd = 0;
-		String chr;
+		int chrSt = 0, chrEnd = GoldAssembly.chromLengthStatic("chr1", "hg18");
+		List<String> chrs;
 		parser.setUsageWidth(80);
 		try
 		{
 			parser.parseArgument(args);
 
 			if(arguments.size() < 1 ) {
-				System.err.println(C_USAGE);
-				System.exit(1);
-			}
-
-			chr = arguments.get(0);
-			if (!chr.startsWith("chr")) chr = "chr" + chr;
-			if (arguments.size()>1)
-			{
-				chrSt = Integer.parseInt(arguments.get(1));
-				chrEnd = Integer.parseInt(arguments.get(2));
+				chrs = MethylDbUtils.CHROMS;
 			}
 			else
 			{
-				chrSt = 0;
-				chrEnd = GoldAssembly.chromLengthStatic(chr, "hg18");
+				String chr = arguments.get(0);
+				if (!chr.startsWith("chr")) chr = "chr" + chr;
+				chrs = new ArrayList<String>(1);
+				chrs.add(chr);
+				if (arguments.size()>1)
+				{
+					chrSt = Integer.parseInt(arguments.get(1));
+					chrEnd = Integer.parseInt(arguments.get(2));
+					chrEndSet = true;
+				}
 			}
 
 		}
@@ -116,20 +117,18 @@ public class MethylDbToWigs {
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
 		
-		// Setup output files.
-		String rawspanline = String.format("variableStep chrom=%s\n",chr);
+		if (chrs.size()==1) this.outPrefix += "-" + chrs.get(0);
 
+		// Setup output files.
 		String outfnAs = this.outPrefix + "." + this.table1 + ".bare.wig";
 		PrintWriter pwAs = new PrintWriter(new FileOutputStream(outfnAs));
 		pwAs.printf("track type=wiggle_0 name=%sbare description=%sbare  color=204,153,102 visibility=full " +
 				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
-		pwAs.append(rawspanline);
 	
 		String outfnBs = this.outPrefix + "." + this.table2 + ".bare.wig";
 		PrintWriter pwBs = new PrintWriter(new FileOutputStream(outfnBs));
 		pwBs.printf("track type=wiggle_0 name=%sbare description=%sbare color=204,102,0 visibility=full " +
 				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
-		pwBs.append(rawspanline);
 		
 		String outfnA = this.outPrefix + "." + this.table1 + ".wig";
 		PrintWriter pwA = new PrintWriter(new FileOutputStream(outfnA));
@@ -157,150 +156,154 @@ public class MethylDbToWigs {
 		pwCvg.printf("track type=wiggle_0 name=%s description=%s visibility=full " + 
 				" autoScale=off alwaysZero=off maxHeightPixels=64:48:10 viewLimits=-2:2\n", "CoverageDelta", "CoverageDelta");
 		
-		// Use CpG walker.
-		
-		
-		
-		// This is wildly ineffeficient, but i'm in a hurry right now.  Implement a
-		// walker class in the future.
-		int JUMP_INTERVAL = (int)Math.round((double)this.windSize/1.0);
-		int MAXCPGS = 10000;
-		List<String> tables = Arrays.asList(this.table1,this.table2);
-		int mpCount = 0;
-		int numCpgs = 0, flank=0, windS = 0, windE = 0;
-		double[] abuffer = new double[MAXCPGS]; 
-		double[] bbuffer = new double[MAXCPGS]; 
-		double[] dbuffer = new double[MAXCPGS]; 
-		double[] cvgabuffer = new double[MAXCPGS]; 
-		double[] cvgbbuffer = new double[MAXCPGS]; 
-		final double LOG2 = Math.log(2.0);
-
-		boolean inSpan = false;
-		boolean[] posSeen = new boolean[250000000];
-		for (int mp = chrSt; mp <= chrEnd; mp += this.stepSize, mpCount++)
+		for (String chr : chrs)
 		{
-			if ((mpCount % 1E2)==0) System.err.printf("On mp=%d (#%d)\n",mp, mpCount);
 
-			
-			// We start at our window size, then go out until we have minCpgs.  We quit
-			// if we hit maxWindStretch
-			boolean done = false;
-			for (int windCur = this.windSize; !done && (windCur <= this.maxWindStretch); windCur += JUMP_INTERVAL)
+			if (!chrEndSet)
 			{
-				 flank = windCur/2;
-				 windS = mp - flank;
-				 windE = mp + flank;
-				
-				params.clearRangeFilters();
-				params.addRangeFilter(chr, windS, windE);
-				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tables);
-				numCpgs = cpgit.getCurNumRows();
-				
-				
-				if (numCpgs >= this.minCpgs)
-				{
-					done = true;
-					if ((mpCount % 1E2)==0) System.err.printf("\tFound a window windCur=%d (%d-%d): %d cpgs\n", windCur, windS, windE, numCpgs);
-					
-					// Start a new span sec if necessary
-					if (!inSpan)
-					{
-						inSpan = true;
-						String spanline = String.format("fixedStep chrom=%s start=%d step=%d span=%d\n",
-								chr, mp, this.stepSize, (this.stepSize*2)-2);
-						pwA.append(spanline);
-						pwB.append(spanline);
-						pwDplus.append(spanline);
-						pwDminus.append(spanline);
-						pwCvg.append(spanline);
-					}
-					
-					
-					// Now calculate the values!
-					int numCpgsCounted = 0;
-					CPG: for (int i = 0; i < numCpgs; i++)
-					{
-						Cpg[] cpgs = null;
-						try
-						{
-							cpgs = cpgit.next();
-						}
-						catch (Exception e)
-						{
-							System.err.printf("cpgit.getCurNumRows() said we had %d rows, but i am failing on the %dth!\n%s",
-									numCpgs, i, e.toString());
-							continue CPG;
-						}
-						
-						double metha = cpgs[0].fracMeth(!this.noNonconvFilter);
-						double methb = cpgs[1].fracMeth(!this.noNonconvFilter);
-						if (Double.isNaN(metha) || Double.isNaN(methb))
-						{
-							System.err.printf("Why is meth value of CpG at %d NaN when i used a selective query??\n\t\t%s\n\t\t%s\n",
-									cpgs[0].chromPos, cpgs[0].toStringExpanded(), cpgs[1].toStringExpanded());
-						}
-						else
-						{
-							// Finally we can do what we came to do .
-							double delta = methb-metha;
-							abuffer[numCpgsCounted] = metha;
-							bbuffer[numCpgsCounted] = methb;
-							dbuffer[numCpgsCounted] = delta;
-							cvgabuffer[numCpgsCounted] = cpgs[0].totalReads+cpgs[0].totalReadsOpposite;
-							cvgbbuffer[numCpgsCounted] = cpgs[1].totalReads+cpgs[1].totalReadsOpposite;
-							numCpgsCounted++;
-							
-							// And add the raw ones straight away
-							int pos = cpgs[0].chromPos;
-							if (this.bare && !posSeen[pos])
-							{
-								pwAs.printf("%d\t%d\n",pos,(int)Math.round(100.0*metha));
-								pwBs.printf("%d\t%d\n",pos,(int)Math.round(100.0*methb));
-								posSeen[pos] = true;
-							}
-						}
-					} // foreach Cpgs
-					
-					// Write line
-					int aval = (int)Math.round( 100.0 * MatUtils.nanMean(abuffer, 0, numCpgsCounted));
-					pwA.println(aval);
-					int bval = (int)Math.round( 100.0 * MatUtils.nanMean(bbuffer, 0, numCpgsCounted));
-					pwB.println(bval);
-					
-					int dval = (int)Math.round( 100.0 * MatUtils.nanMean(dbuffer, 0, numCpgsCounted));
-					pwDplus.println( (dval>0) ? dval : "0");
-					pwDminus.println( (dval<0) ? dval : "0");
-					
-					// 0.9 is to correct for our actual disparity in coverage right now
-//					double cvgRatio = Math.log(MatUtils.nanMean(cvgbbuffer, 0, numCpgsCounted) / 
-//							(0.9 * MatUtils.nanMean(cvgabuffer, 0, numCpgsCounted)))/LOG2; 
-					
-					double cvg = MatUtils.nanMean(cvgbbuffer, 0, numCpgsCounted);
-					pwCvg.printf("%.3f\n",cvg);
-					
-				} // (numCpgs>=minCpgs)
-				
-				cpgit.destroy();
-			} // loop through window sizes
-			
-			if (!done)
-			{
-				System.err.printf("\tFound a window WITH INSUFFICIENT CPGs (%d-%d): %d cpgs\n", windS, windE, numCpgs);
-				inSpan = false;
+				chrEnd = GoldAssembly.chromLengthStatic(chr, "hg18");
 			}
 			
 			
+			String rawspanline = String.format("variableStep chrom=%s\n",chr);
+			pwAs.append(rawspanline);
+			pwBs.append(rawspanline);
+
+
+
+			// This is wildly ineffeficient, but i'm in a hurry right now.  Implement a
+			// walker class in the future.
+			int JUMP_INTERVAL = (int)Math.round((double)this.windSize/1.0);
+			int MAXCPGS = 10000;
+			List<String> tables = Arrays.asList(this.table1,this.table2);
+			int mpCount = 0;
+			int numCpgs = 0, flank=0, windS = 0, windE = 0;
+			double[] abuffer = new double[MAXCPGS]; 
+			double[] bbuffer = new double[MAXCPGS]; 
+			double[] dbuffer = new double[MAXCPGS]; 
+			double[] cvgabuffer = new double[MAXCPGS]; 
+			double[] cvgbbuffer = new double[MAXCPGS]; 
+			final double LOG2 = Math.log(2.0);
+
+			boolean inSpan = false;
+			boolean[] posSeen = new boolean[250000000];
+			for (int mp = chrSt; mp <= chrEnd; mp += this.stepSize, mpCount++)
+			{
+				if ((mpCount % 1E2)==0) System.err.printf("Chr %s\tOn mp=%d (#%d)\n",chr, mp, mpCount);
+
+
+				// We start at our window size, then go out until we have minCpgs.  We quit
+				// if we hit maxWindStretch
+				boolean done = false;
+				for (int windCur = this.windSize; !done && (windCur <= this.maxWindStretch); windCur += JUMP_INTERVAL)
+				{
+					flank = windCur/2;
+					windS = mp - flank;
+					windE = mp + flank;
+
+					params.clearRangeFilters();
+					params.addRangeFilter(chr, windS, windE);
+					CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tables);
+					numCpgs = cpgit.getCurNumRows();
+
+
+					if (numCpgs >= this.minCpgs)
+					{
+						done = true;
+						if ((mpCount % 1E2)==0) System.err.printf("\tFound a window windCur=%d (%d-%d): %d cpgs\n", windCur, windS, windE, numCpgs);
+
+						// Start a new span sec if necessary
+						if (!inSpan)
+						{
+							inSpan = true;
+							String spanline = String.format("fixedStep chrom=%s start=%d step=%d span=%d\n",
+									chr, mp, this.stepSize, (this.stepSize*2)-2);
+							pwA.append(spanline);
+							pwB.append(spanline);
+							pwDplus.append(spanline);
+							pwDminus.append(spanline);
+							pwCvg.append(spanline);
+						}
+
+
+						// Now calculate the values!
+						int numCpgsCounted = 0;
+						CPG: for (int i = 0; i < numCpgs; i++)
+						{
+							Cpg[] cpgs = null;
+							try
+							{
+								cpgs = cpgit.next();
+							}
+							catch (Exception e)
+							{
+								System.err.printf("cpgit.getCurNumRows() said we had %d rows, but i am failing on the %dth!\n%s",
+										numCpgs, i, e.toString());
+								continue CPG;
+							}
+
+							double metha = cpgs[0].fracMeth(!this.noNonconvFilter);
+							double methb = cpgs[1].fracMeth(!this.noNonconvFilter);
+							if (Double.isNaN(metha) || Double.isNaN(methb))
+							{
+								System.err.printf("Why is meth value of CpG at %d NaN when i used a selective query??\n\t\t%s\n\t\t%s\n",
+										cpgs[0].chromPos, cpgs[0].toStringExpanded(), cpgs[1].toStringExpanded());
+							}
+							else
+							{
+								// Finally we can do what we came to do .
+								double delta = methb-metha;
+								abuffer[numCpgsCounted] = metha;
+								bbuffer[numCpgsCounted] = methb;
+								dbuffer[numCpgsCounted] = delta;
+								cvgabuffer[numCpgsCounted] = cpgs[0].totalReads+cpgs[0].totalReadsOpposite;
+								cvgbbuffer[numCpgsCounted] = cpgs[1].totalReads+cpgs[1].totalReadsOpposite;
+								numCpgsCounted++;
+
+								// And add the raw ones straight away
+								int pos = cpgs[0].chromPos;
+								if (this.bare && !posSeen[pos])
+								{
+									pwAs.printf("%d\t%d\n",pos,(int)Math.round(100.0*metha));
+									pwBs.printf("%d\t%d\n",pos,(int)Math.round(100.0*methb));
+									posSeen[pos] = true;
+								}
+							}
+						} // foreach Cpgs
+
+						// Write line
+						int aval = (int)Math.round( 100.0 * MatUtils.nanMean(abuffer, 0, numCpgsCounted));
+						pwA.println(aval);
+						int bval = (int)Math.round( 100.0 * MatUtils.nanMean(bbuffer, 0, numCpgsCounted));
+						pwB.println(bval);
+
+						int dval = (int)Math.round( 100.0 * MatUtils.nanMean(dbuffer, 0, numCpgsCounted));
+						pwDplus.println( (dval>0) ? dval : "0");
+						pwDminus.println( (dval<0) ? dval : "0");
+
+						// 0.9 is to correct for our actual disparity in coverage right now
+						//					double cvgRatio = Math.log(MatUtils.nanMean(cvgbbuffer, 0, numCpgsCounted) / 
+						//							(0.9 * MatUtils.nanMean(cvgabuffer, 0, numCpgsCounted)))/LOG2; 
+
+						double cvg = MatUtils.nanMean(cvgbbuffer, 0, numCpgsCounted);
+						pwCvg.printf("%.3f\n",cvg);
+
+					} // (numCpgs>=minCpgs)
+
+					cpgit.destroy();
+				} // loop through window sizes
+
+				if (!done)
+				{
+					System.err.printf("\tFound a window WITH INSUFFICIENT CPGs (%d-%d): %d cpgs\n", windS, windE, numCpgs);
+					inSpan = false;
+				}
+
+
+			}
 		}
-		
-		
-		if (arguments.size()>1)
-		{
-			
-		}
-		else
-		{
-			params.addRangeFilter(chr);
-		}
+
+
 
 
 		
