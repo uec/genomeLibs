@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
 
@@ -71,65 +72,76 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		
 		boolean goodWind = ((nCpgs>0) && (nCpgs >= this.walkParams.minCpgs)); 
 		goodWind &= this.windPasses();
+		GenomicRange gr = new GenomicRange(this.getCurChr(), s, e);
 		
-		boolean dumpLast = false;
-		if (!goodWind)
+		
+		// Check if we overlap with the previous window
+		boolean overlapsPrev = false;
+		if (sameChrom && (domains.size()>0))
 		{
-			if (domains.size()>0) dumpLast = true;
-		}
-		else
-		{
-			double thisScore = this.windScore();
-			// Create a new domain
-			GenomicRange gr = new GenomicRange(this.getCurChr(), s, e);
-			gr.setScore(thisScore);
-			
-			// Do we need to merge it with our last domain, or start a new one?
-			boolean merged = false;
-			if (sameChrom && (domains.size()>0))
+			// Do we actually overlap?
+			GenomicRange last = domains.get(domains.size()-1);
+			overlapsPrev = gr.overlaps(last);
+
+			// Double check that we're actually past it (which we should be.
+			if (!overlapsPrev)
 			{
-				GenomicRange last = domains.get(domains.size()-1);
-				if (gr.overlaps(last))
+				if (last.getEnd()>=gr.getStart())
 				{
-					merged = true;
-					last.setEnd(e);
+					Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(
+							String.format("Why is previous non-overlapping window ahead of current one?? Quitting.\nPrev=%s, Cur=%s\n"));
+					System.exit(1);
 				}
 			}
 			
-			if (!merged)
+			// If we overlap, and it's a good window, we merge into the previous
+			if (overlapsPrev  && goodWind)
 			{
+				last.setEnd(e);
+			}
+		}
+		
+		// If we don't overlap the previous domain, we can process it
+		boolean dumpedLast = false;
+		if (!overlapsPrev)
+		{
+			// If we have a prior one, dump it
+			if (domains.size()>0)
+			{
+				GenomicRange lastGr = domains.get(domains.size()-1);
+				String strandStr = (lastGr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
+				pw.append(MethylDbUtils.bedLine(lastGr.getChrom(), lastGr.getStart(), lastGr.getEnd(), strandStr, lastGr.getScore()));
+				pw.println();
+				domains.remove(0);
+				dumpedLast = true;
+			}
+			
+			// Then start new window if we're on a good one
+			if (goodWind)
+			{
+				double score = this.windScore();
+				gr.setScore(score);
 				domains.add(gr);
-
-				// Print out the last domain and get rid of it
-				if (domains.size()>1)
-				{
-					// Don't dump last if this is the first one
-					dumpLast = true;
-				}
 			}
 		}
-		
-//		System.err.printf("Processed window %s-%s, goodWind=%s, dumpLast=%s\n", 
-//				s,e,goodWind,dumpLast);
-//		if (goodWind)
-//		{
-//			for (Cpg c : this.window)
-//			{
-//				System.err.printf("\t%s\n", c.toStringExpanded());
-//			}
-//		}
-		
-		
-		// Do we need to dump the last domain?
-		if (dumpLast)
-		{
-			GenomicRange lastGr = domains.get(0);
-			String strandStr = (lastGr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
-			pw.append(MethylDbUtils.bedLine(lastGr.getChrom(), lastGr.getStart(), lastGr.getEnd(), strandStr, lastGr.getScore()));
-			pw.println();
-			domains.remove(0);
-		}
 
+		
+		//// DEBUGGING
+//		System.err.printf("Processed window %s-%s, goodWind=%s, dumpLast=%s, ndomains=%d\n", 
+//				s,e,goodWind,dumpedLast, domains.size());
+//		for (int i = 0; i < domains.size(); i++)
+//		{
+//			System.err.printf("\tdomain%d=%d-%d\n", i,domains.get(i).getStart(), domains.get(i).getEnd() );
+//		}
+////		if (goodWind)
+////		{
+////			for (Cpg c : this.window)
+////			{
+////				System.err.printf("\t%s\n", c.toStringExpanded());
+////			}
+////		}
+		
+	
 		this.lastChrom = this.curChr;
 	}
 	

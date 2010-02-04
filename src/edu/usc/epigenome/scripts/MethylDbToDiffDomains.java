@@ -125,7 +125,7 @@ public class MethylDbToDiffDomains {
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
 
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //  
+		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr1")) //  
 		{
 			// Set chromosomes on the domain finders
 			domainFinder.setCurChr(chr);
@@ -135,8 +135,8 @@ public class MethylDbToDiffDomains {
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
 			for (int c = 0; c < MAXCOORD; c += STEP)
-//			MAXCOORD = 68864329;
-//			for (int c = 68827214 ; c < MAXCOORD; c+=STEP)
+//			MAXCOORD = 2981976;
+//			for (int c = 2964914 ; c < MAXCOORD; c+=STEP)
 			{
 				System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
 

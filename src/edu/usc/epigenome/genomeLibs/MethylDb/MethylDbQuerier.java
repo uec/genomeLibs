@@ -54,6 +54,19 @@ public class MethylDbQuerier {
 		featFilters.add(new MethylDbQuerier.FeatClass(featType, flankSize));
 	}
 	
+	public void addFeatFilters(List<String> featTypes)
+	{
+		addFeatFilters(featTypes,0);
+	}
+	
+	public void addFeatFilters(List<String> featTypes, int flankSize)
+	{
+		for (String featType : featTypes)
+		{
+			featFilters.add(new MethylDbQuerier.FeatClass(featType, flankSize));
+		}
+	}
+
 	public void clearRangeFilters()
 	{
 		this.rangeFilters = new HashSet<GenomicRange>(1);
