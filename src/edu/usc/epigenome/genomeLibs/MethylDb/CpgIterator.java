@@ -239,7 +239,12 @@ public class CpgIterator implements Iterator<Cpg> {
 //		1 row in set (1 min 51.58 sec)
 
 		
-		String featTabSec = (params.usesFeatTable()) ? (params.getFeatTable() + ", " ) : "";
+		String featTabSec = "";
+		for (int i = 0; i < params.getFeatFilterTypes().size(); i++)
+		{
+			featTabSec += params.getFeatTable() + " feat" + i;
+			featTabSec += ", ";
+		}
 		String joinSec = (params.usesFeatTable()) ? "straight_join" : "";
 		
 		String methTable = params.getMethylTable();

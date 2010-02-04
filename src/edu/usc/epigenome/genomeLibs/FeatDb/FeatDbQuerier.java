@@ -18,13 +18,14 @@ public class FeatDbQuerier {
 	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/cr?user=benb";
 	
 	public final static String connStr = DEFAULT_CONN_STR;
+	protected int featNum = 0;
 	
 	protected String tablePrefix = DEFAULT_TABLE_PREFIX;
 	
 	
 	// Ranges
 	protected Set<GenomicRange> rangeFilters = new HashSet<GenomicRange>(1);
-	protected Set<String> featFilters = new HashSet<String>(10);
+	protected Set<String> featFilters = new HashSet<String>(1);
 
 	
 	public void addFeatFilter(String featType)
@@ -102,9 +103,18 @@ public class FeatDbQuerier {
 		this.tablePrefix = tablePrefix;
 	}
 
+
+	
+	public int getFeatNum() {
+		return featNum;
+	}
+
+	public void setFeatNum(int featNum) {
+		this.featNum = featNum;
+	}
+
 	
 	/******* PUBLIC DB STUFF ********/
-	
 	
 	
 	/**
@@ -229,14 +239,14 @@ public class FeatDbQuerier {
 			List<String> fClauses = new ArrayList<String>(this.featFilters.size());
 			for (String featFilter : this.featFilters)
 			{
-				String clause = String.format("(featType = ?)");
+				String clause = String.format("(feat%d.featType = ?)", this.getFeatNum());
 				fClauses.add(clause);
 				if (prep!=null)
 				{
 					prep.setString(curInd++, featFilter);
 				}
 			}
-			ListUtils.setDelim(" OR "); // Notice that it's a UNION of feat filters
+			ListUtils.setDelim(" OR "); // Notice that it's an UNION of feat filters
 			clauses.add("(" + ListUtils.excelLine(fClauses.toArray(new String[1])) + ")");
 		}
 

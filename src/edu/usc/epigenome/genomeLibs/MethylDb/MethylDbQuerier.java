@@ -29,7 +29,7 @@ public class MethylDbQuerier {
 	
 	// Ranges
 	protected Set<GenomicRange> rangeFilters = new HashSet<GenomicRange>(1);
-	protected Set<MethylDbQuerier.FeatClass> featFilters = new HashSet<MethylDbQuerier.FeatClass>(1);
+	protected List<MethylDbQuerier.FeatClass> featFilters = new ArrayList<MethylDbQuerier.FeatClass>(10);
 	/***** TO DO - NOT YET IMPLEMENTED ****/
 	//protected boolean featFiltersIntersection = false; // Otherwise implies union
 
@@ -350,8 +350,10 @@ public class MethylDbQuerier {
 			 * TO DO
 			 * Check if we want union or intersection
 			 */
-			for (MethylDbQuerier.FeatClass featFilter : this.featFilters)
+//			for (MethylDbQuerier.FeatClass featFilter : this.featFilters)
+			for (int i = 0; i < this.featFilters.size(); i++)
 			{
+				MethylDbQuerier.FeatClass featFilter = this.featFilters.get(i);
 				// When we have a feature filter, we generally use that index first since the 
 				// number of rows is much smaller in the feature table than the meth table.
 				// So if we add a redundant coordinate filter for the features, we can often
@@ -376,6 +378,7 @@ public class MethylDbQuerier {
 				
 				// Since this is the case, the easiest thing to do is to add in the section from the feat DB helper.
 				FeatDbQuerier featQuery = new FeatDbQuerier();
+				featQuery.setFeatNum(i);
 				featQuery.addFeatFilter(featFilter.featType);
 				for (GenomicRange gr : this.rangeFilters)
 				{
@@ -387,8 +390,8 @@ public class MethylDbQuerier {
 				clauses.add(featOutput.sql);
 				
 				// Then join to meth table.
-				String clause = String.format(" ((%schromPos>=(chromPosStart-%d)) AND (%schromPos<=(chromPosEnd+%d))) ",
-						asSec, featFilter.flank, asSec, featFilter.flank);
+				String clause = String.format(" ((%schromPos>=(feat%d.chromPosStart-%d)) AND (%schromPos<=(feat%d.chromPosEnd+%d))) ",
+						asSec, i, featFilter.flank, asSec, i, featFilter.flank);
 				clauses.add(clause);
 			}
 		}
