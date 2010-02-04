@@ -164,13 +164,11 @@ public class MethylDbToWigs {
 				chrEnd = GoldAssembly.chromLengthStatic(chr, "hg18");
 			}
 			
-			
 			String rawspanline = String.format("variableStep chrom=%s\n",chr);
 			pwAs.append(rawspanline);
 			pwBs.append(rawspanline);
 
-
-
+			//			
 			// This is wildly ineffeficient, but i'm in a hurry right now.  Implement a
 			// walker class in the future.
 			int JUMP_INTERVAL = (int)Math.round((double)this.windSize/1.0);
