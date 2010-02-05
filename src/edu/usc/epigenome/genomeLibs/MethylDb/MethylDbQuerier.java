@@ -384,7 +384,7 @@ public class MethylDbQuerier {
 				{
 					if (!gr.isInfiniteChromRange()) featQuery.addRangeFilter(gr);
 				}
-				FeatDbQuerier.HelperOutput featOutput = featQuery.sqlWhereSecHelper(prep, null, curInd);
+				FeatDbQuerier.HelperOutput featOutput = featQuery.sqlWhereSecHelper(prep, "feat" + i, curInd);
 				//System.err.printf("Adding featOutput to query.  curInd before:%d, curInd after:%d\n",curInd,featOutput.newCurInd);
 				curInd = featOutput.newCurInd;
 				clauses.add(featOutput.sql);

@@ -142,7 +142,7 @@ public class MethylDbToDiffDomains {
 
 				params.clearRangeFilters();
 				int last = Math.min(c+STEP-1, MAXCOORD);
-				params.addRangeFilter(chr, c, last); // *** TESTING , REPLACE ****
+				params.addRangeFilter(chr, c, last);
 				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tables);
 				//int numCpgs = cpgit.getCurNumRows();
 				while (cpgit.hasNext())

@@ -1,11 +1,14 @@
 package edu.usc.epigenome.scripts;
 
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,12 +25,15 @@ import com.googlecode.charts4j.Color;
 import com.googlecode.charts4j.Data;
 import com.googlecode.charts4j.DataEncoding;
 import com.googlecode.charts4j.DataUtil;
+import com.googlecode.charts4j.Fills;
 import com.googlecode.charts4j.GCharts;
 import com.googlecode.charts4j.Plot;
 import com.googlecode.charts4j.Plots;
+import com.googlecode.charts4j.VennDiagram;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
 import com.sun.tools.javac.code.Attribute.Array;
 
+import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatIterator;
@@ -49,10 +55,14 @@ public class MethylDbToFeatPairCounts {
 
 	private static final String C_USAGE = "Use: MethylDbToFeatPairCounts featType1 featType2 .. ";
 	
+	public int STEP = (int)1E6;
+	public int MAXCOORD = (int)2.8E8;
 	
 	// receives other command line parameters than options
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
+    @Option(name="-threeWay",usage="Do feature triplets")
+    protected boolean threeWay = false;
     @Option(name="-methylDbPrefix",usage="use this table to get CpGs")
     protected String methylDbPrefix = "methylCGsRich_normal010310_";
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
@@ -100,35 +110,61 @@ public class MethylDbToFeatPairCounts {
 		
 		int nFeats = featTypes.size();
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
+		String vennFn = String.format("Venns%s.htm", featTypes.get(0));
+		PrintWriter vennPw = new PrintWriter(new FileOutputStream(vennFn));
 		
 		// Go through individual feats.
+		Map<String,Integer> savedCounts = new HashMap<String,Integer>(nFeats);
 		for (String featType : featTypes)
 		{
 			List<String> feats = new ArrayList<String>(1);
 			feats.add(featType);
-			printCounts(feats);
+			int count = printCounts(feats, savedCounts, vennPw);
 		}
-		
+
 		// Then feat pairs
-		for (int i = 0; i < nFeats; i++)
+		if (nFeats>1)
 		{
-			for (int j = i+1; j < nFeats; j++)
+			for (int i = 0; i < nFeats; i++)
 			{
-				List<String> feats = new ArrayList<String>(2);
-				feats.add(featTypes.get(i));
-				feats.add(featTypes.get(j));
-				printCounts(feats);
+				for (int j = i+1; j < nFeats; j++)
+				{
+					List<String> feats = new ArrayList<String>(2);
+					feats.add(featTypes.get(i));
+					feats.add(featTypes.get(j));
+					int count = printCounts(feats, savedCounts, vennPw);
+				}
 			}
 		}
 		
-
+		// Triplets. I know there's a fancy recursive way to do this, but 
+		// this produces a nice ordering for the time being.
+		if (threeWay && (nFeats>2))
+		{
+			for (int i = 0; i < nFeats; i++)
+			{
+				for (int j = i+1; j < nFeats; j++)
+				{
+					for (int k = j+1; k < nFeats; k++)
+					{
+						List<String> feats = new ArrayList<String>(3);
+						feats.add(featTypes.get(i));
+						feats.add(featTypes.get(j));
+						feats.add(featTypes.get(k));
+						printCounts(feats, savedCounts, vennPw);
+					}
+				}
+			}
+		}
+		
+		vennPw.close();
 	}
 
-	protected void printCounts(List<String> featTypes) 
+	protected int printCounts(List<String> featTypes, Map<String,Integer> savedCounts, PrintWriter vennPw) 
 	throws Exception
 	{
-
 		StringBuffer sb = new StringBuffer(5000);
+		int nFeats = featTypes.size();
 		
 		// And the querier params
 		MethylDbQuerier params = new MethylDbQuerier();
@@ -144,18 +180,82 @@ public class MethylDbToFeatPairCounts {
 		String featStr = ListUtils.excelLine(featTypes);
 		
 		int count = 0;
-		for (String chr : Arrays.asList("chr11")) //MethylDbUtils.CHROMS) //  
+		
+		for (String chr : Arrays.asList("chr11","chr12")) //MethylDbUtils.CHROMS) //  
 		{		
-			params.clearRangeFilters();
-			params.addRangeFilter(chr);
 			
-			CpgIterator cpgit = new CpgIterator(params);
-			int numRows = cpgit.getCurNumRows();
-			count += numRows;
+			// Iterator uses DB connection and can use a ton of memory because
+			// it loads all rows at once.  This stuff should really be added to iterator
+			// class, but until it is , just iterate here over the chromosome
+			MAXCOORD = GoldAssembly.chromLengthStatic(chr, "hg18");
+			for (int c = 0; c < MAXCOORD; c += STEP)
+			{
+				int last = Math.min(c+STEP-1, MAXCOORD);
+				params.clearRangeFilters();
+				params.addRangeFilter(chr, c, last);
+//				params.addRangeFilter(chr);
 			
-			System.err.printf("%d, %s %s\n",numRows,chr,featStr);
+				CpgIterator cpgit = new CpgIterator(params);
+				int numRows = cpgit.getCurNumRows();
+				count += numRows;
+			}
 		}
 		
+
+		if ((nFeats > 1) && (vennPw != null))
+		{
+			// If you make them too long
+			String a = featTypes.get(0) + "(" + savedCounts.get(featTypes.get(0)) + ")"; 
+			String b = featTypes.get(1) + "(" + savedCounts.get(featTypes.get(1)) + ")";
+			String c = (nFeats>2) ? (featTypes.get(2) + "(" + savedCounts.get(featTypes.get(2)) + ")") : "";
+
+			double an = savedCounts.get(featTypes.get(0));
+			double bn = savedCounts.get(featTypes.get(1));
+			double cn = (nFeats>2) ? savedCounts.get(featTypes.get(2)) : 0;
+			double abn = (nFeats==2) ? count : savedCounts.get(featTypes.get(0) + "+" + featTypes.get(1));
+			double acn = (nFeats==2) ? 0 : savedCounts.get(featTypes.get(0) + "+" + featTypes.get(2));
+			double bcn = (nFeats==2) ? 0 : savedCounts.get(featTypes.get(1) + "+" + featTypes.get(2));
+			double abcn = (nFeats==2) ? 0 : count;
+			double[] allVals = {an, bn, cn, abn, acn, bcn, abcn};
+			ListUtils.setDelim(", ");
+			System.err.println("vals: " + ListUtils.excelLine(allVals));
+			double divBy = MatUtils.nanMax(allVals) / 100.0;
+
+			
+//			VennDiagram chart = GCharts.newVennDiagram(100, 80, 60, 30, 30, 30, 10);
+			VennDiagram chart = GCharts.newVennDiagram(an/divBy, bn/divBy, cn/divBy, 
+					abn/divBy, acn/divBy, bcn/divBy, abcn/divBy);
+			chart.setDataEncoding(DataEncoding.TEXT);
+			chart.setTitle(featStr, Color.WHITE, 16);
+			chart.setSize(600, 200);
+			chart.setCircleLegends(a,b,c);
+			chart.setCircleColors(Color.GREEN, Color.RED, Color.BLUE);
+			//chart.setBackgroundFill(Fills.newSolidFill(Color.BLACK));
+			String url = chart.toURLString();
+			// EXAMPLE CODE END. Use this url string in your web or
+			// Internet application.
+
+			vennPw.printf("<H3>%s</H3>\n", featStr);
+			vennPw.printf("<IMG SRC=\"%s\">\n", url);
+		}
+
+        
+		// Output
+		sb.append(String.format("%d,%s",count,featStr));
+		for (int i = 0; i < nFeats; i++)
+		{
+			Integer singleCount = savedCounts.get(featTypes.get(i));
+			if (singleCount != null)
+			{
+				sb.append(String.format(",%.2f%%", 100.0*(double)count/(double)singleCount));
+			}
+		}
+		
+		sb.append("\n");
+		savedCounts.put(featStr, count);
+		System.err.println("Setting " + featStr + ": " + count);
+		System.out.append(sb);
+		return count;
 	}
 	
 
