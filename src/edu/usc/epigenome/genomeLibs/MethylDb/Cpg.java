@@ -73,7 +73,21 @@ public class Cpg implements Comparable, Cloneable {
 		this.agReads = agReads;
 		this.totalReadsOpposite = totalReadsOpposite;
 		this.aReadsOpposite = aReadsOpposite;
-		this.cpgWeight = (double)cpgWeight;
+		
+		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
+		if (cpgWeight < 0)
+		{
+			System.err.printf("Got negative cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
+			cpgWeight = 100;
+		}
+		else if (cpgWeight > 5000)
+		{
+			System.err.printf("Got extra-large cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
+			cpgWeight = 100;
+		}
+		
+		// It's actually divided by two since we're looking at both strands.
+		this.cpgWeight = (double)cpgWeight/2.0;
 	}
 	
 	/*** Overridden Comparable methods

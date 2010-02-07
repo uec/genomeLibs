@@ -117,12 +117,13 @@ public class MethylDbToFeatPairCounts {
 		PrintWriter vennPw = new PrintWriter(new FileOutputStream(vennFn));
 		
 		// Go through individual feats.
-		Map<String,Integer> savedCounts = new HashMap<String,Integer>(nFeats);
+		// counts can be larger than 32-bit Integer limit
+		Map<String,Long> savedCounts = new HashMap<String,Long>(nFeats);
 		for (String featType : featTypes)
 		{
 			List<String> feats = new ArrayList<String>(1);
 			feats.add(featType);
-			int count = printCounts(feats, savedCounts, vennPw);
+			long count = printCounts(feats, savedCounts, vennPw);
 		}
 
 		// Then feat pairs
@@ -135,7 +136,7 @@ public class MethylDbToFeatPairCounts {
 					List<String> feats = new ArrayList<String>(2);
 					feats.add(featTypes.get(i));
 					feats.add(featTypes.get(j));
-					int count = printCounts(feats, savedCounts, vennPw);
+					long count = printCounts(feats, savedCounts, vennPw);
 				}
 			}
 		}
@@ -163,7 +164,7 @@ public class MethylDbToFeatPairCounts {
 		vennPw.close();
 	}
 
-	protected int printCounts(List<String> featTypes, Map<String,Integer> savedCounts, PrintWriter vennPw) 
+	protected long printCounts(List<String> featTypes, Map<String,Long> savedCounts, PrintWriter vennPw) 
 	throws Exception
 	{
 		StringBuffer sb = new StringBuffer(5000);
@@ -182,9 +183,10 @@ public class MethylDbToFeatPairCounts {
 		ListUtils.setDelim("+");
 		String featStr = ListUtils.excelLine(featTypes);
 		
-		int count = 0;
+		// Count can be over the INT 32-bit limit
+		long count = 0;
 		
-		for (String chr : Arrays.asList("chr1")) //MethylDbUtils.CHROMS) //  
+		for (String chr :  MethylDbUtils.CHROMS) //Arrays.asList("chr11", "chr20", "chrX")) //  
 		{		
 			
 			// Iterator uses DB connection and can use a ton of memory because
@@ -201,7 +203,7 @@ public class MethylDbToFeatPairCounts {
 				CpgIterator cpgit = new CpgIterator(params);
 				
 				// Weighted or unweighted
-				int counti;
+				long counti;
 				if (this.cpgCounts)
 				{
 					int numRows = cpgit.getCurNumRows();
@@ -265,7 +267,7 @@ public class MethylDbToFeatPairCounts {
 		sb.append(String.format("%d,%s",count,featStr));
 		for (int i = 0; i < nFeats; i++)
 		{
-			Integer singleCount = savedCounts.get(featTypes.get(i));
+			Long singleCount = savedCounts.get(featTypes.get(i));
 			if (singleCount != null)
 			{
 				sb.append(String.format(",%.2f%%", 100.0*(double)count/(double)singleCount));
