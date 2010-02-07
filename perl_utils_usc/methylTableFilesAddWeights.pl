@@ -21,7 +21,7 @@ FILE: foreach my $origFn (@ARGV)
 {
     my ($name, $path, $suf) = fileparse($origFn, qr/\.[^.]*/); # qr/\.txt/); #
 
-	if ($name !~ /chr([0-9xy]+)/i)
+	if ($name !~ /chr([0-9xym]+)/i)
 	{
 		print STDERR "File $name does not contain \"chr\*\" .. skipping\n";
 		next FILE;
