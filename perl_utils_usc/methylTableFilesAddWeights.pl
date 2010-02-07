@@ -68,6 +68,7 @@ FILE: foreach my $origFn (@ARGV)
 	
 	close(R);
 	close(W); 
+	unlink($newFn);
 }
 
 sub runCmd
