@@ -31,6 +31,8 @@ FILE: foreach my $origFn (@ARGV)
 	$chrNum = 24 if (uc($chrNum) eq "Y");
 	$chrNum = 25 if (uc($chrNum) eq "M");
 
+	my $oneBased = ( ($name =~ /IMR90/i) || ($name =~ /H1/i));
+
 	# We want the output file to have the same name as the input (because
 	# this matches the database name).  So we move the original to a temp.
 	my ( $newfh, $newFn ) = tempfile( "${name}XXXXXX", DIR => "/tmp" );
@@ -49,14 +51,27 @@ FILE: foreach my $origFn (@ARGV)
 		my @f = split(/\t/,$line);
 		
 		my $pos = $f[0];
+		$pos-- if ($oneBased);
 		$pos-- if ($f[1] eq "-"); # Pos should always be the forward strand C
 		my $key = "${chrNum}.${pos}";
 		my $weight = $weights->{$key};
 		
 		if (!$weight)
 		{
-			print STDERR  "Can't find weight for CpG at $key\n";
-			$weight = 1;
+			# The H1 and IMR90 dumps didn't have negative strands
+			if ($f[1] eq '+')
+			{
+				$pos--;
+				$key = "${chrNum}.${pos}";
+				$weight = $weights->{$key};
+				$f[1] = "-" if ($weight); # This is actually a negative strand one
+			}
+			
+			if (!$weight)
+			{
+				print STDERR  "Can't find weight for CpG at $key\n";
+				$weight = 1;
+			}
 		} 
 		
 		my $replace = 0;
