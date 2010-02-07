@@ -31,8 +31,6 @@ FILE: foreach my $origFn (@ARGV)
 	$chrNum = 24 if (uc($chrNum) eq "Y");
 	$chrNum = 25 if (uc($chrNum) eq "M");
 
-	my $oneBased = ( ($name =~ /IMR90/i) || ($name =~ /H1/i));
-
 	# We want the output file to have the same name as the input (because
 	# this matches the database name).  So we move the original to a temp.
 	my ( $newfh, $newFn ) = tempfile( "${name}XXXXXX", DIR => "/tmp" );
@@ -51,8 +49,9 @@ FILE: foreach my $origFn (@ARGV)
 		my @f = split(/\t/,$line);
 		
 		my $pos = $f[0];
-		$pos-- if ($oneBased);
+		#print STDERR "orig pos = $pos\n";
 		$pos-- if ($f[1] eq "-"); # Pos should always be the forward strand C
+		#print STDERR "first strand correction = $pos\n";
 		my $key = "${chrNum}.${pos}";
 		my $weight = $weights->{$key};
 		
@@ -62,6 +61,7 @@ FILE: foreach my $origFn (@ARGV)
 			if ($f[1] eq '+')
 			{
 				$pos--;
+				#print STDERR "second strand correction = $pos\n";
 				$key = "${chrNum}.${pos}";
 				$weight = $weights->{$key};
 				$f[1] = "-" if ($weight); # This is actually a negative strand one
@@ -77,7 +77,20 @@ FILE: foreach my $origFn (@ARGV)
 		my $replace = 0;
 		$replace = 1 if ($f[11] =~ /^[0-9]+$/i);
 		
-		splice(@f, 11, ($replace) ? 1 : 0, $weight);
+		#print STDERR "replace=$replace, numFlds = " . scalar(@f) . "\n";
+		if (scalar(@f)>=12)
+		{
+			splice(@f, 11, ($replace) ? 1 : 0, $weight);
+		}
+		else
+		{
+			for (my $i = scalar(@f); $i < 11; $i++)
+			{
+				$f[$i] = 0;
+			}
+			$f[11] = $weight;
+		}
+		#print STDERR "\tAdded field 11, numFlds = " . scalar(@f) . "\n";
 		print W join("\t",@f)."\n";
 	}
 	
