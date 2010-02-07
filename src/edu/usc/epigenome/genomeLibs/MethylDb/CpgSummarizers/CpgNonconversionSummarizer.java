@@ -50,7 +50,7 @@ public class CpgNonconversionSummarizer extends CpgSummarizer {
 			if (cpg.totalReadsOpposite >= 5)
 			{
 				double frac = (double)cpg.cReadsNonconversionFilt/((double)cpg.cReadsNonconversionFilt+(double)cpg.cReads+(double)cpg.tReads);
-				this.streamValue( frac * 100.0); // Make it percent
+				this.streamValue( frac * 100.0, cpg.getCpgWeight()); // Make it percent
 			}
 		}
 	}

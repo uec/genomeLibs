@@ -63,6 +63,8 @@ public class MethylDbToFeatPairCounts {
     protected boolean noNonconvFilter = false;
     @Option(name="-threeWay",usage="Do feature triplets")
     protected boolean threeWay = false;
+    @Option(name="-cpgCounts",usage="Do counts based on raw number of Cpgs (rather than base pairs)")
+    protected boolean cpgCounts = false;
     @Option(name="-methylDbPrefix",usage="use this table to get CpGs")
     protected String methylDbPrefix = "methylCGsRich_normal010310_";
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
@@ -110,7 +112,8 @@ public class MethylDbToFeatPairCounts {
 		
 		int nFeats = featTypes.size();
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
-		String vennFn = String.format("Venns%s.htm", featTypes.get(0));
+		String countsSec = (this.cpgCounts) ? "cpgCounts" : "bpCounts"; 
+		String vennFn = String.format("Venns%s.%s.htm", featTypes.get(0), countsSec);
 		PrintWriter vennPw = new PrintWriter(new FileOutputStream(vennFn));
 		
 		// Go through individual feats.
@@ -181,7 +184,7 @@ public class MethylDbToFeatPairCounts {
 		
 		int count = 0;
 		
-		for (String chr : Arrays.asList("chr11","chr12")) //MethylDbUtils.CHROMS) //  
+		for (String chr : Arrays.asList("chr1")) //MethylDbUtils.CHROMS) //  
 		{		
 			
 			// Iterator uses DB connection and can use a ton of memory because
@@ -196,8 +199,26 @@ public class MethylDbToFeatPairCounts {
 //				params.addRangeFilter(chr);
 			
 				CpgIterator cpgit = new CpgIterator(params);
-				int numRows = cpgit.getCurNumRows();
-				count += numRows;
+				
+				// Weighted or unweighted
+				int counti;
+				if (this.cpgCounts)
+				{
+					int numRows = cpgit.getCurNumRows();
+					counti = numRows;
+				}
+				else
+				{
+					counti = 0;
+					while (cpgit.hasNext())
+					{
+						Cpg cpg = cpgit.next();
+						counti += (int)cpg.getCpgWeight();
+						//System.err.printf("Weight=%d\n", (int)cpg.getCpgWeight());
+					}
+				}
+				
+				count += counti;
 			}
 		}
 		

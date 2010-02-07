@@ -47,8 +47,8 @@ public abstract class CpgSummarizer {
 	protected double naturalMax = Double.NaN;
 	protected Color color = Color.BLACK;
 	
-	protected Cpg lastCpgSeen = null;
-	int curWeight = -1;
+//	protected Cpg lastCpgSeen = null;
+//	int curWeight = -1;
 	
 	/**
 	 * We need the querier criteria for certain output
@@ -97,7 +97,7 @@ public abstract class CpgSummarizer {
 		valsMin = Double.POSITIVE_INFINITY;
 		valsMax = Double.POSITIVE_INFINITY;
 
-		this.lastCpgSeen = null;
+//		this.lastCpgSeen = null;
 		this.valsWeightingTotal = 0.0;
 		this.weightingTotal = 0.0;
 		
@@ -113,41 +113,41 @@ public abstract class CpgSummarizer {
 	{
 		nCpgsSeen++;
 		
-		// We'll use this weighting when a value is captured
-		if (this.lastCpgSeen != null)
-		{
-			
-			// If the last CpG is simply the opposite strand one,
-			// the dist will be 1.  In this case, use the weighting to
-			// the previous one.
-			int dist = cpg.chromPos - this.lastCpgSeen.chromPos;
-			if (dist == 1)
-			{
-				// Do nothing
-			}
-			else
-			{
-				this.curWeight = dist;
-
-				if (this.curWeight > 10000)
-				{
-					// If it's >10000, it's a jump between elements generally.  Just count it as one
-					this.curWeight = 1; 
-					//System.err.printf("%d\tDistance between two CpGs>100000\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
-				}
-				else if (this.curWeight < 0)
-				{
-					// This happens at the beginning of the chromosome when the last cpg is from the last chrom
-					this.curWeight = 1;
-					//System.err.printf("%d\tDistance between two CpGs<0\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
-				}
-			}
-
-			//System.err.println("Setting cpg weight: " + this.curWeight);
-			cpg.setCpgWeight(this.curWeight);
-
-		}
-		this.lastCpgSeen = cpg;
+//		// We'll use this weighting when a value is captured
+//		if (this.lastCpgSeen != null)
+//		{
+//			
+//			// If the last CpG is simply the opposite strand one,
+//			// the dist will be 1.  In this case, use the weighting to
+//			// the previous one.
+//			int dist = cpg.chromPos - this.lastCpgSeen.chromPos;
+//			if (dist == 1)
+//			{
+//				// Do nothing
+//			}
+//			else
+//			{
+//				this.curWeight = dist;
+//
+//				if (this.curWeight > 10000)
+//				{
+//					// If it's >10000, it's a jump between elements generally.  Just count it as one
+//					this.curWeight = 1; 
+//					//System.err.printf("%d\tDistance between two CpGs>100000\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+//				}
+//				else if (this.curWeight < 0)
+//				{
+//					// This happens at the beginning of the chromosome when the last cpg is from the last chrom
+//					this.curWeight = 1;
+//					//System.err.printf("%d\tDistance between two CpGs<0\t%d\t%d\n",curWeight, lastCpgSeen.chromPos, cpg.chromPos);
+//				}
+//			}
+//
+//			//System.err.println("Setting cpg weight: " + this.curWeight);
+//			cpg.setCpgWeight(this.curWeight);
+//
+//		}
+//		this.lastCpgSeen = cpg;
 		
 	}
 	
@@ -158,7 +158,7 @@ public abstract class CpgSummarizer {
 	 * Use this to update summary stats
 	 * @param val
 	 */
-	protected void streamValue(double val)
+	protected void streamValue(double val, double weight)
 	{
 		if (!Double.isNaN(val))
 		{
@@ -169,11 +169,11 @@ public abstract class CpgSummarizer {
 			if (Double.isNaN(this.valsMax) || (val > this.valsMax)) this.valsMax = val;
 			
 			// Keep track of one version weighted by base pairs covered by the CpG
-			if (this.curWeight > 0)
+			if (weight > 0)
 			{
 				//System.err.println("\t\tAdding weight: " + curWeight);
-				this.weightingTotal += (double)this.curWeight;
-				this.valsWeightingTotal += ((double)this.curWeight * val);
+				this.weightingTotal += weight;
+				this.valsWeightingTotal += (weight * val);
 				if (Double.isNaN(this.weightingTotal) || Double.isNaN(this.valsWeightingTotal))
 				{
 					System.err.printf("Running totals weighting: %f\tvalsWeightingTotal=%f\n", this.weightingTotal, this.valsWeightingTotal);
@@ -186,10 +186,10 @@ public abstract class CpgSummarizer {
 
 	}
 
-	protected void removeValue(double val)
-	{
-		removeValue(val, Double.NaN);
-	}
+//	protected void removeValue(double val)
+//	{
+//		removeValue(val, Double.NaN);
+//	}
 	
 	protected void removeValue(double val, double weight)
 	{

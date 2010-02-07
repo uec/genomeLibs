@@ -62,7 +62,7 @@ public class Cpg implements Comparable, Cloneable {
 	
 	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
 			short cReadsNonconversionFilt, short tReads, short agReads,
-			short totalReadsOpposite, short aReadsOpposite) {
+			short totalReadsOpposite, short aReadsOpposite, int cpgWeight) {
 		super();
 		this.chromPos = chromPos;
 		this.negStrand = negStrand;
@@ -73,6 +73,7 @@ public class Cpg implements Comparable, Cloneable {
 		this.agReads = agReads;
 		this.totalReadsOpposite = totalReadsOpposite;
 		this.aReadsOpposite = aReadsOpposite;
+		this.cpgWeight = (double)cpgWeight;
 	}
 	
 	/*** Overridden Comparable methods
@@ -257,9 +258,9 @@ public class Cpg implements Comparable, Cloneable {
 		return cpgWeight;
 	}
 
-	public void setCpgWeight(double cpgWeight) {
-		this.cpgWeight = cpgWeight;
-	}
+//	public void setCpgWeight(double cpgWeight) {
+//		this.cpgWeight = cpgWeight;
+//	}
 
 	public char getNextBaseRef() {
 		return nextBaseRefUpperCase;

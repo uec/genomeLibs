@@ -48,7 +48,7 @@ public class CpgCoverageSummarizer extends CpgSummarizer {
 		
 		// FORWARD STRAND ONLY
 		double val = (double)(cpg.totalReads);
-		this.streamValue(val);
+		this.streamValue(val, cpg.getCpgWeight());
 	}
 
 	@Override

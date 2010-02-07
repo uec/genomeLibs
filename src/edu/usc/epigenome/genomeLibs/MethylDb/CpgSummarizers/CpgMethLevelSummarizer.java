@@ -47,7 +47,7 @@ public class CpgMethLevelSummarizer extends CpgSummarizer {
 		if (cpg.passesOppositeAFilterDefault())
 		{
 			double val = cpg.fracMeth(true);
-			this.streamValue(val);
+			this.streamValue(val, cpg.getCpgWeight());
 		}
 	}
 

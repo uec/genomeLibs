@@ -150,7 +150,8 @@ public class CpgIterator implements Iterator<Cpg> {
 					curRS.getShort("tReads"),
 					curRS.getShort("agReads"),
 					curRS.getShort("totalReadsOpposite"),
-					curRS.getShort("aReadsOpposite"));
+					curRS.getShort("aReadsOpposite"),
+					curRS.getInt("cpgWeight"));
 			
 			// Downsample data.
 			double downsamplingFactor = this.params.getSamplingFactor();

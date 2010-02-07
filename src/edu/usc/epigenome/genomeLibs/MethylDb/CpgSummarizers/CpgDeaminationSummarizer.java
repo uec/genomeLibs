@@ -45,7 +45,7 @@ public class CpgDeaminationSummarizer extends CpgSummarizer {
 		super.streamCpg(cpg);
 		
 		// Make it a percent
-		this.streamValue( (cpg.passesOppositeAFilterDefault()) ? 0.0 : 100.0);
+		this.streamValue( (cpg.passesOppositeAFilterDefault()) ? 0.0 : 100.0, cpg.getCpgWeight());
 	}
 
 	@Override

@@ -162,7 +162,8 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 						curRS.getShort("cpg" + i + ".tReads"),
 						curRS.getShort("cpg" + i + ".agReads"),
 						curRS.getShort("cpg" + i + ".totalReadsOpposite"),
-						curRS.getShort("cpg" + i + ".aReadsOpposite"));
+						curRS.getShort("cpg" + i + ".aReadsOpposite"),
+						curRS.getInt("cpg" + i + ".cpgWeight"));
 
 				// Downsample data.
 				double downsamplingFactor = this.params.getSamplingFactor();
