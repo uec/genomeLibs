@@ -6,6 +6,7 @@ import heatMap.HeatMap;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -40,7 +41,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	protected final static int BP_SMOOTHING = 400;
 	protected final static int HEATMAP_ROWS = 100;
 	
-	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, 
+	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, arr[2] fwNumScores, arr[3] revNumScores,
 	// j = featNum: arr[0][5] = fwTotalScores for feat 6
 	// k = coordinate: arr[0][5][350] = coord (350 - flank) relative to feature center.
 	protected double[][][] arr;
@@ -50,7 +51,6 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	protected Map<GenomicRange,Integer> featinds = new TreeMap<GenomicRange,Integer>();
 	protected int nFeatsSeen = 0;
 	
-
 	/**
 	 * @param flankSize
 	 * @param zeroInit
@@ -73,10 +73,10 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			System.exit(1);
 		}
 		
-		// i = type: arr[0] fwTotalScores, arr[1] revTotalScores
+		// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, arr[2] fwNumScores, arr[3] revNumScores,
 		// j = featNum: arr[0][5] = fwTotalScores for feat 6
 		// k = coordinate: arr[0][5][350] = coord (350 - flank) relative to feature center.
-		this.arr = new double[2][nFeats][this.downscaleCols];
+		this.arr = new double[4][nFeats][this.downscaleCols];
 		this.featCoords = new GenomicRange[nFeats];
 		this.featNames = new String[nFeats];
 		this.sortVals = new Double[nFeats];
@@ -106,10 +106,19 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		int featInd = this.getInd(gr, featName);
 		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand, true);
 		this.sortVals[featInd] = new Double(sortVal);
-
+		
 		// Flip the strand of the scores if features are flipped
-		arr[0][featInd][colInd] = (featStrand==StrandedFeature.NEGATIVE) ? revStrandScore : fwStrandScore;
-		arr[1][featInd][colInd] = (featStrand==StrandedFeature.NEGATIVE) ? fwStrandScore : revStrandScore;
+		double fwScoreRel = (featStrand==StrandedFeature.NEGATIVE) ? revStrandScore : fwStrandScore;
+		double revScoreRel = (featStrand==StrandedFeature.NEGATIVE) ? fwStrandScore : revStrandScore;
+
+		// Add it to old score
+		arr[0][featInd][colInd] = MatUtils.nanSum(fwScoreRel, arr[0][featInd][colInd]);
+		arr[1][featInd][colInd] = MatUtils.nanSum(revScoreRel, arr[1][featInd][colInd]);
+
+		// And add to totals
+		if (!Double.isNaN(fwScoreRel)) arr[2][featInd][colInd] = MatUtils.nanSum(1.0, arr[2][featInd][colInd]);
+		if (!Double.isNaN(revScoreRel))  arr[3][featInd][colInd] = MatUtils.nanSum(1.0, arr[3][featInd][colInd]);
+		
 	}
 
 
@@ -194,7 +203,10 @@ public class FeatAlignerEachfeat extends FeatAligner {
 //			data = MatUtils.sortRows(data,-0.3333,10);
 			
 //			this.sortRowsExponential(-0.3333, 10);
-			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+			double[][] fw = MatUtils.divMats(this.arr[0], this.arr[2]);
+			double[][] rev = MatUtils.divMats(this.arr[1], this.arr[3]);
+			
+			double[][] dataFull = MatUtils.nanMeanMats(fw, rev);
 			double[][]data = new double[this.nFeatsSeen][];
 			for (int i = 0; i < this.nFeatsSeen; i++) data[i] = dataFull[i];
 			
@@ -274,7 +286,8 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	 * @see edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner#toAverageFeatAligner()
 	 */
 	@Override
-	public FeatAlignerAveraging toAverageFeatAligner() {
+	public FeatAlignerAveraging toAverageFeatAligner() 
+	{
 
 		FeatAlignerAveraging out = new FeatAlignerAveraging(this.flankSize, this.zeroInit);
 		
@@ -282,6 +295,16 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		{
 			double[] fwScores = arr[0][j];
 			double[] revScores = arr[1][j];
+			try
+			{
+			fwScores = MatUtils.divVects(arr[0][j], arr[2][j]);
+			revScores = MatUtils.divVects(arr[1][j], arr[3][j]);
+			}
+			catch (Exception e)
+			{
+				System.err.println(e);
+				e.printStackTrace();
+			}
 			out.addAlignmentFast(fwScores, revScores);
 		}
 		
@@ -308,14 +331,31 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 	public void matlabCsv(PrintWriter pw, boolean strandSpecific)
 	{
+		double[][] fw = this.arr[0];
+		double[][] rev = this.arr[1];
+		if (!this.zeroInit)
+		{
+			try 
+			{
+				fw = MatUtils.divMats(this.arr[0], this.arr[2]);
+				rev = MatUtils.divMats(this.arr[1], this.arr[3]);
+			}
+			catch (Exception e)
+			{
+				System.err.println(e);
+				e.printStackTrace();
+			}
+		}
+		
+			
 		if (strandSpecific)
 		{
-			MatUtils.matlabCsv(pw, this.arr[0], this.numFeats(), 0);
-			MatUtils.matlabCsv(pw, this.arr[1], this.numFeats(), 0);
+			MatUtils.matlabCsv(pw, fw, this.numFeats(), 0);
+			MatUtils.matlabCsv(pw, rev, this.numFeats(), 0);
 		}
 		else
 		{
-			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+			double[][] dataFull = MatUtils.nanMeanMats(fw, rev);
 			System.err.println("Making matlab for " + dataFull.length + " rows (numFeats=" + this.numFeats());
 			MatUtils.matlabCsv(pw, dataFull, this.numFeats(), 0);
 		}
@@ -324,7 +364,20 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	public HeatMap heatMap(double[] colorMinMax)
 	throws Exception
 	{
-		double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
+		double[][] fw = this.arr[0];
+		double[][] rev = this.arr[1];
+		try 
+		{
+			fw = MatUtils.divMats(this.arr[0], this.arr[2]);
+			rev = MatUtils.divMats(this.arr[1], this.arr[3]);
+		}
+		catch (Exception e)
+		{
+			System.err.println(e);
+			e.printStackTrace();
+		}
+
+		double[][] dataFull = MatUtils.nanMeanMats(fw, rev);
 		
 		// Did we actually see as many features as expected?
 		double[][]data = new double[this.nFeatsSeen][];

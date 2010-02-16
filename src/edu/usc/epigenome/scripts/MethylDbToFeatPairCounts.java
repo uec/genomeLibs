@@ -63,12 +63,18 @@ public class MethylDbToFeatPairCounts {
     protected boolean noNonconvFilter = false;
     @Option(name="-threeWay",usage="Do feature triplets")
     protected boolean threeWay = false;
+    @Option(name="-fourWay",usage="Do feature quadruplets")
+    protected boolean fourWay = false;
     @Option(name="-cpgCounts",usage="Do counts based on raw number of Cpgs (rather than base pairs)")
     protected boolean cpgCounts = false;
+    @Option(name="-outPrefix",usage="outputFilename")
+    protected String outPrefix = "featPairs";
+    @Option(name="-masterFeat",usage="If a master feat is specified, we only do pairwise against that")
+    protected String masterFeat = null;
     @Option(name="-methylDbPrefix",usage="use this table to get CpGs")
     protected String methylDbPrefix = "methylCGsRich_normal010310_";
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
-    protected int minCTreads = 2;
+    protected int minCTreads = 0;  // For this, we just care about whole genome stats
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
     		"This sets a maximum number of observed As on the opposite strand (default 0.1)")
     protected double maxOppStrandAfrac = 0.1;
@@ -99,6 +105,14 @@ public class MethylDbToFeatPairCounts {
 				System.exit(1);
 			}
 
+			if ((masterFeat != null) && (this.threeWay || this.fourWay))
+			{
+				System.err.println("Can not do three or four way if masterFeat is specified");
+				System.err.println(C_USAGE);
+				parser.printUsage(System.err);
+				System.exit(1);
+			}
+
 		}
 		catch (CmdLineException e)
 		{
@@ -113,61 +127,105 @@ public class MethylDbToFeatPairCounts {
 		int nFeats = featTypes.size();
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
 		String countsSec = (this.cpgCounts) ? "cpgCounts" : "bpCounts"; 
-		String vennFn = String.format("Venns%s.%s.htm", featTypes.get(0), countsSec);
+		String vennFn = String.format("Venns%s.%s.htm", this.outPrefix, countsSec);
 		PrintWriter vennPw = new PrintWriter(new FileOutputStream(vennFn));
+		
+		String csvFn = String.format("Venns%s.%s.csv", this.outPrefix, countsSec);
+		PrintWriter csvPw = new PrintWriter(new FileOutputStream(csvFn));
+		
 		
 		// Go through individual feats.
 		// counts can be larger than 32-bit Integer limit
 		Map<String,Long> savedCounts = new HashMap<String,Long>(nFeats);
-		for (String featType : featTypes)
+		List<String> singles = new ArrayList<String>(nFeats+1);
+		if (this.masterFeat!=null) singles.add(this.masterFeat);
+		singles.addAll(featTypes);
+		for (String featType : singles)
 		{
 			List<String> feats = new ArrayList<String>(1);
 			feats.add(featType);
-			long count = printCounts(feats, savedCounts, vennPw);
+			long count = printCounts(feats, savedCounts, vennPw, csvPw);
 		}
 
 		// Then feat pairs
-		if (nFeats>1)
+		if (this.masterFeat != null)
 		{
 			for (int i = 0; i < nFeats; i++)
 			{
-				for (int j = i+1; j < nFeats; j++)
-				{
-					List<String> feats = new ArrayList<String>(2);
-					feats.add(featTypes.get(i));
-					feats.add(featTypes.get(j));
-					long count = printCounts(feats, savedCounts, vennPw);
-				}
+				List<String> feats = Arrays.asList(this.masterFeat, featTypes.get(i));
+				long count = printCounts(feats, savedCounts, vennPw, csvPw);
 			}
 		}
-		
-		// Triplets. I know there's a fancy recursive way to do this, but 
-		// this produces a nice ordering for the time being.
-		if (threeWay && (nFeats>2))
+		else
 		{
-			for (int i = 0; i < nFeats; i++)
+			if (nFeats>1)
 			{
-				for (int j = i+1; j < nFeats; j++)
+				for (int i = 0; i < nFeats; i++)
 				{
-					for (int k = j+1; k < nFeats; k++)
+					for (int j = i+1; j < nFeats; j++)
 					{
-						List<String> feats = new ArrayList<String>(3);
+						List<String> feats = new ArrayList<String>(2);
 						feats.add(featTypes.get(i));
 						feats.add(featTypes.get(j));
-						feats.add(featTypes.get(k));
-						printCounts(feats, savedCounts, vennPw);
+						long count = printCounts(feats, savedCounts, vennPw, csvPw);
+					}
+				}
+			}
+
+			// Triplets. I know there's a fancy recursive way to do this, but 
+			// this produces a nice ordering for the time being.
+			if (threeWay && (nFeats>2))
+			{
+				for (int i = 0; i < nFeats; i++)
+				{
+					for (int j = i+1; j < nFeats; j++)
+					{
+						for (int k = j+1; k < nFeats; k++)
+						{
+							List<String> feats = new ArrayList<String>(3);
+							feats.add(featTypes.get(i));
+							feats.add(featTypes.get(j));
+							feats.add(featTypes.get(k));
+							printCounts(feats, savedCounts, vennPw, csvPw);
+						}
+					}
+				}
+			}
+
+			// Don't have a way to draw quadruplets, but we can output them
+			if (threeWay && (nFeats>3))
+			{
+				for (int i = 0; i < nFeats; i++)
+				{
+					for (int j = i+1; j < nFeats; j++)
+					{
+						for (int k = j+1; k < nFeats; k++)
+						{
+							for (int l = k+1; l < nFeats; l++)
+							{
+								List<String> feats = new ArrayList<String>(3);
+								feats.add(featTypes.get(i));
+								feats.add(featTypes.get(j));
+								feats.add(featTypes.get(k));
+								feats.add(featTypes.get(l));
+								// Put null since we can't do the venns
+								printCounts(feats, savedCounts, null,csvPw);
+							}
+						}
 					}
 				}
 			}
 		}
 		
 		vennPw.close();
+		csvPw.close();
 	}
 
-	protected long printCounts(List<String> featTypes, Map<String,Long> savedCounts, PrintWriter vennPw) 
+	protected long printCounts(List<String> featTypes, Map<String,Long> savedCounts, 
+			PrintWriter vennPw, PrintWriter csvPw) 
 	throws Exception
 	{
-		StringBuffer sb = new StringBuffer(5000);
+		StringBuffer sb = new StringBuffer(10000);
 		int nFeats = featTypes.size();
 		
 		// And the querier params
@@ -186,9 +244,10 @@ public class MethylDbToFeatPairCounts {
 		// Count can be over the INT 32-bit limit
 		long count = 0;
 		
-		for (String chr :  MethylDbUtils.CHROMS) //Arrays.asList("chr11", "chr20", "chrX")) //  
+		for (String chr :  MethylDbUtils.CHROMS) //  Arrays.asList("chr21")) //
 		{		
 			
+			System.err.printf("Feats=%s, %s\n",featStr, chr);
 			// Iterator uses DB connection and can use a ton of memory because
 			// it loads all rows at once.  This stuff should really be added to iterator
 			// class, but until it is , just iterate here over the chromosome
@@ -242,7 +301,7 @@ public class MethylDbToFeatPairCounts {
 			double[] allVals = {an, bn, cn, abn, acn, bcn, abcn};
 			ListUtils.setDelim(", ");
 			System.err.println("vals: " + ListUtils.excelLine(allVals));
-			double divBy = MatUtils.nanMax(allVals) / 100.0;
+			double divBy = MatUtils.nanMax(allVals) / 99.99; // Sometimes there's an overflow to 100.00001 when i set this to 100.0, and charts4j crashes
 
 			
 //			VennDiagram chart = GCharts.newVennDiagram(100, 80, 60, 30, 30, 30, 10);
@@ -277,7 +336,7 @@ public class MethylDbToFeatPairCounts {
 		sb.append("\n");
 		savedCounts.put(featStr, count);
 		System.err.println("Setting " + featStr + ": " + count);
-		System.out.append(sb);
+		csvPw.append(sb);
 		return count;
 	}
 	

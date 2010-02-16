@@ -59,6 +59,8 @@ public class MethylDbToDomains {
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
     		"This sets a maximum number of observed As on the opposite strand (default 0.1)")
     protected double maxOppStrandAfrac = 0.1;
+    @Option(name="-maxNextNonGfrac",usage="If the base following the C has more than this ratio of non-G bases, we don't count it. (default 0.1)")
+    protected double maxNextNonGfrac = 0.1;
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -135,11 +137,12 @@ public class MethylDbToDomains {
 		params.setMinCTreads(this.minCTreads);
 		params.setUseNonconversionFilter(!this.noNonconvFilter);
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+		params.setMaxNextNonGfrac(this.maxNextNonGfrac);
 		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
 
 
 
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //  
+		for (String chr : MethylDbUtils.CHROMS) // Arrays.asList("chr11")) // 
 		{
 			
 			

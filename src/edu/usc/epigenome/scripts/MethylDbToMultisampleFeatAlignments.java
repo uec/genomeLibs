@@ -173,8 +173,8 @@ public class MethylDbToMultisampleFeatAlignments {
 				}
 			}
 	
-			List<String> chroms = Arrays.asList("chr11");
-			//List<String> chroms = MethylDbUtils.CHROMS;
+			//List<String> chroms = Arrays.asList("chr11");
+			List<String> chroms = MethylDbUtils.CHROMS;
 			for (String chrStr : chroms)
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);

@@ -167,6 +167,13 @@ public class MatUtils {
 		return totalVar / (double)count;
 	}
 	
+	public static double nanSum(double a, double b)
+	{
+		double[] arr = new double[2];
+		arr[0] = a;
+		arr[1] = b;
+		return nanSum(arr);
+	}
 	
 	public static double nanSum(double[] arr)
 	{

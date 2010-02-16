@@ -51,6 +51,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean censor = false;
 	@Option(name="-alignToStart",usage="If set, align to the left end (or 5' if available) of the feature.  Default is to align to center")
 	protected boolean alignToStart = false;
+	@Option(name="-readCounts",usage="Output read counts")
+	protected boolean readCounts = false;
 	@Option(name="-alignToEnd",usage="If set, align to the right end (or 3' if available) of the feature.  Default is to align to center")
 	protected boolean alignToEnd = false;
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
@@ -171,7 +173,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			for (int i = 0; i < nS; i++)
 			{
 				// 0=readCount, 1=nCpGs, 2=mLevel
-//				fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,false, nFeats,500);
+				fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,true, nFeats,this.downscaleCols);
 //				fStatMats[i][1] = new FeatAlignerEachfeat(flankSize,true, nFeats,500);
 				fStatMats[i][2] = new FeatAlignerEachfeat(flankSize,false, nFeats,this.downscaleCols);
 //				for (int j = (i+1); j < nS; j++)
@@ -180,7 +182,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS)
+			for (String chrStr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) // 
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -199,7 +201,15 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 				if (this.sortByExpression != null)
 				{
-					sortVals = this.fStatMats[i][2].sortRowsBySortVals();
+					
+					if (this.readCounts)
+					{
+						sortVals = this.fStatMats[i][0].sortRowsBySortVals();
+					}
+					else
+					{
+						sortVals = this.fStatMats[i][2].sortRowsBySortVals();
+					}
 					
 				}
 				else if (sortVals == null)
@@ -220,23 +230,53 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 						}
 
 					}
-					sortVals = this.fStatMats[i][2].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
+					if (this.readCounts)
+					{
+						sortVals = this.fStatMats[i][0].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
+					}
+					else
+					{
+						sortVals = this.fStatMats[i][2].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
+					}
 				}
 				else
 				{
-					this.fStatMats[i][2].sortRowsByList(sortVals);
+					if (this.readCounts)
+					{
+						this.fStatMats[i][0].sortRowsByList(sortVals);
+					}
+					else
+					{
+						this.fStatMats[i][2].sortRowsByList(sortVals);
+					}
 				}
 				
 				
 				String tablePrefix = tablePrefixes.get(i);
 				writer.printf("<H4>%s (%d features)</H4>\n", tablePrefix, fStatMats[i][2].numFeats());
 				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
-				
-				PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
-						String.format("%s.%s.featType%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType)));
-				this.fStatMats[i][2].matlabCsv(alignmentWriter, false);
-				alignmentWriter.close();
 
+				if (this.readCounts)
+				{
+					writer.printf("<H4>ReadCounts %s (%d features)</H4>\n", tablePrefix, fStatMats[i][2].numFeats());
+					writer.println(this.fStatMats[i][0].htmlChart(!this.combineStrands, true, true));
+				}
+				
+
+				if (this.readCounts)
+				{
+					PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
+							String.format("%s.%s.featType%d.readCounts.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType)));
+					this.fStatMats[i][0].matlabCsv(alignmentWriter, !this.combineStrands);
+					alignmentWriter.close();
+				}
+				else
+				{
+					PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
+							String.format("%s.%s.featType%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType)));
+					this.fStatMats[i][2].matlabCsv(alignmentWriter, !this.combineStrands);
+					alignmentWriter.close();
+				}
 				
 				double[] colorMinMax = {0.0,1.0};
 				if (this.heatmap) this.fStatMats[i][2].launchSwingHeatmap(colorMinMax);
@@ -373,6 +413,13 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 								chromPos,
 								(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
 										(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
+												featName, chrStr, alignmentPoint, featStrand, sortVal);
+
+						double count = cpgs[i].totalReads;
+						this.fStatMats[i][0].addAlignmentPos(
+								chromPos,
+								(cpgStrand == StrandedFeature.NEGATIVE) ? 0.0 : count,
+										(cpgStrand == StrandedFeature.NEGATIVE) ? count : 0.0,
 												featName, chrStr, alignmentPoint, featStrand, sortVal);
 					}
 

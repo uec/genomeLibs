@@ -39,7 +39,8 @@ public class MethylDbQuerier {
 	// Filtering
 	protected int minCTreads = 0;
 	protected boolean useNonconversionFilter = true;
-	protected double maxOppstrandAfrac = 0.2; // Double.MAX_VALUE;
+	protected double maxOppstrandAfrac = 0.1; // Double.MAX_VALUE;
+	protected double maxNextNonGfrac = 0.1; // Double.MAX_VALUE;
 	
 	
 	
@@ -241,7 +242,17 @@ public class MethylDbQuerier {
 		this.maxOppstrandAfrac = maxOppstrandAfrac;
 	}
 	
+	public double getMaxNextNonGfrac() {
+		return maxNextNonGfrac;
+	}
+
+
+	public void setMaxNextNonGfrac(double maxNextNonGfrac) {
+		this.maxNextNonGfrac = maxNextNonGfrac;
+	}
+
 	/******* PUBLIC DB STUFF ********/
+
 
 	/**
 	 * @param asName This is the table alias, i.e. SELECT ... FROM tab1 t1, tab2 t2 ... 
@@ -410,7 +421,7 @@ public class MethylDbQuerier {
 		}
 		
 		
-		// oppstrand gtoa ratio
+		// oppstrand gtoa ratio (IMR90 and H1 might have total set to 0)
 		if (this.maxOppstrandAfrac < 1.0)
 		{
 			String clause = String.format("((%stotalReadsOpposite=0) OR ((%saReadsOpposite/%stotalReadsOpposite)<=?))",asSec, asSec, asSec);
@@ -420,6 +431,19 @@ public class MethylDbQuerier {
 				prep.setDouble(curInd++, (double)this.maxOppstrandAfrac);
 			}
 		}
+		
+		// next base G ratio (IMR90 and H1 might have total set to 0)
+		if (this.maxNextNonGfrac < 1.0)
+		{
+			String clause = String.format("((%snextBaseTotalReads=0) OR ((%snextBaseGreads/%snextBaseTotalReads)>=?))",asSec, asSec, asSec);
+			clauses.add(clause);
+			if (prep != null)
+			{
+				prep.setDouble(curInd++, 1.0-(double)this.maxNextNonGfrac);
+			}
+		}
+		
+		
 		
 		ListUtils.setDelim(" AND ");
 		String sql = ListUtils.excelLine(clauses.toArray(new String[1]));

@@ -117,8 +117,9 @@ public class MethylDbToBareWigs {
 			String outfn = this.outPrefix + "." + tab + ".bare.wig";
 			PrintWriter pw = new PrintWriter(new FileOutputStream(outfn));
 			pws[i] = pw;
+			// Use -2 for view limit so you can see ones at 0
 			pw.printf("track type=wiggle_0 name=%sbare description=%sbare color=204,102,0 visibility=full " +
-					" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", tab, tab);
+					" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=-2:100\n", tab, tab);
 		}
 
 

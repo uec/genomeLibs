@@ -264,7 +264,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 //		1 row in set (1 min 51.58 sec)
 
 		
-		String featTabSec = (params.usesFeatTable()) ? (params.getFeatTable() + ", " ) : "";
+		String featTabSec = (params.usesFeatTable()) ? (params.getFeatTable() + " feat0, " ) : "";
 		String joinSec = (params.usesFeatTable()) ? " straight_join " : "";
 		
 		// Table sec
