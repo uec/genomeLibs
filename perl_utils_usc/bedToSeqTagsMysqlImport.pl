@@ -2,6 +2,8 @@
 
 use strict;
 
+
+
 my $seen = {};
 LINE: while (my $line = <STDIN>)
 {
