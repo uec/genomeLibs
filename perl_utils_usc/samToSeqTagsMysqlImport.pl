@@ -34,7 +34,7 @@ LINE: while (my $line = <STDIN>)
 	# Check for valid line
 	if ($nF < 14)
 	{
-		print STDERR "Unrecognized SAM format! $nF fields\n";
+		print STDERR "Unrecognized SAM format! $nF fields\n$line\n";
 		next LINE;
 	} 
 	
