@@ -32,7 +32,7 @@ LINE: while (my $line = <STDIN>)
 	my $nF = scalar(@f);
 	
 	# Check for valid line
-	if ($nF < 14)
+	if ($nF < 11)
 	{
 		print STDERR "Unrecognized SAM format! $nF fields\n$line\n";
 		next LINE;
