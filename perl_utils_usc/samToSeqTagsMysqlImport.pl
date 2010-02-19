@@ -75,7 +75,7 @@ LINE: while (my $line = <STDIN>)
 	{
 		my $seq = $f[9];
 		my $len = length($seq);
-		$pos -= $len;
+		$pos += $len;
 	}
 	
 	
