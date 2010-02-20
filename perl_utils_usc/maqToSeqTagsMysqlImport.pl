@@ -39,6 +39,11 @@ LINE: while (my $line = <STDIN>)
 	my $chr = $f[1];
 	my $pos = $f[2];
 	my $strand = $f[3];
+	my $len = $f[13];
+	
+	# Maq reports at the leftmost coord relative to the genome.  We want to correct
+	# for negative strand reads
+	$pos += $len if ($strand eq '-');
 	
 	# Remove dups
 	my $key = join("__",$chr, $pos,$strand);
