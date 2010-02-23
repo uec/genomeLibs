@@ -91,7 +91,7 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				// Blank line, keep trying (unless we hit the end of file)
 				done = !this.openStream.ready();
 			}
-			else if ((line_items.length == 7) || (line_items.length == 8)) // length 7 if no reads
+			else if ((line_items.length >= 6) || (line_items.length <= 8)) // length 7 if no reads
 			{
 				String line_chr = line_items[0];
 				int line_pos = Integer.parseInt(line_items[1]);
