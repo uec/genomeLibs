@@ -36,7 +36,6 @@ public class MethylDbToNucleosomeComparisons {
 	
 	public static final String methPrefix = "methylCGsRich_imr90_";
 	public static final String controlMethPrefix = "methylCGsRich_normal010310_";
-	public static final String mnasePrefix = "mnaseIMR90_021110_";
 	
 	private static final String C_USAGE = "Use: MethylDbToNucleosomeComparisons -outPrefix out  " + 
 		" -withinFeat CTCF -nucSize 185 -assocSize 20 -maxOppStrandAfrac 0.10 -maxNextNonGfrac 0.10 -noNonconvFilter";
@@ -49,6 +48,8 @@ public class MethylDbToNucleosomeComparisons {
     protected String outPrefix = null;
     @Option(name="-nucSize",usage="nucleosome size (185)")
     protected int nucSize = 185;
+    @Option(name="-mnasePrefix",usage="mnase database table (default mnaseIMR90_021110_)")
+    protected String mnasePrefix = "mnaseIMR90_021110_";
     @Option(name="-minReadsPerBp",usage="only output CpGs with this number of reads per bp or greater (default 0.0)")
     protected double minReadsPerBp = 0.0;
     @Option(name="-assocSize",usage="Number of bases around 1/2 nuc to count (should be less than 1/2 nuc, default 40)")
@@ -133,7 +134,7 @@ public class MethylDbToNucleosomeComparisons {
 		List<String> methTables = Arrays.asList(methPrefix, controlMethPrefix);
 		List<String> mnaseTables = Arrays.asList(mnasePrefix);
 
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //  MethylDbUtils.CHROMS) //
+		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr2","chr21","chr22")) // 
 		{
 			
 			// Iterator uses DB connection and can use a ton of memory because
@@ -148,6 +149,8 @@ public class MethylDbToNucleosomeComparisons {
 				params.clearRangeFilters();
 				params.addRangeFilter(chr, c, c+STEP-1); 
 
+				try
+				{
 				
 				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, methTables);
 				//int numCpgs = cpgit.getCurNumRows();
@@ -171,7 +174,12 @@ public class MethylDbToNucleosomeComparisons {
 					}
 				}
 
-
+				}
+				catch (Exception e)
+				{
+					System.err.printf("%s\nCouldn't do region %s:%d-%d\n",e.toString(),chr,c,c+STEP-1);
+					e.printStackTrace();
+				}
 			}
 		}
 		
@@ -193,14 +201,17 @@ public class MethylDbToNucleosomeComparisons {
 
 		int center = target.chromPos;
 		int quarterNuc = (int)((double)this.nucSize/4.0);
+		int halfNuc = (int)((double)this.nucSize/2.0);
 		int assocHalf = (int)((double)this.assocSize/2.0);
+
+		int cycle = halfNuc;
 		
 		int s, e;
 		CpgIterator cpgit;
 		
 		// First fw
-		s = center - quarterNuc - assocHalf;
-		e = center - quarterNuc + assocHalf;
+		s = center - cycle - assocHalf;
+		e = center - cycle + assocHalf;
 		params.clearRangeFilters();
 		params.addRangeFilter(chr, s, e);
 		cpgit = new CpgIterator(params);
@@ -208,8 +219,8 @@ public class MethylDbToNucleosomeComparisons {
 		//System.err.printf("Cpg %d\t Getting (+) reads at %d-%d\t%d\n", center, s, e,fwCount);
 
 		// Then rev
-		s = center + quarterNuc - assocHalf;
-		e = center + quarterNuc + assocHalf;
+		s = center + cycle - assocHalf;
+		e = center + cycle + assocHalf;
 		params.clearRangeFilters();
 		params.addRangeFilter(chr, s, e);
 		cpgit = new CpgIterator(params);

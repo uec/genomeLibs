@@ -26,7 +26,7 @@ public class FeatAlignerAveraging extends FeatAligner {
 	
 	protected final int MAX_NUMPOINTS = 500;
 	protected final int NUMPOINTS_STEP = 2;
-	protected final int MINCOUNTS = 100; // Set to 0 for readCounts
+	protected final int MINCOUNTS = 0; // Set to 0 for readCounts
 //	double MIN_FRACTION_PASSING = 0.5;
 	protected final double MIN_FRACTION_CONTIGUOUS_STRETCH = 0.3;
 

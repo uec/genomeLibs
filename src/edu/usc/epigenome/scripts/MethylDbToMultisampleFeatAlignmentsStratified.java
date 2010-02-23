@@ -43,6 +43,14 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean combineStrands = false;
 	@Option(name="-heatmap",usage="If set, make a java heatmap")
 	protected boolean heatmap = false;
+	@Option(name="-nomatlab",usage="If set, don't make matlab output files (default false)")
+	protected boolean nomatlab = false;
+	@Option(name="-nometh",usage="If set, don't make meth files (default false)")
+	protected boolean nometh = false;
+	@Option(name="-nohtml",usage="If set, don't make html files (default false)")
+	protected boolean nohtml = false;
+	@Option(name="-nosort",usage="If set, don't sort at all (nullifies stratification). Default fale")
+	protected boolean nosort = false;
 //	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
 //	protected boolean noDeltas = false;
 	@Option(name="-featFilter",usage="We will take the intersection with this feature. Must be a featType in the features table")
@@ -146,7 +154,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 		int nFeatTypes = featFns.size();
 
 		// Setup writer
-		PrintWriter writer = new PrintWriter(new FileOutputStream(String.format("%s.charts.html", outputPrefix)));
+		PrintWriter writer = new PrintWriter(new FileOutputStream(String.format("%s.flank%d.charts.html", outputPrefix, this.flankSize)));
 		writer.println("<P>" + ListUtils.excelLine(args) + "</P>");
 
 	
@@ -161,7 +169,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			int nFeats = feats.num_features(); 
 			
 			PrintWriter sortWriter = new PrintWriter(new FileOutputStream(
-					String.format("%s.featType%d.sortVals.csv", outputPrefix, onFeatType)));
+					String.format("%s.flank%d.featType%d.sortVals.csv", outputPrefix, this.flankSize, onFeatType)));
 			
 			
 			// Create arrays
@@ -173,16 +181,16 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			for (int i = 0; i < nS; i++)
 			{
 				// 0=readCount, 1=nCpGs, 2=mLevel
-				fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,true, nFeats,this.downscaleCols);
+				if (readCounts) fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,true, nFeats,this.downscaleCols);
 //				fStatMats[i][1] = new FeatAlignerEachfeat(flankSize,true, nFeats,500);
-				fStatMats[i][2] = new FeatAlignerEachfeat(flankSize,false, nFeats,this.downscaleCols);
+				if (!nometh) fStatMats[i][2] = new FeatAlignerEachfeat(flankSize,false, nFeats,this.downscaleCols);
 //				for (int j = (i+1); j < nS; j++)
 //				{
 //					fDeltaMats[onDeltaMat++] = new FeatAlignerAveraging(flankSize,false);
 //				}
 			}
 	
-			for (String chrStr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) // 
+			for (String chrStr : MethylDbUtils.CHROMS) // Arrays.asList("chr11")) //
 			{
 				processChrom(chrStr, feats, tablePrefixes, skipUnoriented);
 			}
@@ -196,101 +204,92 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 			// M-levels
 			Double[] sortVals = null;
+			int ind = (this.readCounts) ? 0 : 2;
 			for (int i = 0; i < nS; i++)
 			{
+				if (!this.nosort)
+				{
+					if (this.sortByExpression != null)
+					{
+							sortVals = this.fStatMats[i][ind].sortRowsBySortVals();
+					}
+					else if (sortVals == null)
+					{
+						int nCols = this.fStatMats[i][ind].numCols();
+						int colsStart = 0;
+						int colsEnd = nCols-1;
+						if (this.censor)
+						{
+							int midPoint = (int)Math.round((double)nCols/2);
+							if (this.alignToStart)
+							{
+								colsStart = midPoint;
+							}
+							else if (this.alignToEnd)
+							{
+								colsEnd = midPoint;
+							}
 
-				if (this.sortByExpression != null)
-				{
-					
-					if (this.readCounts)
-					{
-						sortVals = this.fStatMats[i][0].sortRowsBySortVals();
-					}
-					else
-					{
-						sortVals = this.fStatMats[i][2].sortRowsBySortVals();
-					}
-					
-				}
-				else if (sortVals == null)
-				{
-					int nCols = this.fStatMats[i][2].numCols();
-					int colsStart = 0;
-					int colsEnd = nCols-1;
-					if (this.censor)
-					{
-						int midPoint = (int)Math.round((double)nCols/2);
-						if (this.alignToStart)
-						{
-							colsStart = midPoint;
-						}
-						else if (this.alignToEnd)
-						{
-							colsEnd = midPoint;
 						}
 
-					}
-					if (this.readCounts)
-					{
-						sortVals = this.fStatMats[i][0].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
+						sortVals = this.fStatMats[i][ind].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
 					}
 					else
 					{
-						sortVals = this.fStatMats[i][2].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
-					}
-				}
-				else
-				{
-					if (this.readCounts)
-					{
-						this.fStatMats[i][0].sortRowsByList(sortVals);
-					}
-					else
-					{
-						this.fStatMats[i][2].sortRowsByList(sortVals);
+						this.fStatMats[i][ind].sortRowsByList(sortVals);
 					}
 				}
 				
-				
+
 				String tablePrefix = tablePrefixes.get(i);
-				writer.printf("<H4>%s (%d features)</H4>\n", tablePrefix, fStatMats[i][2].numFeats());
-				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
-
-				if (this.readCounts)
+				if (!this.nohtml)
 				{
-					writer.printf("<H4>ReadCounts %s (%d features)</H4>\n", tablePrefix, fStatMats[i][2].numFeats());
-					writer.println(this.fStatMats[i][0].htmlChart(!this.combineStrands, true, true));
+					if (this.readCounts)
+					{
+						writer.printf("<H4>ReadCounts %s (%d features)</H4>\n", tablePrefix, fStatMats[i][ind].numFeats());
+						writer.println(this.fStatMats[i][0].htmlChart(!this.combineStrands, false, false));
+					}
+					else
+					{
+						writer.printf("<H4>%s (%d features)</H4>\n", tablePrefix, fStatMats[i][ind].numFeats());
+						writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true));
+					}
 				}
-				
 
-				if (this.readCounts)
+				if (!this.nomatlab)
 				{
-					PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
-							String.format("%s.%s.featType%d.readCounts.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType)));
-					this.fStatMats[i][0].matlabCsv(alignmentWriter, !this.combineStrands);
-					alignmentWriter.close();
-				}
-				else
-				{
-					PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
-							String.format("%s.%s.featType%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType)));
-					this.fStatMats[i][2].matlabCsv(alignmentWriter, !this.combineStrands);
-					alignmentWriter.close();
+					if (this.readCounts)
+					{
+						PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
+								String.format("%s.%s.featType%d.flank%d.readCounts.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize)));
+						this.fStatMats[i][0].matlabCsv(alignmentWriter, !this.combineStrands);
+						alignmentWriter.close();
+					}
+					else
+					{
+						PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
+								String.format("%s.%s.featType%d.flank%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize)));
+						this.fStatMats[i][2].matlabCsv(alignmentWriter, !this.combineStrands);
+						alignmentWriter.close();
+					}
 				}
 				
 				double[] colorMinMax = {0.0,1.0};
-				if (this.heatmap) this.fStatMats[i][2].launchSwingHeatmap(colorMinMax);
+				if (this.heatmap) this.fStatMats[i][ind].launchSwingHeatmap(colorMinMax);
 			} // Sample
 
-			System.err.println("About to sort expression vals");
-			Arrays.sort(sortVals);
-			System.err.println("About to print expression vals");
-			for (int i = 0; i < sortVals.length; i++)
+			if (sortVals != null)
 			{
-				sortWriter.println(sortVals[i].toString());
+				System.err.println("About to sort expression vals");
+				Arrays.sort(sortVals);
+				System.err.println("About to print expression vals");
+				for (int i = 0; i < sortVals.length; i++)
+				{
+					sortWriter.println(sortVals[i].toString());
+				}
+				sortWriter.close();
+				System.err.println("Done printing expression vals");
 			}
-			sortWriter.close();
-			System.err.println("Done printing expression vals");
 			
 
 //			if (!this.noDeltas)
@@ -394,7 +393,10 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				params.setMinCTreads(this.minCTreads);
 				params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 				params.addRangeFilter(chrStr,flankStart,flankEnd);
+				
 				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
+
+				
 				while (cpgit.hasNext()) 
 				{
 					Cpg[] cpgs = cpgit.next();
@@ -409,18 +411,24 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					{
 						double mLevel = cpgs[i].fracMeth(params.getUseNonconversionFilter());
 						mLevels[i] = mLevel;
-						this.fStatMats[i][2].addAlignmentPos(
-								chromPos,
-								(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
-										(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
-												featName, chrStr, alignmentPoint, featStrand, sortVal);
+						if (!this.nometh)
+						{
+							this.fStatMats[i][2].addAlignmentPos(
+									chromPos,
+									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
+											(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
+													featName, chrStr, alignmentPoint, featStrand, sortVal);
+						}
 
 						double count = cpgs[i].totalReads;
-						this.fStatMats[i][0].addAlignmentPos(
-								chromPos,
-								(cpgStrand == StrandedFeature.NEGATIVE) ? 0.0 : count,
-										(cpgStrand == StrandedFeature.NEGATIVE) ? count : 0.0,
-												featName, chrStr, alignmentPoint, featStrand, sortVal);
+						if (this.readCounts)
+						{
+							this.fStatMats[i][0].addAlignmentPos(
+									chromPos,
+									(cpgStrand == StrandedFeature.NEGATIVE) ? 0.0 : count,
+											(cpgStrand == StrandedFeature.NEGATIVE) ? count : 0.0,
+													featName, chrStr, alignmentPoint, featStrand, sortVal);
+						}
 					}
 
 					//				if (!this.noDeltas)

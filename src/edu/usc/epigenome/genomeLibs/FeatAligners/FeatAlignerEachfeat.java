@@ -185,24 +185,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		{
 
 			// DOWNSCALING
-			
-//			double[][] dataFull = MatUtils.nanMeanMats(this.arr[0], this.arr[1]);
-//			
-//			// Did we actually see as many features as expected?
-//			double[][]data = new double[this.nFeatsSeen][];
-//			for (int i = 0; i < this.nFeatsSeen; i++) data[i] = dataFull[i];
-//			
-//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format(
-//					"num nans: this.arr[0]=%d, this.arr[1]=%d, sum(this.arr[0..1])=%d\n",
-//					MatUtils.countNans(this.arr[0]), MatUtils.countNans(this.arr[1]), MatUtils.countNans(data)));
-//
-//
-//			
-//
-//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Sorting %d rows\n",data.length));
-//			data = MatUtils.sortRows(data,-0.3333,10);
-			
-//			this.sortRowsExponential(-0.3333, 10);
+		
 			double[][] fw = MatUtils.divMats(this.arr[0], this.arr[2]);
 			double[][] rev = MatUtils.divMats(this.arr[1], this.arr[3]);
 			

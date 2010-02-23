@@ -47,6 +47,8 @@ public class MethylDbToMultisampleFeatAlignments {
 	protected boolean combineStrands = false;
 	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
 	protected boolean noDeltas = false;
+	@Option(name="-nometh",usage="If set, do not output any meth charts")
+	protected boolean nometh = false;
 	@Option(name="-featFilter",usage="We will take the intersection with this feature. Must be a featType in the features table")
 	protected List<String> featFilters = new ArrayList<String>(5);
 	@Option(name="-censor",usage="If set, do not include points within the flank region but inside the feature region")
@@ -201,8 +203,10 @@ public class MethylDbToMultisampleFeatAlignments {
 				{
 					writer.println(this.fStatMats[i][0].htmlChart(!this.combineStrands, false, false, tablePrefix, featsFnBase));
 				}
-				
-				writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true, tablePrefix, featsFnBase));
+				if (!this.nometh)
+				{
+					writer.println(this.fStatMats[i][2].htmlChart(!this.combineStrands, true, true, tablePrefix, featsFnBase));
+				}
 			}
 
 			if ((nS>1) && !this.noDeltas)

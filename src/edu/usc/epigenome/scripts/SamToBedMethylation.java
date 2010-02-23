@@ -4,13 +4,8 @@ import net.sf.samtools.*;
 import net.sf.samtools.util.CloseableIterator;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.logging.Logger;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -22,14 +17,10 @@ import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
-public class SamToBed {
+public class SamToBedMethylation {
 
-	final private static String prefix = "methylCGsRich_";
 	final private static String USAGE = "SamToBed [opts] sampleName file1.bam file2.bam ... > out.bed";
 
-	final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
-	
-	
 	/**
 	 * object vars
 	 */
@@ -66,7 +57,7 @@ public class SamToBed {
 	public static void main(String[] args)
 	throws Exception
 	{
-		new SamToBed().doMain(args);
+		new SamToBedMethylation().doMain(args);
 	}
 
 	public void doMain(String[] args)
