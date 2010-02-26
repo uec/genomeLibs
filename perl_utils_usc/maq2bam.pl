@@ -14,7 +14,8 @@ my $finalBamFn = 0;
 
 die "input must be map file" if ($mapFn !~ /\.map$/);
 die "not supported for non-human, will fix soon" if ($refFa !~ /hg/);
-my $mapFnBase = basename($mapFn, qr/\.map/);
+my $mapFnBase = basename($mapFn);
+$mapFnBase =~ s/\.map$//;
 
 # Since we're going into a temp dir one level deeper, we have to adjust for relative FNs
 my $curIn = $mapFn;
