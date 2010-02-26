@@ -102,35 +102,47 @@ public class AlignmentPosIteratorMaqPileup extends AlignmentPosIterator {
 				char[] snps = snps_str.toCharArray();
 				String base_quals = line_items[5];
 				//		String mapping_quals = line_items[6];
-				
+
 				String read_positions = "";
-				if (positionsIncluded && (read_count>0)) read_positions = line_items[7];
-
-
-				// Make the output object.  Just make one with SNPs, and then reduce if necessary
-				if (this.apOptions.trackBisulfiteConversion)
+				if (positionsIncluded && (read_count>0))
 				{
-					ap = new AlignmentPosSnpsBisulfiteConverted(line_ref, line_chr, line_pos, this.apOptions);
-				}
-				else
-				{
-					ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
-				}
-				
-				ap.setStrand(StrandedFeature.POSITIVE); // Positive by default
-				//	System.err.println("ap=" + ap);
-				
-				if (read_count>0)
-				{
-				addMaqPositions(this.apOptions, (AlignmentPosSnps)ap, snps, base_quals, read_positions);
+					read_positions = line_items[7];
 				}
 
-				if (!apOptions.trackSnps)
+				try
 				{
-					AlignmentPosDepthOnly newAp = new AlignmentPosDepthOnly(ap);
-					newAp.setDepth(ap.getDepth());
-					ap = newAp;
-					//			System.err.println("ap=" + ap);
+
+					// Make the output object.  Just make one with SNPs, and then reduce if necessary
+					if (this.apOptions.trackBisulfiteConversion)
+					{
+						ap = new AlignmentPosSnpsBisulfiteConverted(line_ref, line_chr, line_pos, this.apOptions);
+					}
+					else
+					{
+						ap = new AlignmentPosSnps(line_ref, line_chr, line_pos, this.apOptions);
+					}
+
+					ap.setStrand(StrandedFeature.POSITIVE); // Positive by default
+					//	System.err.println("ap=" + ap);
+
+					if (read_count>0)
+					{
+						addMaqPositions(this.apOptions, (AlignmentPosSnps)ap, snps, base_quals, read_positions);
+					}
+
+					if (!apOptions.trackSnps)
+					{
+						AlignmentPosDepthOnly newAp = new AlignmentPosDepthOnly(ap);
+						newAp.setDepth(ap.getDepth());
+						ap = newAp;
+						//			System.err.println("ap=" + ap);
+					}
+				}
+				catch (Exception e)
+				{
+					System.err.println("Problem parsing pileup line: " + ListUtils.excelLine(line_items));
+					System.err.println(e.toString());
+					ap = null;
 				}
 			}
 			else

@@ -16,6 +16,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
@@ -38,7 +39,8 @@ public class MethylDbToNucleosomeComparisons {
 	public static final String controlMethPrefix = "methylCGsRich_normal010310_";
 	
 	private static final String C_USAGE = "Use: MethylDbToNucleosomeComparisons -outPrefix out  " + 
-		" -withinFeat CTCF -nucSize 185 -assocSize 20 -maxOppStrandAfrac 0.10 -maxNextNonGfrac 0.10 -noNonconvFilter";
+		" -withinFeat CTCF -footprintSize 145 -assocSize 20 -maxOppStrandAfrac 0.10 " + 
+		" -maxNextNonGfrac 0.10 -noNonconvFilter -mnasePrefix nucTable1 -mnasePrefix nucTable2";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
@@ -46,10 +48,10 @@ public class MethylDbToNucleosomeComparisons {
     protected String withinFeat = null;
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = null;
-    @Option(name="-nucSize",usage="nucleosome size (185)")
-    protected int nucSize = 185;
+    @Option(name="-footprintSize",usage="nucleosome size (185)")
+    protected int footprintSize = 185;
     @Option(name="-mnasePrefix",usage="mnase database table (default mnaseIMR90_021110_)")
-    protected String mnasePrefix = "mnaseIMR90_021110_";
+    protected List<String> mnasePrefixes = new ArrayList<String>(5); //"mnaseIMR90_021110_";
     @Option(name="-minReadsPerBp",usage="only output CpGs with this number of reads per bp or greater (default 0.0)")
     protected double minReadsPerBp = 0.0;
     @Option(name="-assocSize",usage="Number of bases around 1/2 nuc to count (should be less than 1/2 nuc, default 40)")
@@ -88,8 +90,8 @@ public class MethylDbToNucleosomeComparisons {
 				System.exit(1);
 			}
 
-			if( outPrefix == null ) {
-				System.err.println("Must specify outPrefix");
+			if( (outPrefix == null) || (this.mnasePrefixes.size()==0) ) {
+				System.err.println("Must specify outPrefix and at least one mnasePrefix");
 				parser.printUsage(System.err);
 				System.err.println(C_USAGE);
 				System.exit(1);
@@ -111,8 +113,10 @@ public class MethylDbToNucleosomeComparisons {
 		
 
 		// Setup output files and print domain finders
+		ListUtils.setDelim("-");
+		String mnasePrefixStr = ListUtils.excelLine(mnasePrefixes);
 		String outFn = String.format("%s.nuc%d.assoc%d.%s.%s.csv", 
-				this.outPrefix, this.nucSize, this.assocSize, mnasePrefix, methPrefix);
+				this.outPrefix, this.footprintSize, this.assocSize, mnasePrefixStr, methPrefix);
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 		pw.printf("%s,%s\n","Meth", "ReadsPerBp");
 
@@ -132,8 +136,11 @@ public class MethylDbToNucleosomeComparisons {
 		// to add fake positions for all Cs in the genome, and we didn't know which ones
 		// actually had coverage in their data.
 		List<String> methTables = Arrays.asList(methPrefix, controlMethPrefix);
-		List<String> mnaseTables = Arrays.asList(mnasePrefix);
+	//	List<String> mnaseTables = Arrays.asList(mnasePrefix);
 
+		int nSeries = mnasePrefixes.size();
+		double readCounts[] = new double[nSeries];
+		
 		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr2","chr21","chr22")) // 
 		{
 			
@@ -161,16 +168,27 @@ public class MethylDbToNucleosomeComparisons {
 					Cpg cpg = cpgs[0];
 					double meth = cpg.fracMeth(!this.noNonconvFilter);
 	
-					double mnaseReads = this.countMnaseReads(chr, cpg);
+					boolean enoughReads = false;
+					for (int i = 0; i < nSeries; i++)
+					{
+						double mnaseReads = this.countMnaseReads(chr, cpg, mnasePrefixes.get(i));
+						if (mnaseReads >= this.minReadsPerBp) enoughReads = true;
+						readCounts[i] = mnaseReads;
+					}
 					
 					//
-					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, meth=%f, mnase=%.3f\n", onCpg, meth, mnaseReads);
+					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, meth=%f, mnase=%.3f\n", onCpg, meth, readCounts[0]);
 					onCpg++;
 					
-					if (mnaseReads >= this.minReadsPerBp)
+					if (enoughReads)
 					{
 						//pw.printf("%s,%d,%.3f,%.3f\n", chr, cpg.chromPos, meth*100, mnaseReads);
-						pw.printf("%.3f,%.3f\n", meth*100, mnaseReads);
+						pw.printf("%.3f", meth*100);
+						for (int i = 0; i < nSeries; i++)
+						{
+							pw.printf(",%.3f", readCounts[i]);
+						}
+						pw.println();
 					}
 				}
 
@@ -189,7 +207,7 @@ public class MethylDbToNucleosomeComparisons {
 	} // Main
 
 
-	protected double countMnaseReads(String chr, Cpg target)
+	protected double countMnaseReads(String chr, Cpg target, String mnasePrefix)
 	throws Exception
 	{
 		MethylDbQuerier params = new MethylDbQuerier();
@@ -200,8 +218,8 @@ public class MethylDbToNucleosomeComparisons {
 		params.setMethylTablePrefix(mnasePrefix);
 
 		int center = target.chromPos;
-		int quarterNuc = (int)((double)this.nucSize/4.0);
-		int halfNuc = (int)((double)this.nucSize/2.0);
+		int quarterNuc = (int)((double)this.footprintSize/4.0);
+		int halfNuc = (int)((double)this.footprintSize/2.0);
 		int assocHalf = (int)((double)this.assocSize/2.0);
 
 		int cycle = halfNuc;
@@ -227,7 +245,7 @@ public class MethylDbToNucleosomeComparisons {
 		int revCount = countStrandedReads(cpgit, StrandedFeature.NEGATIVE);
 		//System.err.printf("Cpg %d\t Getting (-) reads at %d-%d\t%d\n", center, s, e,revCount);
 		
-		double frac = ((double)fwCount+(double)revCount)/(4.0*(double)assocHalf);
+		double frac = ((double)fwCount+(double)revCount)/(2.0*(double)assocHalf);
 		
 		return frac;
 	}
