@@ -35,6 +35,8 @@ public class MethylDbToNucleosomeComparisons {
 	public int STEP = (int)1E6;
 	public int MAXCOORD = (int)2.8E8;
 	
+	public final double LOG_OF_TWO = Math.log(2.0);
+	
 	public static final String methPrefix = "methylCGsRich_imr90_";
 	public static final String controlMethPrefix = "methylCGsRich_normal010310_";
 	
@@ -46,6 +48,8 @@ public class MethylDbToNucleosomeComparisons {
     protected boolean noNonconvFilter = false;
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected String withinFeat = null;
+    @Option(name="-featFlank",usage="If withinFeat is selected, we use this much flank around each feature (0)")
+    protected int featFlank = 0;
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = null;
     @Option(name="-footprintSize",usage="nucleosome size (185)")
@@ -118,7 +122,7 @@ public class MethylDbToNucleosomeComparisons {
 		String outFn = String.format("%s.nuc%d.assoc%d.%s.%s.csv", 
 				this.outPrefix, this.footprintSize, this.assocSize, mnasePrefixStr, methPrefix);
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
-		pw.printf("%s,%s\n","Meth", "ReadsPerBp");
+		//pw.printf("%s,%s\n","Meth", "ReadsPerBp");
 
 		
 		MethylDbQuerier params = new MethylDbQuerier();
@@ -126,7 +130,7 @@ public class MethylDbToNucleosomeComparisons {
 		params.setUseNonconversionFilter(!this.noNonconvFilter);
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 		params.setMaxNextNonGfrac(this.maxNextNonGfrac);
-		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
+		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, this.featFlank);
 
 		// We use the control table simply to limit the valid Cpg.  This is a result of 
 		// our incorrect loading of Lister 2009 tables, which contains many Cpgs which 
@@ -139,9 +143,17 @@ public class MethylDbToNucleosomeComparisons {
 	//	List<String> mnaseTables = Arrays.asList(mnasePrefix);
 
 		int nSeries = mnasePrefixes.size();
+		boolean useChipseq[] = new boolean[nSeries];
+		for (int i = 0; i < nSeries; i++)
+		{
+			// Wow talk about a special case.
+			useChipseq[i] = (this.mnasePrefixes.get(i).contains("K4"));
+		}
+		
+		
 		double readCounts[] = new double[nSeries];
 		
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr2","chr21","chr22")) // 
+		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) // 
 		{
 			
 			// Iterator uses DB connection and can use a ton of memory because
@@ -171,7 +183,7 @@ public class MethylDbToNucleosomeComparisons {
 					boolean enoughReads = false;
 					for (int i = 0; i < nSeries; i++)
 					{
-						double mnaseReads = this.countMnaseReads(chr, cpg, mnasePrefixes.get(i));
+						double mnaseReads = this.countMnaseReads(chr, cpg, mnasePrefixes.get(i), useChipseq[i]);
 						if (mnaseReads >= this.minReadsPerBp) enoughReads = true;
 						readCounts[i] = mnaseReads;
 					}
@@ -207,7 +219,92 @@ public class MethylDbToNucleosomeComparisons {
 	} // Main
 
 
-	protected double countMnaseReads(String chr, Cpg target, String mnasePrefix)
+	protected double countMnaseReads(String chr, Cpg target, String mnasePrefix, boolean chipSeqMetric)
+	throws Exception
+	{
+		int PSEUDOCOUNT = 1;
+		int FRAGLENHIGH = 600;
+		
+		
+		int center = target.chromPos;
+		int quarterNuc = (int)((double)this.footprintSize/4.0);
+		int halfNuc = (int)((double)this.footprintSize/2.0);
+		int assocHalf = (int)((double)this.assocSize/2.0);
+		int fraghalf = (int)((double)FRAGLENHIGH/2.0);
+
+		int cycle = halfNuc;
+		
+		int s, e;
+		
+		double out;
+
+		if (chipSeqMetric)
+		{
+			// CHIP-SEQ .  THIS SHOULD TAKE  A FRAGMENT LEN, BUT 600 is based on K4 IMR90 offsets.
+			
+			// First fw
+			s = center - fraghalf;
+			e = center;
+			int preCountPos = countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.POSITIVE);
+			//if (preCountPos>0) System.err.printf("Cpg %d\t Getting (+) reads at %d-%d\t%d\n", center, s, e,preCountPos);
+
+			// Then rev
+			s = center;
+			e = center + fraghalf;
+			int postCountNeg = countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.NEGATIVE);
+			//if (postCountNeg>0) System.err.printf("Cpg %d\t Getting (-) reads at %d-%d\t%d\n", center, s, e,postCountNeg);
+
+			out = (double)(preCountPos+postCountNeg)/(double)fraghalf;
+		}
+		else
+		{
+			// MNASE METRIC
+
+			// First fw
+			s = center - cycle - assocHalf;
+			e = center - cycle + assocHalf;
+			int preCountPos = countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.POSITIVE);
+			//System.err.printf("Cpg %d\t Getting (+) reads at %d-%d\t%d\n", center, s, e,fwCount);
+
+			// Then rev
+			s = center + cycle - assocHalf;
+			e = center + cycle + assocHalf;
+			int postCountNeg = countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.NEGATIVE);
+			//System.err.printf("Cpg %d\t Getting (-) reads at %d-%d\t%d\n", center, s, e,revCount);
+
+			// Then middle
+			s = center - assocHalf;
+			e = center + assocHalf;
+			int midCountBoth = countUnstrandedReads(mnasePrefix, chr, s, e);
+
+
+			int numerator = preCountPos +  postCountNeg + PSEUDOCOUNT;
+			int denom = midCountBoth + PSEUDOCOUNT; // The number of bases covered is the same as num, since we cover both strands of the assoc region
+			out = Math.log((double)numerator / (double)denom) / LOG_OF_TWO;
+
+			//double frac = ((double)fwCount+(double)revCount)/(2.0*(double)assocHalf);
+		}
+		
+		
+		return out;
+	}
+	
+	protected int countUnstrandedReads(String mnasePrefix, String chr, int s, int e)
+	throws Exception
+	{
+		return countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.UNKNOWN);
+	}
+	
+	/**
+	 * @param mnasePrefix
+	 * @param chr
+	 * @param s
+	 * @param e
+	 * @param targetStrand: Set to UNKNOWN if you want either strand
+	 * @return
+	 * @throws Exception
+	 */
+	protected int countStrandedReads(String mnasePrefix, String chr, int s, int e, StrandedFeature.Strand targetStrand)
 	throws Exception
 	{
 		MethylDbQuerier params = new MethylDbQuerier();
@@ -217,46 +314,16 @@ public class MethylDbToNucleosomeComparisons {
 		params.setMaxNextNonGfrac(1.0);
 		params.setMethylTablePrefix(mnasePrefix);
 
-		int center = target.chromPos;
-		int quarterNuc = (int)((double)this.footprintSize/4.0);
-		int halfNuc = (int)((double)this.footprintSize/2.0);
-		int assocHalf = (int)((double)this.assocSize/2.0);
-
-		int cycle = halfNuc;
-		
-		int s, e;
-		CpgIterator cpgit;
-		
-		// First fw
-		s = center - cycle - assocHalf;
-		e = center - cycle + assocHalf;
 		params.clearRangeFilters();
 		params.addRangeFilter(chr, s, e);
-		cpgit = new CpgIterator(params);
-		int fwCount = countStrandedReads(cpgit, StrandedFeature.POSITIVE);
-		//System.err.printf("Cpg %d\t Getting (+) reads at %d-%d\t%d\n", center, s, e,fwCount);
+		CpgIterator cpgit = new CpgIterator(params);
 
-		// Then rev
-		s = center + cycle - assocHalf;
-		e = center + cycle + assocHalf;
-		params.clearRangeFilters();
-		params.addRangeFilter(chr, s, e);
-		cpgit = new CpgIterator(params);
-		int revCount = countStrandedReads(cpgit, StrandedFeature.NEGATIVE);
-		//System.err.printf("Cpg %d\t Getting (-) reads at %d-%d\t%d\n", center, s, e,revCount);
-		
-		double frac = ((double)fwCount+(double)revCount)/(2.0*(double)assocHalf);
-		
-		return frac;
-	}
-	
-	protected int countStrandedReads(CpgIterator cpgit, StrandedFeature.Strand targetStrand)
-	{
 		int count = 0;
 		while (cpgit.hasNext())
 		{
 			Cpg cpg = cpgit.next();
-			if (cpg.getStrand() == targetStrand) count++; 
+			if ((targetStrand == StrandedFeature.UNKNOWN) ||
+					(cpg.getStrand() == targetStrand)) count++;
 		}
 		return count;
 	}
