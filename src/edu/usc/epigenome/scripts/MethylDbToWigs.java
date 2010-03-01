@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.biojava.bio.seq.StrandedFeature;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -120,41 +121,76 @@ public class MethylDbToWigs {
 		if (chrs.size()==1) this.outPrefix += "-" + chrs.get(0);
 
 		// Setup output files.
+		List<PrintWriter> openFiles = new ArrayList<PrintWriter>(100);
 		String outfnAs = this.outPrefix + "." + this.table1 + ".bare.wig";
 		PrintWriter pwAs = new PrintWriter(new FileOutputStream(outfnAs));
 		pwAs.printf("track type=wiggle_0 name=%sbare description=%sbare  color=204,153,102 visibility=full " +
 				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
+		openFiles.add(pwAs);
 	
 		String outfnBs = this.outPrefix + "." + this.table2 + ".bare.wig";
 		PrintWriter pwBs = new PrintWriter(new FileOutputStream(outfnBs));
 		pwBs.printf("track type=wiggle_0 name=%sbare description=%sbare color=204,102,0 visibility=full " +
 				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
+		openFiles.add(pwBs);
 		
 		String outfnA = this.outPrefix + "." + this.table1 + ".wig";
 		PrintWriter pwA = new PrintWriter(new FileOutputStream(outfnA));
 		pwA.printf("track type=wiggle_0 name=%s description=%s  color=204,153,102 visibility=full " +
 				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
+		openFiles.add(pwA);
 	
 		String outfnB = this.outPrefix + "." + this.table2 + ".wig";
 		PrintWriter pwB = new PrintWriter(new FileOutputStream(outfnB));
 		pwB.printf("track type=wiggle_0 name=%s description=%s color=204,102,0 visibility=full " +
 				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
+		openFiles.add(pwB);
+		
+		// HEMI
+		String outfnHemiA = this.outPrefix + ".hemimeth." + this.table1 + ".wig";
+		PrintWriter pwHemiA = new PrintWriter(new FileOutputStream(outfnHemiA));
+		pwHemiA.printf("track type=wiggle_0 name=hemi-%s description=hemi-%s  color=204,153,102 visibility=full " +
+				" autoScale=off alwaysZero=off maxHeightPixels=64:64:10 viewLimits=-50:50\n", this.table1, this.table1);
+		openFiles.add(pwHemiA);
+	
+		String outfnHemiB = this.outPrefix + ".hemimeth." + this.table2 + ".wig";
+		PrintWriter pwHemiB = new PrintWriter(new FileOutputStream(outfnHemiB));
+		pwHemiB.printf("track type=wiggle_0 name=hemi-%s description=hemi-%s color=204,102,0 visibility=full " +
+				" autoScale=off alwaysZero=off maxHeightPixels=64:64:10 viewLimits=-50:50\n", this.table2, this.table2);
+		openFiles.add(pwHemiB);
+
+		String outfnHemifakeA = this.outPrefix + ".hemifakemeth." + this.table1 + ".wig";
+		PrintWriter pwHemifakeA = new PrintWriter(new FileOutputStream(outfnHemifakeA));
+		pwHemifakeA.printf("track type=wiggle_0 name=hemifake-%s description=hemifake-%s  color=204,153,102 visibility=full " +
+				" autoScale=off alwaysZero=off maxHeightPixels=64:64:10 viewLimits=-50:50\n", this.table1, this.table1);
+		openFiles.add(pwHemifakeA);
+	
+		String outfnHemifakeB = this.outPrefix + ".hemifakemeth." + this.table2 + ".wig";
+		PrintWriter pwHemifakeB = new PrintWriter(new FileOutputStream(outfnHemifakeB));
+		pwHemifakeB.printf("track type=wiggle_0 name=hemifake-%s description=hemifake-%s color=204,102,0 visibility=full " +
+				" autoScale=off alwaysZero=off maxHeightPixels=64:64:10 viewLimits=-50:50\n", this.table2, this.table2);
+		openFiles.add(pwHemifakeB);
+
 		
 		String outfnDplus = this.outPrefix + ".deltaplus.wig";
 		PrintWriter pwDplus = new PrintWriter(new FileOutputStream(outfnDplus));
 		pwDplus.printf("track type=wiggle_0 name=%s description=%s color=255,0,0 visibility=full " + 
 				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:60\n", "deltaplus", "deltaplus");
+		openFiles.add(pwDplus);
 
 		String outfnDminus = this.outPrefix + ".deltaMinus.wig";
 		PrintWriter pwDminus = new PrintWriter(new FileOutputStream(outfnDminus));
 		pwDminus.printf("track type=wiggle_0 name=%s description=%s color=0,255,0 visibility=full " + 
 				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=-60:0\n", "deltaMinus", "deltaMinus");
+		openFiles.add(pwDminus);
 
 		
 		String outCvg = this.outPrefix + ".cvgDelta.wig";
 		PrintWriter pwCvg = new PrintWriter(new FileOutputStream(outCvg));
 		pwCvg.printf("track type=wiggle_0 name=%s description=%s visibility=full " + 
 				" autoScale=off alwaysZero=off maxHeightPixels=64:48:10 viewLimits=-2:2\n", "CoverageDelta", "CoverageDelta");
+		openFiles.add(pwCvg);
+
 		
 		for (String chr : chrs)
 		{
@@ -178,6 +214,14 @@ public class MethylDbToWigs {
 			int numCpgs = 0, flank=0, windS = 0, windE = 0;
 			double[] abuffer = new double[MAXCPGS]; 
 			double[] bbuffer = new double[MAXCPGS]; 
+			double[] afwbuffer = new double[MAXCPGS]; 
+			double[] bfwbuffer = new double[MAXCPGS]; 
+			double[] arevbuffer = new double[MAXCPGS]; 
+			double[] brevbuffer = new double[MAXCPGS]; 
+			double[] afwfakebuffer = new double[MAXCPGS]; 
+			double[] bfwfakebuffer = new double[MAXCPGS]; 
+			double[] arevfakebuffer = new double[MAXCPGS]; 
+			double[] brevfakebuffer = new double[MAXCPGS]; 
 			double[] dbuffer = new double[MAXCPGS]; 
 			double[] cvgabuffer = new double[MAXCPGS]; 
 			double[] cvgbbuffer = new double[MAXCPGS]; 
@@ -218,6 +262,10 @@ public class MethylDbToWigs {
 									chr, mp, this.stepSize, (this.stepSize*2)-2);
 							pwA.append(spanline);
 							pwB.append(spanline);
+							pwHemiA.append(spanline);
+							pwHemiB.append(spanline);
+							pwHemifakeA.append(spanline);
+							pwHemifakeB.append(spanline);
 							pwDplus.append(spanline);
 							pwDminus.append(spanline);
 							pwCvg.append(spanline);
@@ -225,7 +273,7 @@ public class MethylDbToWigs {
 
 
 						// Now calculate the values!
-						int numCpgsCounted = 0;
+						int numCpgsCounted = 0, numCpgsCountedFw = 0, numCpgsCountedRev = 0, numCpgsCountedFwfake = 0, numCpgsCountedRevfake = 0;
 						CPG: for (int i = 0; i < numCpgs; i++)
 						{
 							Cpg[] cpgs = null;
@@ -258,6 +306,35 @@ public class MethylDbToWigs {
 								cvgbbuffer[numCpgsCounted] = cpgs[1].totalReads+cpgs[1].totalReadsOpposite;
 								numCpgsCounted++;
 
+								// Strand specific
+								if (cpgs[0].getStrand() == StrandedFeature.NEGATIVE)
+								{
+									arevbuffer[numCpgsCountedRev] = metha;
+									brevbuffer[numCpgsCountedRev] = methb;
+									numCpgsCountedRev++;
+								}
+								else
+								{
+									afwbuffer[numCpgsCountedFw] = metha;
+									bfwbuffer[numCpgsCountedFw] = methb;
+									numCpgsCountedFw++;
+								}
+								
+								// Fake strand specific
+								if (Math.random()>0.5)
+								{
+									arevfakebuffer[numCpgsCountedRevfake] = metha;
+									brevfakebuffer[numCpgsCountedRevfake] = methb;
+									numCpgsCountedRevfake++;
+								}
+								else
+								{
+									afwfakebuffer[numCpgsCountedFwfake] = metha;
+									bfwfakebuffer[numCpgsCountedFwfake] = methb;
+									numCpgsCountedFwfake++;
+								}
+								
+								
 								// And add the raw ones straight away
 								int pos = cpgs[0].chromPos;
 								if (this.bare && !posSeen[pos])
@@ -275,6 +352,23 @@ public class MethylDbToWigs {
 						int bval = (int)Math.round( 100.0 * MatUtils.nanMean(bbuffer, 0, numCpgsCounted));
 						pwB.println(bval);
 
+						int ahemival = (int)Math.round( 100.0 * (MatUtils.nanMean(afwbuffer, 0, numCpgsCountedFw) -
+								MatUtils.nanMean(arevbuffer, 0, numCpgsCountedRev)));
+						pwHemiA.println(ahemival);
+						
+						int bhemival = (int)Math.round( 100.0 * (MatUtils.nanMean(bfwbuffer, 0, numCpgsCountedFw) -
+								MatUtils.nanMean(brevbuffer, 0, numCpgsCountedRev)));
+						pwHemiB.println(bhemival);
+
+						int ahemifakeval = (int)Math.round( 100.0 * (MatUtils.nanMean(afwfakebuffer, 0, numCpgsCountedFwfake) -
+								MatUtils.nanMean(arevfakebuffer, 0, numCpgsCountedRevfake)));
+						pwHemifakeA.println(ahemifakeval);
+						
+						int bhemifakeval = (int)Math.round( 100.0 * (MatUtils.nanMean(bfwfakebuffer, 0, numCpgsCountedFwfake) -
+								MatUtils.nanMean(brevfakebuffer, 0, numCpgsCountedRevfake)));
+						pwHemifakeB.println(bhemifakeval);
+
+						
 						int dval = (int)Math.round( 100.0 * MatUtils.nanMean(dbuffer, 0, numCpgsCounted));
 						pwDplus.println( (dval>0) ? dval : "0");
 						pwDminus.println( (dval<0) ? dval : "0");
@@ -301,17 +395,11 @@ public class MethylDbToWigs {
 			}
 		}
 
+		for (PrintWriter pw : openFiles)
+		{
+			pw.close();
+		}
 
-
-
-		
-		pwA.close();
-		pwB.close();
-		pwAs.close();
-		pwBs.close();
-		pwDplus.close();
-		pwDminus.close();
-		pwCvg.close();
 		
 	} // Main
 

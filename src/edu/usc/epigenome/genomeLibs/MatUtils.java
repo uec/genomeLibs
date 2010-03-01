@@ -990,6 +990,17 @@ public class MatUtils {
     	return out;
 	}
 	
+	public static double[] intVectToDouble(int[] mat)
+	{
+	   	int nrow = mat.length;
+
+    	double[] out = new double[nrow];
+    	for (int i = 0; i < nrow; i++)
+    	{
+    		out[i] = (double)mat[i];
+     	}
+    	return out;
+	}
 	
 	public static int[][] doubleMatToInt(double[][] mat)
 	{

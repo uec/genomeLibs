@@ -14,8 +14,6 @@ import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
 
-import net.sf.samtools.SAMRecord;
-
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 
 public class MethylDbUtils {

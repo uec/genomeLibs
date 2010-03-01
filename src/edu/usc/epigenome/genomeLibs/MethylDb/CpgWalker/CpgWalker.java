@@ -8,6 +8,7 @@ import org.biojava.bio.seq.StrandedFeature;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizerStrandspecific;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
 
 /**
@@ -30,6 +31,8 @@ public abstract class CpgWalker {
 	
 	// Some useful summarizers for the window
 	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
+	protected CpgSummarizer methSummarizerFw = new CpgMethLevelSummarizerStrandspecific(true);
+	protected CpgSummarizer methSummarizerRev = new CpgMethLevelSummarizerStrandspecific(false);
 	public String lastChrom = "noChrom";
 
 	
@@ -54,6 +57,8 @@ public abstract class CpgWalker {
 	{
 		window = new LinkedList<Cpg>();
 		methSummarizer = new CpgMethLevelSummarizer();
+		methSummarizerFw = new CpgMethLevelSummarizerStrandspecific(true);
+		methSummarizerRev = new CpgMethLevelSummarizerStrandspecific(false);
 	}
 	
 	/**
@@ -68,6 +73,9 @@ public abstract class CpgWalker {
 		// Add this Cpg to the head of the queue
 		window.add(cpg);
 		methSummarizer.streamCpg(cpg);
+		methSummarizerFw.streamCpg(cpg);
+		methSummarizerRev.streamCpg(cpg);
+		
 		
 		// Remove cpgs from the tail
 		boolean done = false;
@@ -82,13 +90,15 @@ public abstract class CpgWalker {
 			{
 				window.remove();
 				methSummarizer.removeCpg(endCpg);
+				methSummarizerFw.removeCpg(endCpg);
+				methSummarizerRev.removeCpg(endCpg);
 			}
 		}
 		
 		//System.err.println("\tChecking " + this.windStr());
 		
 		// And process the window
-		if (window.size()>walkParams.minCpgs)
+		if (window.size()>=walkParams.minCpgs)
 		{
 //			System.err.println("\t\t Sufficient Cpgs");
 //			double mean = this.methSummarizer.getValMean(true);
