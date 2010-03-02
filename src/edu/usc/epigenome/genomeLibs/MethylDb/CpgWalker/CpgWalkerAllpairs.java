@@ -31,13 +31,25 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 			boolean process = true;
 			if (samestrandOnly)
 			{
+				System.err.println("Using same strand only");
 				process = (prior.getStrand() == head.getStrand());
 			}
 			
 			if (process)
 			{
 				//System.err.printf("\tProcessing pair: %d, %d\n", prior.chromPos, head.chromPos);
-				recordPair(prior, head);
+				
+				if (prior.chromPos > head.chromPos)
+				{
+					// Only valid reason is if they're on different chromosomes.
+					System.err.printf("Skipping out of order pair (new chrom?): %d, %d\n", prior.chromPos, head.chromPos);
+					this.reset();
+					return;
+				}
+				else
+				{
+					recordPair(prior, head);
+				}
 			}
 		}
 	}

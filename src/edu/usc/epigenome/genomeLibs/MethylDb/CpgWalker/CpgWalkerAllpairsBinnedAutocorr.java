@@ -49,6 +49,8 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 	
 	protected void init(double[] inBinEdges)
 	{
+		useSummarizers = false;
+		
 		// Initalize counters
 		counters = new HashMap<Object,int[]>();
 		int windSize = this.walkParams.maxWindSize;
@@ -98,14 +100,18 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 		// Add the singlet for each (only count it if both have a valid range)
 		if ((r1 != null) && (r2 != null))
 		{
+			
 			counter = this.counters.get(rangeSingletToKey(r1));
 			counter[dist]++;
+
 			counter = this.counters.get(rangeSingletToKey(r2));
 			counter[dist]++;
 
-			// And for the pair
+			// And for the pair (we have to count it twice if we're in the same range)
+			boolean sameRange = (r1.equals(r2));
 			counter = this.counters.get(rangePairToKey(r1,r2));
 			counter[dist]++;
+			if (sameRange) counter[dist]++;
 		}
 		
 	}
@@ -168,7 +174,7 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 						
 				
 				// Get it as a fraction of bin1
-				sb.append(String.format("%.2f-%.2f->%.2f-%.2f (by %.2f-%2f)",b1s,b1e,b2s,b2e,b1s,b1e));
+				sb.append(String.format("%.2f-%.2f->%.2f-%.2f",b1s,b1e,b2s,b2e,b1s,b1e));
 				sb.append(',');
 				sb.append(ListUtils.excelLine(MatUtils.divVects(bothCounts, b1Counts)));
 				sb.append('\n');
@@ -176,7 +182,7 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 				// And as a fraction of bin2 (unless they're identical)
 				if (i!=j)
 				{
-				sb.append(String.format("%.2f-%.2f->%.2f-%.2f (by %.2f-%2f)",b1s,b1e,b2s,b2e,b2s,b2e));
+				sb.append(String.format("%.2f-%.2f->%.2f-%.2f",b2s,b2e,b1s,b1e));
 				sb.append(',');
 				sb.append(ListUtils.excelLine(MatUtils.divVects(bothCounts, b2Counts)));
 				sb.append('\n');

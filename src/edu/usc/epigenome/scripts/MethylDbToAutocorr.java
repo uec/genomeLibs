@@ -17,6 +17,7 @@ import org.kohsuke.args4j.Option;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerAllpairsBinnedAutocorr;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
@@ -40,6 +41,8 @@ public class MethylDbToAutocorr {
     protected List<Double> range = null;
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected String withinFeat = null;
+    @Option(name="-featFlank",usage="Flank size to use with the feature")
+    protected int featFlank = 0;
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
     @Option(name="-windSize",usage="starting window size (500)")
@@ -126,7 +129,7 @@ public class MethylDbToAutocorr {
 			// Start table
 			String tab = this.tables.get(i);
 			
-			String featSec = (this.withinFeat==null) ? "" : "." + this.withinFeat;
+			String featSec = (this.withinFeat==null) ? "" : String.format(".%s-f%d", this.withinFeat, this.featFlank);
 			String outFn = String.format("Autocorr.%s.%s%s.wind%d.csv", 
 					this.outPrefix, tab, featSec, this.windSize);
 			PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
@@ -142,11 +145,11 @@ public class MethylDbToAutocorr {
 		params.setUseNonconversionFilter(!this.noNonconvFilter);
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 		params.setMaxNextNonGfrac(this.maxNextNonGfrac);
-		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
+		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, this.featFlank);
 
 
 
-		for (String chr : Arrays.asList("chr11")) //MethylDbUtils.CHROMS) //  
+		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //  
 		{
 		
 

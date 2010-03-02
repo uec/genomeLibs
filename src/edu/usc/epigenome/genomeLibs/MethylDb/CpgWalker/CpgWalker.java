@@ -25,6 +25,7 @@ public abstract class CpgWalker {
  * 	
  */
 	public CpgWalkerParams walkParams = null;
+	protected boolean useSummarizers = true;
 	
 	// List management
 	public LinkedList<Cpg> window = new LinkedList<Cpg>();
@@ -56,9 +57,12 @@ public abstract class CpgWalker {
 	public void reset()
 	{
 		window = new LinkedList<Cpg>();
-		methSummarizer = new CpgMethLevelSummarizer();
-		methSummarizerFw = new CpgMethLevelSummarizerStrandspecific(true);
-		methSummarizerRev = new CpgMethLevelSummarizerStrandspecific(false);
+		if (useSummarizers)
+		{
+			methSummarizer = new CpgMethLevelSummarizer();
+			methSummarizerFw = new CpgMethLevelSummarizerStrandspecific(true);
+			methSummarizerRev = new CpgMethLevelSummarizerStrandspecific(false);
+		}
 	}
 	
 	/**
@@ -69,14 +73,17 @@ public abstract class CpgWalker {
 		int newPos = cpg.chromPos;
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
 				String.format("Found Cpg: %d\n", newPos));
-		
+
 		// Add this Cpg to the head of the queue
 		window.add(cpg);
-		methSummarizer.streamCpg(cpg);
-		methSummarizerFw.streamCpg(cpg);
-		methSummarizerRev.streamCpg(cpg);
-		
-		
+		if (useSummarizers)
+		{
+			methSummarizer.streamCpg(cpg);
+			methSummarizerFw.streamCpg(cpg);
+			methSummarizerRev.streamCpg(cpg);
+		}
+
+
 		// Remove cpgs from the tail
 		boolean done = false;
 		Cpg endCpg;
@@ -89,9 +96,12 @@ public abstract class CpgWalker {
 			else
 			{
 				window.remove();
-				methSummarizer.removeCpg(endCpg);
-				methSummarizerFw.removeCpg(endCpg);
-				methSummarizerRev.removeCpg(endCpg);
+				if (useSummarizers)
+				{
+					methSummarizer.removeCpg(endCpg);
+					methSummarizerFw.removeCpg(endCpg);
+					methSummarizerRev.removeCpg(endCpg);
+				}
 			}
 		}
 		
