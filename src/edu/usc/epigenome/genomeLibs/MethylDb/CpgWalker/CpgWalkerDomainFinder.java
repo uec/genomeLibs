@@ -54,24 +54,29 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 
 
 	@Override
-	protected void processWindow()
+	protected void processWindow(List<Cpg> inWindow)
 	{
 		boolean sameChrom = this.lastChrom.equalsIgnoreCase(this.getCurChr());
 
 		
 		// Does this window constitute a domain?
-		int nCpgs = this.window.size();
+		int nCpgs = inWindow.size();
 		int s=-1, e=-1;
 
 		if (nCpgs>0)
 		{
-			s = this.window.get(0).chromPos;
-			e = this.window.get(nCpgs-1).chromPos;
+			s = inWindow.get(0).chromPos;
+			e = inWindow.get(nCpgs-1).chromPos;
 		}
+
+//		System.err.println("\tprocessing window: " + s +
+//				"-" + e + "(" + 
+//				 (1 + e - s) + ")");
+
 		
-		
+		// This is where we call the actual filter
 		boolean goodWind = ((nCpgs>0) && (nCpgs >= this.walkParams.minCpgs)); 
-		goodWind &= this.windPasses();
+		goodWind &= this.windPasses(inWindow);
 		GenomicRange gr = new GenomicRange(this.getCurChr(), s, e);
 		
 		
@@ -119,7 +124,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 			// Then start new window if we're on a good one
 			if (goodWind)
 			{
-				double score = this.windScore();
+				double score = this.windScore(inWindow);
 				gr.setScore(score);
 				domains.add(gr);
 			}
@@ -155,6 +160,6 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	}
 
 
-	abstract protected boolean windPasses();
-	abstract protected double windScore();
+	abstract protected boolean windPasses(List<Cpg> inWindow);
+	abstract protected double windScore(List<Cpg>inWindow);
 }

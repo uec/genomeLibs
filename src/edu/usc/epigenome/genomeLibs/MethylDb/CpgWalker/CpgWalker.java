@@ -1,6 +1,8 @@
 package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
@@ -28,7 +30,7 @@ public abstract class CpgWalker {
 	protected boolean useSummarizers = true;
 	
 	// List management
-	public LinkedList<Cpg> window = new LinkedList<Cpg>();
+	private LinkedList<Cpg> window = new LinkedList<Cpg>();
 	
 	// Some useful summarizers for the window
 	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
@@ -57,6 +59,11 @@ public abstract class CpgWalker {
 	public void reset()
 	{
 		window = new LinkedList<Cpg>();
+		this.resetSummarizers();
+	}
+	
+	public void resetSummarizers()
+	{
 		if (useSummarizers)
 		{
 			methSummarizer = new CpgMethLevelSummarizer();
@@ -66,9 +73,10 @@ public abstract class CpgWalker {
 	}
 	
 	/**
-	 * @param cpg
+	 * This uses a fixed window size and is much faster
+	 * @param cpg Must be streamed in serially.
 	 */
-	public void streamCpg(Cpg cpg)
+	public void streamCpgFixedWind(Cpg cpg)
 	{
 		int newPos = cpg.chromPos;
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
@@ -115,13 +123,104 @@ public abstract class CpgWalker {
 //			System.err.println("\t\t Mean meth=" + mean);
 //			if (mean < 0.7)
 //			System.out.println(MethylDbUtils.bedLine("chr11", windStart(), windEnd(), ".", mean));
-			this.processWindow();
+			this.processWindow(this.window);
 		}
 		else
 		{
 //			System.err.println("\t\t Not enough Cpgs");
 		}
+	}
 		
+	/**
+	 * This uses a fixed step, and can have variable window sizing to accommodate
+	 * widely varying CG density.
+	 * @param cpg Must be streamed in serially.
+	 */
+	public void streamCpgVariableWind(Cpg cpg)
+	{
+		int newPos = cpg.chromPos;
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
+				String.format("Variable wind found Cpg: %d\n", newPos));
+
+		// Add this Cpg to the head of the queue
+		window.add(cpg);
+
+
+		// Remove cpgs from the tail
+		boolean done = false;
+		Cpg endCpg;
+		while (!done && ((endCpg = window.peek()) != null))
+		{
+			if ((newPos - endCpg.chromPos) < this.walkParams.maxWindSize)
+			{
+				done = true;
+			}
+			else
+			{
+				window.remove();
+			}
+		}
+
+		//System.err.println("\tChecking " + this.windStr());
+		
+		// And process the window
+		//System.err.println(this.windStr());
+		if (window.size()>=walkParams.minCpgs)
+		{
+			
+			// First we set our summarizers.
+			// Take the last minCpgs as the sub-window.  Do it as an iterator since
+			// a linked list might be quicker iterating than using "get(i)".
+			Iterator<Cpg> backIt = window.descendingIterator();
+			int i = 0;
+			int lastPos = 0;
+			if (useSummarizers) this.resetSummarizers();
+			while (i<walkParams.minCpgs)
+			{
+				// ***** REMOVE THIS
+				if (!backIt.hasNext()) System.err.println("Why did we run out of window elements?!"); // REMOVE
+				// ***** REMOVE THIS
+
+				Cpg backCpg = backIt.next();
+				//System.err.println("\t(i=" + i + ") cpg=" + backCpg.chromPos);
+				lastPos = backCpg.chromPos;
+				
+				if (useSummarizers)
+				{
+					methSummarizer.streamCpg(backCpg);
+					methSummarizerFw.streamCpg(backCpg);
+					methSummarizerRev.streamCpg(backCpg);
+				}
+				
+				i++;
+			}
+			
+			
+			
+			
+//			System.err.println("\tDomain size=" + (cpg.chromPos-lastPos+1));
+//			System.out.println("chr11\t" + lastPos + "\t" + cpg.chromPos);
+			
+			
+			// Process this window
+			this.processWindow(this.window.subList(this.window.size()-walkParams.minCpgs, this.window.size()));
+		}
+	}
+
+	/**
+	 * @param cpg
+	 */
+	public void streamCpg(Cpg cpg)
+	{
+		//System.err.println("useFixedStep=" + walkParams.useFixedStep);
+		if (this.walkParams.useVariableWindow)
+		{
+			this.streamCpgVariableWind(cpg);
+		}
+		else
+		{
+			this.streamCpgFixedWind(cpg);
+		}
 	}
 
 	public String windStr()
@@ -164,7 +263,7 @@ public abstract class CpgWalker {
 	}
 	
 	// OVERRIDE THESE
-	abstract protected void processWindow();
+	abstract protected void processWindow(List<Cpg> inWindow);
 
 	
 }

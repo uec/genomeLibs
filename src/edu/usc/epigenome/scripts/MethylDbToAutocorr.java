@@ -149,7 +149,7 @@ public class MethylDbToAutocorr {
 
 
 
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //  
+		for (String chr : Arrays.asList("chr11")) //  MethylDbUtils.CHROMS) //
 		{
 		
 

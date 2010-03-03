@@ -8,9 +8,9 @@ public class CpgWalkerParams {
 	public int minCpgs = 0;
 	
 	// These are only for CpgWalkerFixedStep type
+	public boolean useVariableWindow = false;
 	public int minWindSize = 0;
-	public int stepSize = 0;
-
+	
 	
 //	public MethylDbQuerier methylParams = null;
 
