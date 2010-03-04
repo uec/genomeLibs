@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
 
+import edu.usc.epigenome.genomeLibs.TabularOutput;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
@@ -19,7 +20,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
  * Walks over a sliding window of adjacent Cpgs
  */
 
-public abstract class CpgWalker {
+public abstract class CpgWalker implements TabularOutput {
 
 
 /*
@@ -264,6 +265,22 @@ public abstract class CpgWalker {
 	
 	// OVERRIDE THESE
 	abstract protected void processWindow(List<Cpg> inWindow);
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.TabularOutput#headerStr()
+	 */
+	@Override
+	public String headerStr() throws Exception {
+		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.TabularOutput#toCsvStr()
+	 */
+	@Override
+	public String toCsvStr() throws Exception {
+		return null;
+	}
 
 	
 }

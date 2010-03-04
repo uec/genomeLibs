@@ -32,7 +32,7 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 			boolean process = true;
 			if (samestrandOnly)
 			{
-				System.err.println("Using same strand only");
+				//System.err.println("Using same strand only");
 				process = (prior.getStrand() == head.getStrand());
 			}
 			

@@ -54,14 +54,20 @@ public class SamFiveprimeConversion {
 
 	@Option(name="-minConv",usage="minimum number of converted cytosines required")
 	protected int minConv = 1;
+	@Option(name="-numRecs",usage="If set, this does the first n recs (default off)")
+	protected int numRecs = -1;
 	@Option(name="-outputFilePrefix",usage="Prefix for output files")
 	protected String outputFilePrefix = "FiveprimeConv";
 	@Option(name="-numCycles",usage="Number of cycles to track")
 	protected int numCycles = 100;
+	@Option(name="-minMapq",usage="Minimim mapping quality (default 30)")
+	protected int minMapq = 30;
 //	@Option(name="-outputReads",usage=" Outputs one line per read (default false)")
 //	protected boolean outputReads = false;
 	@Option(name="-useCpgsToFilter",usage=" Use CpGs and CpHs to filter if true, otherwise just CpHs (default false)")
 	protected boolean useCpgsToFilter = false;
+	@Option(name="-noFilters",usage=" Don't display filters (default false)")
+	protected boolean noFilters = false;
 	@Option(name="-relativeFreqs",usage=" If set, we don't do filtering and we instead plot the position relative to all other positions")
 	protected boolean relativeFreqs = false;
 
@@ -123,12 +129,19 @@ public class SamFiveprimeConversion {
 			inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
 			int recCounter = 0;
 			CloseableIterator<SAMRecord> samIt = inputSam.iterator();
-			while (samIt.hasNext())
+			SAMREC: while ( !((this.numRecs>0) && (recCounter>this.numRecs)) && samIt.hasNext())
 			{
 			//record: for (final SAMRecord samRecord : inputSam) {
 				// Convert read name to upper case.
 				//samRecord.setReadName(samRecord.getReadName().toUpperCase());
 				SAMRecord samRecord = samIt.next();
+				
+				int mapQual = samRecord.getMappingQuality();
+				boolean unmapped = samRecord.getReadUnmappedFlag();
+				if (unmapped || (mapQual < this.minMapq))
+				{
+					continue SAMREC;
+				}
 
 				String seq = PicardUtils.getReadString(samRecord, true);
 
@@ -171,8 +184,8 @@ public class SamFiveprimeConversion {
 							// ok to use for these statistics, because it throws
 							// off the ratios (100% of CpGs at the first base with
 							// filtering will be converted, which is not useful information)
-							if (this.relativeFreqs || (convStart != i))
-							{
+//							if (this.relativeFreqs || (convStart != i))
+//							{
 								// Get counter
 								String key = cytosineContext(i, ref, seq);
 								ByCycleCounter counter = cycleCounters.get(key);
@@ -184,7 +197,7 @@ public class SamFiveprimeConversion {
 
 								boolean filter = (i<convStart);
 								counter.increment(filter, conv, i);
-							}
+//							}
 
 							//if (cpg && (i<convStart)) System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
 
@@ -235,7 +248,8 @@ public class SamFiveprimeConversion {
 		
 		pw.print("<H4>CpH zoom</H4>\n");
 		pw.print("<P><IMG SRC=\"");
-		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CC","CT"),0.95,1.0));
+		this.numCycles = 20;
+		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CC","CT"),0.80,1.0));
 		pw.print("\">\n");
 		pw.print("</P>\n");
 		}
@@ -280,17 +294,19 @@ public class SamFiveprimeConversion {
 			{
 				ByCycleCounter counter = counters.get(context);
 				numCycles = Math.max(numCycles, counter.numCycles);
+				numCycles = Math.min(numCycles, this.numCycles);
+				System.err.printf("numCycles(%d) = max(this.numcycles=%d, counter.numCycles=%d\n",numCycles, this.numCycles, counter.numCycles);
 
 				// Once with filter, once without
-				Plot noFilter = counter.toPlot(false, minVal,maxVal, this.relativeFreqs);
+				Plot noFilter = counter.toPlot(false, minVal,maxVal, this.relativeFreqs, numCycles);
 				noFilter.setColor(GetContextColor(context, false));
 				noFilter.setLegend(String.format("%s no filter", context));
 				//noFilter.addShapeMarkers(Shape.CIRCLE, Color.BLACK, 3);
 				plots.add(noFilter);
 
-				if (!this.relativeFreqs)
+				if (!noFilters && !this.relativeFreqs)
 				{	
-					Plot withFilter = counter.toPlot(true, minVal,maxVal, this.relativeFreqs);
+					Plot withFilter = counter.toPlot(true, minVal,maxVal, this.relativeFreqs, numCycles);
 					withFilter.setColor(GetContextColor(context, true));
 					withFilter.setLegend(String.format("%s with filter", context));
 					//withFilter.addShapeMarkers(Shape.SQUARE, Color.BLACK, 3);
@@ -309,8 +325,17 @@ public class SamFiveprimeConversion {
 			chart.addXAxisLabels(xAxis);
 			chart.addXAxisLabels(AxisLabelsFactory.newAxisLabels("Cycle number", 50.0));
 
+			// This seems to be buggy.
+			//yAxis = AxisLabelsFactory.newNumericRangeAxisLabels(minVal, maxVal);
+
 			AxisLabels yAxis;
-			yAxis = AxisLabelsFactory.newNumericRangeAxisLabels(minVal, maxVal);
+			List<String> ylabels = new ArrayList<String>(10);
+			double step = (maxVal-minVal)/5.0;
+			for (double i = minVal; i <= maxVal; i+=step)
+			{
+				ylabels.add(String.format("%.2f", i));
+			}
+			yAxis = AxisLabelsFactory.newAxisLabels(ylabels);
 			chart.addYAxisLabels(yAxis);
 			chart.addRightAxisLabels(yAxis);
 			chart.addYAxisLabels(AxisLabelsFactory.newAxisLabels("% conv", 50.0));
@@ -334,22 +359,21 @@ public class SamFiveprimeConversion {
 		Color out = Color.ORANGE;
 		if (context.equalsIgnoreCase("CG"))
 		{
-			out = (filtered) ? Color.BLACK : Color.GRAY;
+			out = (filtered) ? Color.GRAY : Color.BLACK;
 		}
 		else if (context.equalsIgnoreCase("CA"))
 		{
-			out = (filtered) ? Color.GREEN : Color.LIGHTGREEN;
+			out = (filtered) ? Color.LIGHTGREEN : Color.GREEN ;
 		}
 		else if (context.equalsIgnoreCase("CT"))
 		{
-			out = (filtered) ? Color.RED : Color.PINK;
+			out = (filtered) ?  Color.PINK : Color.RED;
 		}
 		else if (context.equalsIgnoreCase("CC"))
 		{
-			out = (filtered) ? Color.BROWN : Color.BEIGE;
+			out = (filtered) ?  Color.BEIGE : Color.BROWN;
 		}
 		
-		// TODO Auto-generated method stub
 		return out;
 	}
 
@@ -387,8 +411,10 @@ public class SamFiveprimeConversion {
 	{
 		char refC = refStr.charAt(pos);
 		char seqC = seqStr.charAt(pos);
+		boolean converted = ((refC == 'C') && (seqC == 'T'));
+		//if (pos==0) System.err.printf("Pos %d, refC=%c, seqC=%c, converted=%s\n", pos, refC, seqC, converted);
 		
-		return ((refC == 'C') && (seqC == 'T'));
+		return converted;
 	}
 
 	static int boolToInd(boolean bool)
@@ -421,6 +447,7 @@ public class SamFiveprimeConversion {
 
 		void increment(boolean pre, boolean converted, int cycle)
 		{
+			//if (converted && (cycle==0)) System.err.printf("Incrementing cycle %d, pre=%s, converted=%s\n",cycle,pre,converted);
 			if (cycle < numCycles)
 			{
 				counter[boolToInd(pre)][boolToInd(converted)][cycle]++;
@@ -430,7 +457,13 @@ public class SamFiveprimeConversion {
 		public Plot toPlot(boolean withFilter, double minScale, double maxScale, boolean relativeFreqs)
 		throws Exception
 		{
-			Data data = this.toData(withFilter, minScale, maxScale, relativeFreqs);
+			return this.toPlot(withFilter, minScale, maxScale, relativeFreqs, -1);
+		}
+		
+		public Plot toPlot(boolean withFilter, double minScale, double maxScale, boolean relativeFreqs, int maxCycles)
+		throws Exception
+		{
+			Data data = this.toData(withFilter, minScale, maxScale, relativeFreqs, maxCycles);
 			Plot plot = Plots.newPlot(data);
 			
 
@@ -465,17 +498,30 @@ public class SamFiveprimeConversion {
 		public Data toData(boolean withFilter, double minScale, double maxScale, boolean relativeFreqs)
 		throws Exception
 		{
+			return this.toData(withFilter, minScale, maxScale, relativeFreqs, -1); 
+		}
+
+		public Data toData(boolean withFilter, double minScale, double maxScale, boolean relativeFreqs, int maxCycles)
+		throws Exception
+		{
 			double[][][] dblCount = MatUtils.intMatToDouble(counter);
 			
 			double[][] convNonconv = (withFilter) ? dblCount[boolToInd(false)] : MatUtils.sumMats(dblCount[0], dblCount[1]);
 			double[] data = MatUtils.divVects(convNonconv[boolToInd(true)], MatUtils.vectSum(convNonconv[0], convNonconv[1]));
-			data = MatUtils.vectSum(convNonconv[0], convNonconv[1]);
+			
+			// Why was this in here?
+			//data = MatUtils.vectSum(convNonconv[0], convNonconv[1]);
 			
 			if (relativeFreqs)
 			{
 				double[] meCounts = convNonconv[boolToInd(true)];
 				double totalMe = MatUtils.nanSum(meCounts);
 				data = MatUtils.divVect(meCounts, totalMe);
+			}
+			
+			if (maxCycles>0)
+			{
+				data = Arrays.copyOfRange(data, 0, maxCycles);
 			}
 			
 			// Nans not allowed

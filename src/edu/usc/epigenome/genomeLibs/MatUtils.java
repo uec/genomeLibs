@@ -789,6 +789,15 @@ public class MatUtils {
 		return outMat[0];
 	}
 	
+	public static double[] sumVect(double[] vect, double incrementVal)
+	{
+		
+		double[][] mat = new double[1][vect.length];
+		mat[0] = vect;
+		double[][] outMat = sumMat(mat, incrementVal);
+		return outMat[0];
+	}
+
 	public static double[][] divMat(double[][] mat, double denom)
 	{
 		return multMat(mat, 1/denom);
@@ -811,6 +820,22 @@ public class MatUtils {
 		return out;		
 	}
 	
+	public static double[][] sumMat(double[][] mat, double incrementVal)
+	{
+		int nrow = mat.length;
+		int ncol = mat[0].length;
+
+		double[][] out = new double[nrow][ncol];
+		for (int i = 0; i < nrow; i++)
+		{
+			for (int j = 0; j < ncol; j++)
+			{
+				out[i][j] = mat[i][j] + incrementVal;
+			}
+		}
+		
+		return out;		
+	}
 	
 	public static double[][] divMats(double[][] nmat , double[][] dmat)
 	throws Exception

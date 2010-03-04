@@ -176,7 +176,7 @@ public class MethylDbToDomains {
 
 
 
-		for (String chr : Arrays.asList("chr11")) //MethylDbUtils.CHROMS) //  
+		for (String chr : MethylDbUtils.CHROMS) // Arrays.asList("chr11")) // 
 		{
 			
 			

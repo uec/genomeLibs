@@ -115,7 +115,17 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 		}
 		
 	}
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalker#reset()
+	 */
+	@Override
+	public void reset() {
+		super.reset();
+		init(this.binEdges);
+	}
+
 	
+	@Override
 	public String headerStr()
 	{
 		StringBuffer sb = new StringBuffer((int)1E5);
@@ -150,6 +160,7 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 		return sb.toString();
 	}
 	
+	@Override
 	public String toCsvStr()
 	throws Exception
 	{
