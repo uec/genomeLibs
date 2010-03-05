@@ -21,7 +21,8 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 	protected double methSD = Double.NaN;
 
 	protected double[] counts;
-	protected double[] sums;
+	protected double[] pearsonSums;
+	protected double[] meanSums;
 	
 	
 	public CpgWalkerAllpairsPearsonAutocorr(CpgWalkerParams inWalkParams,
@@ -42,7 +43,8 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 		// Initalize counters
 		int windSize = this.walkParams.maxWindSize;
 		counts = new double[windSize-1]; 
-		sums = new double[windSize-1];
+		pearsonSums = new double[windSize-1];
+		meanSums = new double[windSize-1];
 	}
 
 	
@@ -63,6 +65,7 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 		// Get the distance
 		
 		int dist = second.chromPos - first.chromPos - 1; // ([0] will be dist of 1)
+				
 		double m1 = first.fracMeth(true);
 		double m2 = second.fracMeth(true);
 		
@@ -79,7 +82,8 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 			
 			double p1 = (m1 - this.methMean) / this.methSD;
 			double p2 = (m2 - this.methMean) / this.methSD;
-			this.sums[dist] += (p1 * p2);
+			this.pearsonSums[dist] += (p1 * p2);
+			this.meanSums[dist] = m1;
 		}
 		
 	}
@@ -99,7 +103,19 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 //		return sb.toString();
 //	}
 	
-	
+	public double[] means()
+	throws Exception
+	{
+		double[] countsCopy = Arrays.copyOf(this.counts, this.counts.length);
+		// Replace zero counts with Nan, so they don't end up as Infinity
+		for (int i = 0; i < counts.length; i++)
+		{
+			if (this.counts[i]<=0.0) countsCopy[i] = Double.NaN; 
+		}
+
+		double[] out = MatUtils.divVects(countsCopy, this.counts);
+		return out;
+	}
 
 	
 	@Override
@@ -113,9 +129,10 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 		// Values of -1.0 will now give us a pearson of 0 if we don't set them back to 0
 		for (int i = 0; i < counts.length; i++)
 		{
-			if (countsMinusOne[i]==-1.0) countsMinusOne[i] = 0.0; 
+			// Anything less than 20 can be unstable because we don't actually use the paired mean
+			if (countsMinusOne[i]<=10.0) countsMinusOne[i] = Double.NaN; 
 		}
-		double[] pearsons = MatUtils.divVects(this.sums, countsMinusOne); 
+		double[] pearsons = MatUtils.divVects(this.pearsonSums, countsMinusOne); 
 		
 		sb.append(ListUtils.excelLine(pearsons));
 		//sb.append(ListUtils.excelLine(countsMinusOne));

@@ -48,7 +48,7 @@ public class MethylDbToAutocorr {
     @Option(name="-range",usage="All the range breakpoints that you want (default 0.0, 0.33, 0.67, 1.0)")
     protected List<Double> range = null;
     @Option(name="-withinFeat",usage="A featType from the features table")
-    protected String withinFeat = null;
+    protected List<String> withinFeats = new ArrayList<String>(10);
     @Option(name="-featFlank",usage="Flank size to use with the feature")
     protected int featFlank = 0;
     @Option(name="-outPrefix",usage="Output files will have this name")
@@ -121,119 +121,141 @@ public class MethylDbToAutocorr {
 		int nTables = this.tables.size();
 		
 //		MINCOORD = 7000000;
-//		MAXCOORD = 10000000;
-//		STEP = MAXCOORD-MINCOORD+1;;
+//		MAXCOORD = 20000000;
+//		STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
 		
 
-		// Setup output files
-		List<PrintWriter> pws = new ArrayList<PrintWriter>();
-		for (int i = 0; i < nTables; i++)
+		
+		
+		// Loop through within feats.  If more than one is specified, throw in a null one for fun.  Also add
+		// it if we haven't specified any
+		if (withinFeats.size() != 1) withinFeats.add(null);
+
+		for (String withinFeat : withinFeats)
 		{
-			// Start table
-			String tab = this.tables.get(i);
 
-			String strandSec = (this.sameStrand) ? ".sameStrand" : "";
-			String featSec = (this.withinFeat==null) ? "" : String.format(".%s-f%d", this.withinFeat, this.featFlank);
-			String outFn = String.format("Autocorr.%s.%s%s%s.wind%d.csv", 
-					this.outPrefix, tab, featSec, strandSec, this.windSize);
-			PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
-			pws.add(pw);
-		}
-	
-		// Setup streaming params
-		MethylDbQuerier params = new MethylDbQuerier();
-		params.setMinCTreads(this.minCTreads);
-		params.setUseNonconversionFilter(!this.noNonconvFilter);
-		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
-		params.setMaxNextNonGfrac(this.maxNextNonGfrac);
-		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, this.featFlank);
+			// Setup output files
+			List<PrintWriter> pws = new ArrayList<PrintWriter>();
 
-		
-		// If we are doing correlation, we need the mean and SD.
-		CpgMethLevelSummarizer[] methSumms = getMethSummarizers(params);
-		
-		
-		// Setup autocorr objects
-		CpgWalkerParams walkerParams = new CpgWalkerParams();
-		walkerParams.maxWindSize = this.windSize;
-		walkerParams.minWindSize = this.windSize;
-		walkerParams.minCpgs = 2;
-		CpgWalkerAllpairs[] autocorrs = new CpgWalkerAllpairs[nTables];
-		for (int i = 0; i < nTables; i++)
-		{
-			// Autocorr counter
-			if (this.usePearson)
+			for (int i = 0; i < nTables; i++)
 			{
-				double mean = methSumms[i].getValMean(false);
-				double sd = methSumms[i].getValStdev();
-				System.err.printf("mean=%.3f, sd=%.3f (table %s)\n",mean,sd,this.tables.get(i));
-				autocorrs[i] = new CpgWalkerAllpairsPearsonAutocorr(walkerParams, sameStrand, mean, sd);
+				// Start table
+				String tab = this.tables.get(i);
+
+				String typeSec = (this.usePearson) ? ".pearson" : ".methBins";
+				String strandSec = (this.sameStrand) ? ".sameStrand" : "";
+				String featSec = String.format(".%s-f%d", (withinFeat==null)?"all":withinFeat, this.featFlank);
+				String outFn = String.format("Autocorr.%s.%s%s%s%s.wind%d.csv", 
+						this.outPrefix, tab, featSec, strandSec, typeSec, this.windSize);
+				PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
+				pws.add(pw);
 			}
-			else
+
+			// Setup streaming params
+			MethylDbQuerier params = new MethylDbQuerier();
+			params.setMinCTreads(this.minCTreads);
+			params.setUseNonconversionFilter(!this.noNonconvFilter);
+			params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+			params.setMaxNextNonGfrac(this.maxNextNonGfrac);
+			if (withinFeat!=null) params.addFeatFilter(withinFeat, this.featFlank);
+
+
+			// If we are doing correlation, we need the mean and SD.
+			CpgMethLevelSummarizer[] methSumms = null;
+			if (this.usePearson) methSumms = getMethSummarizers(params);
+
+
+			// Setup autocorr objects
+			CpgWalkerParams walkerParams = new CpgWalkerParams();
+			walkerParams.maxWindSize = this.windSize;
+			walkerParams.minWindSize = this.windSize;
+			walkerParams.minCpgs = 2;
+			CpgWalkerAllpairs[] autocorrs = new CpgWalkerAllpairs[nTables];
+			for (int i = 0; i < nTables; i++)
 			{
-				autocorrs[i] = new CpgWalkerAllpairsBinnedAutocorr(walkerParams, sameStrand, this.range);
-			}
-	
-			// Header
-			PrintWriter pw = pws.get(i);
-			String header = autocorrs[i].headerStr();
-			if (header != null) pw.println();
-		}
-		
-
-
-
-		for (String chr :  Arrays.asList("chr11"))//MethylDbUtils.CHROMS) // 
-		{
-		
-
-			// Iterator uses DB connection and can use a ton of memory because
-			// it loads all rows at once.  This stuff should really be added to iterator
-			// class, but until it is , just iterate here over the chromosome
-			int onCpg = 0;
-
-			
-			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
-			{
-				System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
-
-				params.clearRangeFilters();
-				params.addRangeFilter(chr, c, c+STEP-1); // *** TESTING , REPLACE ****
-				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
-				//int numCpgs = cpgit.getCurNumRows();
-				while (cpgit.hasNext())
+				// Autocorr counter
+				if (this.usePearson)
 				{
-					Cpg[] cpgs = cpgit.next();
-
-					// Stream Cpgs
-					for (int i = 0; i < nTables; i++)
-					{
-						autocorrs[i].streamCpg(cpgs[i]);
-					}
-
-					//
-					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, autocorrs[0].windStr());
-					onCpg++;
+					double mean = methSumms[i].getValMean(false);
+					double sd = methSumms[i].getValStdev();
+					System.err.printf("mean=%.3f, sd=%.3f (table %s)\n",mean,sd,this.tables.get(i));
+					autocorrs[i] = new CpgWalkerAllpairsPearsonAutocorr(walkerParams, sameStrand, mean, sd);
+				}
+				else
+				{
+					autocorrs[i] = new CpgWalkerAllpairsBinnedAutocorr(walkerParams, sameStrand, this.range);
 				}
 
-
+				// Header
+				PrintWriter pw = pws.get(i);
+				String header = autocorrs[i].headerStr();
+				if (header != null) pw.println(header);
 			}
+
+
+
+
+			for (String chr :  Arrays.asList("chr11"))//MethylDbUtils.CHROMS) // 
+			{
+
+
+				// Iterator uses DB connection and can use a ton of memory because
+				// it loads all rows at once.  This stuff should really be added to iterator
+				// class, but until it is , just iterate here over the chromosome
+				int onCpg = 0;
+
+
+				for (int c = MINCOORD; c < MAXCOORD; c += STEP)
+				{
+					System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
+
+					params.clearRangeFilters();
+					params.addRangeFilter(chr, c, c+STEP-1);
+					CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
+					//int numCpgs = cpgit.getCurNumRows();
+					while (cpgit.hasNext())
+					{
+						Cpg[] cpgs = cpgit.next();
+
+						// Stream Cpgs
+						for (int i = 0; i < nTables; i++)
+						{
+							//System.err.printf("Streaming cpg at pos %d to table %s\n",cpgs[i].chromPos,this.tables.get(i));
+							autocorrs[i].streamCpg(cpgs[i]);
+						}
+
+						//
+						if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, autocorrs[0].windStr());
+						onCpg++;
+					}
+
+
+				}
+			}
+
+			// Print autocorrs and close
+			for (int i = 0; i < nTables; i++)
+			{
+				PrintWriter pw = pws.get(i);
+				CpgWalkerAllpairs autocorr = autocorrs[i];
+
+				pw.append(autocorr.toCsvStr());
+
+				pw.close();
+			}
+
 		}
-	
-		// Print autocorrs and close
-		for (int i = 0; i < nTables; i++)
-		{
-			PrintWriter pw = pws.get(i);
-			CpgWalkerAllpairs autocorr = autocorrs[i];
-			
-			pw.append(autocorr.toCsvStr());
-			
-			pw.close();
-		}
-		
+
 		
 	} // Main
 
+	
+//	private CpgMethLevelSummarizer[] getMeansByDist(MethylDbQuerier params) 
+//	throws Exception
+//	{
+//		
+//	}
+	
 	private CpgMethLevelSummarizer[] getMethSummarizers(MethylDbQuerier params) 
 	throws Exception
 	{

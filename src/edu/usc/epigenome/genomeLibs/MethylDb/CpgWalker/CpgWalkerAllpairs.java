@@ -22,7 +22,7 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 		int n = inWindow.size();
 		if (n < 2) return;
 		
-		//System.err.println(windStr());
+		//System.err.println(this.windStr());
 		
 		Cpg head = inWindow.get(n-1);
 		for (int i = 0; i < (n-1); i++)
@@ -46,6 +46,12 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 					System.err.printf("Skipping out of order pair (new chrom?): %d, %d\n", prior.chromPos, head.chromPos);
 					this.reset();
 					return;
+				}
+				else if (prior.chromPos == head.chromPos)
+				{
+					System.err.printf("Why did we get the same CpG twice (%d)??\n",head.chromPos);  
+					(new Exception()).printStackTrace();
+					System.exit(1);
 				}
 				else
 				{

@@ -92,6 +92,7 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 		// Get the distance
 		int dist = second.chromPos - first.chromPos;
 		
+
 		Pair<Double,Double> r1 = getRange(first);
 		Pair<Double,Double> r2 = getRange(second);
 		
@@ -137,6 +138,7 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 			sb.append(i);
 		}
 		
+		//System.err.println("Header="+sb.length());
 		return sb.toString();
 	}
 	

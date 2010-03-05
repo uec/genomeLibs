@@ -119,7 +119,7 @@ public abstract class CpgWalker implements TabularOutput {
 		// And process the window
 		if (window.size()>=walkParams.minCpgs)
 		{
-//			System.err.println("\t\t Sufficient Cpgs");
+//			System.err.println("\t\t Sufficient Cpgs: " + window.size());
 //			double mean = this.methSummarizer.getValMean(true);
 //			System.err.println("\t\t Mean meth=" + mean);
 //			if (mean < 0.7)
