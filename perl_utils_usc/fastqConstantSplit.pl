@@ -21,6 +21,7 @@ foreach my $inputFile (@inputFileList)
 	$totalFileLength % 4 == 0 || die "input is not divisible by 4";
 	my $totalSeqLength = $totalFileLength / 4;
 	my $seqsPerFile = $totalSeqLength / $numberOfFiles;
+	$seqsPerFile =~ s/\.\d+$//;
 	open(my $inputHandle, "<$inputFile") || die "can't open input";
 	
 	for my $i (1..$numberOfFiles)
