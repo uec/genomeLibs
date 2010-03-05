@@ -8,12 +8,22 @@ my $SAMDIR = "/home/uec-00/shared/production/software/samtools";
 
 my $mapFn = $ARGV[0] || die "no input map";
 my $refFa = $ARGV[1] || die "no input genome";
+my $refFai = $refFa;
+if( -e $refFa && $refFa =~ /\.fa$/)
+{
+		$refFai = $refFai . ".fai";
+		die "no fai found" unless -e $refFai;
+}
+else
+{
+	die "no ref or ref index found";	
+}
 
 my $finalProcId = 0;
 my $finalBamFn = 0;
 
 die "input must be map file" if ($mapFn !~ /\.map$/);
-die "not supported for non-human, will fix soon" if ($refFa !~ /hg/);
+#die "not supported for non-human, will fix soon" if ($refFa !~ /hg/);
 my $mapFnBase = basename($mapFn);
 $mapFnBase =~ s/\.map$//;
 
@@ -29,7 +39,7 @@ system "${SAMDIR}/maq2sam-long ${curIn} > ${curOut}";
 # Sam to full bam
 $curIn = $curOut;
 $curOut = "${mapFnBase}.bam";
-system "${SAMDIR}/samtools view -bt /home/uec-00/shared/production/genomes/sambam/hg18.fai -o ${curOut} ${curIn}";
+system "${SAMDIR}/samtools view -bt $refFai -o ${curOut} ${curIn}";
 
 # remove dups
 $curIn = $curOut;
