@@ -135,7 +135,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 			System.exit(1);
 		}
 		
-		//logger.log(Level.INFO, "hasNext(): " + out);
+		//System.err.println("hasNext(): " + out);
 		
 		return out;
 	}
@@ -173,7 +173,14 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 				}
 
 				out[i] = cpg;
-				//System.err.printf("out[%d] = %s\n",i,cpg.toString());
+				
+//				for (int c = 1; c <= curRS.getMetaData().getColumnCount(); c++)
+//				{
+//					System.err.print(", " + curRS.getMetaData().getColumnName(c));
+//				}
+//				System.err.println();
+					
+				//System.err.printf("out[%d] = %s\n",i, cpg.toString());
 			}
 			
 		}
@@ -322,6 +329,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		sql += ListUtils.excelLine(secs);
 		
 		// And finish
+		sql += " GROUP BY cpg0.chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
 		sql += " ORDER BY cpg0.chromPos;";
 		return sql;
 	}
