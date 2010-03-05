@@ -118,7 +118,7 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 		double[] pearsons = MatUtils.divVects(this.sums, countsMinusOne); 
 		
 		sb.append(ListUtils.excelLine(pearsons));
-		sb.append(ListUtils.excelLine(countsMinusOne));
+		//sb.append(ListUtils.excelLine(countsMinusOne));
 		
 		return sb.toString();
 	}

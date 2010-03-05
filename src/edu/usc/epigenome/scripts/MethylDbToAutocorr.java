@@ -183,7 +183,7 @@ public class MethylDbToAutocorr {
 
 
 
-		for (String chr :  MethylDbUtils.CHROMS) //Arrays.asList("chr11"))// 
+		for (String chr :  Arrays.asList("chr11"))//MethylDbUtils.CHROMS) // 
 		{
 		
 
@@ -259,7 +259,7 @@ public class MethylDbToAutocorr {
 				System.err.printf("LOADING NEW WIND (MEAN/SD pass): %d-%d\n",c,c+STEP-1);
 
 				params.clearRangeFilters();
-				params.addRangeFilter(chr, c, c+STEP-1); // *** TESTING , REPLACE ****
+				params.addRangeFilter(chr, c, c+STEP-1); 
 				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
 				while (cpgit.hasNext())
 				{
