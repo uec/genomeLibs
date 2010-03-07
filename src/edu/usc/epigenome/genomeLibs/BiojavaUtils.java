@@ -38,5 +38,20 @@ public class BiojavaUtils {
 		return out;
 	}
 	
+	public static char strandToSymbol(StrandedFeature.Strand strand)
+	{
+		char out = '.';
+		
+		if (strand == StrandedFeature.NEGATIVE)
+		{
+			out = '-';
+		}
+		else if (strand == StrandedFeature.POSITIVE)
+		{
+			out = '+';
+		}
+		
+		return out;
+	}
 	
 }

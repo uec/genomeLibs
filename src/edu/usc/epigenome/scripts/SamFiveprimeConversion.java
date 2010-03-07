@@ -242,14 +242,14 @@ public class SamFiveprimeConversion {
 		
 		pw.print("<H4>CpH</H4>\n");
 		pw.print("<P><IMG SRC=\"");
-		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CC","CT"),0.0,1.0));
+		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CY"),0.0,1.0));
 		pw.print("\">\n");
 		pw.print("</P>\n");
 		
 		pw.print("<H4>CpH zoom</H4>\n");
 		pw.print("<P><IMG SRC=\"");
 		this.numCycles = 20;
-		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CC","CT"),0.80,1.0));
+		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CY"),0.96,1.0));
 		pw.print("\">\n");
 		pw.print("</P>\n");
 		}
@@ -325,15 +325,16 @@ public class SamFiveprimeConversion {
 			chart.addXAxisLabels(xAxis);
 			chart.addXAxisLabels(AxisLabelsFactory.newAxisLabels("Cycle number", 50.0));
 
-			// This seems to be buggy.
+			// This function seems to be buggy.
 			//yAxis = AxisLabelsFactory.newNumericRangeAxisLabels(minVal, maxVal);
 
 			AxisLabels yAxis;
 			List<String> ylabels = new ArrayList<String>(10);
 			double step = (maxVal-minVal)/5.0;
-			for (double i = minVal; i <= maxVal; i+=step)
+			for (double i = minVal; i <= maxVal; i = (Math.floor((i+step)*10000.0)/10000.0))
 			{
 				ylabels.add(String.format("%.2f", i));
+				System.err.println("Adding label " + i);
 			}
 			yAxis = AxisLabelsFactory.newAxisLabels(ylabels);
 			chart.addYAxisLabels(yAxis);
@@ -369,6 +370,10 @@ public class SamFiveprimeConversion {
 		{
 			out = (filtered) ?  Color.PINK : Color.RED;
 		}
+		else if (context.equalsIgnoreCase("CY"))
+		{
+			out = (filtered) ?  Color.PINK : Color.RED;
+		}
 		else if (context.equalsIgnoreCase("CC"))
 		{
 			out = (filtered) ?  Color.BEIGE : Color.BROWN;
@@ -400,11 +405,27 @@ public class SamFiveprimeConversion {
 		if (pos >= (refStr.length()-1)) return "end"; // At the last character
 		
 		char refCcur = refStr.charAt(pos);
-		
 		char refCnext = refStr.charAt(pos+1);
-		//char seqCnext = seqStr.charAt(pos+1);
-		
-		return (String.format("%c%c",refCcur, refCnext)).toUpperCase();
+		char seqCnext = seqStr.charAt(pos+1);
+				
+		// This is tricky.  We want to use the following base in the sequence,
+		// unless it's a T.  If it's a T , you really can't tell what it is
+		// unless you look at reads on the opposite strand.  And you don't want
+		// to call CpCs either, because they might be biased for mCs.  So to just
+		// show the information we're confident in , just show Y vs. A vs. G
+		char next = seqCnext;
+		if ((next == 'T') || (next == 'C')) next = 'Y';
+//		if (next == 'T')
+//		{
+//			if (refCnext == 'C')
+//			{
+//				// You really don't know at this point which it is, unless
+//				// you look at reads on the opposite strand
+//				next = 'Y';
+//			}
+//		}
+
+		return (String.format("%c%c",refCcur, next)).toUpperCase();
 	}
 	
 	static boolean isConverted(int pos, String refStr, String seqStr)
@@ -463,6 +484,7 @@ public class SamFiveprimeConversion {
 		public Plot toPlot(boolean withFilter, double minScale, double maxScale, boolean relativeFreqs, int maxCycles)
 		throws Exception
 		{
+			System.err.printf("To plot with %f-%f\n",minScale,maxScale);
 			Data data = this.toData(withFilter, minScale, maxScale, relativeFreqs, maxCycles);
 			Plot plot = Plots.newPlot(data);
 			

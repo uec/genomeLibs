@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.biojava.bio.program.gff.GFFRecord;
+import org.biojava.bio.seq.StrandedFeature;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -21,6 +22,7 @@ import org.usckeck.genome.GFFUtils;
 
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
 
+import edu.usc.epigenome.genomeLibs.BiojavaUtils;
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
@@ -36,6 +38,9 @@ public class GtfToFeatDbOffline {
 	
 	@Option(name="-tablePrefix",usage="Prefix for DB table (default " + FeatDbQuerier.DEFAULT_TABLE_PREFIX + ")")
     protected String tablePrefix = FeatDbQuerier.DEFAULT_TABLE_PREFIX;
+	@Option(name="-cpgMethTableFormat",usage="If used, this creates tables of the MethylCGRich format , one for each feature type and chrom (default false)")
+    protected boolean cpgMethTableFormat = false;
+
  	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -100,17 +105,103 @@ public class GtfToFeatDbOffline {
 				GFFRecord rec = (GFFRecord) featit.next();
 				this.outputFeat(rec, featType);
 			}
+			
+			// If we're doing meth tables, it's one per feat type, so we can close output files
+			if (this.cpgMethTableFormat) this.closeOutputFiles();
 		}
 	
+		// Finish up
+		this.closeOutputFiles();
+	}
+		
+	protected void closeOutputFiles()
+	{
 		// Close files
 		for (PrintWriter writer : this.outFiles.values())
 		{
 			writer.close();
 		}
-		
 	}
-		
+	
 	public void outputFeat(GFFRecord feat, String featType)
+	throws IOException
+	{
+		if (this.cpgMethTableFormat)
+		{
+			outputFeatMethTable(feat,featType);
+		}
+		else
+		{
+			outputFeatFeatTable(feat,featType);
+		}
+			
+	}
+	
+	public void outputFeatMethTable(GFFRecord feat, String featType)
+	throws IOException
+	{
+		String chr = feat.getSeqName();
+		
+		// If it's oriented, we make a separate table for starts and ends.  Unless
+		// it's trivial size (<2bp), in which case we only put it into starts
+		int featLeft = feat.getStart();
+		int featRight = feat.getEnd();
+		int featLen = featRight-featLeft+1;
+		boolean featRev = (feat.getStrand()==StrandedFeature.NEGATIVE);
+
+		
+		if (featLen <= 10)
+		{
+			// A single point basically
+			outputFeatMethTableEnd(chr, featType, (featRev) ? featRight : featLeft, featLen, "Starts", feat.getStrand());
+		}
+		else if (feat.getStrand() == StrandedFeature.UNKNOWN)
+		{
+			// Unstranded
+			outputFeatMethTableEnd(chr, featType, featLeft, featLen, "Unstranded", StrandedFeature.POSITIVE);
+			outputFeatMethTableEnd(chr, featType, featRight, featLen, "Unstranded", StrandedFeature.NEGATIVE);
+		}
+		else
+		{
+			// Stranded
+			outputFeatMethTableEnd(chr, featType, featLeft, featLen, (featRev)?"Ends":"Starts", StrandedFeature.POSITIVE);
+			outputFeatMethTableEnd(chr, featType, featRight, featLen, (featRev)?"Starts":"Ends", StrandedFeature.NEGATIVE);
+		}
+	
+	}
+	
+	public void outputFeatMethTableEnd(String chr, String featType, int chromPos, int featLen, String endLabel, StrandedFeature.Strand strand)
+	throws IOException
+	{
+		String fn = String.format("methylCGsRich_%s_%s_%s.txt", featType, endLabel, chr);
+		
+		PrintWriter writer = this.outFiles.get(fn);
+		if (writer == null)
+		{
+			writer = new PrintWriter(new File(fn));
+			this.outFiles.put(fn, writer);
+		}
+		
+		
+		List<String> flds = new ArrayList<String>(12);
+		
+		flds.add(Integer.toString(chromPos));
+		flds.add(Character.toString(BiojavaUtils.strandToSymbol(strand)));
+		flds.add("1");
+		flds.add("1");
+		flds.add("0");
+		flds.add("0");
+		flds.add("0");
+		flds.add("0");
+		flds.add("0");
+		flds.add("0");
+		flds.add("0");
+		flds.add(Integer.toString(featLen));
+		
+		writer.println( ListUtils.excelLine(flds.toArray(new String[1])));
+	}
+	
+	public void outputFeatFeatTable(GFFRecord feat, String featType)
 	throws IOException
 	{
 		String chr = feat.getSeqName();
@@ -147,20 +238,20 @@ public class GtfToFeatDbOffline {
 		writer.println( ListUtils.excelLine(flds.toArray(new String[1])));
 	}
 	
-	public static void outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr)
-	throws IOException
-	{
-		
-		String fn = prefix + sampleName + "_" + chr + ".txt";
-		PrintWriter writer = new PrintWriter(new File(fn));
-		
-		Iterator<Cpg> cpgIt = cpgMap.values().iterator();
-		while (cpgIt.hasNext())
-		{
-			Cpg cpg = cpgIt.next();
-			String line = cpg.toString();
-			writer.println(line);
-		}
-		writer.close();
-	}
+//	public static void outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr)
+//	throws IOException
+//	{
+//		
+//		String fn = prefix + sampleName + "_" + chr + ".txt";
+//		PrintWriter writer = new PrintWriter(new File(fn));
+//		
+//		Iterator<Cpg> cpgIt = cpgMap.values().iterator();
+//		while (cpgIt.hasNext())
+//		{
+//			Cpg cpg = cpgIt.next();
+//			String line = cpg.toString();
+//			writer.println(line);
+//		}
+//		writer.close();
+//	}
 }

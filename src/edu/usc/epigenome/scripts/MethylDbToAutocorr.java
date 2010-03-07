@@ -14,6 +14,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
@@ -120,10 +121,6 @@ public class MethylDbToAutocorr {
 		
 		int nTables = this.tables.size();
 		
-//		MINCOORD = 7000000;
-//		MAXCOORD = 20000000;
-//		STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
-		
 
 		
 		
@@ -157,29 +154,44 @@ public class MethylDbToAutocorr {
 			params.setUseNonconversionFilter(!this.noNonconvFilter);
 			params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 			params.setMaxNextNonGfrac(this.maxNextNonGfrac);
+
+
+			// Autocorr params needed for pass 1 and 2
+			CpgWalkerParams walkerParams = new CpgWalkerParams();
+			walkerParams.maxScanningWindSize = this.windSize;
+			walkerParams.minScanningWindSize = this.windSize;
+			walkerParams.minScanningWindCpgs = 2;
+
+			
+			// For the background, it makes a big difference whether we add this filter
+			// before or after doing the 1st pass to calculate mean/sd.
 			if (withinFeat!=null) params.addFeatFilter(withinFeat, this.featFlank);
 
 
 			// If we are doing correlation, we need the mean and SD.
-			CpgMethLevelSummarizer[] methSumms = null;
-			if (this.usePearson) methSumms = getMethSummarizers(params);
+			double[][] methMeans = new double[nTables][];
+			double[][] methSDs = new double[nTables][];
+			if (this.usePearson)
+			{
+				CpgWalkerAllpairsPearsonAutocorr[] meanAutocorrs = (CpgWalkerAllpairsPearsonAutocorr[])this.streamAutocorrs(params, walkerParams, null);
+				for (int i = 0; i < nTables; i++)
+				{
+					methMeans[i] = meanAutocorrs[i].means();
+					methSDs[i] = meanAutocorrs[i].stdevs();
+				}
+			}
 
 
-			// Setup autocorr objects
-			CpgWalkerParams walkerParams = new CpgWalkerParams();
-			walkerParams.maxWindSize = this.windSize;
-			walkerParams.minWindSize = this.windSize;
-			walkerParams.minCpgs = 2;
 			CpgWalkerAllpairs[] autocorrs = new CpgWalkerAllpairs[nTables];
 			for (int i = 0; i < nTables; i++)
 			{
 				// Autocorr counter
 				if (this.usePearson)
 				{
-					double mean = methSumms[i].getValMean(false);
-					double sd = methSumms[i].getValStdev();
-					System.err.printf("mean=%.3f, sd=%.3f (table %s)\n",mean,sd,this.tables.get(i));
-					autocorrs[i] = new CpgWalkerAllpairsPearsonAutocorr(walkerParams, sameStrand, mean, sd);
+					ListUtils.setDelim(",");
+					System.err.printf("mean=%s\n, sd=%s\n (table %s)\n",ListUtils.excelLine(methMeans[i]),
+							ListUtils.excelLine(methSDs[i]),this.tables.get(i));
+					autocorrs[i] = new CpgWalkerAllpairsPearsonAutocorr(walkerParams, sameStrand, methMeans[i], methSDs[i]);
 				}
 				else
 				{
@@ -190,48 +202,13 @@ public class MethylDbToAutocorr {
 				PrintWriter pw = pws.get(i);
 				String header = autocorrs[i].headerStr();
 				if (header != null) pw.println(header);
+				
 			}
 
+			// And run!
+			this.streamAutocorrs(params, walkerParams, autocorrs);
 
 
-
-			for (String chr :  Arrays.asList("chr11"))//MethylDbUtils.CHROMS) // 
-			{
-
-
-				// Iterator uses DB connection and can use a ton of memory because
-				// it loads all rows at once.  This stuff should really be added to iterator
-				// class, but until it is , just iterate here over the chromosome
-				int onCpg = 0;
-
-
-				for (int c = MINCOORD; c < MAXCOORD; c += STEP)
-				{
-					System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
-
-					params.clearRangeFilters();
-					params.addRangeFilter(chr, c, c+STEP-1);
-					CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
-					//int numCpgs = cpgit.getCurNumRows();
-					while (cpgit.hasNext())
-					{
-						Cpg[] cpgs = cpgit.next();
-
-						// Stream Cpgs
-						for (int i = 0; i < nTables; i++)
-						{
-							//System.err.printf("Streaming cpg at pos %d to table %s\n",cpgs[i].chromPos,this.tables.get(i));
-							autocorrs[i].streamCpg(cpgs[i]);
-						}
-
-						//
-						if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, autocorrs[0].windStr());
-						onCpg++;
-					}
-
-
-				}
-			}
 
 			// Print autocorrs and close
 			for (int i = 0; i < nTables; i++)
@@ -250,39 +227,57 @@ public class MethylDbToAutocorr {
 	} // Main
 
 	
-//	private CpgMethLevelSummarizer[] getMeansByDist(MethylDbQuerier params) 
-//	throws Exception
-//	{
-//		
-//	}
-	
-	private CpgMethLevelSummarizer[] getMethSummarizers(MethylDbQuerier params) 
+	/**
+	 * @param params
+	 * @param walkerParams
+	 * @param autocorrs If passed in , we use these ones.  If null, we create Pearson autocorrs from scratch,
+	 *        and run them using mean 0 SD 0 (useful for doing a first pass to calculate mean/sd for second pass)
+	 * @return
+	 * @throws Exception
+	 */
+	private CpgWalkerAllpairs[] streamAutocorrs(MethylDbQuerier params, CpgWalkerParams walkerParams,
+			CpgWalkerAllpairs[] autocorrs) 
 	throws Exception
 	{
-
-		System.err.println("Getting mean/sd");
-		
 		int nTabs = this.tables.size();
-		CpgMethLevelSummarizer[] summs = new CpgMethLevelSummarizer[nTabs];
-		for (int i=0; i<nTabs; i++)
+			
+
+		// We use the autocorr object to do this so that it will be matched
+		// 100% with Pearson calculation in second pass
+		if (autocorrs==null)
 		{
-			summs[i] = new CpgMethLevelSummarizer(params);
+			autocorrs = new CpgWalkerAllpairsPearsonAutocorr[nTabs];
+
+			int windSize = walkerParams.maxScanningWindSize;
+			for (int i = 0; i < nTabs; i++)
+			{
+				autocorrs[i] = new CpgWalkerAllpairsPearsonAutocorr(walkerParams, this.sameStrand, 
+						new double[windSize-1], new double[windSize-1]);
+			}
 		}
-		
-		for (String chr : Arrays.asList("chr11")) //  MethylDbUtils.CHROMS) //
+
+		for (String chr : MethylDbUtils.CHROMS) //  Arrays.asList("chr11"))//
 		{
+
+
 			// Iterator uses DB connection and can use a ton of memory because
 			// it loads all rows at once.  This stuff should really be added to iterator
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
 
+//			MINCOORD = 7000000;
+//			MAXCOORD = 20000000;
+//			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
+			
+
 			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
-				System.err.printf("LOADING NEW WIND (MEAN/SD pass): %d-%d\n",c,c+STEP-1);
+				System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
 
 				params.clearRangeFilters();
-				params.addRangeFilter(chr, c, c+STEP-1); 
+				params.addRangeFilter(chr, c, c+STEP-1);
 				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
+				//int numCpgs = cpgit.getCurNumRows();
 				while (cpgit.hasNext())
 				{
 					Cpg[] cpgs = cpgit.next();
@@ -290,17 +285,67 @@ public class MethylDbToAutocorr {
 					// Stream Cpgs
 					for (int i = 0; i < nTabs; i++)
 					{
-						summs[i].streamCpg(cpgs[i]);
+						//System.err.printf("Streaming cpg at pos %d to table %s\n",cpgs[i].chromPos,this.tables.get(i));
+						autocorrs[i].streamCpg(cpgs[i]);
 					}
 
 					//
+					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, autocorrs[0].windStr());
 					onCpg++;
 				}
+
+
 			}
 		}
 		
-		return summs;
+		return autocorrs;
 	}
+	
+//	private CpgMethLevelSummarizer[] getMethSummarizers(MethylDbQuerier params) 
+//	throws Exception
+//	{
+//
+//		System.err.println("Getting mean/sd");
+//		
+//		int nTabs = this.tables.size();
+//		CpgMethLevelSummarizer[] summs = new CpgMethLevelSummarizer[nTabs];
+//		for (int i=0; i<nTabs; i++)
+//		{
+//			summs[i] = new CpgMethLevelSummarizer(params);
+//		}
+//		
+//		for (String chr : Arrays.asList("chr11")) //  MethylDbUtils.CHROMS) //
+//		{
+//			// Iterator uses DB connection and can use a ton of memory because
+//			// it loads all rows at once.  This stuff should really be added to iterator
+//			// class, but until it is , just iterate here over the chromosome
+//			int onCpg = 0;
+//
+//			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
+//			{
+//				System.err.printf("LOADING NEW WIND (MEAN/SD pass): %d-%d\n",c,c+STEP-1);
+//
+//				params.clearRangeFilters();
+//				params.addRangeFilter(chr, c, c+STEP-1); 
+//				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
+//				while (cpgit.hasNext())
+//				{
+//					Cpg[] cpgs = cpgit.next();
+//
+//					// Stream Cpgs
+//					for (int i = 0; i < nTabs; i++)
+//					{
+//						summs[i].streamCpg(cpgs[i]);
+//					}
+//
+//					//
+//					onCpg++;
+//				}
+//			}
+//		}
+//		
+//		return summs;
+//	}
 
 	public static double safeVal(double v)
 	{

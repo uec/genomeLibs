@@ -17,20 +17,23 @@ import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 
 public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 
-	protected double methMean = Double.NaN;
-	protected double methSD = Double.NaN;
+	protected double methMeans[] = null;
+	protected double methSDs[] = null;
 
 	protected double[] counts;
 	protected double[] pearsonSums;
-	protected double[] meanSums;
 	
+	// These are for calculating mean and sd
+	protected double[] meanCounts;
+	protected double[] methTotals;
+	protected double[] methSquareTotals;
 	
 	public CpgWalkerAllpairsPearsonAutocorr(CpgWalkerParams inWalkParams,
-			boolean inSamestrandOnly, double inMethMean, double inMethStandardDev) {
+			boolean inSamestrandOnly, double[] inMethMeans, double inMethStandardDevs[]) {
 		super(inWalkParams, inSamestrandOnly);
 		
-		methMean = inMethMean;
-		methSD = inMethStandardDev;
+		methMeans = inMethMeans;
+		methSDs = inMethStandardDevs;
 		
 		init();
 	}
@@ -38,13 +41,15 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 	
 	protected void init()
 	{
-		useSummarizers = false;
+		useSummarizers = true;
 		
 		// Initalize counters
-		int windSize = this.walkParams.maxWindSize;
+		int windSize = this.walkParams.maxScanningWindSize;
 		counts = new double[windSize-1]; 
+		meanCounts = new double[windSize-1]; 
 		pearsonSums = new double[windSize-1];
-		meanSums = new double[windSize-1];
+		methTotals = new double[windSize-1];
+		methSquareTotals = new double[windSize-1];
 	}
 
 	
@@ -69,7 +74,7 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 		double m1 = first.fracMeth(true);
 		double m2 = second.fracMeth(true);
 		
-		if (Double.isNaN(methMean) || Double.isNaN(methSD))
+		if ((methMeans==null) || (methSDs==null))
 		{
 			System.err.println("mean or SD must be set before running CpgWalkerAllpairsPearsonAutocorr::recordPair()");
 			System.exit(1);
@@ -78,12 +83,16 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 		// (only count it if both have a valid range)
 		if (!Double.isNaN(m1) && !Double.isNaN(m2)) 
 		{
-			this.counts[dist]++;
 			
-			double p1 = (m1 - this.methMean) / this.methSD;
-			double p2 = (m2 - this.methMean) / this.methSD;
+			double p1 = (m1 - this.methMeans[dist]) / this.methSDs[dist];
+			double p2 = (m2 - this.methMeans[dist]) / this.methSDs[dist];
 			this.pearsonSums[dist] += (p1 * p2);
-			this.meanSums[dist] = m1;
+			this.counts[dist] += 2;
+			
+			// Mean and SD records. Count each seperately
+			this.meanCounts[dist] ++;
+			this.methTotals[dist] += m2;
+			this.methSquareTotals[dist] += Math.pow(m2, 2);
 		}
 		
 	}
@@ -106,17 +115,43 @@ public class CpgWalkerAllpairsPearsonAutocorr extends CpgWalkerAllpairs {
 	public double[] means()
 	throws Exception
 	{
-		double[] countsCopy = Arrays.copyOf(this.counts, this.counts.length);
+		double[] countsCopy = Arrays.copyOf(this.meanCounts, this.meanCounts.length);
 		// Replace zero counts with Nan, so they don't end up as Infinity
-		for (int i = 0; i < counts.length; i++)
+		for (int i = 0; i < countsCopy.length; i++)
 		{
-			if (this.counts[i]<=0.0) countsCopy[i] = Double.NaN; 
+			if (this.meanCounts[i]<=0.0) countsCopy[i] = Double.NaN; 
 		}
-
-		double[] out = MatUtils.divVects(countsCopy, this.counts);
+		double[] out = MatUtils.divVects(this.methTotals, countsCopy);
 		return out;
+		
+//		double[] out = new double[this.counts.length];
+//		double mean = this.methSummarizer.getValMean(false);
+//		for (int i = 0; i < out.length; i++)
+//		{
+//			out[i] = mean;
+//		}
+//		return out;
 	}
 
+	public double[] stdevs()
+	throws Exception
+	{
+		double[] means = this.means();
+		double[] sds = new double[this.meanCounts.length];
+		for (int i = 0; i < meanCounts.length; i++)
+		{
+			sds[i] = (this.meanCounts[i]==0) ? Double.NaN : Math.sqrt((this.methSquareTotals[i]/this.meanCounts[i])-Math.pow(means[i],2));
+		}
+		return sds;
+		
+//		double[] out = new double[this.counts.length];
+//		double sd = this.methSummarizer.getValStdev();
+//		for (int i = 0; i < out.length; i++)
+//		{
+//			out[i] = sd;
+//		}
+//		return out;
+	}
 	
 	@Override
 	public String toCsvStr()

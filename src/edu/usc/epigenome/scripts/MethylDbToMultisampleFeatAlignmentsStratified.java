@@ -143,12 +143,14 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			parser.printUsage(System.err);
 			return;
 		}
-		if (this.censor && !this.skipUnoriented)
-		{
-			System.err.println("With censoring, you should add -skipUnoriented");
-			parser.printUsage(System.err);
-			return;
-		}
+
+		// I don't think this is necessary.
+		//		if (this.censor && !this.skipUnoriented)
+//		{
+//			System.err.println("With censoring, you should add -skipUnoriented");
+//			parser.printUsage(System.err);
+//			return;
+//		}
 		
 		int nS = tablePrefixes.size();
 		int nFeatTypes = featFns.size();

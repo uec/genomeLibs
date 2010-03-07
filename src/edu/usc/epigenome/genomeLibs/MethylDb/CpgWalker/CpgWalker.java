@@ -98,7 +98,7 @@ public abstract class CpgWalker implements TabularOutput {
 		Cpg endCpg;
 		while (!done && ((endCpg = window.peek()) != null))
 		{
-			if ((newPos - endCpg.chromPos) < this.walkParams.maxWindSize)
+			if ((newPos - endCpg.chromPos) < this.walkParams.maxScanningWindSize)
 			{
 				done = true;
 			}
@@ -117,7 +117,7 @@ public abstract class CpgWalker implements TabularOutput {
 		//System.err.println("\tChecking " + this.windStr());
 		
 		// And process the window
-		if (window.size()>=walkParams.minCpgs)
+		if (window.size()>=walkParams.minScanningWindCpgs)
 		{
 //			System.err.println("\t\t Sufficient Cpgs: " + window.size());
 //			double mean = this.methSummarizer.getValMean(true);
@@ -152,7 +152,7 @@ public abstract class CpgWalker implements TabularOutput {
 		Cpg endCpg;
 		while (!done && ((endCpg = window.peek()) != null))
 		{
-			if ((newPos - endCpg.chromPos) < this.walkParams.maxWindSize)
+			if ((newPos - endCpg.chromPos) < this.walkParams.maxScanningWindSize)
 			{
 				done = true;
 			}
@@ -166,7 +166,7 @@ public abstract class CpgWalker implements TabularOutput {
 		
 		// And process the window
 		//System.err.println(this.windStr());
-		if (window.size()>=walkParams.minCpgs)
+		if (window.size()>=walkParams.minScanningWindCpgs)
 		{
 			
 			// First we set our summarizers.
@@ -176,7 +176,8 @@ public abstract class CpgWalker implements TabularOutput {
 			int i = 0;
 			int lastPos = 0;
 			if (useSummarizers) this.resetSummarizers();
-			while (i<walkParams.minCpgs)
+			boolean minSizeReached = false;
+			while ((i<window.size()) && !(minSizeReached && (i>walkParams.minScanningWindCpgs)))
 			{
 				// ***** REMOVE THIS
 				if (!backIt.hasNext()) System.err.println("Why did we run out of window elements?!"); // REMOVE
@@ -193,18 +194,20 @@ public abstract class CpgWalker implements TabularOutput {
 					methSummarizerRev.streamCpg(backCpg);
 				}
 				
+				int windLen = newPos-lastPos;
+				minSizeReached = (windLen>=this.walkParams.minScanningWindSize);
+				//System.err.printf("Checking size %d (minSizeReached=%s)\n",windLen,minSizeReached);
+
 				i++;
 			}
-			
-			
-			
-			
-//			System.err.println("\tDomain size=" + (cpg.chromPos-lastPos+1));
-//			System.out.println("chr11\t" + lastPos + "\t" + cpg.chromPos);
-			
-			
+
+
 			// Process this window
-			this.processWindow(this.window.subList(this.window.size()-walkParams.minCpgs, this.window.size()));
+	//		System.err.printf("Checking size %d (minSizeReached=%s)\n",cpg.chromPos-lastPos+1,minSizeReached);
+			if (minSizeReached && (i>walkParams.minScanningWindCpgs))
+			{
+				this.processWindow(this.window.subList(this.window.size()-i, this.window.size()));
+			}
 		}
 	}
 
@@ -226,23 +229,34 @@ public abstract class CpgWalker implements TabularOutput {
 
 	public String windStr()
 	{
-		return windStr(false);
+		return windStr(this.window);
 	}
 	
+	public static String windStr(List<Cpg> inWind)
+	{
+		return windStr(inWind, false);
+	}
+
 	public String windStr(boolean longVers)
+	{
+		return windStr(this.window, longVers);
+	}
+
+	
+	public static String windStr(List<Cpg> inWind, boolean longVers)
 	{
 		StringBuffer sb = new StringBuffer(10000);
 		
-		int e = windEnd();
-		int s = windStart();
+		int e = windEnd(inWind);
+		int s = windStart(inWind);
 		sb.append(String.format("Wind %d-%d (%d bp) has %d elements: ",
-				s, e, e-s+1, this.window.size()));
+				s, e, e-s+1, inWind.size()));
 		if (longVers)
 		{
-			for (int i = 0; i < window.size(); i++)
+			for (int i = 0; i < inWind.size(); i++)
 			{
 				if (i>0) sb.append(", ");
-				Cpg cpg = window.get(i);
+				Cpg cpg = inWind.get(i);
 				sb.append(cpg.chromPos);
 			}
 		}
@@ -250,19 +264,39 @@ public abstract class CpgWalker implements TabularOutput {
 		
 		return sb.toString();
 	}
+
+	public int windLen()
+	{
+		return windLen(this.window);
+	}
 	
 	public int windStart()
 	{
-		if (window.size()==0) return -1;
-		return window.get(0).chromPos;
+		return windStart(window);
 	}
 
 	public int windEnd()
 	{
-		if (window.size()==0) return -1;
-		return window.get(window.size()-1).chromPos;
+		return windEnd(window);
 	}
 	
+	public static int windLen(List<Cpg> inWind)
+	{
+		return windEnd(inWind) - windStart(inWind) + 1;
+	}
+	
+	public static int windStart(List<Cpg> inWind)
+	{
+		if (inWind.size()==0) return -1;
+		return inWind.get(0).chromPos;
+	}
+
+	public static int windEnd(List<Cpg> inWind)
+	{
+		if (inWind.size()==0) return -1;
+		return inWind.get(inWind.size()-1).chromPos;
+	}
+
 	// OVERRIDE THESE
 	abstract protected void processWindow(List<Cpg> inWindow);
 

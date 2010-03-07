@@ -41,12 +41,18 @@ public class MethylDbToDomains {
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
+    @Option(name="-debug",usage="only does a test segment, more debug output")
+    protected boolean debug = false;
+    @Option(name="-debugDomain",usage="only does a test segment")
+    protected boolean debugDomain = false;
     @Option(name="-table",usage="Prefix for DB table (default methylCGsRich_normal010310_)")
     protected List<String> tables = new ArrayList<String>();
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected String withinFeat = null;
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
+    @Option(name="-minOutputWindSize",usage="only output windows this big or bigger (0)")
+    protected int minOutputWindSize = 500;
     @Option(name="-windSize",usage="starting window size (500)")
     protected int windSize = 500;
     @Option(name="-variableWindowMaxWind",usage="If set , we expand window up to this size to get at least minCpgs (required but slower)")
@@ -127,7 +133,9 @@ public class MethylDbToDomains {
 		// We do fixed step or fixed wind
 		// depending on input params
 		CpgWalkerParams walkerParams = new CpgWalkerParams();
-		walkerParams.minCpgs = this.minCpgs;
+		walkerParams.debug = this.debug;
+		walkerParams.minScanningWindCpgs = this.minCpgs;
+		walkerParams.minOutputWindSize = this.minOutputWindSize;
 		if (this.variableWindowMaxWind >= 0)
 		{
 			if (this.windSize>this.variableWindowMaxWind)
@@ -139,13 +147,13 @@ public class MethylDbToDomains {
 				return;
 			}
 				
-			walkerParams.minWindSize = this.windSize;
-			walkerParams.maxWindSize = this.variableWindowMaxWind;
+			walkerParams.minScanningWindSize = this.windSize;
+			walkerParams.maxScanningWindSize = this.variableWindowMaxWind;
 			walkerParams.useVariableWindow = true;
 		}
 		else
 		{
-			walkerParams.maxWindSize = this.windSize;
+			walkerParams.maxScanningWindSize = this.windSize;
 		}
 			
 		// Setup output files and print domain finders.  
@@ -155,8 +163,8 @@ public class MethylDbToDomains {
 		{
 			String tab = this.tables.get(i);
 			String fixedSec = (walkerParams.useVariableWindow) ? String.format(".varMaxWind%d", variableWindowMaxWind) : "";
-			String outFn = String.format("%s.%s%s.wind%d.minCpg%d.meth%.2f-%.2f.bed", 
-					this.outPrefix, tab, fixedSec, this.windSize, this.minCpgs, this.minMeth, this.maxMeth);
+			String outFn = String.format("%s.%s%s.wind%d.minOutput%d.minCpg%d.meth%.2f-%.2f.bed", 
+					this.outPrefix, tab, fixedSec, this.windSize, this.minOutputWindSize, this.minCpgs, this.minMeth, this.maxMeth);
 			PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 			pws.add(pw);
 	
@@ -176,7 +184,8 @@ public class MethylDbToDomains {
 
 
 
-		for (String chr : MethylDbUtils.CHROMS) // Arrays.asList("chr11")) // 
+		List<String> chrs = (this.debug||this.debugDomain) ? Arrays.asList("chr11") : MethylDbUtils.CHROMS;
+		for (String chr : chrs)
 		{
 			
 			
@@ -192,9 +201,12 @@ public class MethylDbToDomains {
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
 			
-//			MINCOORD = 0;
-//			MAXCOORD = 20000000;
-//			//STEP = MAXCOORD - MINCOORD + 1;
+			if (this.debug || this.debugDomain)
+			{
+				MINCOORD = 0;
+				MAXCOORD = 40000000;
+				STEP = Math.min(STEP, MAXCOORD - MINCOORD + 1);
+			}
 			
 			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
@@ -221,6 +233,13 @@ public class MethylDbToDomains {
 
 
 			}
+			
+			// Finish chromosomes on the domain finders
+			for (int i = 0; i < nTables; i++)
+			{
+				domainFinders[i].finishChr();
+			}
+			
 		}
 		
 //		for (int i = 0; i < nTables; i++)

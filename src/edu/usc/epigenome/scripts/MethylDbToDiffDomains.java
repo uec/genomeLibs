@@ -104,8 +104,8 @@ public class MethylDbToDiffDomains {
 		// Setup output files and print domain finders
 		List<PrintWriter> pws = new ArrayList<PrintWriter>();
 		CpgWalkerParams walkerParams = new CpgWalkerParams();
-		walkerParams.maxWindSize = this.windSize;
-		walkerParams.minCpgs = this.minCpgs;
+		walkerParams.maxScanningWindSize = this.windSize;
+		walkerParams.minScanningWindCpgs = this.minCpgs;
 
 		String outFn = String.format("%s.DiffA-%s.DiffB-%s.wind%d.minCpg%d.meth%.2f-%.2f.bed", 
 				this.outPrefix, tables.get(0), tables.get(1), this.windSize, this.minCpgs, this.minMeth, this.maxMeth);

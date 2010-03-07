@@ -53,7 +53,7 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 		
 		// Initalize counters
 		counters = new HashMap<Object,int[]>();
-		int windSize = this.walkParams.maxWindSize;
+		int windSize = this.walkParams.maxScanningWindSize;
 
 		// Setup bin tree
 		binEdges = inBinEdges; // Save it for later
@@ -132,7 +132,7 @@ public class CpgWalkerAllpairsBinnedAutocorr extends CpgWalkerAllpairs {
 		StringBuffer sb = new StringBuffer((int)1E5);
 		
 		sb.append("Range");
-		for (int i = 0; i < this.walkParams.maxWindSize; i++)
+		for (int i = 0; i < this.walkParams.maxScanningWindSize; i++)
 		{
 			sb.append(",d");
 			sb.append(i);

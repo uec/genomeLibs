@@ -39,10 +39,19 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	 * @param curChr the curChr to set
 	 */
 	public void setCurChr(String curChr) {
+		// This doesn't hurt if the last one was already processed
+		boolean dumpedLast = this.outputAndRemoveCurWind();
+		
 		this.curChr = curChr;
 		super.newChrom();
 	}
 
+	/**
+	 * Outputs the last domain
+	 */
+	public void finishChr() {
+		boolean dumpedLast = this.outputAndRemoveCurWind();
+	}
 
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalker#reset()
@@ -75,7 +84,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 
 		
 		// This is where we call the actual filter
-		boolean goodWind = ((nCpgs>0) && (nCpgs >= this.walkParams.minCpgs)); 
+		boolean goodWind = ((nCpgs>0) && (nCpgs >= this.walkParams.minScanningWindCpgs)); 
 		goodWind &= this.windPasses(inWindow);
 		GenomicRange gr = new GenomicRange(this.getCurChr(), s, e);
 		
@@ -111,15 +120,8 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		if (!overlapsPrev)
 		{
 			// If we have a prior one, dump it
-			if (domains.size()>0)
-			{
-				GenomicRange lastGr = domains.get(domains.size()-1);
-				String strandStr = (lastGr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
-				pw.append(MethylDbUtils.bedLine(lastGr.getChrom(), lastGr.getStart(), lastGr.getEnd(), strandStr, lastGr.getScore()));
-				pw.println();
-				domains.remove(0);
-				dumpedLast = true;
-			}
+			dumpedLast = this.outputAndRemoveCurWind();
+
 			
 			// Then start new window if we're on a good one
 			if (goodWind)
@@ -149,6 +151,32 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	
 		this.lastChrom = this.curChr;
 	}
+	
+	/**
+	 * @return true if we had a window to dump
+	 */
+	protected boolean outputAndRemoveCurWind()
+	{
+		
+		// If we have a prior one, dump it
+		boolean foundOne = false;
+		if (domains.size()>0 )
+		{
+			GenomicRange lastGr = domains.get(domains.size()-1);
+			int len = lastGr.getEnd()-lastGr.getStart()+1;
+			if (len >= this.walkParams.minOutputWindSize)
+			{
+				if (this.walkParams.debug) System.err.printf("Output domain: %s\n", lastGr.toString());
+				String strandStr = (lastGr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
+				pw.append(MethylDbUtils.bedLine(lastGr.getChrom(), lastGr.getStart(), lastGr.getEnd(), strandStr, lastGr.getScore()));
+				pw.println();
+			}
+			domains.remove(0);
+			foundOne = true;
+		}
+		return foundOne;
+	}
+	
 	
 	public List<GenomicRange> getDomains() {
 		return domains;
