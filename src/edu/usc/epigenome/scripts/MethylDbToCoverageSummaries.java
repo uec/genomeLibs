@@ -71,6 +71,7 @@ public class MethylDbToCoverageSummaries {
 		// Don't filter
 		MethylDbQuerier querier = new MethylDbQuerier();
 		querier.setMinCTreads(0);
+		querier.setMaxNextNonGfrac(1.0);
 		querier.setUseNonconversionFilter(false);
 		querier.setMaxOppstrandAfrac(Double.POSITIVE_INFINITY);
 
@@ -81,7 +82,7 @@ public class MethylDbToCoverageSummaries {
 		long totalMeasurements = 0;
 		SortedMap<Integer,Integer> counts = new TreeMap<Integer,Integer>();
 
-		for (String chrom : MethylDbUtils.CHROMS) 
+		for (String chrom : MethylDbUtils.TEST_CHROMS) 
 		{
 			// Stupid JDBC tries to load entire chromosome into memory at once,
 			// which is too much.
@@ -132,7 +133,7 @@ public class MethylDbToCoverageSummaries {
 		// Output
 		//System.out.printf("Total unique CpG=%d, total CpG measurements=%d\n",totalUniqueCpgs, totalMeasurements);
 		int maxCvg = counts.lastKey();
-		for (int i = 0; i < maxCvg; i++)
+		for (int i = 0; i <= maxCvg; i++)
 		{
 			Integer countObj = counts.get(new Integer(i));
 			int count = (countObj==null) ? 0 : countObj.intValue();
