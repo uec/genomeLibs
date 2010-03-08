@@ -55,7 +55,7 @@ sub addMissingCpgs
 	
 	foreach my $key (sort(grep {/$chrNum\./} (keys(%$weights))))
 	{
-		$key =~ /$chrNum\.(.*)/;
+		$key =~ /^$chrNum\.(.*)/;
 		my $origPos = $1;
 		
 		# This is just the plus strand one
