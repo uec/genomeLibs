@@ -20,8 +20,8 @@ print STDERR "Found " . scalar(keys(%$weights)) . " Cpg weights\n";
 
 
 # Go through chroms
-my @chrs = 1..26;
-@chrs = 22;
+my @chrs = 1..25;
+#@chrs = 22;
 my @prefixes = @ARGV;
 foreach my $chrNum (@chrs)
 {
@@ -65,7 +65,7 @@ sub addMissingCpgs
 			my $strand = ($i==0) ? "+" : "-";
 			if (my $row = $chrRowsH->{$pos})
 			{
-				print STDERR "($chr) $pos ($strand) found: " . join("\t", @$row) . "\n";
+				#print STDERR "($chr) $pos ($strand) found: " . join("\t", @$row) . "\n";
 			}
 			else
 			{
@@ -73,7 +73,7 @@ sub addMissingCpgs
 				my @newRow = ($pos, $strand);
 				push (@newRow, map {"0"} (1..9));
 				push (@newRow, $weight);
-				print STDERR "($chr) Adding $pos ($strand): " . join("\t", @newRow) . "\n";
+				#print STDERR "($chr) Adding $pos ($strand): " . join("\t", @newRow) . "\n";
 				$chrRowsH->{$pos} = \@newRow;
 			}
 		}
