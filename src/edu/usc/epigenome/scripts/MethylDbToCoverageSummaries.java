@@ -82,7 +82,7 @@ public class MethylDbToCoverageSummaries {
 		long totalMeasurements = 0;
 		SortedMap<Integer,Integer> counts = new TreeMap<Integer,Integer>();
 
-		for (String chrom : MethylDbUtils.TEST_CHROMS) 
+		for (String chrom : MethylDbUtils.CHROMS) 
 		{
 			// Stupid JDBC tries to load entire chromosome into memory at once,
 			// which is too much.
