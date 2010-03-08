@@ -104,9 +104,9 @@ sub chrNumToChr
 	my ($chrNum) = @_;
 	
 	my $chr = "chr${chrNum}";
-	$chr = "chrX" if ($chr==23);
-	$chr = "chrY" if ($chr==24);
-	$chr = "chrM" if ($chr==25);
+	$chr = "chrX" if ($chrNum==23);
+	$chr = "chrY" if ($chrNum==24);
+	$chr = "chrM" if ($chrNum==25);
 	return $chr;
 }
 
