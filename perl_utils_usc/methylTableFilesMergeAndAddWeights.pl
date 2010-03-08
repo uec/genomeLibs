@@ -8,9 +8,8 @@ use File::Temp qw/ tempfile /;
 my $USAGE = "methylTableFilesMergeAndAddWeights.pl -cpgLocFn cpgs.cse -outPrefix methylCpgsRich methylCpgsRich_PCR1 methylCpgsRich_PCR2 ...";
 
 my $cpgLocFn = "~/genomic-data-misc/CpgsAll.hg18.cse";
-GetOptions ('cpgLocFn=s'=>\$cpgLocFn) || die "$USAGE\n";
 my $outPrefix = "methylCpgsRich";
-GetOptions ('outPrefix=s'=>\$outPrefix) || die "$USAGE\n";
+GetOptions ('cpgLocFn=s'=>\$cpgLocFn, 'outPrefix=s'=>\$outPrefix) || die "$USAGE\n";
 
 die "$USAGE\n" unless (@ARGV>0);
 
