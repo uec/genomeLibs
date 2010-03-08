@@ -110,8 +110,8 @@ public class MethylDbToCoverageSummaries {
 						System.err.printf("\tTree has %d items\n", counts.size());
 					}
 
-					int count = cpg[0].totalReads + cpg[0].totalReadsOpposite;
-					totalUniqueCpgs++;
+					int count = cpg[0].totalReads;
+					if (count >= 1) totalUniqueCpgs++;
 					totalMeasurements += count;
 
 
@@ -130,7 +130,7 @@ public class MethylDbToCoverageSummaries {
 		}
 
 		// Output
-		System.out.printf("Total unique CpG=%d, total CpG measurements=%d\n",totalUniqueCpgs, totalMeasurements);
+		//System.out.printf("Total unique CpG=%d, total CpG measurements=%d\n",totalUniqueCpgs, totalMeasurements);
 		int maxCvg = counts.lastKey();
 		for (int i = 0; i < maxCvg; i++)
 		{
