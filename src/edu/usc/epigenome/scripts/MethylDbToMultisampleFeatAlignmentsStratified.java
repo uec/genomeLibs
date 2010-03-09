@@ -21,6 +21,9 @@ import org.kohsuke.args4j.Option;
 import org.usckeck.genome.ChromFeatures;
 import org.usckeck.genome.GFFUtils;
 
+import com.mallardsoft.tuple.Pair;
+import com.mallardsoft.tuple.Tuple;
+
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
@@ -183,7 +186,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			for (int i = 0; i < nS; i++)
 			{
 				// 0=readCount, 1=nCpGs, 2=mLevel
-				if (readCounts) fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,true, nFeats,this.downscaleCols);
+				if (readCounts) fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,!this.censor, nFeats,this.downscaleCols); // Changed this to start with NaN.  Now we explicitly zero out features to allow censoring
 //				fStatMats[i][1] = new FeatAlignerEachfeat(flankSize,true, nFeats,500);
 				if (!nometh) fStatMats[i][2] = new FeatAlignerEachfeat(flankSize,false, nFeats,this.downscaleCols);
 //				for (int j = (i+1); j < nS; j++)
@@ -376,7 +379,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			int alignmentPoint = flankRange.getRefPoint();
 			int flankStart = flankRange.getStart();
 			int flankEnd = flankRange.getEnd();
-
+			
 			
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
 					"Fetching coords: censor=%s\talignToStart=%s\tchr=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\t\n",
@@ -386,6 +389,17 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			try 
 			{
 
+				// Zero out
+				for (int i = 0; i < nS; i++)
+				{
+					if (this.censor && this.readCounts)
+					{
+						// Doing every one is way too slow
+						this.fStatMats[i][0].zeroOutRange(flankStart, flankEnd, featName, chrStr, alignmentPoint, featStrand, sortVal);
+					}
+				}
+				
+				
 				// Meth
 				MethylDbQuerier params = new MethylDbQuerier();
 				for (String featFilter : this.featFilters)
@@ -398,6 +412,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				
 				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
 
+				
 				
 				while (cpgit.hasNext()) 
 				{

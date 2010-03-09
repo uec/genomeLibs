@@ -28,6 +28,8 @@ import com.googlecode.charts4j.GCharts;
 import com.googlecode.charts4j.LineChart;
 import com.googlecode.charts4j.Plot;
 import com.googlecode.charts4j.Plots;
+import com.mallardsoft.tuple.Pair;
+import com.mallardsoft.tuple.Tuple;
 
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner.PlotType;
@@ -99,7 +101,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	 * @see edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner#addAlignmentPos(double, double, java.lang.String, java.lang.String, int, org.biojava.bio.seq.StrandedFeature.Strand)
 	 */
 	@Override
-	public void addAlignmentPos(int genomeRelPos, double fwStrandScore, double revStrandScore,
+	public Pair<Integer,Integer> addAlignmentPos(int genomeRelPos, double fwStrandScore, double revStrandScore,
 			String featName, String featChr, int featCoord, Strand featStrand, double sortVal) {
 
 		GenomicRange gr = new GenomicRange(featChr, featCoord, featCoord, featStrand);
@@ -119,9 +121,25 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		if (!Double.isNaN(fwScoreRel)) arr[2][featInd][colInd] = MatUtils.nanSum(1.0, arr[2][featInd][colInd]);
 		if (!Double.isNaN(revScoreRel))  arr[3][featInd][colInd] = MatUtils.nanSum(1.0, arr[3][featInd][colInd]);
 		
+		return Tuple.from(featInd, colInd);
 	}
 
-
+	public void zeroOutRange(int genomeRelStart, int genomeRelEnd, String featName, String featChr, int featCoord, Strand featStrand, double sortVal)
+	{
+		GenomicRange gr = new GenomicRange(featChr, featCoord, featCoord, featStrand);
+		int featInd = this.getInd(gr, featName);
+		int startColInd = this.getColumnInd(genomeRelStart, featCoord, featStrand, true);
+		int endColInd = this.getColumnInd(genomeRelEnd, featCoord, featStrand, true);
+		this.sortVals[featInd] = new Double(sortVal);
+		
+		// Add it to old score
+		Arrays.fill(arr[0][featInd], Math.min(startColInd, endColInd), Math.max(startColInd, endColInd),0.0);
+		Arrays.fill(arr[1][featInd], Math.min(startColInd, endColInd), Math.max(startColInd, endColInd),0.0);
+		Arrays.fill(arr[2][featInd], Math.min(startColInd, endColInd), Math.max(startColInd, endColInd),0.0001); // Make it non-zero in case we don't get any more
+		Arrays.fill(arr[3][featInd], Math.min(startColInd, endColInd), Math.max(startColInd, endColInd),0.0001); // Make it non-zero in case we don't get any more
+		System.err.printf("Zeroing from arr[%d] %d-%d\n",featInd,Math.min(startColInd, endColInd), Math.max(startColInd, endColInd));
+	}
+	
 
 	public Double[] sortRowsExponential(double exponentialFactor, int minDist)
 	{

@@ -6,6 +6,8 @@ import java.util.logging.Logger;
 import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.seq.StrandedFeature;
 
+import com.mallardsoft.tuple.Pair;
+
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRangeWithRefpoint;
 
@@ -46,7 +48,18 @@ public abstract class FeatAligner {
 	
 	
 	abstract public int numCols();
-	abstract public void addAlignmentPos (int genomeRelPos, double fwStrandScore, double revStrandScore,
+	/**
+	 * @param genomeRelPos
+	 * @param fwStrandScore
+	 * @param revStrandScore
+	 * @param featName
+	 * @param featChr
+	 * @param featCoord
+	 * @param featStrand
+	 * @param sortVal
+	 * @return Returns (featInd, colInd) pair
+	 */
+	abstract public Pair<Integer, Integer> addAlignmentPos (int genomeRelPos, double fwStrandScore, double revStrandScore,
 			String featName, String featChr, int featCoord, StrandedFeature.Strand featStrand, double sortVal);
 	
 	abstract public FeatAlignerAveraging toAverageFeatAligner();

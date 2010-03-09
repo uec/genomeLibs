@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
@@ -26,6 +27,8 @@ public class MethylDbToCoverageSummaries {
 //    @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
 //    protected boolean noNonconvFilter = false;
 	// receives other command line parameters than options
+	@Option(name="-doubleStranded",usage="If set, counts include both strands (default false)")
+	protected boolean doubleStranded = false;
 	@Argument
 	private List<String> tablePrefixes = new ArrayList<String>();
 	
@@ -112,6 +115,7 @@ public class MethylDbToCoverageSummaries {
 					}
 
 					int count = cpg[0].totalReads;
+					if (this.doubleStranded) count += cpg[0].totalReadsOpposite;
 					if (count >= 1) totalUniqueCpgs++;
 					totalMeasurements += count;
 
