@@ -21,7 +21,7 @@ print STDERR "Found " . scalar(keys(%$weights)) . " Cpg weights\n";
 
 # Go through chroms
 my @chrs = 1..25;
-#@chrs = 22;
+#@chrs = (22);
 my @prefixes = @ARGV;
 foreach my $chrNum (@chrs)
 {

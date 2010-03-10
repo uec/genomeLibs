@@ -248,7 +248,7 @@ public class SamFiveprimeConversion {
 		
 		pw.print("<H4>CpH zoom</H4>\n");
 		pw.print("<P><IMG SRC=\"");
-		this.numCycles = 20;
+		//this.numCycles = 20;
 		pw.print(HtmlChartUrl(cycleCounters, Arrays.asList("CA","CY"),0.96,1.0));
 		pw.print("\">\n");
 		pw.print("</P>\n");

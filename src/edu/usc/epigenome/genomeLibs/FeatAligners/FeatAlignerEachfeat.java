@@ -137,7 +137,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		Arrays.fill(arr[1][featInd], Math.min(startColInd, endColInd), Math.max(startColInd, endColInd),0.0);
 		Arrays.fill(arr[2][featInd], Math.min(startColInd, endColInd), Math.max(startColInd, endColInd),0.0001); // Make it non-zero in case we don't get any more
 		Arrays.fill(arr[3][featInd], Math.min(startColInd, endColInd), Math.max(startColInd, endColInd),0.0001); // Make it non-zero in case we don't get any more
-		System.err.printf("Zeroing from arr[%d] %d-%d\n",featInd,Math.min(startColInd, endColInd), Math.max(startColInd, endColInd));
+		//System.err.printf("Zeroing from arr[%d] %d-%d\n",featInd,Math.min(startColInd, endColInd), Math.max(startColInd, endColInd));
 	}
 	
 
