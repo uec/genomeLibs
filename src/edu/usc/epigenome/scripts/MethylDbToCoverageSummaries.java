@@ -22,13 +22,15 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class MethylDbToCoverageSummaries {
 
-	private static final String C_USAGE = "Use: MethylDbToSummaryStats tablePrefix > stats.csv";
+	private static final String C_USAGE = "Use: MethylDbToSummaryStats tablePrefix -withinFeat featA -withinFeat featB > stats.csv";
 	
 //    @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
 //    protected boolean noNonconvFilter = false;
 	// receives other command line parameters than options
 	@Option(name="-doubleStranded",usage="If set, counts include both strands (default false)")
 	protected boolean doubleStranded = false;
+	@Option(name="-withinFeat",usage="make separate count listings ones for each feature type")
+	protected List<String> withinFeats = new ArrayList<String>(20);
 	@Argument
 	private List<String> tablePrefixes = new ArrayList<String>();
 	
@@ -80,18 +82,32 @@ public class MethylDbToCoverageSummaries {
 
 		querier.setMethylTablePrefix(tablePrefixes.get(0));
 
+		// One for each feature.  Add one for global
+		withinFeats.add("global");
+		int nF = withinFeats.size();
+		
+		
 		// Setup counters
 		long totalUniqueCpgs = 0;
 		long totalMeasurements = 0;
-		SortedMap<Integer,Integer> counts = new TreeMap<Integer,Integer>();
-
-		for (String chrom : MethylDbUtils.CHROMS) 
+		SortedMap<Integer,Integer>[] featCounts = new SortedMap[nF];
+		for (int i = 0; i < nF; i++)
+		{
+			featCounts[i] = new TreeMap<Integer,Integer>();
+		}
+			
+		for (String chrom : MethylDbUtils.CHROMS) // MethylDbUtils.TEST_CHROMS) // 
 		{
 			// Stupid JDBC tries to load entire chromosome into memory at once,
 			// which is too much.
-			final int STEP = (int)1E7;
-			final int MAXCOORD = (int)2.8E8;
-			for (int c = 0; c < MAXCOORD; c += STEP)
+			int STEP = (int)1E6;
+			int MINCOORD = 0;
+			int MAXCOORD = (int)2.8E8;
+			
+//			MAXCOORD = 10000000;
+//			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
+
+			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
 
 				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Starting chrom " + chrom + " from " + c+1 + " to " + c+STEP + "\n");
@@ -99,49 +115,85 @@ public class MethylDbToCoverageSummaries {
 				querier.clearRangeFilters();
 				querier.addRangeFilter(chrom, c+1, c+STEP);
 
-				// This will use too much memory if we don't set "allowNumRows" to false
-				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(querier, tablePrefixes);
-				int numRows = cpgit.getCurNumRows();
-				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Found " + numRows + " cpgs");
-				int i = 0;
-				while (cpgit.hasNext())
+				for (int f = 0; f < nF; f++)
 				{
-					Cpg[] cpg = cpgit.next();
-					i++;
-					if ((i%1E5)==0) 
+
+					String withinFeat = withinFeats.get(f);
+					boolean global = withinFeat.matches("global");
+					SortedMap<Integer,Integer> counts = featCounts[f];
+
+					// Add feature filter
+					querier.clearFeatFilters();
+					if (!global) querier.addFeatFilter(withinFeat);
+
+
+					// This will use too much memory if we don't set "allowNumRows" to false
+					CpgIteratorMultisample cpgit = new CpgIteratorMultisample(querier, tablePrefixes);
+					int numRows = cpgit.getCurNumRows();
+					Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Found " + numRows + " cpgs");
+					int i = 0;
+					while (cpgit.hasNext())
 					{
-						System.err.println("On " + i + "/" + numRows + ":\t" + cpg.toString());
-						System.err.printf("\tTree has %d items\n", counts.size());
-					}
+						Cpg[] cpg = cpgit.next();
+						i++;
+						if ((i%1E5)==0) 
+						{
+							System.err.println("On " + i + "/" + numRows + ":\t" + cpg.toString());
+							System.err.printf("\tTree has %d items\n", counts.size());
+						}
 
-					int count = cpg[0].totalReads;
-					if (this.doubleStranded) count += cpg[0].totalReadsOpposite;
-					if (count >= 1) totalUniqueCpgs++;
-					totalMeasurements += count;
+						int count = cpg[0].totalReads;
+						if (this.doubleStranded) count += cpg[0].totalReadsOpposite;
+
+						if (global)
+						{
+							if (count >= 1) totalUniqueCpgs++;
+							totalMeasurements += count;
+						}
 
 
-					Integer cvg = counts.get(count);
-					if (cvg == null)
-					{
-						cvg = new Integer(0);
+						Integer cvg = counts.get(count);
+						if (cvg == null)
+						{
+							cvg = new Integer(0);
+							counts.put(new Integer(count), cvg);
+						}
+						cvg = cvg + 1;
+						//System.err.printf("New val for counts->{%d} = %d\n", count, cvg);
+
 						counts.put(new Integer(count), cvg);
 					}
-					cvg = cvg + 1;
-					//System.err.printf("New val for counts->{%d} = %d\n", count, cvg);
-
-					counts.put(new Integer(count), cvg);
 				}
 			}
 		}
 
 		// Output
 		//System.out.printf("Total unique CpG=%d, total CpG measurements=%d\n",totalUniqueCpgs, totalMeasurements);
-		int maxCvg = counts.lastKey();
+		int maxCvg = 0;
+		for (int f = 0; f < nF; f++)
+		{
+			maxCvg = Math.max(maxCvg, featCounts[f].lastKey());
+		}
+		
+		// Header
+		System.out.print("coverage");
+		for (int f = 0; f < nF; f++)
+		{
+			System.out.printf(",%s",withinFeats.get(f));
+		}
+		System.out.println();
+		
+		
 		for (int i = 0; i <= maxCvg; i++)
 		{
-			Integer countObj = counts.get(new Integer(i));
-			int count = (countObj==null) ? 0 : countObj.intValue();
-			System.out.printf("%d,%d\n", i,count);
+			System.out.printf("%d",i);
+			for (int f = 0; f < nF; f++)
+			{
+				Integer countObj = featCounts[f].get(new Integer(i));
+				int count = (countObj==null) ? 0 : countObj.intValue();
+				System.out.printf(",%d",count);
+			}
+			System.out.println();
 		}
 		
 
