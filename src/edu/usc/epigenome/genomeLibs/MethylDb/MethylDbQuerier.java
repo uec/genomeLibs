@@ -43,6 +43,10 @@ public class MethylDbQuerier {
 	protected double maxNextNonGfrac = 0.1; // Double.MAX_VALUE;
 	
 	
+	public void clearFeatFilters()
+	{
+		featFilters = new ArrayList<MethylDbQuerier.FeatClass>(10);
+	}
 	
 	public void addFeatFilter(String featType)
 	{

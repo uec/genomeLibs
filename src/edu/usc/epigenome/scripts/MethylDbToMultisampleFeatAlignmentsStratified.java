@@ -237,7 +237,15 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 						}
 
-						sortVals = this.fStatMats[i][ind].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
+						//sortVals = this.fStatMats[i][ind].sortRowsExponential(-0.3333, 10, colsStart, colsEnd);
+						if ((colsEnd-colsStart) < 20)
+						{
+							sortVals = this.fStatMats[i][ind].sortRowsExponential(-0.6666, 2, colsStart, colsEnd);
+						}
+						else
+						{
+							sortVals = this.fStatMats[i][ind].sortRowsExponential(-2.0, 10, colsStart, colsEnd);
+						}
 					}
 					else
 					{
