@@ -11,7 +11,8 @@ import edu.usc.epigenome.genomeLibs.TabularOutput;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizerStrandspecific;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizerStrandSpecific;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizerStranded;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
 
 /**
@@ -35,8 +36,8 @@ public abstract class CpgWalker implements TabularOutput {
 	
 	// Some useful summarizers for the window
 	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
-	protected CpgSummarizer methSummarizerFw = new CpgMethLevelSummarizerStrandspecific(true);
-	protected CpgSummarizer methSummarizerRev = new CpgMethLevelSummarizerStrandspecific(false);
+	protected CpgSummarizer methSummarizerFw = new CpgMethLevelSummarizerStrandSpecific(true);
+	protected CpgSummarizer methSummarizerRev = new CpgMethLevelSummarizerStrandSpecific(false);
 	public String lastChrom = "noChrom";
 
 	
@@ -68,8 +69,8 @@ public abstract class CpgWalker implements TabularOutput {
 		if (useSummarizers)
 		{
 			methSummarizer = new CpgMethLevelSummarizer();
-			methSummarizerFw = new CpgMethLevelSummarizerStrandspecific(true);
-			methSummarizerRev = new CpgMethLevelSummarizerStrandspecific(false);
+			methSummarizerFw = new CpgMethLevelSummarizerStranded(true);
+			methSummarizerRev = new CpgMethLevelSummarizerStranded(false);
 		}
 	}
 	
