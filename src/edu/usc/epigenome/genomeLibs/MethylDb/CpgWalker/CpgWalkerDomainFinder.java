@@ -14,10 +14,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 abstract public class CpgWalkerDomainFinder extends CpgWalker {
 
-	String curChr = null;
 	PrintWriter pw = null;
-	String lastChrom = "noChrom";
-	
 	List<GenomicRange> domains = new LinkedList<GenomicRange>();
 	
 	
@@ -27,13 +24,6 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	}
 
 	
-	/**
-	 * @return the curChr
-	 */
-	public String getCurChr() {
-		return curChr;
-	}
-
 
 	/**
 	 * @param curChr the curChr to set
@@ -42,8 +32,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		// This doesn't hurt if the last one was already processed
 		boolean dumpedLast = this.outputAndRemoveCurWind();
 		
-		this.curChr = curChr;
-		super.newChrom();
+		super.setCurChr(curChr);
 	}
 
 	/**
@@ -51,7 +40,9 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	 */
 	public void finishChr() {
 		boolean dumpedLast = this.outputAndRemoveCurWind();
+		super.finishChr();
 	}
+
 
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalker#reset()
@@ -65,7 +56,6 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	@Override
 	protected void processWindow(List<Cpg> inWindow)
 	{
-		boolean sameChrom = this.lastChrom.equalsIgnoreCase(this.getCurChr());
 
 		
 		// Does this window constitute a domain?
@@ -91,6 +81,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		
 		// Check if we overlap with the previous window
 		boolean overlapsPrev = false;
+		boolean sameChrom = !this.onNewChrom();
 		if (sameChrom && (domains.size()>0))
 		{
 			// Do we actually overlap?
@@ -149,8 +140,6 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 ////		}
 		
 	
-		this.lastChrom = this.curChr;
-		
 		// And the superclass
 		super.processWindow(inWindow);
 

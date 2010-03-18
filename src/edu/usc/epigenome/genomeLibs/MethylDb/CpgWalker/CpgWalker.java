@@ -41,6 +41,7 @@ public class CpgWalker implements TabularOutput {
 	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
 	protected CpgSummarizer methSummarizerFw = new CpgMethLevelSummarizerStranded(true);
 	protected CpgSummarizer methSummarizerRev = new CpgMethLevelSummarizerStranded(false);
+	String curChr = null;
 	public String lastChrom = "noChrom";
 
 	// Sends events when it gets a good window
@@ -66,6 +67,34 @@ public class CpgWalker implements TabularOutput {
 	{
 		listeners.add(l);
 	}
+	
+	/**
+	 * @return the curChr
+	 */
+	public String getCurChr() {
+		return curChr;
+	}
+
+	/**
+	 * @param curChr the curChr to set
+	 */
+	public void setCurChr(String curChr) {
+		this.curChr = curChr;
+		newChrom();
+	}
+
+	boolean onNewChrom()
+	{
+		return !this.lastChrom.equalsIgnoreCase(this.getCurChr());
+	}
+
+
+	/**
+	 * Outputs the last domain
+	 */
+	public void finishChr() {
+	}
+
 	
 	public void newChrom()
 	{
@@ -321,6 +350,8 @@ public class CpgWalker implements TabularOutput {
 		{
 			l.actionPerformed(e);
 		}
+
+		this.lastChrom = this.curChr;
 	}
 
 	
