@@ -1,5 +1,8 @@
 package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,7 +14,6 @@ import edu.usc.epigenome.genomeLibs.TabularOutput;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizerStrandSpecific;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizerStranded;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
 
@@ -21,7 +23,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
  * Walks over a sliding window of adjacent Cpgs
  */
 
-public abstract class CpgWalker implements TabularOutput {
+public class CpgWalker implements TabularOutput {
 
 
 /*
@@ -30,17 +32,19 @@ public abstract class CpgWalker implements TabularOutput {
  */
 	public CpgWalkerParams walkParams = null;
 	protected boolean useSummarizers = true;
+	public static final int PROCESS_WINDOW_EVENT = 1;
 	
 	// List management
 	private LinkedList<Cpg> window = new LinkedList<Cpg>();
 	
 	// Some useful summarizers for the window
 	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
-	protected CpgSummarizer methSummarizerFw = new CpgMethLevelSummarizerStrandSpecific(true);
-	protected CpgSummarizer methSummarizerRev = new CpgMethLevelSummarizerStrandSpecific(false);
+	protected CpgSummarizer methSummarizerFw = new CpgMethLevelSummarizerStranded(true);
+	protected CpgSummarizer methSummarizerRev = new CpgMethLevelSummarizerStranded(false);
 	public String lastChrom = "noChrom";
 
-	
+	// Sends events when it gets a good window
+	protected List<ActionListener> listeners = new ArrayList<ActionListener>(10);
 	
 	/**
 	 * 
@@ -51,6 +55,16 @@ public abstract class CpgWalker implements TabularOutput {
 //		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
 //				"test", "test");
 
+	}
+	
+	public void clearWindowListeners()
+	{
+		listeners = new ArrayList<ActionListener>(10);
+	}
+	
+	public void addWindowListener(ActionListener l)
+	{
+		listeners.add(l);
 	}
 	
 	public void newChrom()
@@ -78,7 +92,7 @@ public abstract class CpgWalker implements TabularOutput {
 	 * This uses a fixed window size and is much faster
 	 * @param cpg Must be streamed in serially.
 	 */
-	public void streamCpgFixedWind(Cpg cpg)
+	protected void streamCpgFixedWind(Cpg cpg)
 	{
 		int newPos = cpg.chromPos;
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
@@ -138,7 +152,7 @@ public abstract class CpgWalker implements TabularOutput {
 	 * widely varying CG density.
 	 * @param cpg Must be streamed in serially.
 	 */
-	public void streamCpgVariableWind(Cpg cpg)
+	protected void streamCpgVariableWind(Cpg cpg)
 	{
 		int newPos = cpg.chromPos;
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
@@ -298,13 +312,22 @@ public abstract class CpgWalker implements TabularOutput {
 		return inWind.get(inWind.size()-1).chromPos;
 	}
 
-	// OVERRIDE THESE
-	abstract protected void processWindow(List<Cpg> inWindow);
+	// !!! OVERRIDE THIS !!!
+	protected void processWindow(List<Cpg> inWindow)
+	{
+		// Basic version does nothing except alert listeners
+		ActionEvent e = new ActionEvent(this, PROCESS_WINDOW_EVENT, null);
+		for (ActionListener l : listeners)
+		{
+			l.actionPerformed(e);
+		}
+	}
 
+	
+	
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.TabularOutput#headerStr()
 	 */
-	@Override
 	public String headerStr() throws Exception {
 		return null;
 	}
@@ -312,7 +335,6 @@ public abstract class CpgWalker implements TabularOutput {
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.TabularOutput#toCsvStr()
 	 */
-	@Override
 	public String toCsvStr() throws Exception {
 		return null;
 	}

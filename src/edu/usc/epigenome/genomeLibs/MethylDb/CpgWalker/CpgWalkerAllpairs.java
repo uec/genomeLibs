@@ -59,6 +59,9 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 				}
 			}
 		}
+		
+		// And the superclass
+		super.processWindow(inWindow);
 	}
 	
 	protected abstract void recordPair(Cpg first, Cpg second);

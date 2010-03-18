@@ -10,6 +10,10 @@ public class CpgWalkerWigOutput extends CpgWalker {
 	protected void processWindow() {
 
 		
+		// And the superclass
+		super.processWindow(inWindow);
+
+		
 
 	}
 

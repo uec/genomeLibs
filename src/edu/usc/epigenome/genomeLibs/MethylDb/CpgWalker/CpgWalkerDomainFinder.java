@@ -150,6 +150,10 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		
 	
 		this.lastChrom = this.curChr;
+		
+		// And the superclass
+		super.processWindow(inWindow);
+
 	}
 	
 	/**
