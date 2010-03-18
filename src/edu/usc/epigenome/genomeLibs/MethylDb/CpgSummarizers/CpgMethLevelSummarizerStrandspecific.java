@@ -17,6 +17,7 @@ public class CpgMethLevelSummarizerStrandspecific extends
 	public CpgMethLevelSummarizerStrandspecific(MethylDbQuerier inQuerier, boolean inFwStrand) {
 		super(inQuerier);
 		fwStrand = inFwStrand;
+		
 	}
 
 	/**
