@@ -25,7 +25,6 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
 
 public class CpgWalker implements TabularOutput {
 
-
 /*
  * 
  * 	
@@ -33,6 +32,7 @@ public class CpgWalker implements TabularOutput {
 	public CpgWalkerParams walkParams = null;
 	protected boolean useSummarizers = true;
 	public static final int PROCESS_WINDOW_EVENT = 1;
+	protected List<Cpg> lastProcessedWindow = null;
 	
 	// List management
 	private LinkedList<Cpg> window = new LinkedList<Cpg>();
@@ -83,7 +83,7 @@ public class CpgWalker implements TabularOutput {
 		newChrom();
 	}
 
-	boolean onNewChrom()
+	protected boolean onNewChrom()
 	{
 		return !this.lastChrom.equalsIgnoreCase(this.getCurChr());
 	}
@@ -117,6 +117,10 @@ public class CpgWalker implements TabularOutput {
 		}
 	}
 	
+	public List<Cpg> getLastProcessedWindow() {
+		return lastProcessedWindow;
+	}
+
 	/**
 	 * This uses a fixed window size and is much faster
 	 * @param cpg Must be streamed in serially.
@@ -250,7 +254,7 @@ public class CpgWalker implements TabularOutput {
 	//		System.err.printf("Checking size %d (minSizeReached=%s)\n",cpg.chromPos-lastPos+1,minSizeReached);
 			if (minSizeReached && (i>walkParams.minScanningWindCpgs))
 			{
-				this.processWindow(this.window.subList(this.window.size()-i, this.window.size()));
+				this.processWindow(this.window.subList(this.window.size()-(i-1), this.window.size()));
 			}
 		}
 	}
@@ -269,6 +273,11 @@ public class CpgWalker implements TabularOutput {
 		{
 			this.streamCpgFixedWind(cpg);
 		}
+	}
+
+	public String lastProcessedWindStr(boolean longVers)
+	{
+		return windStr(this.getLastProcessedWindow(),longVers);
 	}
 
 	public String windStr()
@@ -344,6 +353,8 @@ public class CpgWalker implements TabularOutput {
 	// !!! OVERRIDE THIS !!!
 	protected void processWindow(List<Cpg> inWindow)
 	{
+		lastProcessedWindow = inWindow;
+		
 		// Basic version does nothing except alert listeners
 		ActionEvent e = new ActionEvent(this, PROCESS_WINDOW_EVENT, null);
 		for (ActionListener l : listeners)

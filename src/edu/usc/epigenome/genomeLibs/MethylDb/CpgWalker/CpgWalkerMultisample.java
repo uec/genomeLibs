@@ -36,6 +36,27 @@ public abstract class CpgWalkerMultisample implements TabularOutput,ActionListen
 		reset();
 	}
 	
+	public String getCurChr()
+	{
+		return walkers[0].getCurChr();
+	}
+
+	public void setCurChr(String inChr)
+	{
+		for (CpgWalker w : walkers)
+		{
+			w.setCurChr(inChr);
+		}
+	}
+	
+	public void finishChr()
+	{
+		for (CpgWalker w : walkers)
+		{
+			w.finishChr();
+		}
+	}
+
 	public void reset()
 	{
 		for (CpgWalker w : walkers)
@@ -76,13 +97,27 @@ public abstract class CpgWalkerMultisample implements TabularOutput,ActionListen
 		return walkers[0].windLen();
 	}
 	
+	public String lastProcessedWindStr(boolean longVers)
+	{
+		return this.walkers[0].lastProcessedWindStr(longVers);
+	}
+
+	public String windStr(boolean longVers)
+	{
+		return this.walkers[0].windStr(longVers);
+	}
+
+	public String windStr()
+	{
+		return this.windStr(false);
+	}
 	
 	public void actionPerformed(ActionEvent e) {
 		// we should get an event when our last CpgWindow
 		// gets a good window.
 		if (e.getID() == CpgWalker.PROCESS_WINDOW_EVENT)
 		{
-			
+			this.processWindow();
 		}
 		else
 		{
