@@ -188,7 +188,7 @@ public class MethylDbToMultisampleDomains {
 
 
 
-		List<String> chrs = (this.debug||this.debugDomain) ? Arrays.asList("chr11") : MethylDbUtils.CHROMS;
+		List<String> chrs = (this.debug) ? Arrays.asList("chr11","chr12") : MethylDbUtils.CHROMS;
 		for (String chr : chrs)
 		{
 			
@@ -202,12 +202,12 @@ public class MethylDbToMultisampleDomains {
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
 			
-			if (this.debug || this.debugDomain)
+			if (this.debugDomain)
 			{
 				MINCOORD = 31200000;
 				MAXCOORD = 32600000;
 				MINCOORD = 200000;
-				MAXCOORD = 20000000;
+				MAXCOORD = 2000000;
 				STEP = Math.min(STEP, MAXCOORD - MINCOORD + 1);
 			}
 			

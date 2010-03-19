@@ -105,6 +105,7 @@ public class CpgWalker implements TabularOutput {
 	{
 		window = new LinkedList<Cpg>();
 		this.resetSummarizers();
+		System.err.println("CpgWalker reset()");
 	}
 	
 	public void resetSummarizers()

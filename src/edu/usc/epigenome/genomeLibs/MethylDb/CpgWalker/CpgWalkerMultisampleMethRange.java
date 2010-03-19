@@ -33,6 +33,8 @@ public class CpgWalkerMultisampleMethRange extends CpgWalkerMultisample {
 	public void reset() {
 		super.reset();
 		lastPosOutput = -1;
+		curStartPos = -1;
+		System.err.println("CpgWalker multisample reset()");
 	}
 
 

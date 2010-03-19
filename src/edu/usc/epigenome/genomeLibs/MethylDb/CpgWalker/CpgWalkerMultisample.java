@@ -47,6 +47,7 @@ public abstract class CpgWalkerMultisample implements TabularOutput,ActionListen
 		{
 			w.setCurChr(inChr);
 		}
+		reset();
 	}
 	
 	public void finishChr()
