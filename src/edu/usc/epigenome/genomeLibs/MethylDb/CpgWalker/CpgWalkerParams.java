@@ -10,6 +10,7 @@ public class CpgWalkerParams {
 	public int minOutputWindSize = 0;
 	public int minScanningWindCpgs = 0;
 	public boolean debug = false;
+	public int minReadsForOutput = 0;
 	
 	
 	// These only apply to variable size windows

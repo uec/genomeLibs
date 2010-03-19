@@ -53,13 +53,15 @@ public class MethylDbToMultisampleDomains {
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
     @Option(name="-minOutputWindSize",usage="only output windows this big or bigger (0)")
-    protected int minOutputWindSize = 500;
+    protected int minOutputWindSize = 0;
     @Option(name="-windSize",usage="starting window size (500)")
     protected int windSize = 500;
     @Option(name="-variableWindowMaxWind",usage="If set , we expand window up to this size to get at least minCpgs (required but slower)")
     protected int variableWindowMaxWind = -1;
     @Option(name="-minCpgs",usage="minimum number of Cpgs in window")
     protected int minCpgs = 8;
+    @Option(name="-minOutputReads",usage="don't output CpGs with less than this many reads")
+    protected int minOutputReads = 0;
     @Option(name="-minMeth",usage="minimum average methylation for domain (0.4)")
     protected double minMeth = -1.0;
     @Option(name="-maxMeth",usage="maximum average methylation for domain (0.6)")
@@ -137,6 +139,7 @@ public class MethylDbToMultisampleDomains {
 		walkerParams.debug = this.debug;
 		walkerParams.minScanningWindCpgs = this.minCpgs;
 		walkerParams.minOutputWindSize = this.minOutputWindSize;
+		walkerParams.minReadsForOutput = this.minOutputReads;
 		if (this.variableWindowMaxWind >= 0)
 		{
 			if (this.windSize>this.variableWindowMaxWind)
@@ -160,8 +163,8 @@ public class MethylDbToMultisampleDomains {
 		// Setup output file
 		List<PrintWriter> pws = new ArrayList<PrintWriter>();
 		String fixedSec = (walkerParams.useVariableWindow) ? String.format(".varMaxWind%d", variableWindowMaxWind) : "";
-		String outFn = String.format("%s.%s.wind%d.minOutput%d.minCpg%d.meth%.2f-%.2f.bed", 
-				this.outPrefix, fixedSec, this.windSize, this.minOutputWindSize, this.minCpgs, this.minMeth, this.maxMeth);
+		String outFn = String.format("%s%s.wind%d.minOutput%d.minCpg%d.minOutReads%d.meth%.2f-%.2f.gtf", 
+				this.outPrefix, fixedSec, this.windSize, this.minOutputWindSize, this.minCpgs, this.minOutputReads, this.minMeth, this.maxMeth);
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 		pws.add(pw);
 
