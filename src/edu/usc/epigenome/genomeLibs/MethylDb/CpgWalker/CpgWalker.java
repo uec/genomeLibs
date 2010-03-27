@@ -80,7 +80,8 @@ public class CpgWalker implements TabularOutput {
 	 */
 	public void setCurChr(String curChr) {
 		this.curChr = curChr;
-		newChrom();
+		reset();
+		this.alertNewChrom();
 	}
 
 	protected boolean onNewChrom()
@@ -96,9 +97,8 @@ public class CpgWalker implements TabularOutput {
 	}
 
 	
-	public void newChrom()
+	protected void alertNewChrom()
 	{
-		reset();
 	}
 	
 	public void reset()

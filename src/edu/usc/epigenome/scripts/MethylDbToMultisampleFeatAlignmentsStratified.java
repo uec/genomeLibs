@@ -137,6 +137,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			{
 				List<String> l = (onFeats) ? featFns : tablePrefixes;
 				l.add(arg);
+				
 			}
 		}
 		
