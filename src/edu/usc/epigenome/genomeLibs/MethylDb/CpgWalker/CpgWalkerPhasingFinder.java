@@ -4,24 +4,37 @@ import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import java.io.PrintWriter;
 import java.util.*;
 
+import org.usckeck.genome.ChromFeatures;
+
 public class CpgWalkerPhasingFinder extends CpgWalker {
 	
+	protected boolean matlabStyle = false;
 	protected boolean samestrandOnly = false;
 	protected int period = 185;
 	protected int halfPeriod = 92;
-	protected PrintWriter pw = null;
+	protected int flank = 0;
+	protected PrintWriter pws[] = null;
+	protected int chrInt = 0;
+	
+	protected double[] totals = new double[2];
+	protected double[] numSeen = new double[2];
 
 	/**
 	 * @param inWalkParams
 	 */
 	public CpgWalkerPhasingFinder(CpgWalkerParams inWalkParams, boolean inSamestrandOnly,
-			int inPeriod, PrintWriter outWriter) {
+			int inPeriod, PrintWriter outWriterA, PrintWriter outWriterB, boolean inMatlabStyle,
+			int inFlank) {
 		super(inWalkParams);
 		this.samestrandOnly = inSamestrandOnly;
+		this.matlabStyle = inMatlabStyle;
 		this.period = inPeriod;
 		this.halfPeriod = this.period / 2;
+		this.flank = inFlank;
 		System.err.printf("period=%d, half=%d\n",period, halfPeriod);
-		this.pw = outWriter;
+		this.pws = new PrintWriter[2];
+		this.pws[0] = outWriterA;
+		this.pws[1] = outWriterB;
 	}
 
 	
@@ -32,7 +45,11 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 	@Override
 	protected void alertNewChrom() {
 		super.alertNewChrom();
-		//pw.printf("variableStep\tchrom=%s\n", curChr);
+		String s = String.format("variableStep\tchrom=%s\tspan=1\n", curChr);
+		if (!matlabStyle) pws[0].append(s);
+		if (!matlabStyle) pws[1].append(s);
+		
+		chrInt = (new ChromFeatures()).chrom_from_public_str(curChr);
 	}
 
 	@Override
@@ -45,8 +62,7 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 		//System.err.println(this.windStr());
 		
 		Cpg head = inWindow.get(n-1);
-		double total = 0.0;
-		double numSeen = 0.0;
+		this.totals[0] = this.totals[1] = this.numSeen[0] = this.numSeen[1] = 0.0;
 		for (int i = 0; i < (n-1); i++)
 		{
 			Cpg prior = inWindow.get(i);
@@ -58,7 +74,7 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 				process = (prior.getStrand() == head.getStrand());
 			}
 			
-			process &= ((head.chromPos-prior.chromPos)>10); // Don't count neighbors
+//			process &= ((head.chromPos-prior.chromPos)>10); // Don't count neighbors
 			
 			if (process)
 			{
@@ -79,21 +95,54 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 				}
 				else
 				{
-					double pairVal = pairVal(prior, head);
-					total+=pairVal;
-					numSeen++;
+					//double pairVal = pairVal(prior, head);
+					//total+=pairVal;
+					//numSeen++;
+					
+					double m1 = head.fracMeth(true);
+					double m2 = prior.fracMeth(true);
+					double diff = Math.abs(m1-m2);
+					int dist = head.chromPos-prior.chromPos;
+					if ( (dist>=(halfPeriod-flank)) && (dist<=(halfPeriod+flank)))
+					{
+						this.numSeen[0]++;
+						this.totals[0] += diff;
+					}
+					else if ( (dist>=(period-flank)) && (dist<=(period+flank)))
+					{
+						this.numSeen[1]++;
+						this.totals[1] += diff;
+					}
+					
 				}
 			}
 		}
 		
-		// Output a wig line
-		double avg = total / numSeen;
-		if (numSeen>=1 && ((avg>0.5) || (avg<-0.5)))
+		double val0 = (this.numSeen[0]==0.0) ? Double.NaN : (this.totals[0] / this.numSeen[0]);
+		double val1 = (this.numSeen[1]==0.0) ? Double.NaN : (this.totals[1] / this.numSeen[1]);
+		if (Double.isNaN(val0) && Double.isNaN(val1))
 		{
-			//this.pw.printf("%d,total=%.2f\n", head.chromPos, avg);
-			//this.pw.printf("%d\t%d\n",head.chromPos,Math.round(100.0*avg));
-			this.pw.printf("%d,%d\n",head.chromPos,Math.round(100.0*avg));
+			
 		}
+		else if (matlabStyle)
+		{
+			this.pws[0].printf("%d,%d,%.2f\n", chrInt, head.chromPos,val0);
+			this.pws[1].printf("%d,%d,%.2f\n", chrInt, head.chromPos,val1);
+		}
+		else
+		{
+			this.pws[0].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val0));
+			this.pws[1].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val1));
+		}
+		
+//		// Output a wig line
+//		double avg = total / numSeen;
+//		if (numSeen>=1 && ((avg>0.5) || (avg<-0.5)))
+//		{
+//			//this.pw.printf("%d,total=%.2f\n", head.chromPos, avg);
+//			//this.pw.printf("%d\t%d\n",head.chromPos,Math.round(100.0*avg));
+//			this.pw.printf("%d,%d\n",head.chromPos,Math.round(100.0*avg));
+//		}
 		
 		// And the superclass
 		super.processWindow(inWindow);

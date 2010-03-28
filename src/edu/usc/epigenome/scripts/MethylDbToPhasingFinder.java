@@ -39,11 +39,15 @@ public class MethylDbToPhasingFinder {
     protected List<String> tables = new ArrayList<String>();
     @Option(name="-sameStrand",usage="Only count pairs on the same strand (default false)")
     protected boolean sameStrand = false;
+    @Option(name="-matlabStyle",usage="MATLAB instead of wig output (default false)")
+    protected boolean matlabStyle = false;
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected List<String> withinFeats = new ArrayList<String>(10);
     @Option(name="-featFlank",usage="Flank size to use with the feature")
     protected int featFlank = 0;
-    @Option(name="-outPrefix",usage="Output files will have this name")
+    @Option(name="-nucFlank",usage="Flank size from nucleosome position (default 20)")
+    protected int nucFlank = 20;
+   @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
     @Option(name="-windSize",usage="starting window size (500)")
     protected int windSize = 2000;
@@ -116,19 +120,25 @@ public class MethylDbToPhasingFinder {
 
 			// Setup output files
 			List<PrintWriter> pws = new ArrayList<PrintWriter>();
-
+			PrintWriter pwArr[][] = new PrintWriter[nTables][2];
 			for (int i = 0; i < nTables; i++)
 			{
 				// Start table
 				String tab = this.tables.get(i);
 
-				String strandSec = (this.sameStrand) ? ".sameStrand" : "";
-				String featSec = String.format(".%s-f%d", (withinFeat==null)?"all":withinFeat, this.featFlank);
-				String outFn = String.format("Phasing.%s.%s%s%s.wind%d.wig", 
-						this.outPrefix, tab, featSec, strandSec, this.windSize);
-				PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
-				//pw.printf("track type=wiggle_0 name=\"%s\" description=\"%s\"\n",outFn,outFn);		
-				pws.add(pw);
+				for (int j = 0; j <= 1; j++)
+				{
+					String extension = (this.matlabStyle) ? ".csv" : ".wig";
+					String strandSec = (this.sameStrand) ? ".sameStrand" : "";
+					String featSec = String.format(".%s-f%d", (withinFeat==null)?"all":withinFeat, this.featFlank);
+					String outFn = String.format("Phasing.%s.%s%s%s.wind%d.nucflank%d.%d%s", 
+							this.outPrefix, tab, featSec, strandSec, this.windSize, this.nucFlank, j,extension);
+					PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
+					String name = String.format("%s %s", (j==0)?"half Nuc":"full Nuc", tab);
+					if (!this.matlabStyle) pw.printf("track type=wiggle_0 name=\"%s\" description=\"%s\"\n",name,name);	
+					pwArr[i][j] = pw;
+					pws.add(pw);
+				}
 			}
 
 			// Setup streaming params
@@ -155,8 +165,9 @@ public class MethylDbToPhasingFinder {
 			CpgWalkerPhasingFinder[] finders = new CpgWalkerPhasingFinder[nTables];
 			for (int i = 0; i < nTables; i++)
 			{
-				PrintWriter pw = pws.get(i);
-				finders[i] = new CpgWalkerPhasingFinder(walkerParams, sameStrand, 185, pw);
+				//PrintWriter pw = pws.get(i);
+				finders[i] = new CpgWalkerPhasingFinder(walkerParams, sameStrand, 
+						185, pwArr[i][0],pwArr[i][1], this.matlabStyle, this.nucFlank);
 			}
 
 			// And run!
@@ -165,9 +176,8 @@ public class MethylDbToPhasingFinder {
 
 
 			// Print autocorrs and close
-			for (int i = 0; i < nTables; i++)
+			for (PrintWriter pw : pws)
 			{
-				PrintWriter pw = pws.get(i);
 				pw.close();
 			}
 
@@ -192,7 +202,7 @@ public class MethylDbToPhasingFinder {
 		int nTabs = this.tables.size();
 			
 
-		for (String chr : Arrays.asList("chr11")) //MethylDbUtils.CHROMS) //  
+		for (String chr : MethylDbUtils.CHROMS) //  Arrays.asList("chr11","chr12","chr13")) //
 		{
 
 			// Stream Cpgs
@@ -207,7 +217,7 @@ public class MethylDbToPhasingFinder {
 			int onCpg = 0;
 
 //			MINCOORD = 7000000;
-//			MAXCOORD = 15000000;
+//			MAXCOORD = 8000000;
 //			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
 			
 
