@@ -252,7 +252,7 @@ public class CpgIterator implements Iterator<Cpg> {
 		String sql = String.format("select %s * from %s %s cpg WHERE ", joinSec, featTabSec, methTable);
 		MethylDbQuerier.HelperOutput output = params.sqlWhereSecHelper(prep, "cpg");
 		sql += output.sql;
-		sql += " GROUP BY cpg0.chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
+		sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
 		sql += " ORDER BY chromPos ;";
 		return sql;
 	}
