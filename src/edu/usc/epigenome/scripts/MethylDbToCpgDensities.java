@@ -109,7 +109,7 @@ public class MethylDbToCpgDensities {
 			if (windS<chrStart) windS = chrStart;
 			if (windE>chrEnd) windE = chrEnd;
 			int windLen = windE-windS+1;
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("%d,%d,%d\t%d\n", windS,c,windE,windLen));
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format("%d,%d,%d\t%d\n", windS,c,windE,windLen));
 			
 			params.clearRangeFilters();
 			params.addRangeFilter(chr, windS, windE);
