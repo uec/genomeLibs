@@ -117,7 +117,7 @@ public class MethylDbToCpgDensities {
 			CpgIterator it = new CpgIterator(params);
 			int numCs = it.getCurNumRows();
 			double numCpgs = (double)numCs/2.0;  // We have 2 in the database for each Cpg (one per strand)
-			int dens = (int)Math.round(100.0 * numCs / (double)windLen);  // Make it percent of sequence
+			int dens = (int)Math.round(100.0 * numCpgs / (double)windLen);  // Make it percent of sequence
 			
 //			System.out.printf("%d\t%d\t%f\t%d\n",dens, numCs, numCpgs, windLen);
 			System.out.println(dens);
