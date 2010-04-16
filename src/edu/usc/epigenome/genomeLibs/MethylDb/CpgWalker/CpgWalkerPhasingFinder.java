@@ -126,11 +126,12 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 		}
 		else if (matlabStyle)
 		{
-			this.pws[0].printf("%d,%d,%.2f\n", chrInt, head.chromPos,val0);
-			this.pws[1].printf("%d,%d,%.2f\n", chrInt, head.chromPos,val1);
+			this.pws[0].printf("%d,%d,%.2f,%.2f\n", chrInt, head.chromPos,val0,head.getCpgWeight());
+			this.pws[1].printf("%d,%d,%.2f,%.2f\n", chrInt, head.chromPos,val1,head.getCpgWeight());
 		}
 		else
 		{
+			// Wiggle format
 			this.pws[0].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val0));
 			this.pws[1].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val1));
 		}

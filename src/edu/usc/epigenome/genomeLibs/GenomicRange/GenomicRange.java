@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
+import org.usckeck.genome.ChromFeatures;
 
 import edu.usc.epigenome.genomeLibs.BiojavaUtils;
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
@@ -290,11 +291,19 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 		return comparator.compare(this, o);
 	}
 
-	
-
 	public String commaSeparatedLine()
 	{
-		return String.format("%s,%d,%d,%d",this.getChrom(), BiojavaUtils.strandToInt(this.getStrand()), 
+		return this.commaSeparatedLine(false);
+	}	
+
+	public String commaSeparatedLine(boolean intChrom)
+	{
+		String chr = this.getChrom();
+		if (intChrom)
+		{
+			chr = Integer.toString((new ChromFeatures()).chrom_from_public_str(chr));
+		}
+		return String.format("%s,%d,%d,%d",chr, BiojavaUtils.strandToInt(this.getStrand()), 
 				this.getStart(), this.getEnd());
 	}
 

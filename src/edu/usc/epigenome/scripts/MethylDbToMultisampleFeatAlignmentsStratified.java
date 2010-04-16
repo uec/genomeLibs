@@ -52,7 +52,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean nometh = false;
 	@Option(name="-nohtml",usage="If set, don't make html files (default false)")
 	protected boolean nohtml = false;
-	@Option(name="-nosort",usage="If set, don't sort at all (nullifies stratification). Default fale")
+	@Option(name="-nosort",usage="If set, don't sort at all (nullifies stratification). Default false")
 	protected boolean nosort = false;
 //	@Option(name="-noDeltas",usage="If set, do not output any delta plots")
 //	protected boolean noDeltas = false;
@@ -64,6 +64,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean alignToStart = false;
 	@Option(name="-readCounts",usage="Output read counts")
 	protected boolean readCounts = false;
+	@Option(name="-readCountsIgnoreTotalReads",usage="Used only if -readCounts is set. Instead of using totalReads field, counts each database row as 1 (useful for CpG densities). Default false")
+	protected boolean readCountsIgnoreTotalReads = false;
 	@Option(name="-alignToEnd",usage="If set, align to the right end (or 3' if available) of the feature.  Default is to align to center")
 	protected boolean alignToEnd = false;
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
@@ -177,7 +179,6 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			PrintWriter sortWriter = new PrintWriter(new FileOutputStream(
 					String.format("%s.flank%d.featType%d.sortVals.csv", outputPrefix, this.flankSize, onFeatType)));
 			
-			
 			// Create arrays
 			System.err.println("About to initialize aligners");
 			fStatMats = new FeatAlignerEachfeat[nS][3];
@@ -286,6 +287,15 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 						this.fStatMats[i][2].matlabCsv(alignmentWriter, !this.combineStrands);
 						alignmentWriter.close();
 					}
+					
+					// Coordinates are not valid if sorted
+					if (this.nosort)
+					{
+						PrintWriter coordWriter = new PrintWriter(new FileOutputStream(
+								String.format("%s.flank%d.featType%d.coords.csv", outputPrefix, this.flankSize, onFeatType)));
+						this.fStatMats[i][0].coordCsv(coordWriter);
+						coordWriter.close();
+					}
 				}
 				
 				double[] colorMinMax = {0.0,1.0};
@@ -301,9 +311,9 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 				{
 					sortWriter.println(sortVals[i].toString());
 				}
-				sortWriter.close();
 				System.err.println("Done printing expression vals");
 			}
+			sortWriter.close();
 			
 
 //			if (!this.noDeltas)
@@ -446,7 +456,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 													featName, chrStr, alignmentPoint, featStrand, sortVal);
 						}
 
-						double count = cpgs[i].totalReads;
+						double count = (readCountsIgnoreTotalReads) ? 1.0 : cpgs[i].totalReads;
 						if (this.readCounts)
 						{
 							this.fStatMats[i][0].addAlignmentPos(

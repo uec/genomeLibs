@@ -14,6 +14,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.usckeck.genome.ChromFeatures;
 
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ListUtils;
@@ -33,6 +34,9 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 public class MethylDbToNucleosomeComparisons {
 
 	public int STEP = (int)1E6;
+
+	
+	public int MINCOORD = 0;
 	public int MAXCOORD = (int)2.8E8;
 	
 	public final double LOG_OF_TWO = Math.log(2.0);
@@ -61,7 +65,7 @@ public class MethylDbToNucleosomeComparisons {
     @Option(name="-assocSize",usage="Number of bases around 1/2 nuc to count (should be less than 1/2 nuc, default 40)")
     protected int assocSize = 40;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
-    protected int minCTreads = 2;
+    protected int minCTreads = 1;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
     		"This sets a maximum number of observed As on the opposite strand (default 0.1)")
     protected double maxOppStrandAfrac = 0.1;
@@ -119,10 +123,15 @@ public class MethylDbToNucleosomeComparisons {
 		// Setup output files and print domain finders
 		ListUtils.setDelim("-");
 		String mnasePrefixStr = ListUtils.excelLine(mnasePrefixes);
+		String name = String.format("nucleosomeReads.%s.nuc%d.assoc%d.%s.%s",
+				this.outPrefix, this.footprintSize, this.assocSize, mnasePrefixStr, methPrefix);
 		String outFn = String.format("%s.nuc%d.assoc%d.%s.%s.csv", 
 				this.outPrefix, this.footprintSize, this.assocSize, mnasePrefixStr, methPrefix);
+		String outFnWig = outFn.replace(".csv", ".wig");
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
+		PrintWriter pwWig = new PrintWriter(new FileOutputStream(outFnWig));
 		//pw.printf("%s,%s\n","Meth", "ReadsPerBp");
+		pwWig.printf("track type=wiggle_0 name=\"%s\" description=\"%s\"\n",name,name);	
 
 		
 		MethylDbQuerier params = new MethylDbQuerier();
@@ -153,15 +162,22 @@ public class MethylDbToNucleosomeComparisons {
 		
 		double readCounts[] = new double[nSeries];
 		
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr11")) // 
+		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr17")) // 
 		{
-			
+			String s = String.format("variableStep\tchrom=%s\n", chr);
+			pwWig.append(s);
+			int chrInt = (new ChromFeatures()).chrom_from_public_str(chr);
+		
 			// Iterator uses DB connection and can use a ton of memory because
 			// it loads all rows at once.  This stuff should really be added to iterator
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
-			for (int c = 0; c < MAXCOORD; c += STEP)
-//			for (int c = 0; c < 1000000; c += STEP)
+
+//			MINCOORD = (int)4.5E7;
+//			MAXCOORD = (int)5.5E7;
+//			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
+			
+			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
 				System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
 
@@ -184,7 +200,8 @@ public class MethylDbToNucleosomeComparisons {
 					for (int i = 0; i < nSeries; i++)
 					{
 						double mnaseReads = this.countMnaseReads(chr, cpg, mnasePrefixes.get(i), useChipseq[i]);
-						if (mnaseReads >= this.minReadsPerBp) enoughReads = true;
+						// if (mnaseReads >= this.minReadsPerBp) enoughReads = true;
+						enoughReads = true;
 						readCounts[i] = mnaseReads;
 					}
 					
@@ -194,8 +211,8 @@ public class MethylDbToNucleosomeComparisons {
 					
 					if (enoughReads)
 					{
-						//pw.printf("%s,%d,%.3f,%.3f\n", chr, cpg.chromPos, meth*100, mnaseReads);
-						pw.printf("%.3f", meth*100);
+						pwWig.printf("%d\t%d\n", cpg.chromPos, Math.round(readCounts[0]));
+						pw.printf("%d,%d,%.3f,%.1f", chrInt, cpg.chromPos, meth*100,cpg.getCpgWeight());
 						for (int i = 0; i < nSeries; i++)
 						{
 							pw.printf(",%.3f", readCounts[i]);
@@ -215,6 +232,7 @@ public class MethylDbToNucleosomeComparisons {
 		
 
 		pw.close();
+		pwWig.close();
 
 	} // Main
 
@@ -282,7 +300,7 @@ public class MethylDbToNucleosomeComparisons {
 			int denom = midCountBoth + PSEUDOCOUNT; // The number of bases covered is the same as num, since we cover both strands of the assoc region
 			out = Math.log((double)numerator / (double)denom) / LOG_OF_TWO;
 
-			//double frac = ((double)fwCount+(double)revCount)/(2.0*(double)assocHalf);
+			out = (double)preCountPos +  (double)postCountNeg;
 		}
 		
 		
