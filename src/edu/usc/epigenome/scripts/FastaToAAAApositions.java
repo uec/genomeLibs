@@ -21,8 +21,10 @@ public class FastaToAAAApositions {
 
 	@Option(name="-nA",usage="number of As in row to qualify (default 4)")
 	private int nA = 4;
-//	@Option(name="-repeatMaskToN",usage="if true, lower case bases are set to n (default false)")
-//	private boolean repeatMaskToN = false;
+	@Option(name="-omitChr",usage="if true, just output position and strand (default false)")
+	private boolean omitChr = false;
+	@Option(name="-allowOverlaps",usage="Allow adjacent AAAA oligomers to overlap (default false)")
+	private boolean allowOverlaps = false;
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -117,9 +119,13 @@ public class FastaToAAAApositions {
 								// We got one.  Signal it and advance main counter to our last position
 								int polyaPos = (strand==0) ? i : (i+this.nA-1);
 								char strandStr = (strand==0) ? '+' : '-';
-								out.printf("%s,%d,%s\n", seqName, polyaPos, strandStr);
+								String chrStr = (this.omitChr) ? "" : (seqName + ",");
+								out.printf("%s%d,%s\n", chrStr, polyaPos, strandStr);
 								found = true;
-								i += (this.nA-1);
+								if (!this.allowOverlaps)
+								{
+									i += (this.nA-1); // Advance past the poly-A, don't overcount
+								}
 							}
 						}
 					}
