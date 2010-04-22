@@ -11,7 +11,10 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 	protected boolean matlabStyle = false;
 	protected boolean samestrandOnly = false;
 	protected int period = 185;
-	protected int halfPeriod = 92;
+	protected int halfPeriod;
+	protected int periodAndAHalf;
+	protected int twoPeriods;
+	protected int twoPeriodsAndAHalf;
 	protected int flank = 0;
 	protected PrintWriter pws[] = null;
 	protected int chrInt = 0;
@@ -29,7 +32,10 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 		this.samestrandOnly = inSamestrandOnly;
 		this.matlabStyle = inMatlabStyle;
 		this.period = inPeriod;
-		this.halfPeriod = this.period / 2;
+		this.halfPeriod = (int)Math.round((double)this.period * 0.5);
+		this.periodAndAHalf = (int)Math.round((double)this.period * 1.5);
+		this.twoPeriods = (int)Math.round((double)this.period * 2.0);
+		this.twoPeriodsAndAHalf = (int)Math.round((double)this.period * 2.5);
 		this.flank = inFlank;
 		System.err.printf("period=%d, half=%d\n",period, halfPeriod);
 		this.pws = new PrintWriter[2];
@@ -99,16 +105,20 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 					//total+=pairVal;
 					//numSeen++;
 					
+					
+					// **** KEY LOGIC **** 
 					double m1 = head.fracMeth(true);
 					double m2 = prior.fracMeth(true);
 					double diff = Math.abs(m1-m2);
 					int dist = head.chromPos-prior.chromPos;
-					if ( (dist>=(halfPeriod-flank)) && (dist<=(halfPeriod+flank)))
+					if ( ((dist>=(periodAndAHalf-flank)) && (dist<=(periodAndAHalf+flank))) ||
+							((dist>=(twoPeriodsAndAHalf-flank)) && (dist<=(twoPeriodsAndAHalf+flank))) )
 					{
 						this.numSeen[0]++;
 						this.totals[0] += diff;
 					}
-					else if ( (dist>=(period-flank)) && (dist<=(period+flank)))
+					else if ( ((dist>=(period-flank)) && (dist<=(period+flank))) ||
+								((dist>=(twoPeriods-flank)) && (dist<=(twoPeriods+flank))) )
 					{
 						this.numSeen[1]++;
 						this.totals[1] += diff;
@@ -117,6 +127,7 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 				}
 			}
 		}
+		
 		
 		double val0 = (this.numSeen[0]==0.0) ? Double.NaN : (this.totals[0] / this.numSeen[0]);
 		double val1 = (this.numSeen[1]==0.0) ? Double.NaN : (this.totals[1] / this.numSeen[1]);
@@ -135,6 +146,28 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 			this.pws[0].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val0));
 			this.pws[1].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val1));
 		}
+
+		
+		
+//		if (this.numSeen[0]>0.0)
+//		{
+//			double val0 = (this.totals[0] / this.numSeen[0]);
+//			if (matlabStyle)
+//				this.pws[0].printf("%d,%d,%.2f,%.2f\n", chrInt, head.chromPos,val0,head.getCpgWeight());
+//			else
+//				this.pws[0].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val0));
+//		}
+//		
+//		if (this.numSeen[1]>0.0)
+//		{
+//			double val1 = (this.totals[1] / this.numSeen[1]);
+//			if (matlabStyle)
+//				this.pws[1].printf("%d,%d,%.2f,%.2f\n", chrInt, head.chromPos,val1,head.getCpgWeight());
+//			else
+//				this.pws[1].printf("%d\t%d\n",head.chromPos,Math.round(100.0 * val1));
+//		}
+		
+
 		
 //		// Output a wig line
 //		double avg = total / numSeen;
@@ -149,34 +182,34 @@ public class CpgWalkerPhasingFinder extends CpgWalker {
 		super.processWindow(inWindow);
 	}
 	
-	protected double pairVal(Cpg first, Cpg second)
-	{
-		double m1 = first.fracMeth(true);
-		double m2 = second.fracMeth(true);
-		int dist = second.chromPos-first.chromPos;
-		double mult = multiplier(dist);
-		double d = Math.abs(m1-m2);
-		double score = (1.0-d) * mult;
-		
-		
-		//pw.printf("\t%d - %d (dist %d) = %.2f (%.2f * %.2f)\n", first.chromPos, second.chromPos, dist,score, 1.0-d, mult);
-		return score;
-	}
-	
-	protected double multiplier(int dist)
-	{
-		int withinDist = dist % this.period;
-		
-		int distToMidpoint = Math.abs(withinDist - halfPeriod);
-		double distToMidpointRel = Math.min(((double)distToMidpoint / (double)halfPeriod), 1.0);
-		
-		double mult = 0.0;
-		if ((distToMidpointRel<0.15) || (distToMidpointRel>0.85))
-		{
-			mult = (2.0 * distToMidpointRel) - 1.0;
-		}
-		
-		return mult;
-	}
+//	protected double pairVal(Cpg first, Cpg second)
+//	{
+//		double m1 = first.fracMeth(true);
+//		double m2 = second.fracMeth(true);
+//		int dist = second.chromPos-first.chromPos;
+//		double mult = multiplier(dist);
+//		double d = Math.abs(m1-m2);
+//		double score = (1.0-d) * mult;
+//		
+//		
+//		//pw.printf("\t%d - %d (dist %d) = %.2f (%.2f * %.2f)\n", first.chromPos, second.chromPos, dist,score, 1.0-d, mult);
+//		return score;
+//	}
+//	
+//	protected double multiplier(int dist)
+//	{
+//		int withinDist = dist % this.period;
+//		
+//		int distToMidpoint = Math.abs(withinDist - halfPeriod);
+//		double distToMidpointRel = Math.min(((double)distToMidpoint / (double)halfPeriod), 1.0);
+//		
+//		double mult = 0.0;
+//		if ((distToMidpointRel<0.15) || (distToMidpointRel>0.85))
+//		{
+//			mult = (2.0 * distToMidpointRel) - 1.0;
+//		}
+//		
+//		return mult;
+//	}
 	
 }
