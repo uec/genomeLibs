@@ -46,6 +46,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	// i = type: arr[0] fwTotalScores, arr[1] revTotalScores, arr[2] fwNumScores, arr[3] revNumScores,
 	// j = featNum: arr[0][5] = fwTotalScores for feat 6
 	// k = coordinate: arr[0][5][350] = coord (350 - flank) relative to feature center.
+	protected boolean isSorted = false;
 	protected double[][][] arr;
 	protected String[] featNames;
 	protected Double[] sortVals;
@@ -106,6 +107,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 		GenomicRange gr = new GenomicRange(featChr, featCoord, featCoord, featStrand);
 		int featInd = this.getInd(gr, featName);
+		//System.err.printf("FeatInd=%d\n",featInd);
 		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand, true);
 		this.sortVals[featInd] = new Double(sortVal);
 		
@@ -170,10 +172,11 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 	public void sortRowsByList(Double[] sortVals)
 	{
+		this.isSorted = true;
 		for (int i = 0; i < this.arr.length; i++)
 		{
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(
-					String.format("Sorting %d rows by list arr[%d]\n",this.nFeatsSeen,i));
+					String.format("Sorting %d rows by list arr[%d], %d vals\n",this.nFeatsSeen,i,sortVals.length));
 			this.arr[i] = MatUtils.sortRowsByList(this.arr[i], sortVals);
 		}
 	}
@@ -330,6 +333,22 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		return ind;
 	}
 
+	public void coordCsv(PrintWriter pw)
+	{
+		if (this.isSorted)
+		{
+			System.err.println("Coord output is not yet supported for sorted lists. Use -noSort option");
+		}
+		else
+		{
+			for (int j = 0; j < this.numFeats(); j++)
+			{
+				GenomicRange gr = this.featCoords[j];
+				pw.println(gr.commaSeparatedLine(true));
+			}
+		}
+	}
+	
 	public void matlabCsv(PrintWriter pw, boolean strandSpecific)
 	{
 		double[][] fw = this.arr[0];
