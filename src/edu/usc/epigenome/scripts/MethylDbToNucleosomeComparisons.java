@@ -39,6 +39,8 @@ public class MethylDbToNucleosomeComparisons {
 	public int MINCOORD = 0;
 	public int MAXCOORD = (int)2.8E8;
 	
+	public int PERIODICITY = 185;
+	
 	public final double LOG_OF_TWO = Math.log(2.0);
 	
 	public static final String methPrefix = "methylCGsRich_imr90_";
@@ -62,8 +64,10 @@ public class MethylDbToNucleosomeComparisons {
     protected List<String> mnasePrefixes = new ArrayList<String>(5); //"mnaseIMR90_021110_";
     @Option(name="-minReadsPerBp",usage="only output CpGs with this number of reads per bp or greater (default 0.0)")
     protected double minReadsPerBp = 0.0;
+    @Option(name="-normalizationWindow",usage="window for normalWind output column (default 500)")
+    protected int normalizationWindow = 500;
     @Option(name="-assocSize",usage="Number of bases around 1/2 nuc to count (should be less than 1/2 nuc, default 40)")
-    protected int assocSize = 40;
+    protected int assocSize = 20;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 1;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
@@ -123,10 +127,13 @@ public class MethylDbToNucleosomeComparisons {
 		// Setup output files and print domain finders
 		ListUtils.setDelim("-");
 		String mnasePrefixStr = ListUtils.excelLine(mnasePrefixes);
-		String name = String.format("nucleosomeReads.%s.nuc%d.assoc%d.%s.%s",
-				this.outPrefix, this.footprintSize, this.assocSize, mnasePrefixStr, methPrefix);
-		String outFn = String.format("%s.nuc%d.assoc%d.%s.%s.csv", 
-				this.outPrefix, this.footprintSize, this.assocSize, mnasePrefixStr, methPrefix);
+		String normString = (this.normalizationWindow==0) ? "" : String.format(".normalized%dbpWind", this.normalizationWindow); 
+				
+				
+		String name = String.format("nucleosomeReads.%s.nuc%d.assoc%d%s.%s.%s",
+				this.outPrefix, this.footprintSize, this.assocSize, normString, mnasePrefixStr, methPrefix);
+		String outFn = String.format("%s.nuc%d.assoc%d%s.%s.%s.csv", 
+				this.outPrefix, this.footprintSize, this.assocSize, normString, mnasePrefixStr, methPrefix);
 		String outFnWig = outFn.replace(".csv", ".wig");
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 		PrintWriter pwWig = new PrintWriter(new FileOutputStream(outFnWig));
@@ -156,13 +163,13 @@ public class MethylDbToNucleosomeComparisons {
 		for (int i = 0; i < nSeries; i++)
 		{
 			// Wow talk about a special case.
-			useChipseq[i] = (this.mnasePrefixes.get(i).contains("K4"));
+			useChipseq[i] = !(this.mnasePrefixes.get(i).contains("mnase"));
 		}
 		
 		
-		double readCounts[] = new double[nSeries];
+		MnaseOutput readCounts[] = new MnaseOutput[nSeries];
 		
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr17")) // 
+		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr10")) // 
 		{
 			String s = String.format("variableStep\tchrom=%s\n", chr);
 			pwWig.append(s);
@@ -173,8 +180,8 @@ public class MethylDbToNucleosomeComparisons {
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
 
-//			MINCOORD = (int)4.5E7;
-//			MAXCOORD = (int)5.5E7;
+//			MINCOORD = (int)3.5E7;
+//			MAXCOORD = (int)9.7E7;
 //			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
 			
 			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
@@ -199,23 +206,33 @@ public class MethylDbToNucleosomeComparisons {
 					boolean enoughReads = false;
 					for (int i = 0; i < nSeries; i++)
 					{
-						double mnaseReads = this.countMnaseReads(chr, cpg, mnasePrefixes.get(i), useChipseq[i]);
+						
+						MnaseOutput mnaseReads = this.countMnaseReads(chr, cpg, mnasePrefixes.get(i), useChipseq[i]);
 						// if (mnaseReads >= this.minReadsPerBp) enoughReads = true;
 						enoughReads = true;
 						readCounts[i] = mnaseReads;
 					}
 					
 					//
-					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, meth=%f, mnase=%.3f\n", onCpg, meth, readCounts[0]);
+					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, meth=%f, mnase=%.3f\n", onCpg, meth, readCounts[0].rawCounts);
 					onCpg++;
 					
 					if (enoughReads)
 					{
-						pwWig.printf("%d\t%d\n", cpg.chromPos, Math.round(readCounts[0]));
+						pwWig.printf("%d\t%d\n", cpg.chromPos, Math.round(readCounts[0].val));
 						pw.printf("%d,%d,%.3f,%.1f", chrInt, cpg.chromPos, meth*100,cpg.getCpgWeight());
 						for (int i = 0; i < nSeries; i++)
 						{
-							pw.printf(",%.3f", readCounts[i]);
+							pw.printf(",%.3f", readCounts[i].val);
+						}
+						pw.printf(",%d", cpgs[1].totalReads);
+						for (int i = 0; i < nSeries; i++)
+						{
+							pw.printf(",%.3f", readCounts[i].rawCounts);
+						}
+						for (int i = 0; i < nSeries; i++)
+						{
+							pw.printf(",%.3f", readCounts[i].normWindCount);
 						}
 						pw.println();
 					}
@@ -237,10 +254,10 @@ public class MethylDbToNucleosomeComparisons {
 	} // Main
 
 
-	protected double countMnaseReads(String chr, Cpg target, String mnasePrefix, boolean chipSeqMetric)
+	protected MnaseOutput countMnaseReads(String chr, Cpg target, String mnasePrefix, boolean chipSeqMetric)
 	throws Exception
 	{
-		int PSEUDOCOUNT = 1;
+		double PSEUDOCOUNT = 0.005; // per bp
 		int FRAGLENHIGH = 600;
 		
 		
@@ -254,8 +271,16 @@ public class MethylDbToNucleosomeComparisons {
 		
 		int s, e;
 		
-		double out;
+		MnaseOutput out = new MnaseOutput();
 
+		
+		int windHalf = (int)((double)this.normalizationWindow/2.0);
+		s = center - windHalf;
+		e = center + windHalf;
+		out.normWindCount = (double)this.countUnstrandedReads(mnasePrefix, chr, s, e);
+		//			System.err.printf("NormWind Cpg %d\t Getting (all) reads %s at %d-%d\t%d\n", center, mnasePrefix, s, e,(int)normWindCount);
+
+		
 		if (chipSeqMetric)
 		{
 			// CHIP-SEQ .  THIS SHOULD TAKE  A FRAGMENT LEN, BUT 600 is based on K4 IMR90 offsets.
@@ -272,7 +297,17 @@ public class MethylDbToNucleosomeComparisons {
 			int postCountNeg = countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.NEGATIVE);
 			//if (postCountNeg>0) System.err.printf("Cpg %d\t Getting (-) reads at %d-%d\t%d\n", center, s, e,postCountNeg);
 
-			out = (double)(preCountPos+postCountNeg)/(double)fraghalf;
+			out.val = (double)(preCountPos+postCountNeg)/(double)fraghalf;
+			out.rawCounts = preCountPos+postCountNeg;
+			
+			
+//			if (this.normalizationWindow>0.0)
+//			{
+//				out = ((double)(preCountPos+postCountNeg)+(PSEUDOCOUNT*(double)fraghalf)) * 
+//					(1.0/((double)normWindCount+(PSEUDOCOUNT*(double)this.normalizationWindow))) *
+//							(((double)this.normalizationWindow)/((double)fraghalf));
+//				out = Math.log(out)/LOG_OF_TWO;
+//			}
 		}
 		else
 		{
@@ -282,25 +317,56 @@ public class MethylDbToNucleosomeComparisons {
 			s = center - cycle - assocHalf;
 			e = center - cycle + assocHalf;
 			int preCountPos = countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.POSITIVE);
-			//System.err.printf("Cpg %d\t Getting (+) reads at %d-%d\t%d\n", center, s, e,fwCount);
+//			System.err.printf("Cpg %d\t Getting (+) reads at %d-%d\t%d\n", center, s, e,preCountPos);
 
 			// Then rev
 			s = center + cycle - assocHalf;
 			e = center + cycle + assocHalf;
 			int postCountNeg = countStrandedReads(mnasePrefix, chr, s, e, StrandedFeature.NEGATIVE);
-			//System.err.printf("Cpg %d\t Getting (-) reads at %d-%d\t%d\n", center, s, e,revCount);
+//			System.err.printf("Cpg %d\t Getting (-) reads at %d-%d\t%d\n", center, s, e,postCountNeg);
 
-			// Then middle
+			int phasedCount = preCountPos + postCountNeg;
+			int phasedLen = assocHalf;
+
+
+			out.rawCounts = phasedCount;
+			// Then unphased
+			int unphasedCount = 0;
 			s = center - assocHalf;
 			e = center + assocHalf;
-			int midCountBoth = countUnstrandedReads(mnasePrefix, chr, s, e);
+			unphasedCount += countUnstrandedReads(mnasePrefix, chr, s, e);
+			s = center - this.PERIODICITY - assocHalf;
+			e = center - this.PERIODICITY + assocHalf;
+			unphasedCount += countUnstrandedReads(mnasePrefix, chr, s, e);
+			s = center + this.PERIODICITY - assocHalf;
+			e = center + this.PERIODICITY + assocHalf;
+			unphasedCount += countUnstrandedReads(mnasePrefix, chr, s, e);
+			int unphasedLen = 6 * assocHalf;
+			//			System.err.printf("Cpg %d\t Getting unphased reads at %d-%d\t%d\n", center, center - this.PERIODICITY - assocHalf,
+			//					center + this.PERIODICITY + assocHalf,unphasedCount);
 
 
-			int numerator = preCountPos +  postCountNeg + PSEUDOCOUNT;
-			int denom = midCountBoth + PSEUDOCOUNT; // The number of bases covered is the same as num, since we cover both strands of the assoc region
-			out = Math.log((double)numerator / (double)denom) / LOG_OF_TWO;
 
-			out = (double)preCountPos +  (double)postCountNeg;
+			out.val = ((double)(phasedCount)+(PSEUDOCOUNT*(double)phasedLen)) * 
+			(1.0/((double)unphasedCount+(PSEUDOCOUNT*(double)unphasedLen))) *
+			(((double)unphasedLen)/((double)phasedLen));
+			out.val = Math.log(out.val)/LOG_OF_TWO;
+			//System.err.printf("\tRatio=%.1f\n", out);
+
+//				if (this.normalizationWindow==0.0)
+//				{
+//
+//				}
+//				else
+//
+//				{
+//					out.val = ((double)(phasedCount)+(PSEUDOCOUNT*(double)phasedLen)) * 
+//					(1.0/((double)normWindCount+(PSEUDOCOUNT*(double)this.normalizationWindow))) *
+//					(((double)this.normalizationWindow)/((double)phasedLen));
+//					out.val = Math.log(out.val)/LOG_OF_TWO;
+//					//System.err.printf("\tRatio=%.1f\n", out);
+//				}
+
 		}
 		
 		
@@ -339,6 +405,7 @@ public class MethylDbToNucleosomeComparisons {
 		int count = 0;
 		while (cpgit.hasNext())
 		{
+			// Note if you use a methylCg table, you will get CG density
 			Cpg cpg = cpgit.next();
 			if ((targetStrand == StrandedFeature.UNKNOWN) ||
 					(cpg.getStrand() == targetStrand)) count++;
@@ -346,6 +413,12 @@ public class MethylDbToNucleosomeComparisons {
 		return count;
 	}
 	
+	class MnaseOutput
+	{
+		public double val = 0.0;
+		public double rawCounts = 0.0;
+		public double normWindCount = 0.0;
+	}
 	
 }
 

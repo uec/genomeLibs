@@ -49,8 +49,8 @@ public class MethylDbToPhasingFinder {
     protected int nucFlank = 20;
    @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
-    @Option(name="-windSize",usage="starting window size (500)")
-    protected int windSize = 2000;
+//    @Option(name="-windSize",usage="starting window size (500)")
+//    protected int windSize = 2000;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 2;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
@@ -108,7 +108,7 @@ public class MethylDbToPhasingFinder {
 		
 		int nTables = this.tables.size();
 		
-
+		int windSize = 4 * 185; // Three periods
 		
 		
 		// Loop through within feats.  If more than one is specified, throw in a null one for fun.  Also add
@@ -132,7 +132,7 @@ public class MethylDbToPhasingFinder {
 					String strandSec = (this.sameStrand) ? ".sameStrand" : "";
 					String featSec = String.format(".%s-f%d", (withinFeat==null)?"all":withinFeat, this.featFlank);
 					String outFn = String.format("Phasing.%s.%s%s%s.wind%d.nucflank%d.%d%s", 
-							this.outPrefix, tab, featSec, strandSec, this.windSize, this.nucFlank, j,extension);
+							this.outPrefix, tab, featSec, strandSec, windSize, this.nucFlank, j,extension);
 					PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 					String name = String.format("%s %s", (j==0)?"half Nuc":"full Nuc", tab);
 					if (!this.matlabStyle) pw.printf("track type=wiggle_0 name=\"%s\" description=\"%s\"\n",name,name);	
@@ -151,8 +151,8 @@ public class MethylDbToPhasingFinder {
 
 			// Autocorr params needed for pass 1 and 2
 			CpgWalkerParams walkerParams = new CpgWalkerParams();
-			walkerParams.maxScanningWindSize = this.windSize;
-			walkerParams.minScanningWindSize = this.windSize;
+			walkerParams.maxScanningWindSize = windSize;
+			walkerParams.minScanningWindSize = windSize;
 			walkerParams.minScanningWindCpgs = 2;
 
 			
@@ -202,7 +202,7 @@ public class MethylDbToPhasingFinder {
 		int nTabs = this.tables.size();
 			
 
-		for (String chr : MethylDbUtils.CHROMS) //  Arrays.asList("chr11","chr12","chr13")) //
+		for (String chr : Arrays.asList("chr17")) // MethylDbUtils.CHROMS) //  
 		{
 
 			// Stream Cpgs
