@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
-
+my $samtools = "/home/uec-00/shared/production/software/samtools/samtools";
 my $PRINTLANEIDS = 1;
 my $DOFASTQ = 1;
 my $DOREPEAT = 1;
@@ -59,8 +59,8 @@ foreach my $dir (@ARGV)
 
 	if ($DOALIGNEDCOUNTS)
 	{
-	    my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}*map.q30.txt",
-								 $dir."/ReadCounts_*_${laneNum}_maq.csv");
+	    #my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}*map.q30.txt",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	    my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
 	    push(@flds, $fullReads); push(@headers,"AlignedReads");
 	    push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
 	    push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
@@ -152,16 +152,18 @@ sub alignedCounts
     my ($alignmentGlobPath, $depthsGlobPat) = @_;
 
     my @files = glob($alignmentGlobPath);
+     
     my $alignedReads = 0;
     foreach my $f (@files)
     {
-	die "Can't read file $f\n" unless open(F,$f);
-	
-	while (my $line=<F>)
-	{
-	    $alignedReads++;
-	}
-	close(F);
+    	my $samtoolsOutput = `$samtools view -q 30 $f | wc -l` ; chomp $samtoolsOutput;
+    	$alignedReads += $samtoolsOutput;
+#		die "Can't read file $f\n" unless open(F,$f);
+#		while (my $line=<F>)
+#		{
+#		    $alignedReads++;
+#		}
+#		close(F);
     }
 
     @files = glob($depthsGlobPat);
