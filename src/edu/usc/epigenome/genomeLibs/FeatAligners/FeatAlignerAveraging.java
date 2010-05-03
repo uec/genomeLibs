@@ -12,6 +12,8 @@ import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.StrandedFeature.Strand;
 
 import com.googlecode.charts4j.*;
+import com.mallardsoft.tuple.Pair;
+import com.mallardsoft.tuple.Tuple;
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
@@ -344,7 +346,7 @@ public class FeatAlignerAveraging extends FeatAligner {
 	}
 
 	@Override
-	public void addAlignmentPos(int genomeRelPos, double fwStrandScore,
+	public Pair<Integer,Integer>  addAlignmentPos(int genomeRelPos, double fwStrandScore,
 			double revStrandScore, String featName, String featChr,
 			int featCoord, Strand featStrand, double sortVal) {
 		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand);
@@ -355,7 +357,8 @@ public class FeatAlignerAveraging extends FeatAligner {
 
 		GenomicRange gr = new GenomicRange(featChr, featCoord, featCoord, featStrand);
 		featsSeen.add(gr);
-
+		
+		return Tuple.from(0, colInd);
 	}
 
 	public int numFeats()
