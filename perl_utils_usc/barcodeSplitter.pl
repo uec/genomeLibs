@@ -10,8 +10,8 @@ open($infh, $infile = $ARGV[0]) || die "couldnt open $infile";
 while(!eof($infh))
 {
         $line[0] = readline($infh); $line[1] = readline($infh); $line[2] = readline($infh); $line[3] = readline($infh);
-        my $code = substr($line[1],0,3);
-        my $qual = substr($line[3],0,3);
+        my $code = substr($line[1],0,length($availableBarcodes[0]));
+        my $qual = substr($line[3],0,length($availableBarcodes[0]));
         my $resultFile = "unknown_barcodes";
         my $resultLines = $line[0] . $line[1] . $line[2] . $line[3];
         $barcodeStats{$code}++;
