@@ -351,6 +351,11 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	
 	public void matlabCsv(PrintWriter pw, boolean strandSpecific)
 	{
+		matlabCsv(pw, strandSpecific, false);
+	}
+	
+	public void matlabCsv(PrintWriter pw, boolean strandSpecific, boolean includeCoords)
+	{
 		double[][] fw = this.arr[0];
 		double[][] rev = this.arr[1];
 		if (!this.zeroInit)
@@ -370,16 +375,69 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			
 		if (strandSpecific)
 		{
-			MatUtils.matlabCsv(pw, fw, this.numFeats(), 0);
-			MatUtils.matlabCsv(pw, rev, this.numFeats(), 0);
+			if (includeCoords)
+			{
+				matlabCsv(pw, fw, this.featCoords, this.numFeats(), 0, 'f');
+				matlabCsv(pw, rev, this.featCoords, this.numFeats(), 0, 'r');
+			}
+			else
+			{
+				MatUtils.matlabCsv(pw, fw, this.numFeats(), 0);
+				MatUtils.matlabCsv(pw, rev, this.numFeats(), 0);
+			}
 		}
 		else
 		{
 			double[][] dataFull = MatUtils.nanMeanMats(fw, rev);
 			System.err.println("Making matlab for " + dataFull.length + " rows (numFeats=" + this.numFeats());
-			MatUtils.matlabCsv(pw, dataFull, this.numFeats(), 0);
+			if (includeCoords)
+			{
+				matlabCsv(pw, dataFull, this.featCoords, this.numFeats(), 0, 'n');
+			}
+			else
+			{
+				MatUtils.matlabCsv(pw, dataFull, this.numFeats(), 0);
+			}
 		}
 	}
+
+	public static void matlabCsv(PrintWriter writer, double[][] mat1, GenomicRange[] gr, int nI, int nJ, char tag)
+	{
+		int n_r = mat1.length;
+		if (nI>0 && nI<=n_r) n_r = nI;
+		int n_c1 = mat1[0].length;
+		if (nJ>0 && nJ<=n_c1) n_c1 = nJ;
+		
+		int n_r2 = gr.length;
+		// The two lengths may not be equal since we allow an "nI" limit
+		//		if (n_r != n_r2)
+		//		{
+		//			System.err.printf("MatUtils::matlabCsv n_r (%d) != n_r2 (%d), SKIPPING .. \n", n_r, n_r2);
+		//			return;
+		//		}
+		
+		
+		System.err.println("MatUtils::matlabCsv , n_r = " + n_r);
+		for (int i=0 ; i<n_r; i++)
+		{
+
+			// First the GRs
+			writer.print(tag);
+			writer.print(",");
+			writer.print(gr[i].commaSeparatedLine(true));
+			
+			// Now the mat	
+			for (int j=0; j<n_c1; j++)
+			{
+				writer.print(",");
+				writer.print(mat1[i][j]);
+				//System.err.println("mat["+i+"]["+j+"]="+ mat[i][j]);
+			}
+
+			//System.err.println("Writing matlab line: " + (i+1));
+			writer.print("\n");
+		}
+	}	
 	
 	public HeatMap heatMap(double[] colorMinMax)
 	throws Exception

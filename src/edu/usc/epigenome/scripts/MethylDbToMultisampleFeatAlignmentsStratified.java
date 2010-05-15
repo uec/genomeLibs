@@ -68,6 +68,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean readCountsIgnoreTotalReads = false;
 	@Option(name="-alignToEnd",usage="If set, align to the right end (or 3' if available) of the feature.  Default is to align to center")
 	protected boolean alignToEnd = false;
+	@Option(name="-includeCoords",usage="If set, include coords in main csv file (default false)")
+	protected boolean includeCoords = false;
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
     protected int maxFeatSize = Integer.MAX_VALUE;
     @Option(name="-flankSize",usage="bp flanking each side of the feature center (default 2000)")
@@ -277,14 +279,14 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					{
 						PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
 								String.format("%s.%s.featType%d.flank%d.readCounts.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize)));
-						this.fStatMats[i][0].matlabCsv(alignmentWriter, !this.combineStrands);
+						this.fStatMats[i][0].matlabCsv(alignmentWriter, !this.combineStrands, this.includeCoords);
 						alignmentWriter.close();
 					}
 					else
 					{
 						PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
 								String.format("%s.%s.featType%d.flank%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize)));
-						this.fStatMats[i][2].matlabCsv(alignmentWriter, !this.combineStrands);
+						this.fStatMats[i][2].matlabCsv(alignmentWriter, !this.combineStrands, this.includeCoords);
 						alignmentWriter.close();
 					}
 					

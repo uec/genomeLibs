@@ -175,7 +175,7 @@ public class MethylDbToMultisampleFeatAlignments {
 				}
 			}
 	
-			//List<String> chroms = Arrays.asList("chr11");
+			//List<String> chroms = Arrays.asList("chr1");
 			List<String> chroms = MethylDbUtils.CHROMS;
 			for (String chrStr : chroms)
 			{
