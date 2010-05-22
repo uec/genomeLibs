@@ -82,6 +82,10 @@ public class MethylDbToNucleosomeComparisonContinuous {
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
 	
+	public static final int METHCOUNTER_LEN = 400;
+	public static final int METHCOUNTER_HALFLEN = 200;
+
+	
 	public static void main(String[] args)
 	throws Exception	
 	{
@@ -169,9 +173,10 @@ public class MethylDbToNucleosomeComparisonContinuous {
 			useChipseq[i] = !mnasePrefix.contains("mnase") && !mnasePrefix.contains("Schones");
 		}
 		
+		double[] methCounts = new double[METHCOUNTER_LEN];
+		double[] methTotals = new double[METHCOUNTER_LEN];
 		
-		
-		for (String chr : Arrays.asList("chr21")) // MethylDbUtils.CHROMS) //
+		for (String chr : Arrays.asList("chr1")) // MethylDbUtils.CHROMS) //
 		{
 			String s = String.format("variableStep\tchrom=%s\n", chr);
 			pwWig.append(s);
@@ -192,33 +197,46 @@ public class MethylDbToNucleosomeComparisonContinuous {
 				{
 					ChromScoresFast counts[] = new ChromScoresFast[2];
 					counts = MethylDbUtils.chromScoresReadCounts(params, chr, this.mnasePrefix, "hg18");
+					ChromScoresFast meths[] = new ChromScoresFast[2];
+					meths = MethylDbUtils.chromScoresMethLevels(params, chr, this.methPrefix, "hg18");
+					
+					
 					System.err.println("Getting min pos");
 					int minPos = counts[0].chromMinPos(chr); 
 					System.err.println("Getting max pos");
 					int maxPos = counts[0].chromMaxPos(chr);
 					
-					for (int pos = minPos; pos<maxPos; pos += this.step)
+					for (int pos = minPos; pos<maxPos; pos += 1) // this.step)
 					{
 
-						MnaseOutput mnaseReads = this.countMnaseReads(chr, pos, counts[0], counts[1], useChipseq[0]);
+						//MnaseOutput mnaseReads = this.countMnaseReads(chr, pos, counts[0], counts[1], useChipseq[0]);
 						//if (mnaseReads.rawCounts>2) System.err.printf("Raw counts=%d\n", (int)mnaseReads.rawCounts);
+						
+						boolean fwRead = (counts[0].getScore(chr, pos).intValue() >= 1);
+						boolean revRead = (counts[1].getScore(chr, pos).intValue() >= 1);
+						MnaseOutput mnaseReads = new MnaseOutput();
+						mnaseReads.rawCounts = (fwRead) ? 1 : 0;
+						
+						if (fwRead) incrementMethCounts(chr,pos,false,methCounts,methTotals,meths,maxPos);
+						if (revRead) incrementMethCounts(chr,pos,true,methCounts,methTotals,meths,maxPos);
+						
 						boolean enoughReads;
 						enoughReads = (mnaseReads.rawCounts >= this.minReadsPerBp);
 						//enoughReads = true;
 					
 						//
-						if ((pos % 1E5)==0) System.err.printf("On pos #%d, meth=%d\n", pos, (int)mnaseReads.rawCounts);
+						if ((pos % 1E6)==0) System.err.printf("On pos #%d, meth=%d\n", pos, (int)mnaseReads.rawCounts);
 					
-						if (enoughReads)
-						{
-							pwWig.printf("%d\t%.2f\n",pos, mnaseReads.rawCounts);
-//							pwWig.printf("%d\t%.2f\n",pos, mnaseReads.val);
-							pw.printf("%d,%d", chrInt, pos);
-//							pw.printf(",%.3f", mnaseReads.val);
-							pw.printf(",%d", (int)mnaseReads.rawCounts);
-//							pw.printf(",%.3f", mnaseReads.normWindCount);
-							pw.println();
-						}
+//						if (enoughReads)
+//						{
+//							pwWig.printf("%d\t%.2f\n",pos, mnaseReads.rawCounts);
+////							pwWig.printf("%d\t%.2f\n",pos, mnaseReads.val);
+//							pw.printf("%d,%d", chrInt, pos);
+////							pw.printf(",%.3f", mnaseReads.val);
+//							pw.printf(",%d", (int)mnaseReads.rawCounts);
+////							pw.printf(",%.3f", mnaseReads.normWindCount);
+//							pw.println();
+//						}
 					}
 
 				}
@@ -227,15 +245,43 @@ public class MethylDbToNucleosomeComparisonContinuous {
 					System.err.printf("%s\nCouldn't do region %s\n",e.toString(),chr);
 					e.printStackTrace();
 				}
-			}
+		}
 	
 		
 
 		pw.close();
 		pwWig.close();
+		
+		outFn = outFn.replace(".csv", ".methAlign.csv");
+		pw = new PrintWriter(new FileOutputStream(outFn));
+		ListUtils.setDelim(",");
+		pw.println(ListUtils.excelLine(methCounts));
+		pw.println(ListUtils.excelLine(methTotals));
+		pw.close();
 
 	} // Main
 
+	protected static void incrementMethCounts(String chr, int pos, boolean rev, double[] methCounts, double[] methTotals, ChromScoresFast meths[], int maxCoord)
+	{
+		int len = methCounts.length;
+		
+		for (int i = 0; i < len; i++)
+		{
+			int coord = (rev) ? ((pos+METHCOUNTER_HALFLEN) - i) : ((pos-METHCOUNTER_HALFLEN) + i);
+			if ((coord>=0) && (coord<maxCoord))
+			{
+				if (meths[0].getScore(chr, coord).doubleValue() > 0.0)
+				{
+					methCounts[i] += 1.0;
+					double m = meths[1].getScore(chr, coord).doubleValue();
+					//if (m>1.0) System.err.printf("Meth>1.0 (%.3f)\n",m);
+					methTotals[i] += m; 
+				}
+			}
+		}
+		
+	}
+	
 
 	protected MnaseOutput countMnaseReads(String chr, int pos, ChromScoresFast fwCounts, ChromScoresFast revCounts, boolean chipSeqMetric)
 	throws Exception
@@ -310,32 +356,40 @@ public class MethylDbToNucleosomeComparisonContinuous {
 
 			int phasedCount = preCountPos + postCountNeg;
 			int phasedLen = assocHalf;
-
-
 			out.rawCounts = phasedCount;
 			out.val = phasedCount;
-			// Then unphased
-			int unphasedCount = 0;
-			s = center - assocHalf;
-			e = center + assocHalf;
-			unphasedCount += countUnstrandedReads(fwCounts, revCounts, chr, s, e);
-			s = center - this.PERIODICITY - assocHalf;
-			e = center - this.PERIODICITY + assocHalf;
-			unphasedCount += countUnstrandedReads(fwCounts, revCounts, chr, s, e);
-			s = center + this.PERIODICITY - assocHalf;
-			e = center + this.PERIODICITY + assocHalf;
-			unphasedCount += countUnstrandedReads(fwCounts, revCounts,  chr, s, e);
-			int unphasedLen = 6 * assocHalf;
-			//			System.err.printf("Cpg %d\t Getting unphased reads at %d-%d\t%d\n", center, center - this.PERIODICITY - assocHalf,
-			//					center + this.PERIODICITY + assocHalf,unphasedCount);
 
 
+//			int fwReads = countReads(revCounts, chr, center, center);
+//			out.rawCounts = fwReads;
+//			out.val = fwReads;
+			
+			
+			
+//			// Then unphased
+//			int unphasedCount = 0;
+//			s = center - assocHalf;
+//			e = center + assocHalf;
+//			unphasedCount += countUnstrandedReads(fwCounts, revCounts, chr, s, e);
+//			s = center - this.PERIODICITY - assocHalf;
+//			e = center - this.PERIODICITY + assocHalf;
+//			unphasedCount += countUnstrandedReads(fwCounts, revCounts, chr, s, e);
+//			s = center + this.PERIODICITY - assocHalf;
+//			e = center + this.PERIODICITY + assocHalf;
+//			unphasedCount += countUnstrandedReads(fwCounts, revCounts,  chr, s, e);
+//			int unphasedLen = 6 * assocHalf;
+//			//			System.err.printf("Cpg %d\t Getting unphased reads at %d-%d\t%d\n", center, center - this.PERIODICITY - assocHalf,
+//			//					center + this.PERIODICITY + assocHalf,unphasedCount);
+//
+//
+//
+//			out.val = ((double)(phasedCount)+(PSEUDOCOUNT*(double)phasedLen)) * 
+//			(1.0/((double)unphasedCount+(PSEUDOCOUNT*(double)unphasedLen))) *
+//			(((double)unphasedLen)/((double)phasedLen));
+//			out.val = Math.log(out.val)/LOG_OF_TWO;
 
-			out.val = ((double)(phasedCount)+(PSEUDOCOUNT*(double)phasedLen)) * 
-			(1.0/((double)unphasedCount+(PSEUDOCOUNT*(double)unphasedLen))) *
-			(((double)unphasedLen)/((double)phasedLen));
-			out.val = Math.log(out.val)/LOG_OF_TWO;
-//			//System.err.printf("\tRatio=%.1f\n", out);
+			
+			//			//System.err.printf("\tRatio=%.1f\n", out);
 
 //				if (this.normalizationWindow==0.0)
 //				{

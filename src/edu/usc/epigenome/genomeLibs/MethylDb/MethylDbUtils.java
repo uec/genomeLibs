@@ -232,53 +232,85 @@ public class MethylDbUtils {
 		scores[0] = new ChromScoresArrayInt(inGenome);
 		scores[1] = new ChromScoresArrayInt(inGenome);
 		
-		// Get iterator
-		CpgIteratorMultisample it = chromCpgIteratorMultisample(params, chr, tablePrefix);
-
-		// Populate array
+		int MINCOORD = 0;
+		int MAXCOORD = (int)2.8E8;//		MINCOORD = (int)3.5E7;
+		int STEP = (int)1E6;
+		
 		int numSeen = 0;
-		while (it.hasNext())
+		for (int s = MINCOORD; s < MAXCOORD; s += STEP)
 		{
-			if ((numSeen%1E5)==0) System.err.printf("On CpG #%d\n",numSeen);
-			Cpg[] cpgs = it.next();
-			Cpg cpg = cpgs[0];
-			double count = cpg.totalReads;
-			ChromScoresFast strandScores = (cpg.getStrand() == StrandedFeature.NEGATIVE) ? scores[1] : scores[0];
-//			strandScores.addScore(chr, cpg.chromPos, count);
-			strandScores.addScore(chr, cpg.chromPos, 1);
-			numSeen++;
+			// Get iterator
+			CpgIteratorMultisample it = chromCpgIteratorMultisample(params, chr, tablePrefix, s, s+STEP-1);
+
+			// Populate array
+			while (it.hasNext())
+			{
+				if ((numSeen%1E5)==0) System.err.printf("On CpG #%d\n",numSeen);
+				Cpg[] cpgs = it.next();
+				Cpg cpg = cpgs[0];
+				double count = cpg.totalReads;
+				ChromScoresFast strandScores = (cpg.getStrand() == StrandedFeature.NEGATIVE) ? scores[1] : scores[0];
+				//			strandScores.addScore(chr, cpg.chromPos, count);
+				strandScores.addScore(chr, cpg.chromPos, 1);
+				numSeen++;
+			}
 		}
 		
 		return scores;
 	}
 
-	public static ChromScoresFast chromScoresMethLevels(MethylDbQuerier params, String chr, String tablePrefix, String inGenome)
+	public static ChromScoresFast[] chromScoresMethLevels(MethylDbQuerier params, String chr, String tablePrefix, String inGenome)
 	throws Exception
 	{
-		// Get iterator
-		CpgIteratorMultisample it = chromCpgIteratorMultisample(params, chr, tablePrefix);
-		
 		// Setup  array
-		ChromScoresFast scores = new ChromScoresArray(inGenome);
+		ChromScoresFast[] scores = new ChromScoresFast[2];
+		scores[0] = new ChromScoresArrayInt(inGenome);  // CpG positions [0,1]
+		scores[1] = new ChromScoresArrayInt(inGenome);  // Meth totals
 		
-		// Populate array
-		while (it.hasNext())
+		int MINCOORD = 0;
+		int MAXCOORD = (int)2.8E8;//		MINCOORD = (int)3.5E7;
+		int STEP = (int)1E6;
+		
+		int numSeen = 0;
+		for (int s = MINCOORD; s < MAXCOORD; s += STEP)
 		{
-			Cpg[] cpgs = it.next();
-			Cpg cpg = cpgs[0];
-			double meth = cpg.fracMeth(params.useNonconversionFilter);
-			scores.addScore(chr, cpg.chromPos, meth);
+
+			// Get iterator
+			CpgIteratorMultisample it = chromCpgIteratorMultisample(params, chr, tablePrefix, s, s+STEP-1);
+
+			// Populate array
+			int lastPos = -1;
+			while (it.hasNext())
+			{
+				if ((numSeen%1E5)==0) System.err.printf("On CpG #%d\n",numSeen);
+				Cpg[] cpgs = it.next();
+				Cpg cpg = cpgs[0];
+				int pos = cpg.chromPos;
+				if (pos == lastPos) System.err.printf("Why did we see coord %d twice?\n",pos);
+
+				double meth = cpg.fracMeth(params.useNonconversionFilter);
+				if (meth>1.0) System.err.printf("Meth>1.0 (%.3f)\n",meth);
+				
+				// If it's a minus strand one, slide it back to the + coord.
+				//if (cpg.getStrand() == StrandedFeature.NEGATIVE) pos--;
+				
+				scores[0].addScore(chr, pos, 1.0);
+				scores[1].addScore(chr, pos, 100.0 * meth);
+				lastPos = pos;
+				numSeen++;
+			}
 		}
 		
 		return scores;
 	}
 
-	private static CpgIteratorMultisample chromCpgIteratorMultisample(MethylDbQuerier params, String chr, String tablePrefix)
+	private static CpgIteratorMultisample chromCpgIteratorMultisample(MethylDbQuerier params, String chr, 
+			String tablePrefix, int rangeStart, int rangeEnd)
 	throws Exception
 	{
 		params.clearRangeFilters();
-//		params.addRangeFilter(chr);
-		params.addRangeFilter(chr,(int)14E6,(int)15E6);
+		params.addRangeFilter(chr, rangeStart, rangeEnd);
+//		params.addRangeFilter(chr,(int)14E6,(int)15E6);
 		
 		CpgIteratorMultisample it = null;
 		it = new CpgIteratorMultisample(params, Arrays.asList(tablePrefix));
