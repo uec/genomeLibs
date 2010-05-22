@@ -14,6 +14,9 @@ import java.util.logging.Logger;
 
 import org.biojava.bio.seq.StrandedFeature;
 
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresArray;
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresArrayInt;
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresFast;
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 
 public class MethylDbUtils {
@@ -219,6 +222,71 @@ public class MethylDbUtils {
 	
 		return color;
 	}
+	
+	public static ChromScoresFast[] chromScoresReadCounts(MethylDbQuerier params, String chr, String tablePrefix, String inGenome)
+	throws Exception
+	{
+		
+		// Setup  array
+		ChromScoresFast[] scores = new ChromScoresFast[2];
+		scores[0] = new ChromScoresArrayInt(inGenome);
+		scores[1] = new ChromScoresArrayInt(inGenome);
+		
+		// Get iterator
+		CpgIteratorMultisample it = chromCpgIteratorMultisample(params, chr, tablePrefix);
+
+		// Populate array
+		int numSeen = 0;
+		while (it.hasNext())
+		{
+			if ((numSeen%1E5)==0) System.err.printf("On CpG #%d\n",numSeen);
+			Cpg[] cpgs = it.next();
+			Cpg cpg = cpgs[0];
+			double count = cpg.totalReads;
+			ChromScoresFast strandScores = (cpg.getStrand() == StrandedFeature.NEGATIVE) ? scores[1] : scores[0];
+//			strandScores.addScore(chr, cpg.chromPos, count);
+			strandScores.addScore(chr, cpg.chromPos, 1);
+			numSeen++;
+		}
+		
+		return scores;
+	}
+
+	public static ChromScoresFast chromScoresMethLevels(MethylDbQuerier params, String chr, String tablePrefix, String inGenome)
+	throws Exception
+	{
+		// Get iterator
+		CpgIteratorMultisample it = chromCpgIteratorMultisample(params, chr, tablePrefix);
+		
+		// Setup  array
+		ChromScoresFast scores = new ChromScoresArray(inGenome);
+		
+		// Populate array
+		while (it.hasNext())
+		{
+			Cpg[] cpgs = it.next();
+			Cpg cpg = cpgs[0];
+			double meth = cpg.fracMeth(params.useNonconversionFilter);
+			scores.addScore(chr, cpg.chromPos, meth);
+		}
+		
+		return scores;
+	}
+
+	private static CpgIteratorMultisample chromCpgIteratorMultisample(MethylDbQuerier params, String chr, String tablePrefix)
+	throws Exception
+	{
+		params.clearRangeFilters();
+//		params.addRangeFilter(chr);
+		params.addRangeFilter(chr,(int)14E6,(int)15E6);
+		
+		CpgIteratorMultisample it = null;
+		it = new CpgIteratorMultisample(params, Arrays.asList(tablePrefix));
+		
+		params.clearRangeFilters();
+		return it;
+	}
+	
 	
 //	//	echo "select count(*),featType from features_chr1 GROUP BY featType;" |mysql cr > featTypes.txt
 //	61841   exon

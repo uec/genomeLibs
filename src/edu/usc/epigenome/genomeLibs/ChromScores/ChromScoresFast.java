@@ -20,8 +20,11 @@ import java.text.*;
 
 import java.util.*;
 
+import org.apache.commons.math.linear.MatrixUtils;
+
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ListUtils;
+import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.WigOptions;
 
 
@@ -131,6 +134,7 @@ abstract public class ChromScoresFast {
 	{
 		if (f_genome == null)
 		{
+			(new Exception()).printStackTrace();
 			throw new Exception("Called ChromScoresFast::initChrom without specifying genome");
 		}
 		
@@ -209,7 +213,27 @@ abstract public class ChromScoresFast {
 		
 		return out;
 	}
+
+	public double getScoresTotal(String chr, int st, int end)
+	{
+		double[] scores = getScores(chr,st,end,false);
+		//System.err.printf("Got %d scores\n",scores.length);
+		return MatUtils.nanSum(scores);
+	}
+
 	
+	public int chromMinPos(String chr)
+	{
+		Object chrom_array = this.checkChrom(chr);
+		return this.minPos(chrom_array);
+	}
+	
+	public int chromMaxPos(String chr)
+	{
+		Object chrom_array = this.checkChrom(chr);
+		return this.maxPos(chrom_array);
+	}
+
 	/*
 	 * Static populators
 	 */

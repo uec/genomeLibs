@@ -442,6 +442,47 @@ public class MatUtils {
 	}
 	
 	
+	// If nI or nJ are 0, it uses the total number of rows/columns in the array
+	// Mat1 and Mat2 must have the same number of rows
+	public static void matlabCsv(PrintWriter writer, double[][] mat1, double[][] mat2, int nI, int nJ1, int nJ2)
+	{
+		int n_r = mat1.length;
+		if (nI>0 && nI<=n_r) n_r = nI;
+		int n_c1 = mat1[0].length;
+		if (nJ1>0 && nJ1<=n_c1) n_c1 = nJ1;
+		int n_c2 = mat2[0].length;
+		if (nJ2>0 && nJ2<=n_c2) n_c2 = nJ2;
+
+		
+		int n_r2 = mat2.length;
+		// The two lengths may not be equal since we allow an "nI" limit
+		//
+		//		if (n_r != n_r2)
+		//		{
+		//			System.err.printf("MatUtils::matlabCsv n_r (%d) != n_r2 (%d), SKIPPING .. \n", n_r, n_r2);
+		//			return;
+		//		}
+		
+		
+		System.err.println("MatUtils::matlabCsv , n_r = " + n_r);
+		for (int i=0 ; i<n_r; i++)
+		{
+			for (int m=0; m<=1; m++)
+			{
+				int n_c = (m==0) ? n_c1 : n_c2;
+				double[][] mat = (m==0) ? mat1 : mat2;
+				for (int j=0; j<n_c; j++)
+				{
+					if ((j>0) || (m>0)) writer.print(",");
+					writer.print(mat[i][j]);
+					//System.err.println("mat["+i+"]["+j+"]="+ mat[i][j]);
+				}
+			}
+			//System.err.println("Writing matlab line: " + (i+1));
+			writer.print("\n");
+		}
+	}
+
 	public static String matString(int[][] mat)
 	{
 	   	int nrow = mat.length;

@@ -5,7 +5,7 @@ public class ChromScoresArrayInt extends ChromScoresFast {
 
 	public ChromScoresArrayInt(String genome) {
 		super(genome);
-		init();
+		init(genome);
 	}
 
 	
