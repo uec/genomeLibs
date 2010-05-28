@@ -37,7 +37,10 @@ public class ChromScoresArray extends ChromScoresFast {
 	protected Object addScoreToArray(Object array, int pos, Number score)
 	{
 		
-		pos = (int)((double)pos / (double)downsamplingFactor);
+		if (downsamplingFactor > 1)
+		{
+			pos = (int)((double)pos / (double)downsamplingFactor);
+		}
 		//System.err.printf("On pos %d (ds=%d)\n", pos, downsamplingFactor);
 		
 		if (pos >= ((double[])array).length)
@@ -48,7 +51,8 @@ public class ChromScoresArray extends ChromScoresFast {
 		else
 		{
 			double[] doubleArray = (double[])array;
-			double incrementVal = (score.doubleValue() / (double)downsamplingFactor);
+			double incrementVal = score.doubleValue();
+			if (downsamplingFactor > 1) incrementVal = (score.doubleValue() / (double)downsamplingFactor);
 			doubleArray[pos] += incrementVal;
 			//if (doubleArray[pos]>1.0) System.err.printf("\tpos=%d, incrementVal=%.3f newVal=%.3f\n",pos,incrementVal,doubleArray[pos]);
 		}
