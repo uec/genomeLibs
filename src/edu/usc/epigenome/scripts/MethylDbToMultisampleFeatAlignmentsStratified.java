@@ -151,6 +151,15 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			parser.printUsage(System.err);
 			return;
 		}
+		
+		if (this.includeCoords && !this.nosort)
+		{
+			System.err.println("If -includeCoords is specified, also must specify -nosort");
+			System.err.println(C_USAGE);
+			parser.printUsage(System.err);
+			return;
+			
+		}
 
 		// I don't think this is necessary.
 		//		if (this.censor && !this.skipUnoriented)
@@ -295,7 +304,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					{
 						PrintWriter coordWriter = new PrintWriter(new FileOutputStream(
 								String.format("%s.flank%d.featType%d.coords.csv", outputPrefix, this.flankSize, onFeatType)));
-						this.fStatMats[i][0].coordCsv(coordWriter);
+						int coordInd = (this.readCounts) ? 0 : 2;
+						this.fStatMats[i][coordInd].coordCsv(coordWriter);
 						coordWriter.close();
 					}
 				}
