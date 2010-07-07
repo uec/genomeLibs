@@ -34,10 +34,10 @@ public class MethylDbToWigs {
     protected boolean bare = false;
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
-    @Option(name="-table1",usage="Prefix for DB table (default methylCGsRich_normal010310_)")
-    protected String table1 = "methylCGsRich_normal010310_";
-    @Option(name="-table2",usage="Prefix for DB table (default methylCGsRich_tumor011010_)")
-    protected String table2 = "methylCGsRich_tumor011010_";
+    @Option(name="-table1",usage="Prefix for DB table (default methylCGsRich_normalM030510_)")
+    protected String table1 = "methylCGsRich_normalM030510_";
+    @Option(name="-table2",usage="Prefix for DB table (default methylCGsRich_tumorM030510_)")
+    protected String table2 = "methylCGsRich_tumorM030510_";
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected String withinFeat = null;
     @Option(name="-outPrefix",usage="Output files will have this name")

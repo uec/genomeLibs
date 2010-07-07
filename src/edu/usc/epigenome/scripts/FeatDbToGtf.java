@@ -104,6 +104,7 @@ public class FeatDbToGtf {
 				FeatDbQuerier params = new FeatDbQuerier();
 				params.addRangeFilter(chrStr);
 				params.addFeatFilter(featType);
+				
 				FeatIterator feats = new FeatIterator(params);
 
 				while (feats.hasNext())

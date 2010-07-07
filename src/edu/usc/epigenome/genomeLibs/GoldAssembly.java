@@ -153,7 +153,7 @@ public class GoldAssembly {
 		}
 
 		String fn = genomeDataDir(genome) + "/chromosomes/" + chr + "." + suffix;
-		System.err.println("Fetching seq: " + chr);
+		System.err.printf("Fetching seq %s from %s\n",chr,fn);
 
 		BufferedReader br;
 		try

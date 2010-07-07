@@ -4,16 +4,18 @@ use strict;
 use File::Basename;
 use Getopt::Long;
 
-my $USAGE = "CokusBsSeqToMysqlImport.pl --outPrefix mnase < input.txt";
+my $USAGE = "CokusBsSeqToMysqlImport.pl --outPrefix mnase --filterCpg < input.txt";
 
 my $delim = "\t";
 my $outPrefix = "features";
+my $filterCpg = 0;
 my $desc = "";
-GetOptions ('outPrefix=s' => \$outPrefix) || die "$USAGE\n";
+GetOptions ('outPrefix=s' => \$outPrefix, 'filterCpg!' => \$filterCpg) || die "$USAGE\n";
 
 die "$USAGE\n" unless (@ARGV==0);
 
-my $CPG_COORDS_PREFIX = "/Users/benb/genomic-data-misc/CpGs/mm9/";
+#my $CPG_COORDS_PREFIX = "/Users/benb/genomic-data-misc/CpGs/mm9/";
+my $CPG_COORDS_PREFIX = "/Users/benb/genomic-data-misc/CpGs/";
 my $CPG_COORDS_SUFFIX = ".fa.cpgCoords.csv";
 
 
@@ -32,40 +34,69 @@ my $cgMap = {};
 my $methylNonCgs = 0;
 LINE: while (my $line = <STDIN>)
 {
-	$lineNum++;
-	print STDERR "On line $lineNum\n" if (($lineNum%100000)==0);
-	
-	chomp $line;
-	my @f = split(/\t/, $line);
-	
-	# Check for valid line
-	if (@f != 2)
-	{
-		print STDERR "Unrecognized Cokus format! $line\n";
-		next LINE;
-	} 
-	
-	my $m = lc($f[1]);
-	my ($chr, $pos, $strand);
+    $lineNum++;
+    print STDERR "On line $lineNum\n" if (($lineNum%100000)==0);
+    
+    chomp $line;
+    my @f = split(/\t/, $line);
+    
+    # Check for valid line
+    my $m=0;
+    my $count = 1;
+    my ($chr, $pos, $strand);
+    my $valid = 0;
+    if (@f == 2)
+    {
+	$m = lc($f[1]);
 	if ($f[0] =~ /m?(\d+)([\-\+])(\d+)/)
 	{
-		$chr = "chr" . int($1);
-		($strand,$pos) = ($2,int($3));
+	    $chr = "chr" . int($1);
+	    ($strand,$pos) = ($2,int($3));
+	    $valid = 1;
 	}
 	elsif ($f[0] =~ /m?([XYMxym])[XYMxym]([\-\+])(\d+)/)
 	{
-		$chr = "chr${1}";
-		($strand,$pos) = ($2,int($3));
+	    $chr = "chr${1}";
+	    ($strand,$pos) = ($2,int($3));
+	    $valid = 1;
 	}
 	elsif ($f[0] =~ /unk/ || $f[0] =~ /rnd/ )
 	{
-		next LINE;
+	    next LINE;
 	}
 	else
 	{
-		print STDERR "Unrecognized Cokus format! $line\n";
-		next LINE;
+	    print STDERR "Unrecognized Cokus format! $line\n";
+	    next LINE;
 	}
+    }
+    elsif (@f==5)
+    {
+	($strand,$pos,$m,$count) = @f[1..4];
+	if ($f[0] =~ /^(\d+)$/)
+	{
+	    $valid = 1;
+	    $chr = "chr".int($1);
+	}
+	if ($f[0] =~ /^([XYM])/i)
+	{
+	    $valid = 1;
+	    $chr = "chr".uc(${1});
+	}
+	elsif ($f[0] =~ /unk/ || $f[0] =~ /rnd/ )
+	{
+	    next LINE;
+	}
+    }
+
+
+    if (!$valid)
+    {
+	print STDERR "Unrecognized Cokus format! $line\n";
+	next LINE;
+    } 
+
+    
 	
 
 	# Check if it's the last one
@@ -79,8 +110,7 @@ LINE: while (my $line = <STDIN>)
 	}
 	
 	
-	# Is it a CpG?
-	
+	# Is it a CpG?	
 	if (!$cgMap->{$pos})
 	{
 		# Doesn't map.  Count methylated nonmaps
@@ -88,7 +118,15 @@ LINE: while (my $line = <STDIN>)
 	}
 	else
 	{
-		
+	    if ($count>0)
+	    {
+		# This means it's the one line per C format
+		writeRow($outPrefix, $chr, $pos, $strand, $count, int($count*$m));
+	    }
+	    else
+	    {
+
+
 		if ($lastKey eq $key)
 		{
 	#		print STDERR "\tFound a dup: $key\n";
@@ -97,6 +135,7 @@ LINE: while (my $line = <STDIN>)
 		{
 			# End the old one
 			my ($lastChr, $lastPos, $lastStrand) = split(/__/,$lastKey);
+
 			writeRow($outPrefix, $lastChr, $lastPos, $lastStrand, $curTotal, $curMeth);
 			
 			# start a new one
@@ -108,6 +147,7 @@ LINE: while (my $line = <STDIN>)
 		# Increment
 		$curTotal++;
 		$curMeth++ if ($m eq 'm');
+	    }
 	}
 	
 
@@ -156,6 +196,9 @@ sub readCgMap
 	{
 		chomp $line;
 		my ($fChr, $pos) = split(/,/,$line);
+		
+		$pos++ if ($fn !~ /mm/i); # Make it one-based
+
 		$map->{$pos}++; 
 	}
 		

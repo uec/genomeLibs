@@ -187,7 +187,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		catch (Exception e)
 		{
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("next() error: " + e.getMessage());
-			System.exit(1);
+			//System.exit(1);
 		}
 		
 		return out;

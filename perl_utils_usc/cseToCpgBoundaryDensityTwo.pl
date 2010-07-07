@@ -31,7 +31,7 @@ eval
     my $balanceOfPower;
     while (my $line = <STDIN>)
     {
-	print STDERR "On line $on_line (balance $balanceOfPower)\n" if (($on_line++ % 500)==0);
+	print STDERR "On line $on_line (balance $balanceOfPower)\n" if (($on_line++ % 100)==0);
 	chomp $line;
 	my @flds = split(/[\t,]/,$line);
 	if ((@flds < 2) || (@flds > 3))
@@ -39,6 +39,7 @@ eval
 	    print STDERR "Line does not match c\ts\te format (C [\t,] S [\t,] [E])\n";
 	    next;
 	}
+	print STDERR join(",",@flds[0..3])."\n";
 	
 	my $chr = $flds[0];
 	if ($chr == 23)
@@ -73,7 +74,7 @@ eval
 	    # Figure out which half has more.  Right hand side is positive
 	    my $balanceAdjust = $count * (($windStart<$center) ? -1 : 1);
 	    $balanceOfPower += $balanceAdjust;
-#	    print STDERR "$chr\t$windStart\t$windEnd\t$count\t$balanceOfPower\n";
+	    #print STDERR "$chr\t$windStart\t$windEnd\t$count\t$balanceOfPower\n";
 
 	    # Increment
 	    $windStart += $windSize;
@@ -113,16 +114,23 @@ sub getCpgCount
     $s++;
     $e++;
 
+	# For some reason, DBI chokes with negative start/ends
+	my $numRows = 0;
+	my $cpgCount;
+	if (($s>0) && ($e>0))
+	{ 
+
     $::selectSth->bind_param(1,$chr);
     $::selectSth->bind_param(2,$s);
     $::selectSth->bind_param(3,$e);
 
-    $::selectSth->execute();
+   $::selectSth->execute();
 
-    my ($cpgCount, $numRows);
     $::selectSth->bind_columns(undef, \$cpgCount, \$numRows);
     $::selectSth->fetch();
-#    print STDERR "$chr\t$s\t$e\tCpgCount=${cpgCount}\tNumRows=$numRows\n";
+#   print STDERR "$chr\t$s\t$e\tCpgCount=${cpgCount}\tNumRows=$numRows\n";
+	}
+	
     return ($numRows>0) ? int($cpgCount*100) : "NaN";  # Percentage
 }
 

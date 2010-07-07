@@ -27,6 +27,12 @@ public class MethylDbUtils {
         		"chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
         		"chr19", "chr20", "chr21", "chr22", "chrX");
 	
+	public static final List<String> SMALL_CHROMS =
+		Arrays.asList(
+//				"chr6", "chr7", "chr8","chr9",
+        		"chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
+        		"chr19", "chr20", "chr21", "chr22");
+
 	public static final List<String> TEST_CHROMS =
 	Arrays.asList("chr11");
 
@@ -226,14 +232,20 @@ public class MethylDbUtils {
 	public static ChromScoresFast[] chromScoresReadCounts(MethylDbQuerier params, String chr, String tablePrefix, String inGenome)
 	throws Exception
 	{
+		return chromScoresReadCounts( params,  chr,  tablePrefix,  inGenome, 0, (int)2.8E8);
+	}
+	
+	public static ChromScoresFast[] chromScoresReadCounts(MethylDbQuerier params, String chr, String tablePrefix, String inGenome, int chromS, int chromE)
+	throws Exception
+	{
 		
 		// Setup  array
 		ChromScoresFast[] scores = new ChromScoresFast[2];
-		scores[0] = new ChromScoresArrayInt(inGenome);
-		scores[1] = new ChromScoresArrayInt(inGenome);
+		scores[0] = new ChromScoresArrayInt(inGenome); // FW STRAND
+		scores[1] = new ChromScoresArrayInt(inGenome); // REV STRAND
 		
-		int MINCOORD = 0;
-		int MAXCOORD = (int)2.8E8;//		MINCOORD = (int)3.5E7;
+		int MINCOORD = chromS;
+		int MAXCOORD = (chromE>0) ? chromE : (int)2.8E8;
 		int STEP = (int)1E6;
 		
 		int numSeen = 0;
@@ -246,13 +258,21 @@ public class MethylDbUtils {
 			while (it.hasNext())
 			{
 				if ((numSeen%1E5)==0) System.err.printf("On CpG #%d\n",numSeen);
-				Cpg[] cpgs = it.next();
-				Cpg cpg = cpgs[0];
-				double count = cpg.totalReads;
-				ChromScoresFast strandScores = (cpg.getStrand() == StrandedFeature.NEGATIVE) ? scores[1] : scores[0];
-				//			strandScores.addScore(chr, cpg.chromPos, count);
-				strandScores.addScore(chr, cpg.chromPos, 1);
-				numSeen++;
+				try
+				{
+					Cpg[] cpgs = it.next();
+					Cpg cpg = cpgs[0];
+					double count = cpg.totalReads;
+					ChromScoresFast strandScores = (cpg.getStrand() == StrandedFeature.NEGATIVE) ? scores[1] : scores[0];
+					//			strandScores.addScore(chr, cpg.chromPos, count);
+					strandScores.addScore(chr, cpg.chromPos, 1);
+					numSeen++;
+				}
+				catch (Exception e)
+				{
+					System.err.println("Skipping CpG: ");
+					e.printStackTrace();
+				}
 			}
 		}
 		
@@ -262,13 +282,19 @@ public class MethylDbUtils {
 	public static ChromScoresFast[] chromScoresMethLevels(MethylDbQuerier params, String chr, String tablePrefix, String inGenome)
 	throws Exception
 	{
+		return chromScoresMethLevels( params,  chr,  tablePrefix,  inGenome, 0, (int)2.8E8);
+	}
+
+	public static ChromScoresFast[] chromScoresMethLevels(MethylDbQuerier params, String chr, String tablePrefix, String inGenome, int chromS, int chromE)
+	throws Exception
+	{
 		// Setup  array
 		ChromScoresFast[] scores = new ChromScoresFast[2];
 		scores[0] = new ChromScoresArrayInt(inGenome);  // CpG positions [0,1]
 		scores[1] = new ChromScoresArrayInt(inGenome);  // Meth totals
 		
-		int MINCOORD = 0;
-		int MAXCOORD = (int)2.8E8;//		MINCOORD = (int)3.5E7;
+		int MINCOORD = chromS;
+		int MAXCOORD = (chromE>0) ? chromE : (int)2.8E8;
 		int STEP = (int)1E6;
 		
 		int numSeen = 0;
@@ -283,21 +309,29 @@ public class MethylDbUtils {
 			while (it.hasNext())
 			{
 				if ((numSeen%1E5)==0) System.err.printf("On CpG #%d\n",numSeen);
-				Cpg[] cpgs = it.next();
-				Cpg cpg = cpgs[0];
-				int pos = cpg.chromPos;
-				if (pos == lastPos) System.err.printf("Why did we see coord %d twice?\n",pos);
+				try
+				{
+					Cpg[] cpgs = it.next();
+					Cpg cpg = cpgs[0];
+					int pos = cpg.chromPos;
+					if (pos == lastPos) System.err.printf("Why did we see coord %d twice?\n",pos);
 
-				double meth = cpg.fracMeth(params.useNonconversionFilter);
-				if (meth>1.0) System.err.printf("Meth>1.0 (%.3f)\n",meth);
-				
-				// If it's a minus strand one, slide it back to the + coord.
-				//if (cpg.getStrand() == StrandedFeature.NEGATIVE) pos--;
-				
-				scores[0].addScore(chr, pos, 1.0);
-				scores[1].addScore(chr, pos, 100.0 * meth);
-				lastPos = pos;
-				numSeen++;
+					double meth = cpg.fracMeth(params.useNonconversionFilter);
+					if (meth>1.0) System.err.printf("Meth>1.0 (%.3f)\n",meth);
+
+					// If it's a minus strand one, slide it back to the + coord.
+					//if (cpg.getStrand() == StrandedFeature.NEGATIVE) pos--;
+
+					scores[0].addScore(chr, pos, 1.0);
+					scores[1].addScore(chr, pos, 100.0 * meth);
+					lastPos = pos;
+					numSeen++;
+				}
+				catch (Exception e)
+				{
+					System.err.println("Skipping CpG: ");
+					e.printStackTrace();
+				}
 			}
 		}
 		

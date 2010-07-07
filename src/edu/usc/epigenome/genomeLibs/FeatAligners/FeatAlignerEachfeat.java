@@ -65,6 +65,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 		this.flankSize = inFlankSize;
 		this.downscaleCols = (inDownscaleCols>0) ? inDownscaleCols : ((flankSize*2)+1); 
+		this.downscaleCols = Math.min(this.downscaleCols, ((flankSize*2)+1));
 		int nEls = 2*nFeats*this.downscaleCols;
 		
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("About to allocate memory ("+nEls+" doubles) for alignerEachfeat() (" + nFeats + ") features\n");
@@ -377,8 +378,8 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		{
 			if (includeCoords)
 			{
-				matlabCsv(pw, fw, this.featCoords, this.numFeats(), 0, 'f');
-				matlabCsv(pw, rev, this.featCoords, this.numFeats(), 0, 'r');
+				matlabCsv(pw, fw, this.featCoords, this.numFeats(), 0, '1');
+				matlabCsv(pw, rev, this.featCoords, this.numFeats(), 0, '2');
 			}
 			else
 			{
@@ -392,7 +393,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			System.err.println("Making matlab for " + dataFull.length + " rows (numFeats=" + this.numFeats());
 			if (includeCoords)
 			{
-				matlabCsv(pw, dataFull, this.featCoords, this.numFeats(), 0, 'n');
+				matlabCsv(pw, dataFull, this.featCoords, this.numFeats(), 0, '0');
 			}
 			else
 			{

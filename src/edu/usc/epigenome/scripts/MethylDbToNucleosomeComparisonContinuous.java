@@ -34,8 +34,6 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinder;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinderMethRange;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
-
-
 public class MethylDbToNucleosomeComparisonContinuous {
 
 //	public int STEP = (int)1E6;
@@ -70,6 +68,12 @@ public class MethylDbToNucleosomeComparisonContinuous {
     protected String methPrefix = "methylCGsRich_imr90_";
     @Option(name="-motif",usage="If set, we use counts for this motif rather than methylation as the feature of interest (For instance 'CG' for CG density")
     protected String motif = null;
+    @Option(name="-autoMnase",usage="If set, we use counts for the MNase reads themselves rather than methylation")
+    protected boolean autoMnase = false;
+   @Option(name="-autoMnaseFw",usage="If set, we use counts for the MNase reads themselves rather than methylation")
+    protected boolean autoMnaseFw = false;
+    @Option(name="-autoMnaseRev",usage="If set, we use counts for the MNase (opposite strand) reads themselves rather than methylation")
+    protected boolean autoMnaseRev = false;
     @Option(name="-refGenome",usage="reference genome (default hg18)")
     protected String refGenome = "hg18";
     @Option(name="-minReadsPerBp",usage="only output CpGs with this number of reads per bp or greater (default 0.0)")
@@ -91,8 +95,8 @@ public class MethylDbToNucleosomeComparisonContinuous {
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
 	
-	public static final int METHCOUNTER_LEN = 1000;
-	public static final int METHCOUNTER_HALFLEN = 500;
+	public static final int METHCOUNTER_LEN = 2000; // 1600; // 2000; //1000;
+	public static final int METHCOUNTER_HALFLEN = METHCOUNTER_LEN / 2;
 
 	
 	public static void main(String[] args)
@@ -187,7 +191,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 		double[] methCounts = new double[METHCOUNTER_LEN];
 		double[] methTotals = new double[METHCOUNTER_LEN];
 		
-		for (String chr : MethylDbUtils.SMALL_CHROMS) //  Arrays.asList("chr22")) //MethylDbUtils.SMALL_CHROMS) //  
+		for (String chr :  MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //MethylDbUtils.SMALL_CHROMS) //  
 		{
 			String s = String.format("variableStep\tchrom=%s\n", chr);
 			pwWig.append(s);
@@ -216,7 +220,11 @@ public class MethylDbToNucleosomeComparisonContinuous {
 
 					
 					// The meth differ if it's a motif
-					if (this.motif == null)
+					if (this.autoMnase || this.autoMnaseFw || this.autoMnaseRev)
+					{
+						meths = counts;
+					}
+					else if (this.motif == null)
 					{
 						meths = MethylDbUtils.chromScoresMethLevels(params, chr, this.methPrefix, this.refGenome, offs, offe);
 					}
@@ -267,17 +275,20 @@ public class MethylDbToNucleosomeComparisonContinuous {
 						boolean enoughReads = true;
 						MnaseOutput mnaseReads = new MnaseOutput();
 						mnaseReads.rawCounts = (fwRead) ? 1 : 0;
-						if (fwRead)
+						if (this.minReadsPerBp > 0.0)
 						{
-							int nucCenter = pos + ( (this.PERIODICITY-this.assocSize) / 2);
-							mnaseReads = this.countMnaseReads(chr, nucCenter, counts[0], counts[1], useChipseq[0]);
+							if (fwRead)
+							{
+								int nucCenter = pos + ( (this.PERIODICITY-this.assocSize) / 2);
+								mnaseReads = this.countMnaseReads(chr, nucCenter, counts[0], counts[1], useChipseq[0]);
+							}
+							else if (revRead)
+							{
+								int nucCenter = pos - ( (this.PERIODICITY-this.assocSize) / 2);
+								mnaseReads = this.countMnaseReads(chr, nucCenter, counts[0], counts[1], useChipseq[0]);
+							}
+							enoughReads = (mnaseReads.val >= this.minReadsPerBp);
 						}
-						else if (revRead)
-						{
-							int nucCenter = pos - ( (this.PERIODICITY-this.assocSize) / 2);
-							mnaseReads = this.countMnaseReads(chr, nucCenter, counts[0], counts[1], useChipseq[0]);
-						}
-						enoughReads = (mnaseReads.val >= this.minReadsPerBp);
 
 						
 						
@@ -296,14 +307,14 @@ public class MethylDbToNucleosomeComparisonContinuous {
 					
 						if (enoughReads)
 						{
-							pwWig.printf("%d\t%.2f\n",pos, mnaseReads.val);
-//							pwWig.printf("%d\t%.2f\t%.2f\t%s\n",pos,mnaseReads.rawCounts, mnaseReads.val, fwRead?"+":"-");
-
-//							pw.printf("%d,%d", chrInt, pos);
-////							pw.printf(",%.3f", mnaseReads.val);
-//							pw.printf(",%d", (int)mnaseReads.rawCounts);
-////							pw.printf(",%.3f", mnaseReads.normWindCount);
-//							pw.println();
+//							pwWig.printf("%d\t%.2f\n",pos, mnaseReads.val);
+////							pwWig.printf("%d\t%.2f\t%.2f\t%s\n",pos,mnaseReads.rawCounts, mnaseReads.val, fwRead?"+":"-");
+//
+////							pw.printf("%d,%d", chrInt, pos);
+//////							pw.printf(",%.3f", mnaseReads.val);
+////							pw.printf(",%d", (int)mnaseReads.rawCounts);
+//////							pw.printf(",%.3f", mnaseReads.normWindCount);
+////							pw.println();
 						}
 					}
 
@@ -358,7 +369,11 @@ public class MethylDbToNucleosomeComparisonContinuous {
 				boolean cpg = meths[0].getScore(chr, coord).doubleValue() > 0.0;
 				
 				// Increment the totals count
-				if (this.motif != null)
+				if (this.autoMnase || this.autoMnaseFw || this.autoMnaseRev)
+				{
+					methCounts[i] += 1.0;
+				}
+				else if (this.motif != null)
 				{
 					methCounts[i] += 2.0;
 				}
@@ -368,7 +383,18 @@ public class MethylDbToNucleosomeComparisonContinuous {
 				}
 			
 				// And the score
-				if (cpg)
+				if (this.autoMnaseFw || this.autoMnaseRev)
+				{
+					int ind = (rev) ? 1 : 0;
+					if (this.autoMnaseRev) ind = 1-ind;
+					double m = meths[ind].getScore(chr, coord).doubleValue();
+					methTotals[i] += m;
+				}
+				else if (this.autoMnase)
+				{
+					
+				}
+				else if (cpg)
 				{
 					double m = meths[1].getScore(chr, coord).doubleValue();
 					//if (m>1.0) System.err.printf("Meth>1.0 (%.3f)\n",m);

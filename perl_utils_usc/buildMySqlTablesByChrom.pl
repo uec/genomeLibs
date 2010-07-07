@@ -11,9 +11,10 @@ my $delim = "\t";
 my $templateFn = 0;
 my $replaceStr = "TEMPLATE_CHR";
 my $pipe = 0;
+my $pipePrefix = 0;
 my $clobberTable = 1;
 my $db = "cr";
-GetOptions ('clobberTable!'=>\$clobberTable, 'pipeConverterScript=s'=>\$pipe, 'templateFile=s' => \$templateFn, 'replaceStr=s' => \$replaceStr) || die "$USAGE\n";
+GetOptions ('clobberTable!'=>\$clobberTable, 'pipeConverterScript=s'=>\$pipe, 'pipePrefix=s'=>\$pipePrefix, 'templateFile=s' => \$templateFn, 'replaceStr=s' => \$replaceStr) || die "$USAGE\n";
 
 print STDERR "clobber=$clobberTable\targv=" . scalar(@ARGV) . "\n";
 die "$USAGE\n" unless ((!$clobberTable || $templateFn) && (@ARGV>0));
@@ -43,7 +44,9 @@ foreach my $tabfn (@ARGV)
 	# table, we have to move it.
 	if ($pipe)
 	{
-		my $tabfnNew = "${name}.converted.txt";
+		$name =~ /(chr\w+)/;
+		my $nameChr = $1;
+		my $tabfnNew = ($pipePrefix) ? "${pipePrefix}_${nameChr}.txt" : "${name}.converted.txt";
 		my $cmd = "${pipe} < $tabfn > $tabfnNew";
 		runCmd($cmd);
 		$tabfn = $tabfnNew;

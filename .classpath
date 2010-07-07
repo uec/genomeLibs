@@ -21,6 +21,6 @@
 	<classpathentry kind="lib" path="heatMap.jar" sourcepath="/heatMap"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/picard"/>
 	<classpathentry kind="lib" path="tuple.jar"/>
-	<classpathentry kind="lib" path="/Users/benb/Documents/Java/mysql-connector-java-5.1.10/mysql-connector-java-5.1.10-bin.jar"/>
+	<classpathentry kind="lib" path="/Volumes/EpigenomeMacPro1/Users/benb/Documents/research/Java/mysql-connector-java-5.0.4-bin.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
