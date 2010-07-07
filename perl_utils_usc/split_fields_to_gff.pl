@@ -366,6 +366,7 @@ sub transform_line
 	return ($chr, $new_line) if (@new_flds[4] !~ /^\d+$/); # The line is probably a header if coord field isn't a number
 
 	# Handle the score
+	@new_flds[6] = "." if (@new_flds[6] =~ /NA/i);
 	$::SCORE_USED = 2 if ((@new_flds[6] ne '.') || (!@new_flds[6]));
 	@new_flds[6] = max(1,min(1000,int(@new_flds[6] * $::SCORE_ADJUST_FACTOR))) if ($::SCORE_ADJUST_FACTOR);
 
