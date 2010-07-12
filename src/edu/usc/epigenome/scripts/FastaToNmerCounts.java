@@ -15,15 +15,17 @@ import org.kohsuke.args4j.Option;
 
 public class FastaToNmerCounts {
 	
-	private static final String USAGE = "Use: FastaToNmerCounts -listAllPerms -nmer 6 -bothStrands [file.fa]\n" + 
+	private static final String USAGE = "Use: FastaToNmerCounts -listAllPerms -nmer 6 -startPosition 0 -bothStrands [file.fa]\n" + 
 	"If file.fa is not included, uses stdin.";
 	
     @Option(name="-bothStrands",usage="Reverse complement all sequences (default false)")
     private boolean bothStrands = false;
     @Option(name="-listAllPerms",usage="list all permutations of length nmer on output (default false, list only observed nmers)")
     private boolean listAllPerms = false;
-   @Option(name="-nmer", usage="nmer length (default 6)")
+    @Option(name="-nmer", usage="nmer length (default 6)")
     private int nmer = 6;
+    @Option(name="-startPosition", usage="If set, we only look at nmers starting at position N of read (value from 1 to readLen-nmer), no revcomp (default none)")
+    private int startPosition = -1;
     // receives other command line parameters than options
     @Argument
     private List<String> arguments = new ArrayList<String>();	
@@ -56,6 +58,7 @@ public class FastaToNmerCounts {
         	{
         		//throw new CmdLineException("Must supply at least one input file");
     			f_read = new BufferedReader(new InputStreamReader(System.in));
+    			System.err.println("Reading from stdin");
         	}
     		else
     		{
@@ -63,6 +66,13 @@ public class FastaToNmerCounts {
         		f_read = new BufferedReader(new FileReader(fn));
   			
     		}
+
+    		if (this.startPosition>=0)
+    		{
+    			if (this.bothStrands) throw new CmdLineException("Can not set -startPosition and -bothStrands together");
+    			if (this.startPosition==0) throw new CmdLineException("-startPosition must be greater than 0");
+    		}
+
 		}
         catch (CmdLineException e)
         {
@@ -98,21 +108,21 @@ public class FastaToNmerCounts {
 		{
 			Sequence seq = seqs.nextSequence();
 			
-			addCounts(nmer, counts, seq);
-			addCounts(1, onemers, seq);
+			addCounts(nmer, counts, seq, this.startPosition);
+			if (!this.listAllPerms) addCounts(1, onemers, seq,0);
 			total_len += seq.length();
 			if (bothStrands)
 			{
 				SymbolList revseq = DNATools.reverseComplement(seq);
-				addCounts(nmer, counts, revseq);
-				addCounts(1, onemers, revseq);
+				addCounts(nmer, counts, revseq, this.startPosition);
+				if (!this.listAllPerms) addCounts(1, onemers, revseq,0);
 				total_len += seq.length();
 			}
 			
 			total_seqs++;
-			if ( (seq.length() > 1E6) || ((on_seq % 1E5)==0) )
+			if ( (seq.length() > 1E6) || ((total_seqs % 1E5)==0) )
 			{
-				System.err.println("Finished seq\t" + on_seq++);
+				System.err.println("Finished seq\t" + total_seqs);
 			}
 		}
 		
@@ -228,7 +238,7 @@ public class FastaToNmerCounts {
 	}
 	
 	
-	private static void addCounts(int n, Map counts, SymbolList seq)
+	private static void addCounts(int n, Map counts, SymbolList seq, int inStartPosition)
 	{
 		
 		//	int len = seq.length();
@@ -237,8 +247,9 @@ public class FastaToNmerCounts {
 		//System.err.println("Full str: "+full_residues);
 		int len = full_residues.length();
 		
-		int end = len-n+1;
-		for (int i = 1; i <= end; i++)
+		int start = (inStartPosition>0) ? (inStartPosition) : 1;
+		int end = (inStartPosition>0) ? start : (len-n+1);
+		for (int i = start; i <= end; i++)
 		{
 			int to = i+n-1;
 			
