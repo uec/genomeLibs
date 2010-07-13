@@ -7,7 +7,7 @@ use strict;
 my $SAMDIR = "/home/uec-00/shared/production/software/samtools";
 
 my $samFn = $ARGV[0] || die "no input sam file";
-my $refFa = $ARGV[1] || die "no input genome";
+my $refFa = $ARGV[-1] || die "no input genome";
 my $refFai = $refFa;
 if( -e $refFa && $refFa =~ /\.fa$/)
 {
@@ -18,6 +18,19 @@ else
 {
 	die "no ref or ref index found";	
 }
+
+
+#handle multiple sams for a merge
+if(scalar(@ARGV) > 2)
+{
+	my $mergeFileString = join(" ", @ARGV[0,-2]);
+	my $mergedFileName = $samFn;
+	$mergedFileName = basename($mergedFileName);
+	$mergedFileName =~ s/\.sam$/\.merged\.sam/;
+	system("cat $mergeFileString > $mergedFileName");
+	$samFn = $mergedFileName;	
+}
+
 
 my $finalProcId = 0;
 my $finalBamFn = 0;
