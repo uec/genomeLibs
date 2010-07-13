@@ -17,7 +17,7 @@ foreach my $f (@files)
     my $outadapters = $f; $outadapters =~ s/\.(\w+)$/.contam.adapters\.$1/g;
     die "Can't write to $outadapters\n" unless (open(OUTADAPTERS,">$outadapters"));
     my $outadaptertrim = $f; $outadaptertrim =~ s/\.(\w+)$/.contam.adapterTrim\.$1/g;
-    die "Can't write to $outadaptertrim\n" unless (open(OUTADAPTERTRIM,">$outadapters"));
+    die "Can't write to $outadaptertrim\n" unless (open(OUTADAPTERTRIM,">$outadaptertrim"));
     my $outnoc = $f; $outnoc =~ s/\.(\w+)$/.nocontam\.$1/g;
     die "Can't write to $outnoc\n" unless (open(OUTNOC,">$outnoc"));
 
