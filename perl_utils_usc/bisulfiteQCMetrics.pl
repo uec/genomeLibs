@@ -45,6 +45,8 @@ foreach my $dir (@ARGV)
             push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
             my $contamAdaptersN = seqCountFastqFiles($dir."${prefix}.contam.adapters.*");
             push(@flds,$contamAdaptersN); push(@headers,"contamAdaptersSeqs");
+             my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.*");
+            push(@flds,$contamAdapterTrimN); push(@headers,"contamAdapterTrimSeqs");            
         }
 
         # Repeat counts
@@ -106,7 +108,7 @@ foreach my $dir (@ARGV)
                         my $numberAligned = `maq mapview $testAlign | wc -l`;
                         chomp $numberAligned;
                         my $ratioAligned = $numberAligned / $chunkSize;
-                        push(@flds, $ratioAligned); push(@headers,$genome);
+                        push(@flds, $ratioAligned); push(@headers,"$genome" . "_q0");
                         #print "$genome: $testAlign\t$numberAligned/$chunkSize = $ratioAligned\n";
                 }
         }
