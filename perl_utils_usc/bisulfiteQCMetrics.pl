@@ -18,114 +18,118 @@ my $headersPrinted = 0;
 foreach my $dir (@ARGV)
 {
     print STDERR "Searching DIR $dir\n";
-
-
+	
     foreach my $laneNum (1..8)
     {
-        my @flds = ();
-        my @headers = ();
-
-        # GENERAL
-        if ($PRINTLANEIDS)
+		my @dirlist = glob("$dir/s_$laneNum*");
+        if($dirlist[0])
         {
-            push(@flds,$dir); push(@headers,"FlowCelln");
-            push(@flds,$laneNum); push(@headers,"laneNum");
-        }
-
-        my $prefix = ($INTERMEDIATE_DIRS) ? "/*s_${laneNum}*/*" : "/*s_${laneNum}*";
-
-        # FASTQ counts
-        if ($DOFASTQ)
-        {
-            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.fastq");
-            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
-            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*");
-            push(@flds,$contamN); push(@headers,"contamSeqs");
-            my $contamPolyaN = seqCountFastqFiles($dir."${prefix}.contam.polya.*");
-            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
-            my $contamAdaptersN = seqCountFastqFiles($dir."${prefix}.contam.adapters.*");
-            push(@flds,$contamAdaptersN); push(@headers,"contamAdaptersSeqs");
-             my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.*");
-            push(@flds,$contamAdapterTrimN); push(@headers,"contamAdapterTrimSeqs");            
-        }
-
-        # Repeat counts
-        if ($DOREPEAT)
-        {
-            my $gaatgN = patternCountFiles($dir."${prefix}.nocontam.fastq", "GAATGGAATG");
-            push(@flds,$gaatgN); push(@headers,"GAATGGAATG");
-            my $tatttN = patternCountFiles($dir."${prefix}.nocontam.fastq", "TATTTTATTT");
-            push(@flds,$tatttN); push(@headers,"TATTTTATTT");
-            my $cattcN = patternCountFiles($dir."${prefix}.nocontam.fastq", "CATTCCATTC");
-            push(@flds,$cattcN); push(@headers,"CATTCCATTC");
-        }
-
-        if ($DOALIGNEDCOUNTS)
-        {
-            #my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}*map.q30.txt",$dir."/ReadCounts_*_${laneNum}_maq.csv");
-            my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
-            push(@flds, $fullReads); push(@headers,"AlignedReads");
-            push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
-            push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
-            push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
-        }
-
-        if ($DODEPTHWINDOWS)
-        {
-            my ($windsFw, $windsRev, $windsTotal,$chroms) = depthWindows($dir."/ReadDepths_maxIden0_*_${laneNum}_*wind100000.csv");
-            my $numWinds = scalar(@$windsFw);
-#           push(@flds,@$windsFw); push(@headers,1..$numWinds);
-#           push(@flds,@$windsRev); push(@headers,1..$numWinds);
-            print STDERR "Num headers: " . scalar(@$chroms) . "\n";
-            push(@flds,@$windsTotal); push(@headers,@$chroms);
-
-            ($windsFw, $windsRev, $windsTotal,$chroms) = depthWindows($dir."/ReadDepths_maxIden1_*_${laneNum}_*wind100000.csv");
-            $numWinds = scalar(@$windsFw);
-#           push(@flds,@$windsFw); push(@headers,1..$numWinds);
-#           push(@flds,@$windsRev); push(@headers,1..$numWinds);
-            push(@flds,@$windsTotal); push(@headers,@$chroms);
-        }
-
-        if ($DOCONVERSION)
-        {
-            my ($convCpG) = conversionFrac($dir."/*${laneNum}.pileup_cg_dinucleotide.csv");
-            push(@flds, $convCpG); push(@headers,"ConversionCpG");
-            my ($convCpH) = conversionFrac($dir."/*${laneNum}.pileup_ch_dinucleotide.csv");
-            push(@flds, $convCpH); push(@headers,"ConversionCpH");
-        }
-
-        if($DOCONTAMALIGNTEST)
-        {
-                my @testAligns = glob("$dir/aligntest_s_$laneNum*");
-                my $chunkSize = `wc -l $dir/s_$laneNum\_sequence.1.nocontam.fastq`;
-                $chunkSize =~ /^(\d+)\s/;
-                $chunkSize = $1;
-                $chunkSize = $chunkSize / 4;
-                foreach my $testAlign (@testAligns)
-                {
-                        $testAlign =~ /aligntest_s_$laneNum\_(.+)\.map/;
-                        my $genome = $1;
-                        my $numberAligned = `maq mapview $testAlign | wc -l`;
-                        chomp $numberAligned;
-                        my $ratioAligned = $numberAligned / $chunkSize;
-                        push(@flds, $ratioAligned); push(@headers,"$genome" . "_q0");
-                        #print "$genome: $testAlign\t$numberAligned/$chunkSize = $ratioAligned\n";
-                }
-        }
-
-        # Now print
-        if (!$headersPrinted && (grep {$_} @headers))
-        {
-            print join(",",@headers)."\n";
-            $headersPrinted = 1;
-        }
-
-        # First two are ids
-        if (scalar(grep {$_} @flds) > 2)
-        {
-            print join(",",@flds)."\n" ;
-        }
-
+        
+	        my @flds = ();
+	        my @headers = ();
+			
+	        # GENERAL
+	        if ($PRINTLANEIDS)
+	        {
+	            push(@flds,$dir); push(@headers,"FlowCelln");
+	            push(@flds,$laneNum); push(@headers,"laneNum");
+	        }
+	
+	        my $prefix = ($INTERMEDIATE_DIRS) ? "/*s_${laneNum}*/*" : "/*s_${laneNum}*";
+	
+	        # FASTQ counts
+	        if ($DOFASTQ)
+	        {
+	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.fastq");
+	            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
+	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*");
+	            push(@flds,$contamN); push(@headers,"contamSeqs");
+	            my $contamPolyaN = seqCountFastqFiles($dir."${prefix}.contam.polya.*");
+	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
+	            my $contamAdaptersN = seqCountFastqFiles($dir."${prefix}.contam.adapters.*");
+	            push(@flds,$contamAdaptersN); push(@headers,"contamAdaptersSeqs");
+	             my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.*");
+	            push(@flds,$contamAdapterTrimN); push(@headers,"contamAdapterTrimSeqs");            
+	        }
+	
+	        # Repeat counts
+	        if ($DOREPEAT)
+	        {
+	            my $gaatgN = patternCountFiles($dir."${prefix}.nocontam.fastq", "GAATGGAATG");
+	            push(@flds,$gaatgN); push(@headers,"GAATGGAATG");
+	            my $tatttN = patternCountFiles($dir."${prefix}.nocontam.fastq", "TATTTTATTT");
+	            push(@flds,$tatttN); push(@headers,"TATTTTATTT");
+	            my $cattcN = patternCountFiles($dir."${prefix}.nocontam.fastq", "CATTCCATTC");
+	            push(@flds,$cattcN); push(@headers,"CATTCCATTC");
+	        }
+	
+	        if ($DOALIGNEDCOUNTS)
+	        {
+	            #my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}*map.q30.txt",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	            my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	            push(@flds, $fullReads); push(@headers,"AlignedReads");
+	            push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
+	            push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
+	            push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
+	        }
+	
+	        if ($DODEPTHWINDOWS)
+	        {
+	            my ($windsFw, $windsRev, $windsTotal,$chroms) = depthWindows($dir."/ReadDepths_maxIden0_*_${laneNum}_*wind100000.csv");
+	            my $numWinds = scalar(@$windsFw);
+	#           push(@flds,@$windsFw); push(@headers,1..$numWinds);
+	#           push(@flds,@$windsRev); push(@headers,1..$numWinds);
+	            print STDERR "Num headers: " . scalar(@$chroms) . "\n";
+	            push(@flds,@$windsTotal); push(@headers,@$chroms);
+	
+	            ($windsFw, $windsRev, $windsTotal,$chroms) = depthWindows($dir."/ReadDepths_maxIden1_*_${laneNum}_*wind100000.csv");
+	            $numWinds = scalar(@$windsFw);
+	#           push(@flds,@$windsFw); push(@headers,1..$numWinds);
+	#           push(@flds,@$windsRev); push(@headers,1..$numWinds);
+	            push(@flds,@$windsTotal); push(@headers,@$chroms);
+	        }
+	
+	        if ($DOCONVERSION)
+	        {
+	            my ($convCpG) = conversionFrac($dir."/*${laneNum}.pileup_cg_dinucleotide.csv");
+	            push(@flds, $convCpG); push(@headers,"ConversionCpG");
+	            my ($convCpH) = conversionFrac($dir."/*${laneNum}.pileup_ch_dinucleotide.csv");
+	            push(@flds, $convCpH); push(@headers,"ConversionCpH");
+	        }
+	
+	        if($DOCONTAMALIGNTEST)
+	        {
+	                my @testAligns = glob("$dir/aligntest_s_$laneNum*");
+	                my $chunkSize = `wc -l $dir/s_$laneNum\_sequence.1.nocontam.fastq`;
+	                $chunkSize =~ /^(\d+)\s/;
+	                $chunkSize = $1;
+	                $chunkSize = $chunkSize / 4;
+	                foreach my $testAlign (@testAligns)
+	                {
+	                        $testAlign =~ /aligntest_s_$laneNum\_(.+)\.map/;
+	                        my $genome = $1;
+	                        my $numberAligned = `maq mapview $testAlign | wc -l`;
+	                        chomp $numberAligned;
+	                        my $ratioAligned = $numberAligned / $chunkSize;
+	                        push(@flds, $ratioAligned); push(@headers,"$genome" . "_q0");
+	                        #print "$genome: $testAlign\t$numberAligned/$chunkSize = $ratioAligned\n";
+	                }
+	        }
+	
+	        # Now print
+	        if (!$headersPrinted && (grep {$_} @headers))
+	        {
+	            print join(",",@headers)."\n";
+	            $headersPrinted = 1;
+	        }
+	
+	        # First two are ids
+	        if (scalar(grep {$_} @flds) > 2)
+	        {
+	            print join(",",@flds)."\n" ;
+	        }
+	
+	    }
     }
 }
 
