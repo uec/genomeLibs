@@ -1,5 +1,7 @@
 package edu.usc.epigenome.scripts;
 
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -26,7 +28,7 @@ public class MethylDbToGpcDensities {
 	
     @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
     //protected String tablePrefix = null;
-    protected String tablePrefix = "GpC_test";
+    protected String tablePrefix = "GpC_test_";
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -100,6 +102,8 @@ public class MethylDbToGpcDensities {
 		System.out.printf("fixedStep chrom=%s start=%d step=%d span=%d\n",chr,chrStart,stepSize,windSize);
 
 		int numQueries = 0;
+		String fn = tablePrefix + chr +"_density.txt";
+		PrintWriter writer = new PrintWriter(new File(fn));
 		for (int c = chrStart; c < chrEnd; c+=stepSize)
 		{
 			if ((++numQueries % 10000)==0) Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info("On query " + numQueries);
@@ -123,12 +127,23 @@ public class MethylDbToGpcDensities {
 			//}
 			int numGpcs = it.getCurNumRows();
 			//double numGpcs = (double)numCs/2.0;  // We have 2 in the database for each Gpc (one per strand)
-			int dens = (int)Math.round(100.0 * numGpcs / ((double)windLen *2));  // Make it percent of sequence
-			
-			System.out.printf("%d\t%d\t%d\n",dens, numGpcs, windLen);
+			int gpcDens = (int)Math.round(100.0 * numGpcs / ((double)windLen *2));  // Make it percent of sequence
+			//float methyDens =  it.getMethyDens();
+			double methySum = 0;
+			while(it.hasNext()){
+				Cytosine methyValue = it.next();
+				methySum += methyValue.fracMeth();
+			}
+			double methyDens = methySum / (numGpcs*100);
+			//System.out.printf("%d\t%d\t%d\t%f\n",gpcDens, numGpcs, windLen, methyDens);
 //			System.out.println(dens);
+			//String fn = prefix + sampleName + "_" + chr + ".txt";
+			
+			
+			writer.printf("%d\t%f\t%d\t%d\n", windS, methyDens, numGpcs, gpcDens);
+			
 		}
-		
+		writer.close();
 
 	}
 }
