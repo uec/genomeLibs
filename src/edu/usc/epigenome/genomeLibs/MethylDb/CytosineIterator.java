@@ -29,6 +29,7 @@ public class CytosineIterator implements Iterator<Cytosine> {
 	protected ResultSet curRS = null;
 	protected int curNumRows = -1;
 	protected String curColStrings = null;
+	//protected double methyDens = Double.NaN;
 	
 
 	/**
@@ -41,8 +42,13 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		this.init(inParams);
 	}
 
-
-
+	//public double methyDensIterater(){
+		//CytosineIterator it = new  
+	//}
+	
+	//public double getMethyDens(){
+	//	return methyDens;
+	//}
 	
 	public int getCurNumRows() {
 		return curNumRows;
@@ -97,6 +103,7 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		int numRows = curRS.getRow();
 		curRS.beforeFirst();
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Finished query execute");
+		//this.methyDens = methyDensIterater();
 		this.curNumRows = numRows;
 		return numRows;
 	}
@@ -160,6 +167,7 @@ public class CytosineIterator implements Iterator<Cytosine> {
 					curRS.getShort("agReads"),
 					curRS.getShort("totalReadsOpposite"),
 					curRS.getShort("aReadsOpposite"),
+					curRS.getDouble("fracMeth"),
 					curRS.getInt("gchWeight"),
 					curRS.getInt("gcgWeight"),
 					curRS.getInt("hcgWeight"));
@@ -260,8 +268,8 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		//}
 		//String joinSec = (params.usesFeatTable()) ? "straight_join" : "";
 		
-		//String methTable = params.getMethylTable();
-		String methTable = params.methylTablePrefix;
+		String methTable = params.getMethylTable();
+		//String methTable = params.methylTablePrefix;
 		String sql = String.format("select * from %s WHERE ", methTable);
 		MethylDbQuerier.HelperOutput output = params.sqlWhereSecHelperForGpc(prep, null);
 		
@@ -272,7 +280,22 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		return sql;
 	}
 	
-	
+/*	private static String sqlHelperMethyFrac(MethylDbQuerier params, PreparedStatement prep)
+	throws Exception
+	{
+		
+		String methTable = params.getMethylTable();
+		//String methTable = params.methylTablePrefix;
+		String sql = String.format("select AVG(`fracMeth`) from %s WHERE ", methTable);
+		MethylDbQuerier.HelperOutput output = params.sqlWhereSecHelperForGpc(prep, null);
+		
+		sql += output.sql;
+		//sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
+		sql += " ORDER BY chromPos ;";
+		
+		return sql;
+	}
+	*/
 	protected static void setupDb()
 	throws Exception
 	{
