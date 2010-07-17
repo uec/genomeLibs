@@ -35,6 +35,8 @@ public class Cytosine implements Comparable, Cloneable {
 	protected char nextBaseRefUpperCase = '0';
 	protected char preBaseRefUpperCase = '0';
 	
+	protected double methyDens = Double.NaN;
+	
 	// This is for weighted averages
 	protected double gchWeight = Double.NaN;
 	protected double gcgWeight = Double.NaN;
@@ -68,7 +70,7 @@ public class Cytosine implements Comparable, Cloneable {
 	
 	public Cytosine(int chromPos, boolean negStrand, short totalReads, short cReads,
 			short cReadsNonconversionFilt, short tReads, short agReads,
-			short totalReadsOpposite, short aReadsOpposite, int gchWeight,  int gcgWeight, int hcgWeight ) {
+			short totalReadsOpposite, short aReadsOpposite, double fracMeth, int gchWeight,  int gcgWeight, int hcgWeight ) {
 		super();
 		this.chromPos = chromPos;
 		this.negStrand = negStrand;
@@ -79,6 +81,8 @@ public class Cytosine implements Comparable, Cloneable {
 		this.agReads = agReads;
 		this.totalReadsOpposite = totalReadsOpposite;
 		this.aReadsOpposite = aReadsOpposite;
+		
+		this.methyDens = fracMeth;
 		
 		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
 		if (gchWeight < 0)
@@ -197,6 +201,9 @@ public class Cytosine implements Comparable, Cloneable {
 		return !(failFrac && failAbs);
 	}
 
+	public double fracMeth(){
+		return methyDens;
+	}
 	
 	public double fracMeth(boolean useNonconvFilt)
 	{
@@ -281,7 +288,7 @@ public class Cytosine implements Comparable, Cloneable {
 	public String toStringExpanded() 
 	{
 
-		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%d\t%d\t%c\t%.2f\t%.2f\t%.2f", 
+		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%d\t%d\t%c\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,
@@ -299,10 +306,10 @@ public class Cytosine implements Comparable, Cloneable {
 				nextBaseRefUpperCase,
 				100*this.fracMeth(true),
 				100*this.fracPreBaseG(),
-				100*this.fracNextBaseG()
-				//this.gchWeight,
-				//this.gcgWeight,
-				//this.hcgWeight
+				100*this.fracNextBaseG(),
+				this.gchWeight,
+				this.gcgWeight,
+				this.hcgWeight
 				);
 				
 	}
