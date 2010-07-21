@@ -262,6 +262,49 @@ public class PicardUtils {
 		return refCnext;
 	}
 	
+	public static char preBaseSeq(int pos, String seqStr)
+	{
+		if (pos <= 0)
+		{
+			return '0';
+		}
+		else
+		{
+			return seqStr.charAt(pos-1); 
+		}
+	}
+	
+	public static char preBaseRef(int pos, String refStr)
+	{
+		return preBaseRef(pos, refStr, false);
+	}
+	
+	/**
+	 * @param pos  This is relative to refStr strand regardless of value of revStrand
+	 * @param refStr
+	 * @param revStrand  If this is true, we give the prior base, reverse complemented.
+	 * @return
+	 */
+	public static char preBaseRef(int pos, String refStr, boolean revStrand)
+	{
+		char refCpre = '0';
+
+		if (revStrand) 
+		{
+			if (pos >= refStr.length()-1) return '0'; // At the last character
+			refCpre = MiscUtils.revCompNuc(refStr.charAt(pos+1));
+		}
+		else
+		{
+			if (pos == 0) return '0'; // At the last character
+			refCpre = refStr.charAt(pos-1);
+		}
+		
+		return refCpre;
+	}
+	
+	
+	
 	public static boolean isCpg(int pos, String refStr)
 	{
 		if (pos >= (refStr.length()-1)) return false; // At the last character
@@ -315,8 +358,148 @@ public class PicardUtils {
 		return ((refC == 'C') && (seqC == 'T'));
 	}
 
+	public static boolean isGch(int pos, String refStr)
+	{
+		if (pos <= 0) return false;
+		if (pos == (refStr.length()-1)) {
+			if (isGuanine(pos-1,refStr) && isCytosine(pos,refStr,false)) {
+				return true;
+			}
+			else{
+				return false;
+			}
+		} // At the last character
+		if (pos > (refStr.length()-1)) return false;
+		return ( isGuanine(pos-1,refStr) && isCytosine(pos,refStr,false) && !isGuanine(pos+1,refStr) );
+	}	
+	
+	public static boolean isOppositeGch(int pos, String refStr)
+	{
+		if (pos >= refStr.length()-1) return false;
+		if (pos == 0) {
+			if (isGuanine(pos,refStr) && isCytosine(pos+1,refStr,false)) {
+				return true;
+			}
+			else{
+				return false;
+			}
+		} // At the first character
+		if (pos < 0) return false;
+		return ( isCytosine(pos+1,refStr,false) && isGuanine(pos,refStr) && !isCytosine(pos-1,refStr,false) );
+	}	
+
+/*	public static boolean isOppositeGch(int pos, String refStr){
+		if (pos > (refStr.length()-2)) return false;
+		if (pos == (refStr.length()-2)) return (isCytosine(pos+1,refStr,false) && isGuanine(pos,refStr));
+		return (isCytosine(pos+1,refStr,false) && isGuanine(pos,refStr) && !isGuanine(pos+2,refStr));
+	}
+*/	
+	
+	public static boolean isGcg(int pos, String refStr)
+	{
+		if (pos >= (refStr.length()-1)) return false; // At the last character
+		if (pos <= 0) return false;
+		
+		return ( isGuanine(pos-1,refStr) && isCytosine(pos,refStr,false) && isGuanine(pos+1,refStr) );
+	}	
+	
+	public static boolean isOppositeGcg(int pos, String refStr)
+	{
+		if (pos >= (refStr.length()-1)) return false; // At the last character
+		if (pos <= 0) return false;
+		
+		return ( isCytosine(pos-1,refStr,false) && isGuanine(pos,refStr) && isCytosine(pos+1,refStr,false) );
+	}
+
+/*	public static boolean isOppositeGcg(int pos, String refStr){
+		if(pos >= (refStr.length()-2)) return false;
+		return isGuanine(pos,refStr) && isCytosine(pos+1,refStr,false) && isGuanine(pos+2,refStr);
+	}
+*/
+	public static boolean isHcg(int pos, String refStr)
+	{
+		if (pos >= (refStr.length()-1)) return false; // At the last character
+		if (pos == 0) {
+			if (isGuanine(pos+1,refStr) && isCytosine(pos,refStr,false)) {
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		
+		return ( !isGuanine(pos-1,refStr) && isCytosine(pos,refStr,false) && isGuanine(pos+1,refStr) );
+	}	
 
 	
+	public static boolean isOppositeHcg(int pos, String refStr)
+	{
+		if (pos >= (refStr.length()-1)) return false; // At the last character
+		if (pos == 0) {
+			if (isGuanine(pos,refStr) && isCytosine(pos+1,refStr,false)) {
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		
+		return ( !isCytosine(pos+1,refStr,false) && isGuanine(pos,refStr) && isCytosine(pos-1,refStr,false) );
+	}
+
+/*	public static boolean isOppositeHcg(int pos, String refStr){
+		if(pos <= 0) return false;
+		if(pos == 1) return (isGuanine(pos,refStr) && isCytosine(pos-1,refStr,false));
+		return ( !isGuanine(pos-2,refStr) && isGuanine(pos,refStr) && isCytosine(pos-1,refStr,false) );
+		
+	}
+*/	
 	
+	public static boolean isHch(int pos, String refStr)
+	{
+		if (pos > (refStr.length()-1) || pos < 0) return false; // At the last character
+		if (pos == 0){
+			if (isCytosine(pos,refStr,false) && !isGuanine(pos+1,refStr)){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		if (pos == refStr.length()-1){
+			if (!isGuanine(pos-1,refStr) && isCytosine(pos,refStr,false)){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		
+		return ( !isGuanine(pos-1,refStr) && isCytosine(pos,refStr,false) && !isGuanine(pos+1,refStr) );
+	}	
+	
+	public static boolean isOppositeHch(int pos, String refStr)
+	{
+		if (pos > (refStr.length()-1) || pos < 0) return false;
+		if (pos == 0){
+			if (!isCytosine(pos+1,refStr,false) && isGuanine(pos,refStr)){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		if (pos == refStr.length()-1){
+			if (isGuanine(pos,refStr) && !isCytosine(pos-1,refStr,false)){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+		
+		return ( !isCytosine(pos-1,refStr,false) && isGuanine(pos,refStr) && !isCytosine(pos+1,refStr,false) );
+	}
+
 	
 }
