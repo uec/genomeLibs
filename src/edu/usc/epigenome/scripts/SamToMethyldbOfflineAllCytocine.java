@@ -45,7 +45,7 @@ public class SamToMethyldbOfflineAllCytocine {
 		@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. --chrom chr1 --chrom chr5")
 		protected List<String> chrs = new ArrayList<String>(25);
 		@Option(name="-minConv",usage="minimum number of converted cytosines required")
-		protected int minConv = 1;
+		protected int minConv = 0;
 //		@Option(name="-numCycles",usage="Number of cycles to track")
 //		protected int numCycles = 100;
 //		@Option(name="-outputReads",usage=" Outputs one line per read (default false)")
@@ -108,10 +108,10 @@ public class SamToMethyldbOfflineAllCytocine {
 			int usedCounter = 0;
 			int filteredOutCounter = 0;
 			// Cph counters
-			int numHcphConvertedWithFilt = 0;
-			int numHcphTotalWithFilt = 0;
-			int numHcphConvertedNoFilt = 0;
-			int numHcphTotalNoFilt = 0;
+			int numCphConvertedWithFilt = 0;
+			int numCphTotalWithFilt = 0;
+			int numCphConvertedNoFilt = 0;
+			int numCphTotalNoFilt = 0;
 
 			// Iterate through chroms
 			if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
@@ -234,10 +234,17 @@ public class SamToMethyldbOfflineAllCytocine {
 										convStart = i;
 									}
 									
-									Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, negStrand, preBaseRef, nextBaseRef);
-									if (cytosine.getNextBaseRef() == '0') cytosine.setNextBaseRef(nextBaseRef);
-									if (cytosine.getPreBaseRef() == '0') cytosine.setPreBaseRef(preBaseRef);
-									this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq);
+									if(!outputHcphs & ishch){
+										
+									}
+									else{
+										Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, negStrand, preBaseRef, nextBaseRef);
+										if (cytosine.getNextBaseRef() == '0') cytosine.setNextBaseRef(nextBaseRef);
+										if (cytosine.getPreBaseRef() == '0') cytosine.setPreBaseRef(preBaseRef);
+										this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq);
+									}
+									
+									
 
 									//if(iscpg)
 									if (isgcg || ishcg)
@@ -258,13 +265,13 @@ public class SamToMethyldbOfflineAllCytocine {
 									
 									if (isgch || ishch){
 										
-										numHcphTotalNoFilt++;
-										if (conv) numHcphConvertedNoFilt++;
+										numCphTotalNoFilt++;
+										if (conv) numCphConvertedNoFilt++;
 										
 										if (i>=convStart)
 										{
-											numHcphTotalWithFilt++;
-											if (conv) numHcphConvertedWithFilt++;
+											numCphTotalWithFilt++;
+											if (conv) numCphConvertedWithFilt++;
 										}
 									}
 									
@@ -276,19 +283,21 @@ public class SamToMethyldbOfflineAllCytocine {
 								boolean oppositeGch = PicardUtils.isOppositeGch(i,ref);
 								boolean oppositeGcg = PicardUtils.isOppositeGcg(i,ref);
 								boolean oppositeHcg = PicardUtils.isOppositeHcg(i,ref);
-								//boolean oppositeHch = PicardUtils.isOppositeHch(i,ref);
+								boolean oppositeHch = PicardUtils.isOppositeHch(i,ref);
 								
 								//if( oppositeGcg || oppositeHcg )
-								if (oppositeGch || oppositeGcg || oppositeHcg )
+								if (oppositeGch || oppositeGcg || oppositeHcg || (oppositeHch & outputHcphs))
 								{
 		//							// Look for cpg on opposite strand
 			//						// Be careful, the "nextBaseRef" is now on the opposite strand!!
+									
 									char nextBaseRefRev = PicardUtils.nextBaseRef(i, ref, true);
 									char preBaseRefRev = PicardUtils.preBaseRef(i, ref, true);
-									Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, !negStrand, preBaseRefRev, nextBaseRefRev);
+									Cytosine oppositeCytosine = findOrCreateCytosine(cytosines, onRefCoord, !negStrand, preBaseRefRev, nextBaseRefRev);
 							//		
-									this.incrementOppositeCytosine(cytosine, seqi);
+									this.incrementOppositeCytosine(oppositeCytosine, seqi);
 								}
+								
 
 
 								// Increment genomic coord position
@@ -331,9 +340,9 @@ public class SamToMethyldbOfflineAllCytocine {
 			System.err.printf("Lost %f%% due to non-converion filter\n%d CpGs filtered for non-conversion, %d CpGs used (MinConv=%d,UseCpgs=%s)\n",
 					frac*100.0, filteredOutCounter, usedCounter, this.minConv, String.valueOf(this.useCpgsToFilter));
 			System.err.printf("Found %d reads total\n", recCounter);
-			System.err.printf("HCpH conversion rate: before filter=%f, after filter=%f\n",
-					100.0 * ((double)numHcphConvertedNoFilt/(double)numHcphTotalNoFilt),
-					100.0 * ((double)numHcphConvertedWithFilt/(double)numHcphTotalWithFilt));
+			System.err.printf("CpH conversion rate: before filter=%f, after filter=%f\n",
+					100.0 * ((double)numCphConvertedNoFilt/(double)numCphTotalNoFilt),
+					100.0 * ((double)numCphConvertedWithFilt/(double)numCphTotalWithFilt));
 		}
 
 
@@ -457,343 +466,6 @@ public class SamToMethyldbOfflineAllCytocine {
 			cytosine.nextBaseGreads += nextBaseGreads;
 			cytosine.nextBaseTotalReads += nextBaseTotalReads;
 		}
-		
-		protected void incrementGch(Cytosine cytosine, char seqChar, boolean nonconvFilter, char preBaseSeq, char nextBaseSeq) 
-		throws Exception
-		{
-			int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0, preBaseGreads = 0, preBaseTotalReads = 0, nextBaseGreads = 0, nextBaseTotalReads = 0;
-			
-			switch (seqChar)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'A':
-			case 'G':
-				agReads = 1;
-				totalReads = 1;
-				break;
-			case 'T':
-				tReads = 1;
-				totalReads = 1;
-				break;
-			case 'C':
-				if (nonconvFilter) cReadsNonconvFilt = 1; else cReads = 1;
-				totalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			// And the previous base
-			switch (preBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				preBaseTotalReads = 1;
-				preBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				preBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-			
-			// And the next base
-			switch (nextBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				nextBaseTotalReads = 1;
-				nextBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				nextBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			cytosine.totalReads += totalReads;
-			cytosine.cReads += cReads;
-			cytosine.tReads += tReads;
-			cytosine.cReadsNonconversionFilt += cReadsNonconvFilt;
-			cytosine.agReads += agReads;
-			
-			cytosine.preBaseGreads += preBaseGreads;
-			cytosine.preBaseTotalReads += preBaseTotalReads;
-			cytosine.nextBaseGreads += nextBaseGreads;
-			cytosine.nextBaseTotalReads += nextBaseTotalReads;
-		}
-		
-		protected void incrementGcg(Cytosine cytosine, char seqChar, boolean nonconvFilter, char preBaseSeq, char nextBaseSeq) 
-		throws Exception
-		{
-			int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0, preBaseGreads = 0, preBaseTotalReads = 0, nextBaseGreads = 0, nextBaseTotalReads = 0;
-			
-			switch (seqChar)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'A':
-			case 'G':
-				agReads = 1;
-				totalReads = 1;
-				break;
-			case 'T':
-				tReads = 1;
-				totalReads = 1;
-				break;
-			case 'C':
-				if (nonconvFilter) cReadsNonconvFilt = 1; else cReads = 1;
-				totalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			// And the previous base
-			switch (preBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				preBaseTotalReads = 1;
-				preBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				preBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-			
-			// And the next base
-			switch (nextBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				nextBaseTotalReads = 1;
-				nextBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				nextBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			cytosine.totalReads += totalReads;
-			cytosine.cReads += cReads;
-			cytosine.tReads += tReads;
-			cytosine.cReadsNonconversionFilt += cReadsNonconvFilt;
-			cytosine.agReads += agReads;
-			
-			cytosine.preBaseGreads += preBaseGreads;
-			cytosine.preBaseTotalReads += preBaseTotalReads;
-			cytosine.nextBaseGreads += nextBaseGreads;
-			cytosine.nextBaseTotalReads += nextBaseTotalReads;
-		}
-		
-		protected void incrementHcg(Cytosine cytosine, char seqChar, boolean nonconvFilter, char preBaseSeq, char nextBaseSeq) 
-		throws Exception
-		{
-			int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0, preBaseGreads = 0, preBaseTotalReads = 0, nextBaseGreads = 0, nextBaseTotalReads = 0;
-			
-			switch (seqChar)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'A':
-			case 'G':
-				agReads = 1;
-				totalReads = 1;
-				break;
-			case 'T':
-				tReads = 1;
-				totalReads = 1;
-				break;
-			case 'C':
-				if (nonconvFilter) cReadsNonconvFilt = 1; else cReads = 1;
-				totalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			// And the previous base
-			switch (preBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				preBaseTotalReads = 1;
-				preBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				preBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-			
-			// And the next base
-			switch (nextBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				nextBaseTotalReads = 1;
-				nextBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				nextBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			cytosine.totalReads += totalReads;
-			cytosine.cReads += cReads;
-			cytosine.tReads += tReads;
-			cytosine.cReadsNonconversionFilt += cReadsNonconvFilt;
-			cytosine.agReads += agReads;
-			
-			cytosine.preBaseGreads += preBaseGreads;
-			cytosine.preBaseTotalReads += preBaseTotalReads;
-			cytosine.nextBaseGreads += nextBaseGreads;
-			cytosine.nextBaseTotalReads += nextBaseTotalReads;
-		}
-		
-		protected void incrementHch(Cytosine cytosine, char seqChar, boolean nonconvFilter, char preBaseSeq, char nextBaseSeq) 
-		throws Exception
-		{
-			int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0, preBaseGreads = 0, preBaseTotalReads = 0, nextBaseGreads = 0, nextBaseTotalReads = 0;
-			
-			switch (seqChar)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'A':
-			case 'G':
-				agReads = 1;
-				totalReads = 1;
-				break;
-			case 'T':
-				tReads = 1;
-				totalReads = 1;
-				break;
-			case 'C':
-				if (nonconvFilter) cReadsNonconvFilt = 1; else cReads = 1;
-				totalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			// And the previous base
-			switch (preBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				preBaseTotalReads = 1;
-				preBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				preBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-			
-			// And the next base
-			switch (nextBaseSeq)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'G':
-				nextBaseTotalReads = 1;
-				nextBaseGreads = 1;
-				break;
-			case 'T':
-			case 'A':
-			case 'C':
-				nextBaseTotalReads = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-		
-			cytosine.totalReads += totalReads;
-			cytosine.cReads += cReads;
-			cytosine.tReads += tReads;
-			cytosine.cReadsNonconversionFilt += cReadsNonconvFilt;
-			cytosine.agReads += agReads;
-			
-			cytosine.preBaseGreads += preBaseGreads;
-			cytosine.preBaseTotalReads += preBaseTotalReads;
-			cytosine.nextBaseGreads += nextBaseGreads;
-			cytosine.nextBaseTotalReads += nextBaseTotalReads;
-		}
-		
-		protected void incrementOppositeGch(Cytosine cytosine, char seqChar) //why not consider nextBase here??
-		throws Exception
-		{
-			int aReadsOpposite = 0, totalReadsOpposite = 0;
-			
-			
-			switch (seqChar)
-			{
-			case 'N':
-			case '0':
-				break;
-			case 'A':
-				aReadsOpposite = 1;
-				totalReadsOpposite = 1;
-				break;
-			case 'G':
-			case 'T':
-			case 'C':
-				totalReadsOpposite = 1;
-				break;
-			default:
-				throw new Exception("Can't recognize seq char: " + seqChar);
-			}
-
-			cytosine.aReadsOpposite += aReadsOpposite;
-			cytosine.totalReadsOpposite += totalReadsOpposite;
-		}
-		
 
 		
 
