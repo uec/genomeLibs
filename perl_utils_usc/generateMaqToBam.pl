@@ -8,7 +8,8 @@ use Getopt::Long;
 my $USAGE = "generateMaqToBam.pl [--noremoveTemps] [--nopropagateOnlyRegions] newname refGenome.fa f1.map f2.map f3.map ...";
 my $region = "chr11";
 my $PROPAGATE_ONLY_REGIONS = 1;
-my $SAMDIR = "/home/uec-00/bberman/bin";
+my $SAMDIR = "/home/uec-00/shared/production/software/samtools";
+#my $SAMDIR = "/home/uec-00/bberman/bin";
 my $RMTMPS = 1;
 my $BATCHSIZE = 50;
 GetOptions ('removeTemps!' => \$RMTMPS, 'propagateOnlyRegions!' => \$PROPAGATE_ONLY_REGIONS) || die "$USAGE\n";
@@ -19,15 +20,20 @@ print STDERR "removeTemps=${RMTMPS}\tpropagate=${PROPAGATE_ONLY_REGIONS}\n";
 die "$USAGE\n" unless (@ARGV>=3);
 my ($newname , $refFa, @mapFns) = @ARGV;
 
+# Start a fake command just to hold all jobs until the end
+my $holdJobId = runCmd(0, "ls", "M2B_HOLDER", [], 1);
+print STDERR "HOlding all jobs on job $holdJobId\n";
+
+
 # Go through pipeline for each map.  We do it in batches because
 # Map merge can only take a limited number.
 my @topDependJobs = ();
 my @topBamFns = ();
-my @dependJobs = ();
 my @bamFns = ();
 my $onJob = 0;
 my $tmpDir;
 my $batchname = "";
+my @dependJobs = ();
 foreach my $mapFn (@mapFns)
 {
     my $regionSec = ($PROPAGATE_ONLY_REGIONS) ? ".${region}" : "";
@@ -51,7 +57,7 @@ foreach my $mapFn (@mapFns)
 	`mkdir $tmpDir`;
     }
 
-    my ($jobid, $bamFn) = runMapPipeline($mapFn, $refFa, $tmpDir);
+    my ($jobid, $bamFn) = runMapPipeline($mapFn, $refFa, $tmpDir, [$holdJobId]);
     push (@dependJobs, $jobid);
     push (@bamFns, "${tmpDir}/$bamFn");
 
@@ -70,6 +76,12 @@ if (scalar(@dependJobs)>1)
 
 # And merge top level
 mergeBams($newname.${regionSec}, \@topDependJobs, \@topBamFns);
+
+# Now we're ready to release the hounds
+print STDERR "About to start jobs by releasing $holdJobId after a 60 second break\n";
+sleep(60);
+`qrls $holdJobId`;
+
 
 
 # - - - - - - OUTPUTS
@@ -143,7 +155,7 @@ sub mergeBams
 # ($processId, $outBamFn)
 sub runMapPipeline
 {
-    my ($mapFn, $refFa, $tmpdir) = @_;
+    my ($mapFn, $refFa, $tmpdir, $dependJobIds) = @_;
 
     my $finalProcId = 0;
     my $finalBamFn = 0;
@@ -174,7 +186,7 @@ sub runMapPipeline
 
 
     my $curOut;
-    my $curJobids = 0;
+    my $curJobids = $dependJobIds;
 
     # Maq 2 sam
     $curOut = "${mapFnBase}.sam";
@@ -246,17 +258,18 @@ sub runMapPipeline
 # Returns jobid
 sub runCmd
 {
-    my ($tmpdir, $cmd, $prefix, $dependJobs) = @_;
+    my ($tmpdir, $cmd, $prefix, $dependJobs, $userHold) = @_;
 
     my ($fh, $file) = tempfile( "${prefix}XXXXXX" , DIR => "/tmp");
     print $fh "#Run on 1 processors on laird\n";
-    print $fh "#PBS -l walltime=30:00:00\n#PBS -l mem=4000mb\n#PBS -l arch=x86_64\n#PBS -q laird\n";
+    print $fh "#PBS -l walltime=30:00:00\n#PBS -l mem=3500mb\n#PBS -l arch=x86_64\n#PBS -q lairdprio\n";
     print $fh "#PBS -W depend=afterany:" . join(":",@$dependJobs) ."\n" if ($dependJobs && @$dependJobs);
     print $fh "cd \"\$PBS_O_WORKDIR\"\n";
     print $fh "${cmd}\n\n";
     close($fh);
 
-    my $fullcmd = "qsub $file";
+    my $holdSec = ($userHold) ? " -h " : "";
+    my $fullcmd = "qsub ${holdSec} $file";
     $fullcmd = "cd ${tmpdir}; ${fullcmd}; cd .." if ($tmpdir);
     print STDERR "${cmd}\n${fullcmd}\n";
 
