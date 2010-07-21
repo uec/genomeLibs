@@ -70,7 +70,7 @@ public class Cytosine implements Comparable, Cloneable {
 	
 	public Cytosine(int chromPos, boolean negStrand, short totalReads, short cReads,
 			short cReadsNonconversionFilt, short tReads, short agReads,
-			short totalReadsOpposite, short aReadsOpposite, double fracMeth, int gchWeight,  int gcgWeight, int hcgWeight ) {
+			short totalReadsOpposite, short aReadsOpposite, String preBaseRefUpperCase, String nextBaseRefUpperCase, double fracMeth, int gchWeight,  int gcgWeight, int hcgWeight ) {
 		super();
 		this.chromPos = chromPos;
 		this.negStrand = negStrand;
@@ -81,6 +81,9 @@ public class Cytosine implements Comparable, Cloneable {
 		this.agReads = agReads;
 		this.totalReadsOpposite = totalReadsOpposite;
 		this.aReadsOpposite = aReadsOpposite;
+		
+		setPreBaseRef(preBaseRefUpperCase);
+		setNextBaseRef(nextBaseRefUpperCase);
 		
 		this.methyDens = fracMeth;
 		
@@ -345,6 +348,14 @@ public class Cytosine implements Comparable, Cloneable {
 
 	public void setNextBaseRef(char nextBaseRef) {
 		this.nextBaseRefUpperCase = Character.toUpperCase(nextBaseRef);
+	}
+	
+	public void setPreBaseRef(String preBaseRef){
+		this.preBaseRefUpperCase = preBaseRef.charAt(0);
+	}
+	
+	public void setNextBaseRef(String nextBaseRef){
+		this.nextBaseRefUpperCase = nextBaseRef.charAt(0);
 	}
 	
 	public char getPreBaseRef() {
