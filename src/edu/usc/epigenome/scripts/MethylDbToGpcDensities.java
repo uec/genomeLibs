@@ -120,27 +120,32 @@ public class MethylDbToGpcDensities {
 			params.addRangeFilter(chr, windS, windE);
 			
 			CytosineIterator it = new CytosineIterator(params);
-			//int numGpc = 0;
+			int numGpc = 0;
 			
 			//while ((it.getString("preBaseRefUpperCase") == "G") && (it.getString("nextBaseRefUpperCase") != "G")) {
-			//	numGpc++;
-			//}
-			int numGpcs = it.getCurNumRows();
+				
+			
+			//int numGpcs = it.getCurNumRows();
 			//double numGpcs = (double)numCs/2.0;  // We have 2 in the database for each Gpc (one per strand)
-			int gpcDens = (int)Math.round(100.0 * numGpcs / ((double)windLen *2));  // Make it percent of sequence
+			
 			//float methyDens =  it.getMethyDens();
 			double methySum = 0;
 			while(it.hasNext()){
 				Cytosine methyValue = it.next();
-				methySum += methyValue.fracMeth();
+				if((methyValue.getPreBaseRef() == 'G') && (methyValue.getNextBaseRef() != 'G')){
+					
+					methySum += methyValue.fracMeth();
+					numGpc++;
+				}
 			}
-			double methyDens = methySum / (numGpcs*100);
+			int gpcDens = (int)Math.round(100.0 * numGpc / ((double)windLen *2));  // Make it percent of sequence
+			double methyDens = methySum / (numGpc*100);
 			//System.out.printf("%d\t%d\t%d\t%f\n",gpcDens, numGpcs, windLen, methyDens);
 //			System.out.println(dens);
 			//String fn = prefix + sampleName + "_" + chr + ".txt";
 			
 			
-			writer.printf("%d\t%f\t%d\t%d\n", windS, methyDens, numGpcs, gpcDens);
+			writer.printf("%d\t%f\t%d\t%d\n", windS, methyDens, numGpc, gpcDens);
 			
 		}
 		writer.close();
