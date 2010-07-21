@@ -140,7 +140,6 @@ public class MethylDbQuerier {
 	{
 		String chrom = this.getChrom();
 		String table = this.methylTablePrefix + chrom;
-
 		return table;
 	}
 
@@ -351,7 +350,7 @@ public class MethylDbQuerier {
 				}
 			}
 			
-			if (grClauses.size()>0)
+			if (grClauses.size()>0)//??? should be >1
 			{
 				ListUtils.setDelim(" OR ");
 				clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
@@ -455,6 +454,8 @@ public class MethylDbQuerier {
 		return new MethylDbQuerier.HelperOutput(sql, curInd);
 	}
 	
+	
+	
 	public class FeatClass
 	{
 		String featType = null;
@@ -490,6 +491,93 @@ public class MethylDbQuerier {
 	}
 	
 	
+	protected MethylDbQuerier.HelperOutput sqlWhereSecHelperForGpc(PreparedStatement prep, String asName)
+	throws SQLException
+	{
+		return this.sqlWhereSecHelperForGpc(prep, asName, 1);
+	}
+	
+	protected MethylDbQuerier.HelperOutput sqlWhereSecHelperForGpc(PreparedStatement prep, String asName, int curInd)
+	throws SQLException
+	{
+		String asSec = (asName==null) ? "" : (asName+".");
+
+		List<String> clauses = new ArrayList<String>(20);
+		
+		
+		// Range filters
+		if (this.rangeFilters.size()>0)
+		{
+			// Testing with the indices in my table shows that if you're doing a whole chromosome, you 
+			// NEVER want to put artificial filters on (like the "whole chromosome" filter we sometimes
+			// use.  So let's detect this.
+//			mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE ((cpg.chromPos>=0 AND cpg.chromPos<=5531960706)) AND  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) AND (chromPosEnd>0) AND (chromPosStart<5531960706) ORDER BY chromPos ;
+//			+----------+
+//			| count(*) |
+//			+----------+
+//			|    49327 |
+//			+----------+
+//			1 row in set (1 min 51.58 sec)
+//
+//			mysql> select straight_join count(*) from features_chr11, methylCGsRich_normal123009_chr11 cpg  WHERE  ((cpg.chromPos>=(chromPosStart)) AND (cpg.chromPos<=(chromPosEnd))  AND (featType = 'hg18.ES.H3K27me3.HMM.gtf'))  AND ((cpg.cReads+cpg.tReads) >= 4) AND ((cpg.totalReadsOpposite=0) OR ((cpg.aReadsOpposite/cpg.totalReadsOpposite)<=0.2)) ORDER BY chromPos ;
+//			+----------+
+//			| count(*) |
+//			+----------+
+//			|    49327 |
+//			+----------+
+//			1 row in set (0.11 sec)
+			
+			List<String> grClauses = new ArrayList<String>(this.rangeFilters.size());
+			for (GenomicRange gr : this.rangeFilters)
+			{
+				// Rule out infinite ones
+				if (!gr.isInfiniteChromRange())
+				{
+					String clause = String.format("(%schromPos>=? AND %schromPos<=?)", asSec, asSec);
+					grClauses.add(clause);
+					if (prep!=null)
+					{
+						prep.setInt(curInd++, gr.getStart());
+						prep.setInt(curInd++, gr.getEnd());
+						
+					}
+					
+				}
+				
+			}
+			clauses.add(grClauses.iterator().next());
+			clauses.add("preBaseRefUpperCase = 'G' AND nextBaseRefUpperCase != 'G' ");
+			if (grClauses.size()>1)//??? should be >1
+			{
+				ListUtils.setDelim(" OR ");
+				clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
+			}
+
+		}
+
+		// feat filters
+		
+		// minCTreads
+		if (this.minCTreads > 0)
+		{
+			String cSec = (this.useNonconversionFilter) ? String.format("%scReads", asSec) :
+				String.format("(%scReads+%scReadsNonconversionFilt)",asSec,asSec);
+			String clause = String.format("((%s+%stReads) >= ?)",cSec, asSec);
+			clauses.add(clause);
+			if (prep != null)
+			{
+				prep.setInt(curInd++, this.minCTreads);
+			}
+		}	
+		
+		//ListUtils.setDelim("");
+		
+		//String sql = ListUtils.excelLine(clauses.toArray(new String[1]));
+		String sql = clauses.iterator().next();
+
+		//String sql = String.format("%schromPos>=? AND %schromPos<=?", asSec, asSec);
+		return new MethylDbQuerier.HelperOutput(sql, curInd);
+	}
 
 	
 	
