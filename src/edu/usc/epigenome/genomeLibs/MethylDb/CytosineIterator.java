@@ -167,6 +167,8 @@ public class CytosineIterator implements Iterator<Cytosine> {
 					curRS.getShort("agReads"),
 					curRS.getShort("totalReadsOpposite"),
 					curRS.getShort("aReadsOpposite"),
+					curRS.getString("preBaseRefUpperCase"),
+					curRS.getString("nextBaseRefUpperCase"),
 					curRS.getDouble("fracMeth"),
 					curRS.getInt("gchWeight"),
 					curRS.getInt("gcgWeight"),
