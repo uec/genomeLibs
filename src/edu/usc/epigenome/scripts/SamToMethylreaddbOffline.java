@@ -41,6 +41,8 @@ public class SamToMethylreaddbOffline {
 	protected boolean useCpgsToFilter = false;
 	@Option(name="-minMapQ",usage="minimum mapping quality (default 0)")
 	protected int minMapQ = 0;
+	@Option(name="-insertMeanSize",usage="mean fragment insert size for end extension (default 250)")
+	protected int insertMeanSize = 250;
 	@Option(name="-debug",usage=" Debugging statements (default false)")
 	protected boolean debug = false;
 
@@ -48,6 +50,7 @@ public class SamToMethylreaddbOffline {
 	// receives other command line parameters than options
 	@Argument
 	private List<String> stringArgs = new ArrayList<String>();
+	private int insertMeanHalfSize = 0; 
 
 	
 	
@@ -82,6 +85,7 @@ public class SamToMethylreaddbOffline {
 			return;
 		}
 
+		insertMeanHalfSize = (int)Math.round(((float)this.insertMeanSize)/2.0);
 		
 		int recCounter = 0;
 		int usedCounter = 0;
@@ -265,9 +269,12 @@ public class SamToMethylreaddbOffline {
 		String out = null;
 		if (nCpg > 0)
 		{
-			out = String.format("%d\t%d\t%s\t%d\t%d\t%d",
-				s,
-				e,
+			int extensionMultiplier = (rec.getReadNegativeStrandFlag()) ? -1 : 1;
+			int mid = s + (extensionMultiplier * insertMeanHalfSize);
+			out = String.format("%d\t%s\t%d\t%d\t%d",
+//				s,
+//				e,
+				mid,
 				strand,
 				nCpg,
 				nCpgMeth,
