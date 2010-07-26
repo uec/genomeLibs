@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.biojava.bio.seq.StrandedFeature;
 
@@ -33,6 +34,9 @@ public class Cpg implements Comparable, Cloneable {
 	
 	// This is for weighted averages
 	protected double cpgWeight = Double.NaN;
+	
+	// Read info
+	protected Map<Integer,CpgRead> readMap = new TreeMap<Integer,CpgRead>();
 
 
 
@@ -89,6 +93,54 @@ public class Cpg implements Comparable, Cloneable {
 		// It's actually divided by two since we're looking at both strands.
 		this.cpgWeight = (double)cpgWeight/2.0;
 	}
+	
+	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
+			short cReadsNonconversionFilt, short tReads, short agReads,
+			short totalReadsOpposite, short aReadsOpposite, int cpgWeight,
+			short nextBaseGreads, short nextBaseTotalReads, char nextBaseRefUpperCase)
+	 {
+		super();
+		this.chromPos = chromPos;
+		this.negStrand = negStrand;
+		this.totalReads = totalReads;
+		this.cReads = cReads;
+		this.cReadsNonconversionFilt = cReadsNonconversionFilt;
+		this.tReads = tReads;
+		this.agReads = agReads;
+		this.totalReadsOpposite = totalReadsOpposite;
+		this.aReadsOpposite = aReadsOpposite;
+		
+		this.nextBaseGreads = nextBaseGreads;
+		this.nextBaseTotalReads = nextBaseTotalReads;
+		this.nextBaseRefUpperCase = nextBaseRefUpperCase;
+		
+		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
+		if (cpgWeight < 0)
+		{
+			System.err.printf("Got negative cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
+			cpgWeight = 100;
+		}
+		else if (cpgWeight > 5000)
+		{
+			System.err.printf("Got extra-large cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
+			cpgWeight = 100;
+		}
+		
+		// It's actually divided by two since we're looking at both strands.
+		this.cpgWeight = (double)cpgWeight/2.0;
+	}
+	
+	/*** Read information ***/
+	public void addRead(CpgRead read)
+	{
+		readMap.put(read.readId, read);
+	}
+	
+	public Map<Integer,CpgRead> getReads()
+	{
+		return readMap;
+	}
+	
 	
 	/*** Overridden Comparable methods
 	 */
@@ -174,13 +226,13 @@ public class Cpg implements Comparable, Cloneable {
 		return String.format("%d\t%f",chromPos, this.fracMeth(useNonconvFilter));
 	}
 
-	public static void outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr)
+	public static void outputCpgsToFile(PrintWriter pw, Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, int minCphCoverage, double minCphMethFrac)
 	throws IOException
 	{
-		outputChromToFile(cpgMap, prefix, sampleName, chr, 0, 0.0);
+		outputCpgsToFile(false, pw, cpgMap, prefix, sampleName, chr, minCphCoverage, minCphMethFrac);
 	}
 	
-	public static void outputCpgsToFile(PrintWriter pw, Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, int minCphCoverage, double minCphMethFrac)
+	public static void outputCpgsToFile(boolean readFormat, PrintWriter pw, Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, int minCphCoverage, double minCphMethFrac)
 	throws IOException
 	{
 		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
@@ -196,19 +248,35 @@ public class Cpg implements Comparable, Cloneable {
 				}
 			}
 			
-			String line = cpg.toString();
-			pw.println(line);
+			String line = (readFormat) ? cpg.toReadFormatString() : cpg.toString();
+			pw.print(line);
+			if (!readFormat) pw.println();
 		}
 	}
 	
+
+
 	public static PrintWriter outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, int minCphCoverage, double minCphMethFrac)
+	throws IOException
+	{
+		return outputChromToFile(false, cpgMap, prefix, sampleName, chr,  minCphCoverage, minCphMethFrac);
+	}
+		
+	public static void outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr)
+	throws IOException
+	{
+		outputChromToFile(cpgMap, prefix, sampleName, chr, 0, 0.0);
+	}
+	
+	public static PrintWriter outputChromToFile(boolean readFormat, Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, 
+			int minCphCoverage, double minCphMethFrac)
 	throws IOException
 	{
 		
 		String fn = prefix + sampleName + "_" + chr + ".txt";
 		PrintWriter writer = new PrintWriter(new File(fn));
 		
-		outputCpgsToFile(writer, cpgMap, prefix, sampleName, chr, minCphCoverage, minCphMethFrac);
+		outputCpgsToFile(readFormat, writer, cpgMap, prefix, sampleName, chr, minCphCoverage, minCphMethFrac);
 		
 		//writer.close();
 		return writer;
@@ -259,7 +327,54 @@ public class Cpg implements Comparable, Cloneable {
 				);
 	}
 	
+	public String toReadFormatString() {
+		
+		StringBuffer sb = new StringBuffer(100*this.readMap.size());
+		Iterator<CpgRead> readIt = this.readMap.values().iterator();
+		while (readIt.hasNext())
+		{
+			CpgRead read = readIt.next();
+			
 
+			sb.append(String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f\n", 
+					chromPos,
+					((negStrand) ? '-' : '+'),
+					read.readId,
+					
+					read.cRead,
+					read.cReadNonconversionFilt,
+					read.tRead,
+					read.agRead,
+					
+					totalReadsOpposite,
+					aReadsOpposite,
+					
+					read.nextBaseGread,
+					read.nextBaseUpperCase,
+					
+					this.cpgWeight
+			));
+		}
+
+//		  `chromPos` INT UNSIGNED NOT NULL,
+//		  `strand` enum('+','-') NOT NULL,
+//		  `readId` INT UNSIGNED	NOT NULL,
+//
+//		  `cRead` SMALLINT UNSIGNED NOT	NULL,
+//		  `cReadNonconversionFilt` SMALLINT UNSIGNED NOT NULL,
+//		  `tRead` SMALLINT UNSIGNED NOT NULL,
+//		  `agRead` SMALLINT UNSIGNED NOT NULL,
+//
+//		  `totalReadsOpposite` SMALLINT UNSIGNED NOT NULL,
+//		  `aReadsOpposite` SMALLINT UNSIGNED NOT NULL,
+//
+//		  `nextBaseGread` SMALLINT UNSIGNED NULL default '0',
+//		  `cpgWeight` SMALLINT UNSIGNED NOT NULL,
+
+		return sb.toString();
+	}
+	
+	
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		Cpg out = (Cpg)super.clone();
