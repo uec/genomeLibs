@@ -18,6 +18,6 @@ public class CpgWalkerParams {
 	public int minScanningWindSize = 0;
 	
 	
-//	public MethylDbQuerier methylParams = null;
+	public MethylDbQuerier methylParams = null;
 
 }
