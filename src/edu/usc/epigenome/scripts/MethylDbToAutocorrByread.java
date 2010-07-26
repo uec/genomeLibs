@@ -135,7 +135,6 @@ public class MethylDbToAutocorrByread {
 				
 			// Setup streaming params
 			MethylDbQuerier params = new MethylDbQuerier();
-			params.setFeatureTablePrefix(withinFeat);
 			params.setMethylTablePrefix(this.table);
 			params.setReadTableSchema();
 			params.setMinCTreads(this.minCTreads);
