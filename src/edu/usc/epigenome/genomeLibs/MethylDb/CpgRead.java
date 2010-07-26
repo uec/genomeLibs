@@ -51,5 +51,18 @@ public class CpgRead {
 	}
 
 
+	public boolean validCg(boolean useNonconvFilt)
+	{
+		return 
+			(agRead == 0) &&
+			(nextBaseGread != 0) &&
+			(!useNonconvFilt || (cReadNonconversionFilt==0));
+	}
 	
+	public boolean meth(boolean useNonconvFilt)
+	{
+		return
+			(cRead > 0) ||
+			(!useNonconvFilt && (cReadNonconversionFilt > 0));
+	}
 }
