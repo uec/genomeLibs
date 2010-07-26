@@ -42,6 +42,9 @@ public class MethylDbQuerier {
 	protected double maxOppstrandAfrac = 0.1; // Double.MAX_VALUE;
 	protected double maxNextNonGfrac = 0.1; // Double.MAX_VALUE;
 	
+	// Schema
+	protected String schema = "methylCGsRich";
+	
 	
 	public void clearFeatFilters()
 	{
@@ -253,8 +256,36 @@ public class MethylDbQuerier {
 	public void setMaxNextNonGfrac(double maxNextNonGfrac) {
 		this.maxNextNonGfrac = maxNextNonGfrac;
 	}
+	
+	/**
+	 * @return the schema
+	 */
+	public String getSchema() {
+		return schema;
+	}
+
+	public boolean useReadTableSchema()
+	{
+		return schema.equals("methylReadCG");
+	}
+	
+	/**
+	 * @param schema the schema to set
+	 */
+	public void setSchema(String schema) {
+		this.schema = schema;
+	}
+	
+	public void setReadTableSchema()
+	{
+		this.schema = "methylReadCG";
+	}
+	
+	
+
 
 	/******* PUBLIC DB STUFF ********/
+
 
 
 	/**
@@ -411,7 +442,7 @@ public class MethylDbQuerier {
 		}
 
 		// minCTreads
-		if (this.minCTreads > 0)
+		if (!this.useReadTableSchema() && (this.minCTreads > 0))
 		{
 			String cSec = (this.useNonconversionFilter) ? String.format("%scReads", asSec) :
 				String.format("(%scReads+%scReadsNonconversionFilt)",asSec,asSec);
@@ -425,7 +456,7 @@ public class MethylDbQuerier {
 		
 		
 		// oppstrand gtoa ratio (IMR90 and H1 might have total set to 0)
-		if (this.maxOppstrandAfrac < 1.0)
+		if (!this.useReadTableSchema() && (this.maxOppstrandAfrac < 1.0))
 		{
 			String clause = String.format("((%stotalReadsOpposite=0) OR ((%saReadsOpposite/%stotalReadsOpposite)<=?))",asSec, asSec, asSec);
 			clauses.add(clause);
@@ -436,7 +467,7 @@ public class MethylDbQuerier {
 		}
 		
 		// next base G ratio (IMR90 and H1 might have total set to 0)
-		if (this.maxNextNonGfrac < 1.0)
+		if (!this.useReadTableSchema() && (this.maxNextNonGfrac < 1.0))
 		{
 			String clause = String.format("((%snextBaseTotalReads=0) OR ((%snextBaseGreads/%snextBaseTotalReads)>=?))",asSec, asSec, asSec);
 			clauses.add(clause);
