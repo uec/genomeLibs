@@ -65,4 +65,19 @@ public class CpgRead {
 			(cRead > 0) ||
 			(!useNonconvFilt && (cReadNonconversionFilt > 0));
 	}
+	
+
+	@Override
+	public String toString() {
+
+		return String.format("%d\t%d\t%d\t%d\t%d\t%d\t%c", 
+						readId,
+						cRead,
+						cReadNonconversionFilt,
+						tRead,
+						agRead,
+						nextBaseGread,
+						nextBaseUpperCase
+		);
+	}
 }

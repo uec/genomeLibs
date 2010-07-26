@@ -170,20 +170,20 @@ public class CpgIterator implements Iterator<Cpg> {
 									(short)0,
 									curRS.getString("nextBaseUpperCase").charAt(0)
 							);
-							System.err.println("New CpG at " + thisChromPos);
+							//System.err.println("New CpG at " + thisChromPos);
 						}
 
 						// Are we finished?
 						if (curChrPos != thisChromPos)
 						{
-							System.err.println("\tFinished CpG at " + thisChromPos);
+							// System.err.println("\tFinished CpG at " + thisChromPos);
 							finished = true;
 							// Rewind
 							curRS.previous(); // Roll back
 						}
 						else
 						{
-							System.err.println("\tAdding to CpG at " + thisChromPos);
+							//System.err.println("\tAdding to CpG at " + thisChromPos);
 							CpgRead read = new CpgRead(
 									curRS.getInt("readId"),
 									curRS.getShort("cRead"),

@@ -265,7 +265,8 @@ public class CpgWalker implements TabularOutput {
 	 */
 	public void streamCpg(Cpg cpg)
 	{
-		//System.err.println("useFixedStep=" + walkParams.useFixedStep);
+		//System.err.println("Streaming CpG: " + cpg.toStringExpanded());
+		//System.err.println("\tuseFixedStep=" + !this.walkParams.useVariableWindow);
 		if (this.walkParams.useVariableWindow)
 		{
 			this.streamCpgVariableWind(cpg);

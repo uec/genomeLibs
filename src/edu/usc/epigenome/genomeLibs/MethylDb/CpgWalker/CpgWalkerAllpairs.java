@@ -6,6 +6,7 @@ import java.util.*;
 public abstract class CpgWalkerAllpairs extends CpgWalker {
 	
 	protected boolean samestrandOnly = false;
+	protected boolean oppstrandOnly = false;
 
 	/**
 	 * @param inWalkParams
@@ -13,6 +14,12 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 	public CpgWalkerAllpairs(CpgWalkerParams inWalkParams, boolean inSamestrandOnly) {
 		super(inWalkParams);
 		this.samestrandOnly = inSamestrandOnly;
+	}
+
+	public CpgWalkerAllpairs(CpgWalkerParams inWalkParams, boolean inSamestrandOnly, boolean inOppstrandOnly) {
+		super(inWalkParams);
+		this.samestrandOnly = inSamestrandOnly;
+		this.oppstrandOnly = inOppstrandOnly;
 	}
 
 	@Override
@@ -34,6 +41,10 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 			{
 				//System.err.println("Using same strand only");
 				process = (prior.getStrand() == head.getStrand());
+			}
+			else if (this.oppstrandOnly)
+			{
+				process = (prior.getStrand() != head.getStrand());
 			}
 			
 			if (process)

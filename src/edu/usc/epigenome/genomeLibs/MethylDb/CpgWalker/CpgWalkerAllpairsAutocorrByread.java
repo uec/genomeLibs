@@ -12,12 +12,7 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 //import com.mallardsoft.tuple.Tuple;
 
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
-import edu.usc.epigenome.genomeLibs.ListUtils;
-import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgRead;
 
@@ -40,8 +35,8 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected int[] nU;
 	
 	
-	public CpgWalkerAllpairsAutocorrByread(CpgWalkerParams inWalkParams, boolean inSamestrandOnly, boolean inSameRead, boolean inDifferentRead) {
-		super(inWalkParams, inSamestrandOnly);
+	public CpgWalkerAllpairsAutocorrByread(CpgWalkerParams inWalkParams, boolean inSamestrandOnly, boolean inOppstrandOnly, boolean inSameRead, boolean inDifferentRead) {
+		super(inWalkParams, inSamestrandOnly, inOppstrandOnly);
 		
 		if (inSameRead && inDifferentRead)
 		{
@@ -82,7 +77,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected void recordPair(Cpg a, Cpg b)
 	{
 		// Get the distance
-		int dist = b.chromPos - a.chromPos;
+		int dist = b.chromPos - a.chromPos - 1;
 		
 //		Map<Integer,CpgRead> aCgReads = a.getReads();
 //		Map<Integer,CpgRead> bCgReads = b.getReads();
@@ -90,13 +85,10 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		Collection<CpgRead> aCgReads = a.getReads().values();
 		Collection<CpgRead> bCgReads = b.getReads().values();
 
-		System.err.println("Here2!");
-
 		for (CpgRead aCgRead : aCgReads)
 		{
-			System.err.println("Here2!");
-			boolean aCg = aCgRead.validCg(true);
-			if (!aCg) System.err.println("Got non-cg cytosine: " + a.toStringExpanded()); // COMMENT OUT
+			boolean aCg = aCgRead.validCg( (this.walkParams.methylParams==null) || this.walkParams.methylParams.getUseNonconversionFilter());
+			//if (!aCg) System.err.println("Got an uncounted cytosine (A): " + a.toString() + "\n\t" + aCgRead.toString()); // COMMENT OUT
 			if (aCg)
 			{
 				int aReadId = aCgRead.readId;
@@ -104,8 +96,8 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 
 				for (CpgRead bCgRead : bCgReads)
 				{
-					boolean bCg = bCgRead.validCg(true);
-					if (!bCg) System.err.println("Got non-cg cytosine: " + b.toStringExpanded());  // COMMENT OUT
+					boolean bCg = bCgRead.validCg( (this.walkParams.methylParams==null) || this.walkParams.methylParams.getUseNonconversionFilter());
+					//if (!bCg) System.err.println("Got uncounted cytosine (B): " + b.toString() + "\n\t" +  bCgRead.toString());  // COMMENT OUT
 					if (bCg)
 					{
 						int bReadId = bCgRead.readId;
@@ -129,7 +121,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 							}
 							else
 							{
-								nMU[dist]+=2;
+								nMU[dist]++;
 							}
 							
 
@@ -157,7 +149,8 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	{
 		StringBuffer sb = new StringBuffer((int)1E5);
 		
-		sb.append(String.format("readType = %d,\tsamestrand=%s\n", this.readType, (this.samestrandOnly)?"true":"false"  ));
+		//sb.append(String.format("readType = %d,\tsamestrand=%s\n", this.readType, (this.samestrandOnly)?"true":"false"  ));
+		sb.append(String.format("%s,%s,%s,%s,%s,%s","Distance","nM","nU","nMM","nMU","nUU"));
 		
 		//System.err.println("Header="+sb.length());
 		return sb.toString();
@@ -193,7 +186,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 
 		for (int i = 0; i < nMM.length; i++)
 		{
-			sb.append(String.format("%d,%d,%d,%d,%d,%d\n",i,nM[i],nU[i],nMM[i],nMU[i],nUU[i]));
+			sb.append(String.format("%d,%d,%d,%d,%d,%d\n",i+1,nM[i],nU[i],nMM[i],nMU[i],nUU[i]));
 		}
 		
 		return sb.toString();
