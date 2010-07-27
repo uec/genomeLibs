@@ -5,7 +5,7 @@ use File::Temp qw/ tempfile tempdir /;
 use strict;
 use Getopt::Long;
 
-my $USAGE = "generateBamsToMethylChromTables.pl [--noremoveTemps] tablePrefix f1.bam f2.bam f3.bam ...";
+my $USAGE = "generateBamsToMethylChromTables.pl [--noremoveTemps] [--useReadCGschema] tablePrefix f1.bam f2.bam f3.bam ...";
 my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
 	       "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
 	       "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM");
@@ -13,7 +13,8 @@ my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "
 
 my $SAMDIR = "/home/uec-00/bberman/bin";
 my $RMTMPS = 0;
-GetOptions ('removeTemps!' => \$RMTMPS) || die "$USAGE\n";
+my $useReadCGschema = 0;
+GetOptions ('removeTemps!' => \$RMTMPS, 'useReadCGschema!' => \$useReadCGschema) || die "$USAGE\n";
 
 print STDERR "removeTemps=${RMTMPS}\n";
 
@@ -63,7 +64,15 @@ foreach my $region (@regions)
 
     # Convert to methyldb table
     my $cmd = "export CLASSPATH=/home/rcf-40/bberman/svn/genomeLibs/trunk/genomeLibs.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/UscKeck.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/sam-1.07.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/apps-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/biojava-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/bytecode.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/commons-math-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-cli.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-collections-2.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-dbcp-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-pool-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/demos-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/jgrapht-jdk1.5.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/junit-4.4.jar\n";
-    $cmd .= "java -Xmx4000m edu.usc.epigenome.scripts.SamToMethyldbOffline -minConv 1 -useCpgsToFilter -minMapQ 30 -chrom ${region} ${newname} $mergeBamFn";
+
+	if ($useReadCGschema)
+	{
+    	$cmd .= "java -Xmx4000m edu.usc.epigenome.scripts.SamToMethylreadCGdbOffline -chrom ${region} -minMapQ 30 ${newname} $mergeBamFn";
+	}
+	else
+	{
+    	$cmd .= "java -Xmx4000m edu.usc.epigenome.scripts.SamToMethyldbOffline -minConv 1 -useCpgsToFilter -minMapQ 30 -chrom ${region} ${newname} $mergeBamFn";
+	}
 
     my $curJobids = [runCmd($tmpDir,$cmd, "B2REG_createMehylTable", [$mergeJobid])];
 
