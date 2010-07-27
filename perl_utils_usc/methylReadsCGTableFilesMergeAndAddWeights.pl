@@ -161,7 +161,7 @@ sub fillChromHash
 			my $replace = 0;
 			$replace = 1 if (($f[11] =~ /^[0-9]+$/i) || ($f[11] =~ /^nan$/i));
 			
-			print STDERR "replace=$replace, numFlds = " . scalar(@f) . "\n";
+			#print STDERR "replace=$replace, numFlds = " . scalar(@f) . "\n";
 			if (scalar(@f)>=12)
 			{
 				splice(@f, 11, ($replace) ? 1 : 0, $weight);
