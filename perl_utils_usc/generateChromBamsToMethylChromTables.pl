@@ -19,7 +19,7 @@ GetOptions ('removeTemps!' => \$RMTMPS, 'useReadCGschema!' => \$useReadCGschema)
 print STDERR "removeTemps=${RMTMPS}\n";
 
 # Input params
-die "$USAGE\n" unless (@ARGV!=3);
+die "$USAGE\n" unless (@ARGV==3);
 my ($newname , $bamPrefix, $bamSuffix) = @ARGV;
 
 
