@@ -37,13 +37,14 @@ public abstract class CpgWalkerAllpairs extends CpgWalker {
 			Cpg prior = inWindow.get(i);
 			
 			boolean process = true;
-			if (samestrandOnly)
+			if (this.samestrandOnly)
 			{
-				//System.err.println("Using same strand only");
+				//System.err.printf("Using same strand only: strand1=%s,\tstrand2=%s\n",prior.getStrandStr(), head.getStrandStr());
 				process = (prior.getStrand() == head.getStrand());
 			}
 			else if (this.oppstrandOnly)
 			{
+				//System.err.printf("Using opp strand only: strand1=%s,\tstrand2=%s\n",prior.getStrandStr(), head.getStrandStr());
 				process = (prior.getStrand() != head.getStrand());
 			}
 			
