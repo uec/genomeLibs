@@ -151,26 +151,26 @@ public class CpgIterator implements Iterator<Cpg> {
 					finished = (!curRS.next());
 					if (!finished)
 					{
-						int thisChromPos = curRS.getInt("chromPos");
+						int thisChromPos = curRS.getInt("cpg.chromPos");
 
 						if (onRead == 0)
 						{
 							curChrPos = thisChromPos;
 							out = new Cpg(thisChromPos,
-									curRS.getString("strand").equals("-"),
+									curRS.getString("cpg.strand").equals("-"),
 									(short)0,
 									(short)0,
 									(short)0,
 									(short)0,
 									(short)0,
-									curRS.getShort("totalReadsOpposite"),
-									curRS.getShort("aReadsOpposite"),
-									curRS.getInt("cpgWeight"),
+									curRS.getShort("cpg.totalReadsOpposite"),
+									curRS.getShort("cpg.aReadsOpposite"),
+									curRS.getInt("cpg.cpgWeight"),
 									(short)0,
 									(short)0,
-									curRS.getString("nextBaseUpperCase").charAt(0)
+									curRS.getString("cpg.nextBaseUpperCase").charAt(0)
 							);
-							//System.err.println("New CpG at " + thisChromPos);
+							//System.err.println("New CpG at " + thisChromPos + " strand=" + out.getStrandStr() + "\tdbstrand=" + curRS.getString("cpg.strand"));
 						}
 
 						// Are we finished?
@@ -185,13 +185,13 @@ public class CpgIterator implements Iterator<Cpg> {
 						{
 							//System.err.println("\tAdding to CpG at " + thisChromPos);
 							CpgRead read = new CpgRead(
-									curRS.getInt("readId"),
-									curRS.getShort("cRead"),
-									curRS.getShort("cReadNonconversionFilt"),
-									curRS.getShort("tRead"),
-									curRS.getShort("agRead"),
-									curRS.getShort("nextBaseGread"),
-									curRS.getString("nextBaseUpperCase").charAt(0)
+									curRS.getInt("cpg.readId"),
+									curRS.getShort("cpg.cRead"),
+									curRS.getShort("cpg.cReadNonconversionFilt"),
+									curRS.getShort("cpg.tRead"),
+									curRS.getShort("cpg.agRead"),
+									curRS.getShort("cpg.nextBaseGread"),
+									curRS.getString("cpg.nextBaseUpperCase").charAt(0)
 							);
 							out.addRead(read);
 							// Increment
@@ -206,18 +206,18 @@ public class CpgIterator implements Iterator<Cpg> {
 			{
 				curRS.next();
 
-				out = new Cpg(curRS.getInt("chromPos"),
-						curRS.getString("strand").equals("-"),
-						curRS.getShort("totalReads"),
-						curRS.getShort("cReads"),
-						curRS.getShort("cReadsNonconversionFilt"),
-						curRS.getShort("tReads"),
-						curRS.getShort("agReads"),
-						curRS.getShort("totalReadsOpposite"),
-						curRS.getShort("aReadsOpposite"),
-						curRS.getInt("cpgWeight"),
-						curRS.getShort("nextBaseGreads"),
-						curRS.getShort("nextBaseTotalReads"),
+				out = new Cpg(curRS.getInt("cpg.chromPos"),
+						curRS.getString("cpg.strand").equals("-"),
+						curRS.getShort("cpg.totalReads"),
+						curRS.getShort("cpg.cReads"),
+						curRS.getShort("cpg.cReadsNonconversionFilt"),
+						curRS.getShort("cpg.tReads"),
+						curRS.getShort("cpg.agReads"),
+						curRS.getShort("cpg.totalReadsOpposite"),
+						curRS.getShort("cpg.aReadsOpposite"),
+						curRS.getInt("cpg.cpgWeight"),
+						curRS.getShort("cpg.nextBaseGreads"),
+						curRS.getShort("cpg.nextBaseTotalReads"),
 						'0'
 						);
 			}
