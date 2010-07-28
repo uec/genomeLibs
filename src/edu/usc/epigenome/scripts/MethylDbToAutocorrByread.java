@@ -22,6 +22,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgMethLevelSummarizer;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerAllpairs;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerAllpairsAutocorrByread;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerAllpairsBinnedAutocorr;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerAllpairsPearsonAutocorr;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
@@ -124,15 +125,8 @@ public class MethylDbToAutocorrByread {
 		for (String withinFeat : withinFeats)
 		{
 
-			// Setup output files
 
-				String tab = this.table;
 
-				String featSec = String.format(".%s-f%d", (withinFeat==null)?"all":withinFeat, this.featFlank);
-				String outFn = String.format("Autocorr.%s.%s%s.wind%d.csv", 
-						this.outPrefix, tab, featSec, this.windSize);
-				PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
-				
 			// Setup streaming params
 			MethylDbQuerier params = new MethylDbQuerier();
 			params.setMethylTablePrefix(this.table);
@@ -148,6 +142,7 @@ public class MethylDbToAutocorrByread {
 			walkerParams.maxScanningWindSize = this.windSize;
 			walkerParams.minScanningWindSize = this.windSize;
 			walkerParams.minScanningWindCpgs = 2;
+			walkerParams.methylParams = params;
 
 			
 			// For the background, it makes a big difference whether we add this filter
@@ -155,16 +150,53 @@ public class MethylDbToAutocorrByread {
 			if (withinFeat!=null) params.addFeatFilter(withinFeat, this.featFlank);
 
 
+			// Setup output files and autocorrs
+			List<CpgWalkerAllpairs> autocorrs = new ArrayList<CpgWalkerAllpairs>(10);
+			List<PrintWriter> pws = new ArrayList<PrintWriter>(10);
+			
+			String tab = this.table;
+			String featSec = String.format(".%s-f%d", (withinFeat==null)?"all":withinFeat, this.featFlank);
+			String outFnPrefix = String.format("Autocorr.%s.%s%s.wind%d", 
+					this.outPrefix, tab, featSec, this.windSize);
+			
+			final int N_CONDITIONS = 5;
+			for (int i = 1; i <= N_CONDITIONS; i++)
+			{
+				String typeStr = null;
+				boolean sameStrand = false;
+				boolean oppStrand = false;
+				boolean sameRead = false;
+				boolean differentRead = false;
+				
+				switch(i)
+				{
+				case 1: typeStr = "anyStrandAnyRead" ; sameStrand=false; oppStrand=false; sameRead=false; differentRead=false; break;
+				case 2: typeStr = "oppStrandAnyRead" ; sameStrand=false; oppStrand=true; sameRead=false; differentRead=false; break;
+				case 3: typeStr = "sameStrandAnyRead" ; sameStrand=true; oppStrand=false; sameRead=false; differentRead=false; break;
+				case 4: typeStr = "sameStrandSameRead" ; sameStrand=true; oppStrand=false; sameRead=true; differentRead=false; break;
+				case 5: typeStr = "sameStrandDifferentRead" ; sameStrand=true; oppStrand=false; sameRead=false; differentRead=true; break;
+				}
+				
+				PrintWriter pw = new PrintWriter(new FileOutputStream(outFnPrefix + "-" + typeStr + ".csv"));
+				pws.add(pw);
+				CpgWalkerAllpairs autocorr = new CpgWalkerAllpairsAutocorrByread(walkerParams, sameStrand, oppStrand, sameRead, differentRead);
+				autocorrs.add(autocorr);
+				pw.println(autocorr.headerStr());
+			}
+			
 			// And run
-			CpgWalkerAllpairs autocorr = new CpgWalkerAllpairsPearsonAutocorr(walkerParams, true, null, null);
-			pw.println(autocorr.headerStr());
-			this.streamAutocorrs(params, walkerParams, autocorr);
+			this.streamAutocorrs(params, walkerParams, autocorrs);
 
 
 
 			// Print autocorrs and close
-			pw.append(autocorr.toCsvStr());
-			pw.close();
+			for (int i = 0; i < N_CONDITIONS; i++)
+			{
+				PrintWriter pw = pws.get(i);
+				CpgWalkerAllpairs autocorr = autocorrs.get(i);
+				pw.append(autocorr.toCsvStr());
+				pw.close();
+			}
 
 		}
 
@@ -180,13 +212,13 @@ public class MethylDbToAutocorrByread {
 	 * @return
 	 * @throws Exception
 	 */
-	private CpgWalkerAllpairs streamAutocorrs(MethylDbQuerier params, CpgWalkerParams walkerParams,
-			CpgWalkerAllpairs autocorr) 
+	private void streamAutocorrs(MethylDbQuerier params, CpgWalkerParams walkerParams,
+			List<CpgWalkerAllpairs> autocorrs) 
 	throws Exception
 	{
 
 
-		for (String chr : Arrays.asList("chr1"))// MethylDbUtils.CHROMS) //  
+		for (String chr : MethylDbUtils.CHROMS) //  Arrays.asList("chr2","chr3"))// 
 		{
 
 
@@ -195,9 +227,9 @@ public class MethylDbToAutocorrByread {
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
 
-			MINCOORD = 7000000;
-			MAXCOORD = 7001000;
-			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
+//			MINCOORD = 7000000;
+//			MAXCOORD = 20000000;
+//			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
 			
 
 			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
@@ -211,17 +243,21 @@ public class MethylDbToAutocorrByread {
 				while (cpgit.hasNext())
 				{
 					Cpg cpg = cpgit.next();
-					//autocorr.streamCpg(cpg);
+					
+					for (CpgWalkerAllpairs autocorr : autocorrs)
+					{
+						autocorr.streamCpg(cpg);
+					}
 
-					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, autocorr.windStr());
+					CpgWalkerAllpairs firstAutocorr = autocorrs.get(0);
+					
+					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, firstAutocorr.windStr());
 					onCpg++;
 				}
 
 
 			}
 		}
-		
-		return autocorr;
 	}
 	
 
