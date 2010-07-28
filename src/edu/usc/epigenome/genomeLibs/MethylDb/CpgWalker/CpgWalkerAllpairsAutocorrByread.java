@@ -85,6 +85,8 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		Collection<CpgRead> aCgReads = a.getReads().values();
 		Collection<CpgRead> bCgReads = b.getReads().values();
 
+		//System.err.println("Comparing CpG (A): " + a.toString() + "\tdist=" + dist);
+
 		for (CpgRead aCgRead : aCgReads)
 		{
 			boolean aCg = aCgRead.validCg( (this.walkParams.methylParams==null) || this.walkParams.methylParams.getUseNonconversionFilter());
