@@ -163,8 +163,8 @@ public class CpgIterator implements Iterator<Cpg> {
 									(short)0,
 									(short)0,
 									(short)0,
-									curRS.getShort("cpg.totalReadsOpposite"),
-									curRS.getShort("cpg.aReadsOpposite"),
+									(short)curRS.getInt("cpg.totalReadsOpposite"),
+									(short)curRS.getInt("cpg.aReadsOpposite"),
 									curRS.getInt("cpg.cpgWeight"),
 									(short)0,
 									(short)0,
@@ -186,11 +186,11 @@ public class CpgIterator implements Iterator<Cpg> {
 							//System.err.println("\tAdding to CpG at " + thisChromPos);
 							CpgRead read = new CpgRead(
 									curRS.getInt("cpg.readId"),
-									curRS.getShort("cpg.cRead"),
-									curRS.getShort("cpg.cReadNonconversionFilt"),
-									curRS.getShort("cpg.tRead"),
-									curRS.getShort("cpg.agRead"),
-									curRS.getShort("cpg.nextBaseGread"),
+									(short)curRS.getInt("cpg.cRead"),
+									(short)curRS.getInt("cpg.cReadNonconversionFilt"),
+									(short)curRS.getInt("cpg.tRead"),
+									(short)curRS.getInt("cpg.agRead"),
+									(short)curRS.getInt("cpg.nextBaseGread"),
 									curRS.getString("cpg.nextBaseUpperCase").charAt(0)
 							);
 							out.addRead(read);
@@ -208,16 +208,16 @@ public class CpgIterator implements Iterator<Cpg> {
 
 				out = new Cpg(curRS.getInt("cpg.chromPos"),
 						curRS.getString("cpg.strand").equals("-"),
-						curRS.getShort("cpg.totalReads"),
-						curRS.getShort("cpg.cReads"),
-						curRS.getShort("cpg.cReadsNonconversionFilt"),
-						curRS.getShort("cpg.tReads"),
-						curRS.getShort("cpg.agReads"),
-						curRS.getShort("cpg.totalReadsOpposite"),
-						curRS.getShort("cpg.aReadsOpposite"),
+						(short)curRS.getInt("cpg.totalReads"),
+						(short)curRS.getInt("cpg.cReads"),
+						(short)curRS.getInt("cpg.cReadsNonconversionFilt"),
+						(short)curRS.getInt("cpg.tReads"),
+						(short)curRS.getInt("cpg.agReads"),
+						(short)curRS.getInt("cpg.totalReadsOpposite"),
+						(short)curRS.getInt("cpg.aReadsOpposite"),
 						curRS.getInt("cpg.cpgWeight"),
-						curRS.getShort("cpg.nextBaseGreads"),
-						curRS.getShort("cpg.nextBaseTotalReads"),
+						(short)curRS.getInt("cpg.nextBaseGreads"),
+						(short)curRS.getInt("cpg.nextBaseTotalReads"),
 						'0'
 						);
 			}
