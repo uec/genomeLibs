@@ -199,7 +199,7 @@ public class MethylDbToMotifDensity {
 			
 
 
-		for (String chr : Arrays.asList("chr22")) // MethylDbUtils.CHROMS) //  
+		for (String chr : Arrays.asList("chr2","chr3")) // MethylDbUtils.CHROMS) //  
 		{
 
 			
@@ -283,7 +283,9 @@ public class MethylDbToMotifDensity {
 	protected int countMotifs(ChromScoresFast scores, String chr, int coordCenter)
 	throws Exception
 	{
-		return countMotifs(scores, chr, coordCenter-this.halfWind, coordCenter+this.halfWind);
+		int s = Math.max(1, coordCenter-this.halfWind);
+		int e = Math.min(scores.chromMaxPos(chr), coordCenter+this.halfWind);
+		return countMotifs(scores, chr, s, e);
 	}
 	
 	protected int countMotifs(ChromScoresFast scores, String chr, int s, int e)
