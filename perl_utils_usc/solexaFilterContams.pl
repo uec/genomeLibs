@@ -18,6 +18,8 @@ foreach my $f (@files)
     die "Can't write to $outadapters\n" unless (open(OUTADAPTERS,">$outadapters"));
     my $outadaptertrim = $f; $outadaptertrim =~ s/\.(\w+)$/.contam.adapterTrim\.$1/g;
     die "Can't write to $outadaptertrim\n" unless (open(OUTADAPTERTRIM,">$outadaptertrim"));
+    my $outadaptertrimcounts = $f; $outadaptertrimcounts =~ s/\.(\w+)$/.contam.adapterTrimCounts\.$1/g;
+    die "Can't write to $outadaptertrimcounts\n" unless (open(OUTADAPTERTRIMCOUNTS,">$outadaptertrimcounts"));
     my $outnoc = $f; $outnoc =~ s/\.(\w+)$/.nocontam\.$1/g;
     die "Can't write to $outnoc\n" unless (open(OUTNOC,">$outnoc"));
 
@@ -74,7 +76,9 @@ foreach my $f (@files)
 		   ($seq_line =~ /[CT]GGTT[CT]AG[CT]AGGAATG[CT][CT]/i) || # Flavor 3
 		   ($seq_line =~ /T[CT]GGTT[CT]AG[CT]AGGAATG[CT][CT]/i)) # Flavor 4
 	    {
-		print OUTADAPTERTRIM $seq_so_far;
+			print OUTADAPTERTRIMCOUNTS length($`) . "\n"; 
+			print OUTADAPTERTRIM $seq_so_far;
+			
 	    }
 	    # Should we check for them at the end?
 	    else
