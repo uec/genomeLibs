@@ -369,9 +369,13 @@ public class MethylDbToNucleosomeComparisonContinuous {
 				boolean cpg = meths[0].getScore(chr, coord).doubleValue() > 0.0;
 				
 				// Increment the totals count
-				if (this.autoMnase || this.autoMnaseFw || this.autoMnaseRev)
+				if (this.autoMnaseRev || this.autoMnaseFw)
 				{
 					methCounts[i] += 1.0;
+				}
+				else if (this.autoMnase)
+				{
+					methCounts[i] += 2.0;
 				}
 				else if (this.motif != null)
 				{
@@ -392,7 +396,8 @@ public class MethylDbToNucleosomeComparisonContinuous {
 				}
 				else if (this.autoMnase)
 				{
-					
+					double m = meths[0].getScore(chr, coord).doubleValue() + meths[1].getScore(chr, coord).doubleValue();
+					methTotals[i] += m;					
 				}
 				else if (cpg)
 				{
