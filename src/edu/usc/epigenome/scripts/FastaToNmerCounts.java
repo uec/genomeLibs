@@ -112,14 +112,14 @@ public class FastaToNmerCounts {
 			Sequence seq = seqs.nextSequence();
 			
 			addCounts(nmer, counts, seq, this.startPosition);
-			if (!this.listAllPerms) addCounts(1, onemers, seq,0,lastPos);
+			if (!this.listAllPerms) addCounts(1, onemers, seq,this.startPosition,lastPos);
 			total_len += ((this.startPosition>0) ? 1 : (seq.length()-nmer+1));
 			total_len_onemers += ((this.startPosition>0) ? nmer : seq.length());
 			if (bothStrands)
 			{
 				SymbolList revseq = DNATools.reverseComplement(seq);
 				addCounts(nmer, counts, revseq, this.startPosition);
-				if (!this.listAllPerms) addCounts(1, onemers, revseq,0,lastPos);
+				if (!this.listAllPerms) addCounts(1, onemers, revseq,this.startPosition,lastPos);
 				total_len += ((this.startPosition>0) ? 1 : (seq.length()-nmer+1));
 				total_len_onemers += ((this.startPosition>0) ? nmer : seq.length());
 			}
@@ -260,7 +260,8 @@ public class FastaToNmerCounts {
 		int lastPos = (inEndPosition>0) ? inEndPosition : (len-n+1);
 		
 		int start = (inStartPosition>0) ? (inStartPosition) : 1;
-		int end = (inStartPosition>0) ? start : lastPos;
+		int end = ((inStartPosition>=1) && (inEndPosition<1)) ? start : lastPos;
+//		System.err.printf("Adding counts\tn=%d,\tstart=%d\tend=%d\n",n,start,end);
 		for (int i = start; i <= end; i++)
 		{
 			int to = i+n-1;
