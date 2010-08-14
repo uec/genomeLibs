@@ -103,20 +103,25 @@ public class FastaToNmerCounts {
 		HashMap onemers = new HashMap(4);
 		int on_seq = 1;
 		long total_len = 0;
+		long total_len_onemers = 0;
 		int total_seqs = 0;
+		
+		int lastPos = (this.startPosition>0) ? (this.startPosition+nmer-1) : 0;
 		while (seqs.hasNext())
 		{
 			Sequence seq = seqs.nextSequence();
 			
 			addCounts(nmer, counts, seq, this.startPosition);
-			if (!this.listAllPerms) addCounts(1, onemers, seq,0);
-			total_len += seq.length();
+			if (!this.listAllPerms) addCounts(1, onemers, seq,0,lastPos);
+			total_len += ((this.startPosition>0) ? 1 : (seq.length()-nmer+1));
+			total_len_onemers += ((this.startPosition>0) ? nmer : seq.length());
 			if (bothStrands)
 			{
 				SymbolList revseq = DNATools.reverseComplement(seq);
 				addCounts(nmer, counts, revseq, this.startPosition);
-				if (!this.listAllPerms) addCounts(1, onemers, revseq,0);
-				total_len += seq.length();
+				if (!this.listAllPerms) addCounts(1, onemers, revseq,0,lastPos);
+				total_len += ((this.startPosition>0) ? 1 : (seq.length()-nmer+1));
+				total_len_onemers += ((this.startPosition>0) ? nmer : seq.length());
 			}
 			
 			total_seqs++;
@@ -126,7 +131,7 @@ public class FastaToNmerCounts {
 			}
 		}
 		
-		System.out.println("seqs: " + total_seqs + "\ttotal length: " + total_len);
+		System.out.println("seqs: " + total_seqs + "\ttotal length: " + total_len + "\tonemers=" + total_len_onemers);
 
 		
 
@@ -186,7 +191,7 @@ public class FastaToNmerCounts {
 					int count = (-1 * negcount.intValue());
 					double frac = (double)count / total_len;
 					
-					double expected = fracExpected(residues,onemers, total_len);
+					double expected = fracExpected(residues,onemers, total_len_onemers);
 					double enriched = frac / expected;
 					
 					System.out.println(residues + "\t" + count + "\t" + frac + "\t" + expected + "\t" + enriched);
@@ -240,6 +245,11 @@ public class FastaToNmerCounts {
 	
 	private static void addCounts(int n, Map counts, SymbolList seq, int inStartPosition)
 	{
+		addCounts(n,counts,seq,inStartPosition,-1);
+	}
+	
+	private static void addCounts(int n, Map counts, SymbolList seq, int inStartPosition, int inEndPosition)
+	{
 		
 		//	int len = seq.length();
 		
@@ -247,8 +257,10 @@ public class FastaToNmerCounts {
 		//System.err.println("Full str: "+full_residues);
 		int len = full_residues.length();
 		
+		int lastPos = (inEndPosition>0) ? inEndPosition : (len-n+1);
+		
 		int start = (inStartPosition>0) ? (inStartPosition) : 1;
-		int end = (inStartPosition>0) ? start : (len-n+1);
+		int end = (inStartPosition>0) ? start : lastPos;
 		for (int i = start; i <= end; i++)
 		{
 			int to = i+n-1;
