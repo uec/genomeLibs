@@ -12,11 +12,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.StrandedFeature;
 
+import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresArray;
 import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresArrayInt;
 import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresFast;
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresMotifPositions;
 import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
 
 public class MethylDbUtils {
@@ -27,14 +30,20 @@ public class MethylDbUtils {
         		"chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
         		"chr19", "chr20", "chr21", "chr22", "chrX");
 	
+	public static final List<String> CHROMS_MINUS_TWELVE =
+		Arrays.asList(
+//				"chrY", "chrM",
+				"chr1","chr2","chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
+        		"chr10", "chr11", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
+        		"chr19", "chr20", "chr21", "chr22", "chrX");
+
 	public static final List<String> SMALL_CHROMS =
 		Arrays.asList(
-//				"chr6", "chr7", "chr8","chr9",
-        		"chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
+        		"chr10", "chr11", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
         		"chr19", "chr20", "chr21", "chr22");
 
 	public static final List<String> TEST_CHROMS =
-	Arrays.asList("chr11");
+		Arrays.asList("chr20", "chr21", "chr22", "chrX");
 
 
 	
@@ -97,7 +106,7 @@ public class MethylDbUtils {
 		{
 			String connStr = FeatDbQuerier.connStr;
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
-			System.err.println("Getting connection for " + connStr);
+//			System.err.println("Getting connection for " + connStr);
 			cConn = DriverManager.getConnection(connStr);
 		}
 		
@@ -229,12 +238,44 @@ public class MethylDbUtils {
 		return color;
 	}
 	
+	public static ChromScoresFast[] chromScoresMotifCounts(String chr, String inGenome, String inMotif, int offs, int offe, boolean fwStrandOnly)
+	throws Exception
+	{
+		ChromScoresFast[] out = new ChromScoresFast[2];
+		char[] seqArr = null;
+		{
+			Sequence seq = GoldAssembly.chromSeq(inGenome, chr);
+			String seqStr = seq.seqString();
+			if (offe>0)
+			{
+				seqStr = seqStr.substring(offs, offe);
+			}
+			seqArr = seqStr.toUpperCase().toCharArray();
+		}
+		
+		System.err.println("Seq length=" + seqArr.length);
+		
+		int endInd = (fwStrandOnly) ? 0 : 1;
+		for (int i = 0; i<=endInd; i++)
+		{
+			ChromScoresMotifPositions all = new ChromScoresMotifPositions(inGenome);
+			StrandedFeature.Strand strand = (i==0) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
+			System.err.printf("About to populate %s for %s for motif %s\n", strand, chr, inMotif);
+			all.populate(chr, inMotif, seqArr, offs, strand);
+			System.err.printf("On %s for %s for motif %s, found %.0f copies\n", strand, chr, inMotif, all.getScoresTotal(chr));
+
+			out[i] = all;
+		}
+		return out;
+	}
+	
 	public static ChromScoresFast[] chromScoresReadCounts(MethylDbQuerier params, String chr, String tablePrefix, String inGenome)
 	throws Exception
 	{
 		return chromScoresReadCounts( params,  chr,  tablePrefix,  inGenome, 0, (int)2.8E8);
 	}
 	
+
 	public static ChromScoresFast[] chromScoresReadCounts(MethylDbQuerier params, String chr, String tablePrefix, String inGenome, int chromS, int chromE)
 	throws Exception
 	{
@@ -243,6 +284,7 @@ public class MethylDbUtils {
 		ChromScoresFast[] scores = new ChromScoresFast[2];
 		scores[0] = new ChromScoresArrayInt(inGenome); // FW STRAND
 		scores[1] = new ChromScoresArrayInt(inGenome); // REV STRAND
+		//if (0==0) return scores;
 		
 		int MINCOORD = chromS;
 		int MAXCOORD = (chromE>0) ? chromE : (int)2.8E8;
@@ -266,6 +308,7 @@ public class MethylDbUtils {
 					ChromScoresFast strandScores = (cpg.getStrand() == StrandedFeature.NEGATIVE) ? scores[1] : scores[0];
 					//			strandScores.addScore(chr, cpg.chromPos, count);
 					strandScores.addScore(chr, cpg.chromPos, 1);
+					//System.err.printf("Added score for CpG #%d\n",numSeen);
 					numSeen++;
 				}
 				catch (Exception e)
@@ -288,10 +331,21 @@ public class MethylDbUtils {
 	public static ChromScoresFast[] chromScoresMethLevels(MethylDbQuerier params, String chr, String tablePrefix, String inGenome, int chromS, int chromE)
 	throws Exception
 	{
+		System.err.println("chr " + chr + "\ttable " + tablePrefix);
+		if (chr.equals("chr12") && tablePrefix.contains("IMR90"))
+		{
+			System.err.println("YES!!");
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.FINE);
+		}
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info("FINEE!!!");
+		
 		// Setup  array
 		ChromScoresFast[] scores = new ChromScoresFast[2];
+//		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE1");
 		scores[0] = new ChromScoresArrayInt(inGenome);  // CpG positions [0,1]
+//		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE2");
 		scores[1] = new ChromScoresArrayInt(inGenome);  // Meth totals
+//		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE3");
 		
 		int MINCOORD = chromS;
 		int MAXCOORD = (chromE>0) ? chromE : (int)2.8E8;
@@ -303,27 +357,33 @@ public class MethylDbUtils {
 
 			// Get iterator
 			CpgIteratorMultisample it = chromCpgIteratorMultisample(params, chr, tablePrefix, s, s+STEP-1);
+//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE8 pos" + s);
 
 			// Populate array
 			int lastPos = -1;
 			while (it.hasNext())
 			{
+//				if (chr.equals("chr12") && tablePrefix.contains("IMR90")) Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE9 pos " + lastPos);
 				if ((numSeen%1E5)==0) System.err.printf("On CpG #%d\n",numSeen);
 				try
 				{
 					Cpg[] cpgs = it.next();
+//					if (chr.equals("chr12") && tablePrefix.contains("IMR90")) Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE10 pos " + lastPos);
 					Cpg cpg = cpgs[0];
 					int pos = cpg.chromPos;
 					if (pos == lastPos) System.err.printf("Why did we see coord %d twice?\n",pos);
 
 					double meth = cpg.fracMeth(params.useNonconversionFilter);
+//					if (chr.equals("chr12") && tablePrefix.contains("IMR90")) Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE11 pos " + lastPos);
 					if (meth>1.0) System.err.printf("Meth>1.0 (%.3f)\n",meth);
 
 					// If it's a minus strand one, slide it back to the + coord.
 					//if (cpg.getStrand() == StrandedFeature.NEGATIVE) pos--;
 
 					scores[0].addScore(chr, pos, 1.0);
+//					if (chr.equals("chr12") && tablePrefix.contains("IMR90")) Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE12 pos " + lastPos);
 					scores[1].addScore(chr, pos, 100.0 * meth);
+//					if (chr.equals("chr12") && tablePrefix.contains("IMR90")) Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE13 pos " + lastPos);
 					lastPos = pos;
 					numSeen++;
 				}
@@ -342,14 +402,19 @@ public class MethylDbUtils {
 			String tablePrefix, int rangeStart, int rangeEnd)
 	throws Exception
 	{
+//		System.err.printf("MAKING new CpgIteratorMultisample %s:%d-%d\n",chr,rangeStart,rangeEnd);
+
 		params.clearRangeFilters();
 		params.addRangeFilter(chr, rangeStart, rangeEnd);
 //		params.addRangeFilter(chr,(int)14E6,(int)15E6);
 		
 		CpgIteratorMultisample it = null;
+//		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE5");
 		it = new CpgIteratorMultisample(params, Arrays.asList(tablePrefix));
+//		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE6");
 		
 		params.clearRangeFilters();
+//		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("HERE7");
 		return it;
 	}
 	

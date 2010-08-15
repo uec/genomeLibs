@@ -49,7 +49,7 @@ public class ChromScoresMotifPositions extends ChromScoresArrayInt {
 		motif = motif.toUpperCase();
 		char[] motifArr = motif.toCharArray();
 		int motifLen = motif.length();
-		int lastPos = full_residues_arr.length - 1;
+		int lastPos = full_residues_arr.length - motifLen;
 		Integer oneAsInt = new Integer(1);
 		
 		boolean doFw = (desiredStrand == StrandedFeature.POSITIVE) || (desiredStrand == StrandedFeature.UNKNOWN);
@@ -57,6 +57,7 @@ public class ChromScoresMotifPositions extends ChromScoresArrayInt {
 		
 		char[] motifRevcompArr = MiscUtils.revCompNucStr(motif).toCharArray();
 		
+		System.err.printf("LastPos=%d\n",lastPos);
 		for (int startPos = 0; startPos<=lastPos; startPos++)
 		{
 			if (doFw)
@@ -65,7 +66,8 @@ public class ChromScoresMotifPositions extends ChromScoresArrayInt {
 				for (int motifPos = 0; match && (motifPos<motifLen); motifPos++)
 				{
 					int refPos = motifPos + startPos;
-					match = (full_residues_arr[refPos] == motifArr[motifPos]);
+					match = nucMatches(motifArr[motifPos],full_residues_arr[refPos]);
+					//match = (full_residues_arr[refPos] == motifArr[motifPos]);
 				}
 				if (match)
 				{
@@ -80,7 +82,8 @@ public class ChromScoresMotifPositions extends ChromScoresArrayInt {
 				for (int motifPos = 0; match && (motifPos<motifLen); motifPos++)
 				{
 					int refPos = motifPos + startPos;
-					match = (full_residues_arr[refPos] == motifRevcompArr[motifPos]);
+					match = nucMatches(motifRevcompArr[motifPos],full_residues_arr[refPos]);
+					//match = (full_residues_arr[refPos] == motifRevcompArr[motifPos]);
 				}
 				if (match)
 				{
@@ -91,7 +94,61 @@ public class ChromScoresMotifPositions extends ChromScoresArrayInt {
 		}
 	}
 	
-
+	public static boolean nucMatches(char matchNuc, char actualNuc)
+	throws Exception
+	{
+		boolean matches = false;
+		
+		switch(matchNuc)
+		{
+		case 'A':
+		case 'C':
+		case 'T':
+		case 'G':
+			matches = (actualNuc == matchNuc);
+			break;
+		case 'Y':
+			switch(actualNuc)
+			{
+			case 'T':
+			case 'C':
+				matches = true;
+				break;
+			}
+			break;
+		case 'R':
+			switch(actualNuc)
+			{
+			case 'A':
+			case 'G':
+				matches = true;
+				break;
+			}
+			break;
+		case 'W':
+			switch(actualNuc)
+			{
+			case 'A':
+			case 'T':
+				matches = true;
+				break;
+			}
+			break;
+		case 'S':
+			switch(actualNuc)
+			{
+			case 'C':
+			case 'G':
+				matches = true;
+				break;
+			}
+			break;
+		default:
+			throw new Exception(String.format("Don't recognize IUPAC code \"%s\"", matchNuc));
+		}
+		
+		return matches;
+	}
 	
 
 }

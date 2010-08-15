@@ -11,7 +11,7 @@ public class ChromScoresArrayInt extends ChromScoresFast {
 	
 	protected Object newChromArray(int chr_len)
 	{
-		System.err.println("About to allocate array of " + chr_len + " floats");
+		System.err.println("About to allocate array of " + chr_len + " ints");
 		int[] out = new int[chr_len+1];
 
 		// Initialize to 0
@@ -57,7 +57,7 @@ public class ChromScoresArrayInt extends ChromScoresFast {
 		 {
 		 }
 		 
-		 System.err.println("First = " + first);
+//		 System.err.println("First = " + first);
 		 return first;
 	 }
 
@@ -72,7 +72,7 @@ public class ChromScoresArrayInt extends ChromScoresFast {
 		 {
 		 }
 		 
-		 System.err.println("Last = " + last);
+//		 System.err.println("Last = " + last);
 		 return last;
 	 }
 

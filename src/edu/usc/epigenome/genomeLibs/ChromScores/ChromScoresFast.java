@@ -19,8 +19,11 @@ import java.text.*;
 
 
 import java.util.*;
+import java.util.logging.Logger;
 
 import org.apache.commons.math.linear.MatrixUtils;
+
+import sun.tools.tree.ThisExpression;
 
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ListUtils;
@@ -39,7 +42,7 @@ abstract public class ChromScoresFast {
 //	private Map f_chrom_locs = new HashMap();
 	int f_first_chrom = 0;
 	int f_last_chrom = 0;
-	int f_arbitrary_genome_length = 1000;
+	int f_arbitrary_genome_length = (int)100000000;
 	String f_genome = null;
 	
 	public final static String ARBITRARY_GENOME = "arbitraryGenome";
@@ -144,7 +147,9 @@ abstract public class ChromScoresFast {
 		int chr_len = (f_genome == ARBITRARY_GENOME) ? this.getArbitraryGenomeLength() : GoldAssembly.chromLengthStatic(chr,f_genome);
 		
 		// Initialize the chrom array
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("About to initialize ChromScoresFast");
 		Object chrom_arr = this.newChromArray(chr_len);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Done initializing ChromScoresFast");
 		f_chrom_arrays.put(chr, chrom_arr);
 	}
 	
@@ -182,6 +187,13 @@ abstract public class ChromScoresFast {
 
 		
 		// Now add score
+//		int chr_len = 0;
+//		try {
+//			chr_len = (f_genome == ARBITRARY_GENOME) ? this.getArbitraryGenomeLength() : GoldAssembly.chromLengthStatic(chr,f_genome);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		if (pos <= chr_len)
 		this.addScoreToArray(chrom_array, pos, score);
 	}
 	
@@ -219,6 +231,23 @@ abstract public class ChromScoresFast {
 		double[] scores = getScores(chr,st,end,false);
 		//System.err.printf("Got %d scores\n",scores.length);
 		return MatUtils.nanSum(scores);
+	}
+
+	public double getScoresTotal(String chr)
+	{
+		int s = this.chromMinPos(chr);
+		int e = this.chromMaxPos(chr);
+			
+		double total=0.0;
+		for (int i = s; i <= e; i++)
+		{
+			int pos = i;
+			double score = ((Number)getScore(chr, pos)).doubleValue();
+			//System.err.println("\tscore=" + score);
+			total+=score;
+		}
+		
+		return total;
 	}
 
 	

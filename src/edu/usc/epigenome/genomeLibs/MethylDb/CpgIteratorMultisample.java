@@ -25,7 +25,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 
 	// Class vars
 	protected static Connection cConn = null; 
-	protected static Map<String,PreparedStatement> cPreps = new HashMap<String,PreparedStatement>();
+	protected Map<String,PreparedStatement> stmts = new HashMap<String,PreparedStatement>(); // I tried caching this statically , but I was running into memory leaks with lots of open statements
 	
 	// Object vars
 	protected MethylDbQuerier params = null;
@@ -68,6 +68,8 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	public int init(MethylDbQuerier inParams, List<String> inSampleTablePrefixes)
 	throws Exception
 	{
+//		System.err.println("INITIALIZING new CpgIteratorMultisample");
+
 		this.params = inParams;
 		this.sampleTablePrefixes = inSampleTablePrefixes;
 		
@@ -77,7 +79,9 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		}
 		
 		// Check if we've started DB connection
-		if (cConn == null) setupDb();
+		cleanupDb();
+		checkDbConnection();
+		
 		PreparedStatement prep = this.getPrep(inParams);
 		this.fillPrep(params, prep);
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Starting query execute");
@@ -103,6 +107,29 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	
 	
 	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#finalize()
+	 */
+	@Override
+	protected void finalize() throws Throwable {
+		try
+		{
+			// I read that resultSet and Statement finalizers might not release memory resources correctly.
+//			System.err.println("CLOSING RESULT SET");
+			curRS.close();
+
+			for (String key : stmts.keySet())
+			{
+				PreparedStatement prep = stmts.get(key);
+				prep.close();
+//				System.err.println("\tCLOSING CACHED STATEMENT");
+			}
+
+		} finally {
+			super.finalize();
+		}
+	}
+
 	public CpgIteratorMultisample()
 	throws Exception 
 	{
@@ -117,6 +144,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	 */
 	public boolean hasNext() 
 	{
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.0");
 		boolean out = false;
 		try
 		{
@@ -125,8 +153,11 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 			}
 			else
 			{
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.1");
 				out = curRS.next();
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.2");
 				curRS.previous(); // Roll back
+				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.3");
 			}
 		}
 		catch (Exception e)
@@ -226,15 +257,15 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		return getPrep(sql);
 	}
 	
-	protected static PreparedStatement getPrep(String sql)
+	protected PreparedStatement getPrep(String sql)
 	throws SQLException
 	{
-		PreparedStatement prep = cPreps.get(sql);
+		PreparedStatement prep = stmts.get(sql);
 		if (prep==null)
 		{
 			prep = cConn.prepareStatement(sql);
-			cPreps.put(sql, prep);
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Making prepared statement: " + sql );
+			stmts.put(sql, prep);
+//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Making prepared statement: " + sql );
 		}
 		return prep;
 	}
@@ -334,13 +365,18 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		return sql;
 	}
 	
-	
+	private void checkDbConnection() 
+	throws Exception {
+		if (cConn == null) setupDb();
+	}
+
+
 	protected void setupDb()
 	throws Exception
 	{
 		String connStr = this.params.connStr;
 		Class.forName("com.mysql.jdbc.Driver").newInstance();
-		System.err.println("Getting connection for " + connStr);
+//		System.err.println("Getting connection for " + connStr);
 		cConn = DriverManager.getConnection(connStr);
 		
 	}
@@ -348,7 +384,8 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	protected static void cleanupDb()
 	throws Exception
 	{
-		cConn.close();
+		if (cConn != null) cConn.close();
+		cConn = null;
 	}
 
 	

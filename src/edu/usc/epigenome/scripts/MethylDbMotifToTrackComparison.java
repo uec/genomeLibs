@@ -172,7 +172,7 @@ public class MethylDbMotifToTrackComparison {
 		double[] methTotals = new double[METHCOUNTER_LEN];
 		
 		int chromNum=1;
-		for (String chr :  Arrays.asList("chr21","chr22")) //MethylDbUtils.SMALL_CHROMS) //  
+		for (String chr :  MethylDbUtils.SMALL_CHROMS) //  Arrays.asList("chr21","chr22")) //
 		{
 			System.err.printf("On chrom %d (%s)\n",chromNum++,chr);
 			String s = String.format("variableStep\tchrom=%s\n", chr);
