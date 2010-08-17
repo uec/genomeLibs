@@ -284,7 +284,7 @@ public class MethylDbToMotifDensity {
 	throws Exception
 	{
 		int s = Math.max(1, coordCenter-this.halfWind);
-		int e = Math.min(scores.chromMaxPos(chr), coordCenter+this.halfWind);
+		int e = Math.min(GoldAssembly.chromLengthStatic(chr, this.refGenome), coordCenter+this.halfWind);
 		return countMotifs(scores, chr, s, e);
 	}
 	

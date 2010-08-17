@@ -68,9 +68,11 @@ public class MethylDbToNucleosomeComparisonContinuous {
     protected String methPrefix = "methylCGsRich_imr90_";
     @Option(name="-motif",usage="If set, we use counts for this motif rather than methylation as the feature of interest (For instance 'CG' for CG density")
     protected String motif = null;
+    @Option(name="-filterByMotif",usage="If set, we use only reads that start with the motif (strand specific)")
+    protected String filterByMotif = null;
     @Option(name="-autoMnase",usage="If set, we use counts for the MNase reads themselves rather than methylation")
     protected boolean autoMnase = false;
-   @Option(name="-autoMnaseFw",usage="If set, we use counts for the MNase reads themselves rather than methylation")
+    @Option(name="-autoMnaseFw",usage="If set, we use counts for the MNase (forward strand)reads themselves rather than methylation")
     protected boolean autoMnaseFw = false;
     @Option(name="-autoMnaseRev",usage="If set, we use counts for the MNase (opposite strand) reads themselves rather than methylation")
     protected boolean autoMnaseRev = false;
@@ -151,6 +153,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 		String motifString = (this.motif == null) ? "" : String.format(".motif%s", this.motif.toUpperCase());
 		String withinStr = (this.withinFeat == null) ? "" : String.format(".withinFeat-%s", this.withinFeat);
 				
+		if (this.filterByMotif != null) motifString += String.format(".filteredByMotif%s",this.filterByMotif);
 				
 		String name = String.format("nucleosomeReads.%s%s%s.minReads%.2f.nuc%d.assoc%d%s.%s.%s",
 				this.outPrefix, motifString, withinStr, this.minReadsPerBp, this.footprintSize, this.assocSize, normString, mnasePrefixStr, methPrefix);
@@ -191,8 +194,10 @@ public class MethylDbToNucleosomeComparisonContinuous {
 		double[] methCounts = new double[METHCOUNTER_LEN];
 		double[] methTotals = new double[METHCOUNTER_LEN];
 		
-		for (String chr :  MethylDbUtils.CHROMS) //Arrays.asList("chr11")) //MethylDbUtils.SMALL_CHROMS) //  
+		int chromNum=1;
+		for (String chr :  MethylDbUtils.CHROMS_MINUS_TWELVE) //MethylDbUtils.SMALL_CHROMS) // Arrays.asList("chr22")) // 
 		{
+			System.err.printf("On chrom %d (%s)\n",chromNum++,chr);
 			String s = String.format("variableStep\tchrom=%s\n", chr);
 			pwWig.append(s);
 			int chrInt = (new ChromFeatures()).chrom_from_public_str(chr);
@@ -210,14 +215,32 @@ public class MethylDbToNucleosomeComparisonContinuous {
 					{
 					ChromScoresFast counts[] = new ChromScoresFast[2];
 					ChromScoresFast meths[] = new ChromScoresFast[2];
+
 					
-					int offs = 0; // 20000000; //0;
-					int offe = 0; // 81000000; //0;
+					
+
+					
+					int offs = 0; //20000000; //0;
+					int offe = 0; //40000000; //0;
 					System.err.printf("offs=%d, offe=%d\n",offs,offe);
 					
 					// The mnase counts are the same for both cases
 					counts = MethylDbUtils.chromScoresReadCounts(params, chr, this.mnasePrefix, this.refGenome, offs, offe);
 
+					// We can filter counts by a particular motif
+					if (this.filterByMotif != null)
+					{
+						ChromScoresFast filterByMotifCounts[] = new ChromScoresFast[2];
+						filterByMotifCounts = MethylDbUtils.chromScoresMotifCounts(chr, this.refGenome, this.filterByMotif, offs, offe,false);
+						
+						System.err.printf("%s, filtering + strand for motif %s. Pre-filter count: %.0f\n",chr,this.filterByMotif, counts[0].getScoresTotal(chr));
+						counts[0].maskOut(filterByMotifCounts[0]);
+						System.err.printf("%s, filtering + strand for motif %s. Post-filter count: %.0f\n",chr,this.filterByMotif, counts[0].getScoresTotal(chr));
+						System.err.printf("%s, filtering - strand for motif %s. Pre-filter count: %.0f\n",chr,this.filterByMotif, counts[1].getScoresTotal(chr));
+						counts[1].maskOut(filterByMotifCounts[1]);
+						System.err.printf("%s, filtering - strand for motif %s. Pre-filter count: %.0f\n",chr,this.filterByMotif, counts[1].getScoresTotal(chr));
+					}
+					
 					
 					// The meth differ if it's a motif
 					if (this.autoMnase || this.autoMnaseFw || this.autoMnaseRev)
@@ -230,6 +253,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 					}
 					else
 					{
+
 						char[] seqArr = null;
 						{
 							Sequence seq = GoldAssembly.chromSeq(this.refGenome, chr);
@@ -265,6 +289,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 					System.err.println("Getting min pos: " + minPos);
 					int maxPos = counts[0].chromMaxPos(chr);
 					System.err.println("Getting max pos: " + maxPos);
+					
 					
 					for (int pos = minPos; pos<maxPos; pos += 1) // this.step)
 					{
@@ -324,7 +349,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 					meths[0] = null;
 					meths[1] = null;
 					System.gc();
-				}
+					}
 					
 				}
 				catch (Exception e)
