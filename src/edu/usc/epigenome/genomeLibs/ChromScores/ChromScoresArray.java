@@ -60,6 +60,21 @@ public class ChromScoresArray extends ChromScoresFast {
 		return array;
 	}
 	
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresFast#setScore(java.lang.Object, int, java.lang.Number)
+	 */
+	@Override
+	protected void setScore(Object array, int pos, Number score) {
+		if (downsamplingFactor > 1)
+		{
+			pos = (int)((double)pos / (double)downsamplingFactor);
+		}
+
+		double[] doubleArray = (double[])array;
+		doubleArray[pos] = score.doubleValue();
+	}
+
+	
 	protected Number getArrayScore(Object array, int pos)
 	{
 		pos = Math.round(pos / downsamplingFactor);

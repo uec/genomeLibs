@@ -80,6 +80,7 @@ abstract public class ChromScoresFast {
 	
 	// Override this to change the underlying data structur
 	abstract protected Object addScoreToArray(Object array, int pos, Number score); // Increments score
+	abstract protected void setScore(Object array, int pos, Number score); // Sets score
 	abstract protected Number getArrayScore(Object array, int pos);
 	//abstract protected double[] getArrayScores(Object array, int st, int end);
 	abstract protected double[] getAllScores(Object array);
@@ -251,6 +252,8 @@ abstract public class ChromScoresFast {
 	}
 
 	
+
+
 	public int chromMinPos(String chr)
 	{
 		Object chrom_array = this.checkChrom(chr);
@@ -349,6 +352,30 @@ abstract public class ChromScoresFast {
 	 * Filters
 	 * 
 	 */
+	
+	
+	/**
+	 * @param other A mask array.  Any position set to 0 in the mask array is set to 0 in the primary array.
+	 * @param invert If set, any position set to 0 in the mask array is kept
+	 * @return
+	 */
+	public void mask(ChromScoresFast other, boolean invert)
+	{
+		for (String chr : this.activeChroms())
+		{
+			int s = this.chromMinPos(chr);
+			int e = this.chromMaxPos(chr);
+			Object thisChrArr = this.f_chrom_arrays.get(chr);
+
+			for (int i = s; i <= e; i++)
+			{
+				int pos = i;
+				double otherScore = ((Number)other.getScore(chr, pos)).doubleValue();
+				boolean toss = (invert) ? (otherScore != 0.0) : (otherScore == 0.0);
+				if (toss) this.setScore(thisChrArr, pos, 0.0);
+			}
+		}
+	}
 	
 	// Sums the score at each coordinate
 	public void addScores(ChromScoresFast other)

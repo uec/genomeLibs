@@ -27,6 +27,14 @@ public class ChromScoresArrayInt extends ChromScoresFast {
 		return array;
 	}
 	
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresFast#setScore(java.lang.Object, int, java.lang.Number)
+	 */
+	@Override
+	protected void setScore(Object array, int pos, Number score) {
+		((int[])array)[pos] = score.intValue();
+	}
+
 	protected Number getArrayScore(Object array, int pos)
 	{
 		// Should we auto this to 0?

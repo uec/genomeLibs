@@ -15,11 +15,26 @@ public class ChromScoresMap extends ChromScoresFast {
 	}
 	
 
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresFast#setScore(java.lang.Object, int, java.lang.Number)
+	 */
+	@Override
+	protected void setScore(Object array, int pos, Number score) {
+		// TODO Auto-generated method stub
+		Map<Integer,Number> m = (Map<Integer,Number>)array;
+		Integer key = new Integer(pos);
+		m.put(key, score);
+	}
+
+
 	protected Object addScoreToArray(Object array, int pos, Number score)
 	{
 		Map<Integer,Number> m = (Map<Integer,Number>)array;
 		Integer key = new Integer(pos);
-		m.put(key, score);
+		Number oldVal = m.get(key);
+		Number newVal = score;
+		if (oldVal != null) newVal = new Double(oldVal.doubleValue() + newVal.doubleValue());
+		m.put(key, newVal);
 		return m;
 	}
 	
