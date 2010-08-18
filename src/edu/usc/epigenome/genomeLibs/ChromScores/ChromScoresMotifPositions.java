@@ -88,7 +88,8 @@ public class ChromScoresMotifPositions extends ChromScoresArrayInt {
 				if (match)
 				{
 					//System.err.printf("Found a (-) strand match to %s at pos %d\n", motif, start_coord+startPos+motifLen-1);
-					this.addScore(target_chr, start_coord+startPos+motifLen-1, oneAsInt);
+					// This is a real problem.  Some of the MNase libraries seem to match start+len-1 (like?) start+len+1 (like ??), and others start+len (like Schones) 
+					this.addScore(target_chr, start_coord+startPos+motifLen, oneAsInt);
 				}
 			}
 		}
