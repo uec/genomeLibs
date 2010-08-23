@@ -65,7 +65,7 @@ public class MethylReadCollection {
 		}
 	}
 	
-	public Set<MethylRead> getSortedReads()
+	public TreeSet<MethylRead> getSortedReads()
 	{
 		TreeSet<MethylRead> out = new TreeSet<MethylRead>(readMapByReadId.values());
 		return out;
