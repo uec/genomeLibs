@@ -97,6 +97,11 @@ public class MethylRead implements Comparable<MethylRead> {
 		
 		return Math.max(methMax,unmethMax);
 	}
+	
+	public int width()
+	{
+		return endPos() - startPos() + 1;
+	}
 
 	/****** EDITING *******/
 
@@ -116,6 +121,9 @@ public class MethylRead implements Comparable<MethylRead> {
 		out = this.startPos()-o.startPos();
 		if (out!=0) return out;
 		
+//		out = this.width()-o.width();
+//		if (out!=0) return -out;
+
 		out = (this.fracMeth()==o.fracMeth()) ? 0 : ( (this.fracMeth()>o.fracMeth()) ? 1 : -1);
 		if (out!=0) return out;
 		

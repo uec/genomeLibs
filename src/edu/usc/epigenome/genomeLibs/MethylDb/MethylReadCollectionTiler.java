@@ -1,6 +1,7 @@
 package edu.usc.epigenome.genomeLibs.MethylDb;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -84,25 +85,7 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 		// Make a sorted list of reads
 		TreeSet<MethylRead> reads = this.getSortedReads();
 		
-		// Make the level structure
-		levels = new TreeSet[MAX_LEVELS];
-		for (MethylRead read : reads)
-		{
-//			pw.printf("Read: %s\n",read.toString());
-			addRead(read);
-		}
-		
-		Document doc = levelsToDoc(cpgPositions.first().intValue(), cpgPositions.last().intValue());
-		// And write the XML
-		writeDoc(doc,pw);
-	
-		// Clean up
-		levels = null;		
-	}
-		
-	
-	public Document levelsToDoc(int firstCoord, int lastCoord)
-	{
+
 		
 		// Start the document
 		DOMImplementation impl = SVGDOMImplementation.getDOMImplementation();
@@ -112,6 +95,49 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 		// Get the root element (the 'svg' element).
 		Element svgRoot = doc.getDocumentElement();
 
+		// Make the level structure
+		int startLevel = 0;
+		for (char c : Arrays.asList('l','i','h'))
+		{
+			levels = new TreeSet[MAX_LEVELS];
+			for (MethylRead read : reads)
+			{
+				//			pw.printf("Read: %s\n",read.toString());
+
+				double meth = read.fracMeth();
+				boolean add = false;
+				if (meth<0.2)
+				{
+					if (c=='l') add = true;
+				}
+				else if (meth < 0.8)
+				{
+					if (c=='i') add = true;
+				}
+				else
+				{
+					if (c=='h') add = true;
+				}
+
+				if (add) addRead(read);
+			}
+
+			int newLevels = levelsToDoc(doc, svgRoot, svgNS, startLevel, cpgPositions.first().intValue(), cpgPositions.last().intValue());
+			startLevel += newLevels;
+		}
+		// And write the XML
+		writeDoc(doc,pw);
+	
+		// Clean up
+		levels = null;		
+	}
+		
+	
+	// Returns the number of levels
+	public int levelsToDoc(Document doc, Element svgRoot, String svgNS, int levelOffset, int firstCoord, int lastCoord)
+	{
+		int out = 0;
+		
 		// Set the width and height attributes on the root 'svg' element.
 		svgRoot.setAttributeNS(null, "width", "400");
 		svgRoot.setAttributeNS(null, "height", "450");
@@ -128,6 +154,7 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 			if (this.levels[l] == null)
 			{
 				finished = true;
+				out = l;
 			}
 			else
 			{
@@ -139,7 +166,7 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 				
 				
 				// Get the Y information
-				int rowCenter = (l * this.rowHeight) + rowHeightHalf;
+				int rowCenter = ((l+levelOffset) * this.rowHeight) + rowHeightHalf;
 				int lineYStart = rowCenter - lineHeightHalf;
 //				int lineYEnd = rowCenter + lineHeightHalf;
 				
@@ -222,7 +249,7 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 //		svgRoot.appendChild(rectangle);
 		
 		
-		return doc;
+		return out;
 	}
 	
 	
