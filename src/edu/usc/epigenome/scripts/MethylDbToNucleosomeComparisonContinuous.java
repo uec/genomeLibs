@@ -66,10 +66,16 @@ public class MethylDbToNucleosomeComparisonContinuous {
     protected String mnasePrefix = "mnaseIMR90_021110_";
     @Option(name="-methPrefix",usage="methylation database table (default methylCGsRich_imr90_)")
     protected String methPrefix = "methylCGsRich_imr90_";
+    @Option(name="-fwStrandOnly",usage="Useful if you want to look for an oriented motif")
+    protected boolean fwStrandOnly = false;
     @Option(name="-motif",usage="If set, we use counts for this motif rather than methylation as the feature of interest (For instance 'CG' for CG density")
     protected String motif = null;
     @Option(name="-filterByMotif",usage="If set, we use only reads that start with the motif (strand specific)")
     protected String filterByMotif = null;
+    @Option(name="-filterByMotifOffset",usage="Used with filterByMotif, specifies the offset relative to the start of the read")
+    protected int filterByMotifOffset = 0;
+    @Option(name="-filterByMotifInvert",usage="Used with filterByMotif, specifies that reads starting with motif should be filtered *out* rather than *in*")
+    protected boolean filterByMotifInvert = false;
     @Option(name="-autoMnase",usage="If set, we use counts for the MNase reads themselves rather than methylation")
     protected boolean autoMnase = false;
     @Option(name="-autoMnaseFw",usage="If set, we use counts for the MNase (forward strand)reads themselves rather than methylation")
@@ -153,12 +159,14 @@ public class MethylDbToNucleosomeComparisonContinuous {
 		String motifString = (this.motif == null) ? "" : String.format(".motif%s", this.motif.toUpperCase());
 		String withinStr = (this.withinFeat == null) ? "" : String.format(".withinFeat-%s", this.withinFeat);
 				
-		if (this.filterByMotif != null) motifString += String.format(".filteredByMotif%s",this.filterByMotif);
+		if (this.filterByMotif != null) motifString += String.format(".filteredByMotif%s%s%s",this.filterByMotif,
+				(this.filterByMotifInvert)?"-inverted":"",(this.filterByMotifOffset!=0)?String.format("-offset%d", this.filterByMotifOffset):"");
+		String fwOnlyStr = (this.fwStrandOnly) ? ".fwStrandOnly" : "";
 				
-		String name = String.format("nucleosomeReads.%s%s%s.minReads%.2f.nuc%d.assoc%d%s.%s.%s",
-				this.outPrefix, motifString, withinStr, this.minReadsPerBp, this.footprintSize, this.assocSize, normString, mnasePrefixStr, methPrefix);
-		String outFn = String.format("%s%s%s.minReads%.2f.nuc%d.assoc%d%s.%s.%s.csv", 
-				this.outPrefix, motifString, withinStr, this.minReadsPerBp, this.footprintSize, this.assocSize, normString, mnasePrefixStr, methPrefix);
+		String name = String.format("nucleosomeReads.%s%s%s.minReads%.2f%s.nuc%d.assoc%d%s.%s.%s",
+				this.outPrefix, motifString, withinStr, this.minReadsPerBp, fwOnlyStr, this.footprintSize, this.assocSize, normString, mnasePrefixStr, methPrefix);
+		String outFn = String.format("%s%s%s.minReads%.2f%s.nuc%d.assoc%d%s.%s.%s.csv", 
+				this.outPrefix, motifString, withinStr, this.minReadsPerBp, fwOnlyStr, this.footprintSize, this.assocSize, normString, mnasePrefixStr, methPrefix);
 		String outFnWig = outFn.replace(".csv", ".wig");
 //		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 		PrintWriter pwWig = new PrintWriter(new FileOutputStream(outFnWig));
@@ -195,7 +203,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 		double[] methTotals = new double[METHCOUNTER_LEN];
 		
 		int chromNum=1;
-		for (String chr :  MethylDbUtils.CHROMS_MINUS_TWELVE) //MethylDbUtils.SMALL_CHROMS) // Arrays.asList("chr22")) // 
+		for (String chr :  MethylDbUtils.CHROMS_MINUS_TWELVE) //MethylDbUtils.SMALL_CHROMS) //  Arrays.asList("chr22")) //,"chr18","chr19","chr20")) //
 		{
 			System.err.printf("On chrom %d (%s)\n",chromNum++,chr);
 			String s = String.format("variableStep\tchrom=%s\n", chr);
@@ -221,7 +229,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 
 					
 					int offs = 0; //20000000; //0;
-					int offe = 0; //40000000; //0;
+					int offe = 30000000; //0;
 					System.err.printf("offs=%d, offe=%d\n",offs,offe);
 					
 					// The mnase counts are the same for both cases
@@ -234,11 +242,13 @@ public class MethylDbToNucleosomeComparisonContinuous {
 						filterByMotifCounts = MethylDbUtils.chromScoresMotifCounts(chr, this.refGenome, this.filterByMotif, offs, offe,false);
 						
 						System.err.printf("%s, filtering + strand for motif %s. Pre-filter count: %.0f\n",chr,this.filterByMotif, counts[0].getScoresTotal(chr));
-						counts[0].maskOut(filterByMotifCounts[0]);
+						counts[0].mask(filterByMotifCounts[0],this.filterByMotifInvert);
+//						counts[0].mask(filterByMotifCounts[1],this.filterByMotifInvert);
 						System.err.printf("%s, filtering + strand for motif %s. Post-filter count: %.0f\n",chr,this.filterByMotif, counts[0].getScoresTotal(chr));
 						System.err.printf("%s, filtering - strand for motif %s. Pre-filter count: %.0f\n",chr,this.filterByMotif, counts[1].getScoresTotal(chr));
-						counts[1].maskOut(filterByMotifCounts[1]);
-						System.err.printf("%s, filtering - strand for motif %s. Pre-filter count: %.0f\n",chr,this.filterByMotif, counts[1].getScoresTotal(chr));
+						counts[1].mask(filterByMotifCounts[1],this.filterByMotifInvert);
+//						counts[1].mask(filterByMotifCounts[0],this.filterByMotifInvert);
+						System.err.printf("%s, filtering - strand for motif %s. Post-filter count: %.0f\n",chr,this.filterByMotif, counts[1].getScoresTotal(chr));
 					}
 					
 					
@@ -270,7 +280,8 @@ public class MethylDbToNucleosomeComparisonContinuous {
 						
 						ChromScoresMotifPositions all = new ChromScoresMotifPositions(this.refGenome);
 						System.err.printf("About to populate both strands for %s for motif %s\n", chr, this.motif);
-						all.populate(chr, this.motif, seqArr, offs, StrandedFeature.UNKNOWN);
+						StrandedFeature.Strand motifStrand = (this.fwStrandOnly) ? StrandedFeature.POSITIVE : StrandedFeature.UNKNOWN;
+						all.populate(chr, this.motif, seqArr, offs, motifStrand);
 
 						meths[0] = all;
 						meths[1] = all;
@@ -296,6 +307,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 
 						boolean fwRead = (counts[0].getScore(chr, pos).intValue() >= 1);
 						boolean revRead = (counts[1].getScore(chr, pos).intValue() >= 1);
+						if (this.fwStrandOnly) revRead = false; // fwRead=false; 
 						
 						boolean enoughReads = true;
 						MnaseOutput mnaseReads = new MnaseOutput();
