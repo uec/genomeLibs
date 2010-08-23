@@ -41,6 +41,15 @@ public class MiscUtils {
 		case 'c': cout = 'g'; break;
 		case 'G': cout = 'C'; break;
 		case 'g': cout = 'c'; break;
+
+		case 'w': cout = 'w'; break;
+		case 'W': cout = 'W'; break;
+		case 's': cout = 's'; break;
+		case 'S': cout = 'S'; break;
+		case 'Y': cout = 'R'; break;
+		case 'y': cout = 'r'; break;
+		case 'R': cout = 'Y'; break;
+		case 'r': cout = 'y'; break;
 		}
 
 		return cout;
