@@ -7,6 +7,22 @@ import org.biojava.bio.program.gff.SimpleGFFRecord;
 public class MiscUtils {
 
 
+	public static void reverseArray(Object[] b) {
+		   int left  = 0;          // index of leftmost element
+		   int right = b.length-1; // index of rightmost element
+		  
+		   while (left < right) {
+		      // exchange the left and right elements
+		      Object temp = b[left]; 
+		      b[left]  = b[right]; 
+		      b[right] = temp;
+		     
+		      // move the bounds toward the center
+		      left++;
+		      right--;
+		   }
+		}//endmethod reverse
+	
 	public static String revString(String in)
 	{
 		StringBuilder sb = new StringBuilder(in);
