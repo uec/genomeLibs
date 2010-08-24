@@ -19,6 +19,10 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.sun.tools.javac.code.Attribute.Array;
+
+import edu.usc.epigenome.genomeLibs.MiscUtils;
+
 public class MethylReadCollectionTiler extends MethylReadCollection {
 
 	public final static int MAX_LEVELS = 1000;
@@ -36,7 +40,10 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 	public String unmethColor = "green";
 	
 	public String fwStrandLineColor = "black";
-	public String revStrandLineColor = "gray";
+	public String revStrandLineColor = "black";
+	
+	public double[] methTiers = { Double.NEGATIVE_INFINITY, 0.001, 0.999,Double.POSITIVE_INFINITY };
+	
 	
 	TreeSet<MethylRead>[] levels = null;
 	
@@ -54,12 +61,27 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 	protected void init() {
 		super.init();
 		cpgPositions = new TreeSet<Integer>();
+		this.clearLevels();
 	}
-	
+
+	protected void clearLevels()
+	{
+		levels = new TreeSet[MAX_LEVELS];
+	}
 	
 	/******** INFO ************/
 
-
+	public int numLevels()
+	{
+		int nL = 0;
+		for (TreeSet<MethylRead> t : this.levels)
+		{
+			if (t == null) return nL;
+			nL++;
+		}
+		return nL;
+	}
+	
 
 	/******** POPULATING ************/
 
@@ -97,32 +119,31 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 
 		// Make the level structure
 		int startLevel = 0;
-		for (char c : Arrays.asList('l','i','h'))
+		int nLevels = this.methTiers.length - 1;
+		if (nLevels <= 1)
 		{
-			levels = new TreeSet[MAX_LEVELS];
+			System.err.printf("Forget to add a final element to MethylReadCollectionTiler.methTiers, adding +Infinity\n");
+			this.methTiers = new double[2];
+			this.methTiers[0] = Double.NEGATIVE_INFINITY;
+			this.methTiers[1] = Double.POSITIVE_INFINITY;
+		}
+		for (int i = 0; i<nLevels; i++)
+		{
+			double tierLow = methTiers[i];
+			double tierHigh = methTiers[i+1];
+		
+			this.clearLevels();
 			for (MethylRead read : reads)
 			{
 				//			pw.printf("Read: %s\n",read.toString());
 
 				double meth = read.fracMeth();
-				boolean add = false;
-				if (meth<0.2)
-				{
-					if (c=='l') add = true;
-				}
-				else if (meth < 0.8)
-				{
-					if (c=='i') add = true;
-				}
-				else
-				{
-					if (c=='h') add = true;
-				}
-
+				boolean add = (meth>tierLow) && (meth<=tierHigh);
 				if (add) addRead(read);
 			}
 
-			int newLevels = levelsToDoc(doc, svgRoot, svgNS, startLevel, cpgPositions.first().intValue(), cpgPositions.last().intValue());
+			boolean upsideDown = (nLevels>1) && (i==0);
+			int newLevels = levelsToDoc(doc, svgRoot, svgNS, startLevel, cpgPositions.first().intValue(), cpgPositions.last().intValue(), upsideDown);
 			startLevel += newLevels;
 		}
 		// And write the XML
@@ -134,9 +155,11 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 		
 	
 	// Returns the number of levels
-	public int levelsToDoc(Document doc, Element svgRoot, String svgNS, int levelOffset, int firstCoord, int lastCoord)
+	public int levelsToDoc(Document doc, Element svgRoot, String svgNS, int levelOffset, int firstCoord, int lastCoord, boolean upsideDown)
 	{
-		int out = 0;
+		
+		TreeSet<MethylRead>[] curLevels = Arrays.copyOf(this.levels,numLevels());
+		if (upsideDown) MiscUtils.reverseArray(curLevels);
 		
 		// Set the width and height attributes on the root 'svg' element.
 		svgRoot.setAttributeNS(null, "width", "400");
@@ -149,9 +172,10 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 		int lineHeightHalf = Math.round(0.5f * this.lineHeightRelative * (float)this.rowHeight);
 				
 		boolean finished = false;
-		for (int l = 0; (l<MAX_LEVELS)&(!finished); l++)
+		int out = curLevels.length;
+		for (int l = 0; (l<curLevels.length)&(!finished); l++)
 		{
-			if (this.levels[l] == null)
+			if (curLevels[l] == null)
 			{
 				finished = true;
 				out = l;
@@ -168,7 +192,7 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 				// Get the Y information
 				int rowCenter = ((l+levelOffset) * this.rowHeight) + rowHeightHalf;
 				int lineYStart = rowCenter - lineHeightHalf;
-//				int lineYEnd = rowCenter + lineHeightHalf;
+				int lineYEnd = rowCenter + lineHeightHalf;
 				
 				int boxYStart = rowCenter - boxHeightHalf;
 //				int boxYEnd = rowCenter + boxHeightHalf;
@@ -176,7 +200,7 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 				
 				
 				System.err.printf("Level %d: ", l);
-				Iterator<MethylRead> rIt = levels[l].iterator();
+				Iterator<MethylRead> rIt = curLevels[l].iterator();
 				while (rIt.hasNext())
 				{
 					MethylRead r = rIt.next();
@@ -186,6 +210,30 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 					int lineXStart = r.startPos() - firstCoord; 
 					int lineXEnd = r.endPos() - firstCoord; 
 					int lineWidth = lineXEnd-lineXStart+1;
+					
+					
+//					// The bounding rectangle
+//					String lineColor = (r.strand==StrandedFeature.NEGATIVE) ? this.revStrandLineColor : this.fwStrandLineColor;
+//					Element rectangle = doc.createElementNS(svgNS, "rect");
+//					rectangle.setAttributeNS(null, "x", Integer.toString(lineXStart));
+//					rectangle.setAttributeNS(null, "y", Integer.toString(lineYStart));
+//					rectangle.setAttributeNS(null, "width", Integer.toString(lineWidth));
+//					rectangle.setAttributeNS(null, "height", Integer.toString(lineHeight));
+////					rectangle.setAttributeNS(null, "fill", "none");
+//					rectangle.setAttributeNS(null, "fill", lineColor);
+//					rectangle.setAttributeNS(null, "stroke", lineColor);
+////					rectangle.setAttributeNS(null, "stroke-width", "1");
+//					svgRoot.appendChild(rectangle);
+					
+					String lineColor = (r.strand==StrandedFeature.NEGATIVE) ? this.revStrandLineColor : this.fwStrandLineColor;
+					Element line = doc.createElementNS(svgNS, "line");
+					line.setAttributeNS(null, "x1", Integer.toString(lineXStart));
+					line.setAttributeNS(null, "y1", Integer.toString(rowCenter));
+					line.setAttributeNS(null, "x2", Integer.toString(lineXEnd));
+					line.setAttributeNS(null, "y2", Integer.toString(rowCenter));
+					line.setAttributeNS(null, "stroke", lineColor);
+					line.setAttributeNS(null, "stroke-width", "1");
+					svgRoot.appendChild(line);
 					
 					// Now go through individual CpGs
 					for (Integer i : r.unmethPositions)
@@ -217,16 +265,7 @@ public class MethylReadCollectionTiler extends MethylReadCollection {
 						svgRoot.appendChild(box);
 					}
 					
-					// The bounding rectangle
-					Element rectangle = doc.createElementNS(svgNS, "rect");
-					rectangle.setAttributeNS(null, "x", Integer.toString(lineXStart));
-					rectangle.setAttributeNS(null, "y", Integer.toString(lineYStart));
-					rectangle.setAttributeNS(null, "width", Integer.toString(lineWidth));
-					rectangle.setAttributeNS(null, "height", Integer.toString(lineHeight));
-					rectangle.setAttributeNS(null, "fill", "none");
-					rectangle.setAttributeNS(null, "stroke", (r.strand==StrandedFeature.NEGATIVE) ? this.revStrandLineColor : this.fwStrandLineColor);
-//					rectangle.setAttributeNS(null, "stroke-width", "1");
-					svgRoot.appendChild(rectangle);
+
 					
 
 				
