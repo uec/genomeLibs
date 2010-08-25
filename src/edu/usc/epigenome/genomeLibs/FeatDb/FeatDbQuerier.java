@@ -67,7 +67,7 @@ public class FeatDbQuerier {
 		String chrom;
 		if (chroms.size() == 0)
 		{
-			Exception e = new Exception("can not get CpGs without a range filter");
+			Exception e = new Exception("can not get CpGs without a range filter (set range to 0,0 for whole chromosome)");
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).throwing("CpgIterator", "sqlHelper", e);
 			throw e;
 		}
@@ -204,33 +204,44 @@ public class FeatDbQuerier {
 			{
 				// This is the best way to pick anything that OVERLAPS the range.
 				// Notice than CONTAINED WITHIN the range would be a different query
-				
-				
-				String clause = String.format("((?<=%schromPosEnd) AND (?>=%schromPosStart))",asSec, asSec);
-				
-				
-				grClauses.add(clause);
-				if (prep!=null)
-				{
-					prep.setInt(curInd++, gr.getStart());
-					prep.setInt(curInd++, gr.getEnd());
-				}
 
-//   OLD WAY.  FOR SOME REASON I THOUGHT THIS WAS BETTER?
-//				// This is the best way to pick anything that OVERLAPS the range.
-//				// Notice than CONTAINED WITHIN the range would be a different query
-//				String clause = String.format("(!(%schromPosStart<? AND %schromPosEnd<?) AND !(%schromPosStart>? AND %schromPosEnd>?))", asSec, asSec,asSec,asSec);
-//				grClauses.add(clause);
-//				if (prep!=null)
-//				{
-//					prep.setInt(curInd++, gr.getStart());
-//					prep.setInt(curInd++, gr.getStart());
-//					prep.setInt(curInd++, gr.getEnd());
-//					prep.setInt(curInd++, gr.getEnd());
-//				}
+				System.err.printf("Adding constraint: chr=%s, s=%d, e=%d\n",gr.getChrom(), gr.getStart(), gr.getEnd());
+				if ((gr.getStart()==0) && (gr.getEnd()==0))
+				{
+					// Whole chromosome, don't add
+				}
+				else
+				{
+					String clause = String.format("((?<=%schromPosEnd) AND (?>=%schromPosStart))",asSec, asSec);
+
+
+					grClauses.add(clause);
+					if (prep!=null)
+					{
+						prep.setInt(curInd++, gr.getStart());
+						prep.setInt(curInd++, gr.getEnd());
+					}
+
+					//   OLD WAY.  FOR SOME REASON I THOUGHT THIS WAS BETTER?
+					//				// This is the best way to pick anything that OVERLAPS the range.
+					//				// Notice than CONTAINED WITHIN the range would be a different query
+					//				String clause = String.format("(!(%schromPosStart<? AND %schromPosEnd<?) AND !(%schromPosStart>? AND %schromPosEnd>?))", asSec, asSec,asSec,asSec);
+					//				grClauses.add(clause);
+					//				if (prep!=null)
+					//				{
+					//					prep.setInt(curInd++, gr.getStart());
+					//					prep.setInt(curInd++, gr.getStart());
+					//					prep.setInt(curInd++, gr.getEnd());
+					//					prep.setInt(curInd++, gr.getEnd());
+					//				}
+				}
 			}
-			ListUtils.setDelim(" OR "); // Notice that it's a UNION of range filters
-			clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
+			
+			if (grClauses.size()>0)
+			{
+				ListUtils.setDelim(" OR "); // Notice that it's a UNION of range filters
+				clauses.add("(" + ListUtils.excelLine(grClauses.toArray(new String[1])) + ")");
+			}
 		}
 		
 		// feat filters
