@@ -22,6 +22,7 @@ import org.usckeck.genome.ChromFeatures;
 import sun.tools.tree.ThisExpression;
 
 import edu.usc.epigenome.genomeLibs.GFFUtils;
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
@@ -37,12 +38,14 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class FeatCounter {
 
-	private static final String C_USAGE = "Use: FeatCounter larger.gtf smaller";
+	private static final String C_USAGE = "Use: FeatCounter elements.gtf";
 	
 //	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 //	protected boolean skipUnoriented = false;
 	@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. -chrom chr1 -chrom chr5")
 	protected List<String> chrs = new ArrayList<String>(25);
+	@Option(name="-feature",multiValued=true,usage="One or more features from features_ tables")
+	protected List<String> features = new ArrayList<String>(25);
 
 	// receives other command line parameters than options
 	@Argument
@@ -83,20 +86,30 @@ public class FeatCounter {
 			return;
 		}
 
-		if (arguments.size()!=2)
+		if (arguments.size()!=1)
 		{
 			System.err.println(C_USAGE);
 			parser.printUsage(System.err);
 			return;
 		}
 		
+		if (features.size()<1)
+		{
+			System.err.println("Must supply at least 1 -feature argument");
+			System.err.println(C_USAGE);
+			parser.printUsage(System.err);
+			return;
+		}		
+		
 		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 		String targetFn = arguments.get(0);
-		String featType = arguments.get(1);
 
 
 		ChromFeatures targetFeats = new ChromFeatures(targetFn, true);
 		// Go through target feats one by one
+		int[] totals = new int[features.size()+1];
+		ListUtils.setDelim(",");
+		System.out.printf("%s,%s,%s,%s,%s\n","chrom","start","end",ListUtils.excelLine(features),"No overlap");
 		for (String chrStr : chrs)
 		{
 			// Some of my files have these forms.
@@ -111,23 +124,41 @@ public class FeatCounter {
 
 				SimpleGFFRecord target = (SimpleGFFRecord) targetit.next();
 
-
-
-				// Get the overlapping feats
-				FeatDbQuerier params = new FeatDbQuerier();
-				params.addRangeFilter(target.getSeqName(), target.getStart(), target.getEnd());
-				params.addFeatFilter(featType);
-				FeatIterator feats = new FeatIterator(params);
-
-				while (feats.hasNext())
+				boolean overlapsSomething = false;
+				for (int n = 0; n < features.size(); n++)
 				{
-					feats.next();
-					nF++;
-				}
-			}
-			System.out.printf("%s,%s,%d\n", featType, chrStr, nF);
-		}
+					String featType = features.get(n);
 
+					// Get the overlapping feats
+					FeatDbQuerier params = new FeatDbQuerier();
+					params.addRangeFilter(target.getSeqName(), target.getStart(), target.getEnd());
+					params.addFeatFilter(featType);
+					FeatIterator feats = new FeatIterator(params);
+
+					boolean overlap = (feats.hasNext());
+					if (overlap) totals[n]++;
+					overlapsSomething |= overlap;
+					
+					if (n==0)
+					{
+						System.out.printf("%s,%d,%d",chrStr,target.getStart(),target.getEnd());
+					}
+					System.out.printf(",%d",(overlap)?1:0);	
+					
+//					while (feats.hasNext())
+//					{
+//						feats.next();
+//						nF++;
+//					}
+				}
+				System.out.printf(",%d",(!overlapsSomething)?1:0);
+				if (!overlapsSomething) totals[features.size()]++;
+				System.out.println();
+			}
+		}
+		
+		ListUtils.setDelim(",");
+		System.out.printf("%s,%s,%s,%s\n","totals","a","b",ListUtils.excelLine(totals));
 	}
 	
 	
