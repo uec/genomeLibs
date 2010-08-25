@@ -22,8 +22,10 @@ import org.usckeck.genome.ChromFeatures;
 import sun.tools.tree.ThisExpression;
 
 import edu.usc.epigenome.genomeLibs.GFFUtils;
+import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
+import edu.usc.epigenome.genomeLibs.ChromScores.ChromScoresArrayInt;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerAveraging;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
@@ -46,6 +48,8 @@ public class FeatCounter {
 	protected List<String> chrs = new ArrayList<String>(25);
 	@Option(name="-feature",multiValued=true,usage="One or more features from features_ tables")
 	protected List<String> features = new ArrayList<String>(25);
+	@Option(name="-flank",multiValued=false,usage="Flanking sequence for each feature")
+	protected int flank = 0;
 
 	// receives other command line parameters than options
 	@Argument
@@ -86,7 +90,7 @@ public class FeatCounter {
 			return;
 		}
 
-		if (arguments.size()!=1)
+		if (arguments.size()>1)
 		{
 			System.err.println(C_USAGE);
 			parser.printUsage(System.err);
@@ -102,10 +106,14 @@ public class FeatCounter {
 		}		
 		
 		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
-		String targetFn = arguments.get(0);
+		
+		ChromFeatures targetFeats = null;
+		if (arguments.size()>=1)
+		{
+			String targetFn = arguments.get(0);
+			targetFeats = new ChromFeatures(targetFn, true);
+		}
 
-
-		ChromFeatures targetFeats = new ChromFeatures(targetFn, true);
 		// Go through target feats one by one
 		int[] totals = new int[features.size()+1];
 		ListUtils.setDelim(",");
@@ -117,43 +125,72 @@ public class FeatCounter {
 			if (chrStr.equalsIgnoreCase("chry")) chrStr = "chrY";
 			if (chrStr.equalsIgnoreCase("chrm")) chrStr = "chrM";
 
-			int nF = 0;
-			Iterator targetit = targetFeats.featureIterator((new ChromFeatures()).chrom_from_public_str(chrStr));
-			while (targetit.hasNext())
+			boolean overlapsSomething = false;
+			if (targetFeats == null)
 			{
-
-				SimpleGFFRecord target = (SimpleGFFRecord) targetit.next();
-
-				boolean overlapsSomething = false;
+				int chrLen = GoldAssembly.chromLengthStatic(chrStr, "hg18");
+				
+				// Take size of features.
 				for (int n = 0; n < features.size(); n++)
 				{
+					ChromScoresArrayInt scores = new ChromScoresArrayInt("hg18");
 					String featType = features.get(n);
 
 					// Get the overlapping feats
 					FeatDbQuerier params = new FeatDbQuerier();
-					params.addRangeFilter(target.getSeqName(), target.getStart(), target.getEnd());
+					params.addRangeFilter(chrStr, 0, 0); // Set to 0,0 for whole chromosome
 					params.addFeatFilter(featType);
 					FeatIterator feats = new FeatIterator(params);
-
-					boolean overlap = (feats.hasNext());
-					if (overlap) totals[n]++;
-					overlapsSomething |= overlap;
-					
-					if (n==0)
+					while (feats.hasNext())
 					{
-						System.out.printf("%s,%d,%d",chrStr,target.getStart(),target.getEnd());
+						GFFRecord rec = feats.next();
+						scores.addRange(chrStr, Math.max(0,rec.getStart()-flank), Math.min(chrLen-1,rec.getEnd()+flank), 1);
 					}
-					System.out.printf(",%d",(overlap)?1:0);	
-					
-//					while (feats.hasNext())
-//					{
-//						feats.next();
-//						nF++;
-//					}
+
+					totals[n] += scores.getCoverageTotal(chrStr);
 				}
-				System.out.printf(",%d",(!overlapsSomething)?1:0);
-				if (!overlapsSomething) totals[features.size()]++;
-				System.out.println();
+
+			}
+			else
+			{			
+				int nF = 0;
+				Iterator targetit = targetFeats.featureIterator((new ChromFeatures()).chrom_from_public_str(chrStr));
+				while (targetit.hasNext())
+				{
+
+					SimpleGFFRecord target = (SimpleGFFRecord) targetit.next();
+
+
+					for (int n = 0; n < features.size(); n++)
+					{
+						String featType = features.get(n);
+
+						// Get the overlapping feats
+						FeatDbQuerier params = new FeatDbQuerier();
+						params.addRangeFilter(target.getSeqName(), target.getStart()-flank, target.getEnd()+flank);
+						params.addFeatFilter(featType);
+						FeatIterator feats = new FeatIterator(params);
+
+						boolean overlap = (feats.hasNext());
+						if (overlap) totals[n]++;
+						overlapsSomething |= overlap;
+
+						if (n==0)
+						{
+							System.out.printf("%s,%d,%d",chrStr,target.getStart(),target.getEnd());
+						}
+						System.out.printf(",%d",(overlap)?1:0);	
+
+						//					while (feats.hasNext())
+						//					{
+						//						feats.next();
+						//						nF++;
+						//					}
+					}
+					System.out.printf(",%d",(!overlapsSomething)?1:0);
+					if (!overlapsSomething) totals[features.size()]++;
+					System.out.println();
+				}
 			}
 		}
 		
