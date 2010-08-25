@@ -250,6 +250,23 @@ abstract public class ChromScoresFast {
 		
 		return total;
 	}
+	
+	public double getCoverageTotal(String chr)
+	{
+		int s = this.chromMinPos(chr);
+		int e = this.chromMaxPos(chr);
+			
+		double total=0.0;
+		for (int i = s; i <= e; i++)
+		{
+			int pos = i;
+			double score = ((Number)getScore(chr, pos)).doubleValue();
+			//System.err.println("\tscore=" + score);
+			if (score!=0.0) total+=1.0;
+		}
+		
+		return total;
+	}
 
 	
 
