@@ -52,7 +52,7 @@ public class MethylDbToDomains {
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
     @Option(name="-minOutputWindSize",usage="only output windows this big or bigger (0)")
-    protected int minOutputWindSize = 500;
+    protected int minOutputWindSize = 0;
     @Option(name="-windSize",usage="starting window size (500)")
     protected int windSize = 500;
     @Option(name="-variableWindowMaxWind",usage="If set , we expand window up to this size to get at least minCpgs (required but slower)")
