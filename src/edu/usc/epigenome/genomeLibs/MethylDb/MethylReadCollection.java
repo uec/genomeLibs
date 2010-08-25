@@ -37,7 +37,20 @@ public class MethylReadCollection {
 	
 	public void addCpg(Cpg cpg)
 	{
+		addCpg(cpg,false);
+	}
+	
+	/**
+	 * @param cpg
+	 * @param collapseRevStrandPositions If true, we subtract one from the position of all reverse strand Cpgs, making them the same as their FW strand counterparts 
+	 * 
+	 */
+	public void addCpg(Cpg cpg, boolean collapseRevStrandPositions)
+	{
 		//System.err.printf("Adding Cpg pos=%d, numReads=%d, meth=%.2f\n%s\n", cpg.chromPos, cpg.totalReads, cpg.fracMeth(true),cpg.toReadFormatString());
+		
+		int newChromPos = (collapseRevStrandPositions && cpg.negStrand) ? cpg.chromPos-1 : cpg.chromPos;
+		cpg.chromPos = newChromPos;
 		
 		Iterator<CpgRead> readIt = cpg.getReads().values().iterator(); 
 		while (readIt.hasNext())
@@ -55,11 +68,12 @@ public class MethylReadCollection {
 				}
 				else
 				{
-					//System.err.printf("Pos %d, Read exists\n",cpg.chromPos);
+					//System.err.printf("Pos %d, Read exists\n",newChromPos);
 				}
 
+				
 				boolean meth = cpgRead.meth(this.params.useNonconversionFilter);
-				read.addPosition(cpg.chromPos, meth);
+				read.addPosition(newChromPos, meth);
 //				System.err.printf("Read %d has %d CpGs (meth=%.2f)\n", cpgRead.readId, read.numTotal(), read.fracMeth());
 			}
 		}
