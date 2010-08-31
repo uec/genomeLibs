@@ -55,7 +55,7 @@ foreach my $f (@files)
 	    # 4) USC Epigenome Center Me2.0 single end
 	    # 5) USC Epigenome Center Me2.X paired end
 	    # 6-8) variants of sequence adapters Me2.X
-	    if (($seq_line =~ /^G?ATCGGAAGAGCTCG/i) ||   
+	    if (($seq_line =~ /^G?ATCGGAAGAG/i) ||   
 		($seq_line =~ /^CGGTTCAGCAGGAATG/i) ||		
 		($seq_line =~ /^CAGCAGGAATGCCGAG/i) ||		
 		($seq_line =~ /^G?TTTGTAAGAG[CT]T[CT]GTA/i) ||		
@@ -67,7 +67,7 @@ foreach my $f (@files)
 		print OUTADAPTERS $seq_so_far;
 	    }
 	    # Now check for adapter sequence at end
-	    elsif (($seq_line =~ /GATCGGAAGAGCTCG/i) ||
+	    elsif (($seq_line =~ /GATCGGAAGAG/i) ||
 		   ($seq_line =~ /CGGTTCAGCAGGAATG/i) ||		
 		   ($seq_line =~ /CAGCAGGAATGCCGAG/i) ||		
 		   ($seq_line =~ /GTTTGTAAGAG[CT]T[CT]GTA/i) ||		
