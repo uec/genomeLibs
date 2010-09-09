@@ -482,7 +482,7 @@ public class CpgWalker implements TabularOutput {
 	{
 		// Call into the single table version to provide backwards compatibility
 		List<Cpg> singleSampleWindow = multiWindowToSingle(inWindow);
-		System.err.println("ProcessWindow, making single sample version: " + this.windStr());
+		//System.err.println("ProcessWindow, making single sample version: " + this.windStr());
 		processWindow(singleSampleWindow);
 		singleSampleWindow.clear();
 		

@@ -27,18 +27,18 @@ public class CpgWalkerDomainFinderMethRange extends CpgWalkerDomainFinder {
 	}
 
 	@Override
-	protected boolean windPasses(List<Cpg> inWindow) {
+	protected boolean windPasses(List<Cpg[]> inWindow) {
 
-		boolean useWeighting = (CpgWalker.windLen(inWindow) >= this.MIN_WEIGHTING_WIND_SIZE);
+		boolean useWeighting = (CpgWalker.windLen(inWindow,true) >= this.MIN_WEIGHTING_WIND_SIZE);
 		
 		// We use the walker's built in meth summarizer
-		double meth = this.methSummarizer.getValMean(useWeighting);
+		double meth = this.methSummarizer.get(0).getValMean(useWeighting);
 		
-		if (this.walkParams.debug) System.err.printf("\tTesting window\t%s\n", CpgWalker.windStr(inWindow));
+		if (this.walkParams.debug) System.err.printf("\tTesting window\t%s\n", CpgWalker.windStr(inWindow,true));
 
 		boolean passes = ((meth>=this.minMeth) && (meth<=this.maxMeth));
 
-		if (this.walkParams.debug && passes) System.err.printf("\t\tFound passing window\t%s\n", CpgWalker.windStr(inWindow));
+		if (this.walkParams.debug && passes) System.err.printf("\t\tFound passing window\t%s\n", CpgWalker.windStr(inWindow,true));
 //		if (this.walkParams.debug && passes) System.err.printf("\t\tFound passing window, meth =%.2f\tsize=%d (%d CpGs)\n",
 //				meth, inWindow.get(inWindow.size()-1).chromPos-inWindow.get(0).chromPos, inWindow.size());
 		
@@ -47,9 +47,9 @@ public class CpgWalkerDomainFinderMethRange extends CpgWalkerDomainFinder {
 	}
 
 	@Override
-	protected double windScore(List<Cpg> inWindow) {
-		boolean useWeighting = (CpgWalker.windLen(inWindow) >= this.MIN_WEIGHTING_WIND_SIZE);
-		double meth = this.methSummarizer.getValMean(useWeighting);
+	protected double windScore(List<Cpg[]> inWindow) {
+		boolean useWeighting = (CpgWalker.windLen(inWindow,true) >= this.MIN_WEIGHTING_WIND_SIZE);
+		double meth = this.methSummarizer.get(0).getValMean(useWeighting);
 		return meth;
 	}
 

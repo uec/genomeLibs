@@ -58,7 +58,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 
 
 	@Override
-	protected void processWindow(List<Cpg> inWindow)
+	protected void processWindow(List<Cpg[]> inWindow, boolean fake)
 	{
 
 		
@@ -68,8 +68,8 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 
 		if (nCpgs>0)
 		{
-			s = inWindow.get(0).chromPos;
-			e = inWindow.get(nCpgs-1).chromPos;
+			s = inWindow.get(0)[0].chromPos;
+			e = inWindow.get(nCpgs-1)[0].chromPos;
 		}
 
 //		System.err.println("\tprocessing window: " + s +
@@ -145,7 +145,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		
 	
 		// And the superclass
-		super.processWindow(inWindow);
+		super.processWindow(inWindow,fake);
 
 	}
 	
@@ -185,6 +185,6 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 	}
 
 
-	abstract protected boolean windPasses(List<Cpg> inWindow);
-	abstract protected double windScore(List<Cpg>inWindow);
+	abstract protected boolean windPasses(List<Cpg[]> inWindow);
+	abstract protected double windScore(List<Cpg[]>inWindow);
 }
