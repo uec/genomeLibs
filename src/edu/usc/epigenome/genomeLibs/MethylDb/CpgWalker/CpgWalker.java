@@ -23,6 +23,10 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgSummarizers.CpgSummarizer;
  * Walks over a sliding window of adjacent Cpgs
  */
 
+/**
+ * @author benb
+ *
+ */
 public class CpgWalker implements TabularOutput {
 
 /*
@@ -32,15 +36,17 @@ public class CpgWalker implements TabularOutput {
 	public CpgWalkerParams walkParams = null;
 	protected boolean useSummarizers = true;
 	public static final int PROCESS_WINDOW_EVENT = 1;
-	protected List<Cpg> lastProcessedWindow = null;
+	protected List<Cpg[]> lastProcessedWindow = null;
+	protected List<String> tables = new ArrayList<String>();
+	
 	
 	// List management
-	private LinkedList<Cpg> window = new LinkedList<Cpg>();
+	private LinkedList<Cpg[]> window = new LinkedList<Cpg[]>();
 	
 	// Some useful summarizers for the window
-	protected CpgSummarizer methSummarizer = new CpgMethLevelSummarizer();
-	protected CpgSummarizer methSummarizerFw = new CpgMethLevelSummarizerStranded(true);
-	protected CpgSummarizer methSummarizerRev = new CpgMethLevelSummarizerStranded(false);
+	protected List<CpgSummarizer> methSummarizer = new ArrayList<CpgSummarizer>();//new CpgMethLevelSummarizer();
+	protected List<CpgSummarizer> methSummarizerFw = new ArrayList<CpgSummarizer>();//new CpgMethLevelSummarizerStranded(true);
+	protected List<CpgSummarizer> methSummarizerRev = new ArrayList<CpgSummarizer>();//new CpgMethLevelSummarizerStranded(false);
 	String curChr = null;
 	public String lastChrom = "noChrom";
 
@@ -50,14 +56,55 @@ public class CpgWalker implements TabularOutput {
 	/**
 	 * 
 	 */
-	public CpgWalker(CpgWalkerParams inWalkParams) {
+	public CpgWalker(CpgWalkerParams inWalkParams, List<String>inTables) {
 		super();
 		this.walkParams = inWalkParams;
+		this.setTables(inTables);
 //		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
 //				"test", "test");
 
 	}
 	
+	/**
+	 * Constructor for single table analysis
+	 * @param inWalkParams
+	 * @param inTables
+	 */
+	public CpgWalker(CpgWalkerParams inWalkParams) {
+		super();
+		this.walkParams = inWalkParams;
+		
+		List<String> newTables = new ArrayList<String>();
+		String methylTable = "hi"; // inWalkParams.methylParams.methylTablePrefix
+		newTables.add(methylTable);
+		this.setTables(newTables);
+//		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
+//				"test", "test");
+
+	}
+
+	
+	/**
+	 * @return the tables
+	 */
+	public List<String> getTables() {
+		return tables;
+	}
+	
+	public int numTables()
+	{
+		return this.getTables().size();
+	}
+
+	/**
+	 * @param tables the tables to set
+	 */
+	public void setTables(List<String> tables) {
+		this.tables = tables;
+	}
+
+
+
 	public void clearWindowListeners()
 	{
 		listeners = new ArrayList<ActionListener>(10);
@@ -103,7 +150,7 @@ public class CpgWalker implements TabularOutput {
 	
 	public void reset()
 	{
-		window = new LinkedList<Cpg>();
+		window = new LinkedList<Cpg[]>();
 		this.resetSummarizers();
 		System.err.println("CpgWalker reset()");
 	}
@@ -112,13 +159,19 @@ public class CpgWalker implements TabularOutput {
 	{
 		if (useSummarizers)
 		{
-			methSummarizer = new CpgMethLevelSummarizer();
-			methSummarizerFw = new CpgMethLevelSummarizerStranded(true);
-			methSummarizerRev = new CpgMethLevelSummarizerStranded(false);
+			methSummarizer = new ArrayList<CpgSummarizer>();
+			methSummarizerFw = new ArrayList<CpgSummarizer>();
+			methSummarizerRev = new ArrayList<CpgSummarizer>();
+			for (int i = 0; i < this.numTables(); i++)
+			{
+				methSummarizer.add(new CpgMethLevelSummarizer());
+				methSummarizerFw.add(new CpgMethLevelSummarizerStranded(true));
+				methSummarizerRev.add(new CpgMethLevelSummarizerStranded(false));
+			}
 		}
 	}
 	
-	public List<Cpg> getLastProcessedWindow() {
+	public List<Cpg[]> getLastProcessedWindow() {
 		return lastProcessedWindow;
 	}
 
@@ -126,9 +179,9 @@ public class CpgWalker implements TabularOutput {
 	 * This uses a fixed window size and is much faster
 	 * @param cpg Must be streamed in serially.
 	 */
-	protected void streamCpgFixedWind(Cpg cpg)
+	protected void streamCpgFixedWind(Cpg[] cpg)
 	{
-		int newPos = cpg.chromPos;
+		int newPos = cpg[0].chromPos;
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
 				String.format("Found Cpg: %d\n", newPos));
 
@@ -136,18 +189,21 @@ public class CpgWalker implements TabularOutput {
 		window.add(cpg);
 		if (useSummarizers)
 		{
-			methSummarizer.streamCpg(cpg);
-			methSummarizerFw.streamCpg(cpg);
-			methSummarizerRev.streamCpg(cpg);
+			for (int t = 0; t < this.numTables(); t++)
+			{
+				methSummarizer.get(t).streamCpg(cpg[t]);
+				methSummarizerFw.get(t).streamCpg(cpg[t]);
+				methSummarizerRev.get(t).streamCpg(cpg[t]);
+			}
 		}
 
 
 		// Remove cpgs from the tail
 		boolean done = false;
-		Cpg endCpg;
+		Cpg[] endCpg;
 		while (!done && ((endCpg = window.peek()) != null))
 		{
-			if ((newPos - endCpg.chromPos) < this.walkParams.maxScanningWindSize)
+			if ((newPos - endCpg[0].chromPos) < this.walkParams.maxScanningWindSize)
 			{
 				done = true;
 			}
@@ -156,9 +212,12 @@ public class CpgWalker implements TabularOutput {
 				window.remove();
 				if (useSummarizers)
 				{
-					methSummarizer.removeCpg(endCpg);
-					methSummarizerFw.removeCpg(endCpg);
-					methSummarizerRev.removeCpg(endCpg);
+					for (int t = 0; t < this.numTables(); t++)
+					{
+						methSummarizer.get(t).removeCpg(endCpg[t]);
+						methSummarizerFw.get(t).removeCpg(endCpg[t]);
+						methSummarizerRev.get(t).removeCpg(endCpg[t]);
+					}
 				}
 			}
 		}
@@ -173,7 +232,7 @@ public class CpgWalker implements TabularOutput {
 //			System.err.println("\t\t Mean meth=" + mean);
 //			if (mean < 0.7)
 //			System.out.println(MethylDbUtils.bedLine("chr11", windStart(), windEnd(), ".", mean));
-			this.processWindow(this.window);
+			this.processWindow(this.window, true);
 		}
 		else
 		{
@@ -186,9 +245,9 @@ public class CpgWalker implements TabularOutput {
 	 * widely varying CG density.
 	 * @param cpg Must be streamed in serially.
 	 */
-	protected void streamCpgVariableWind(Cpg cpg)
+	protected void streamCpgVariableWind(Cpg[] cpg)
 	{
-		int newPos = cpg.chromPos;
+		int newPos = cpg[0].chromPos;
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
 				String.format("Variable wind found Cpg: %d\n", newPos));
 
@@ -198,10 +257,10 @@ public class CpgWalker implements TabularOutput {
 
 		// Remove cpgs from the tail
 		boolean done = false;
-		Cpg endCpg;
+		Cpg[] endCpg;
 		while (!done && ((endCpg = window.peek()) != null))
 		{
-			if ((newPos - endCpg.chromPos) < this.walkParams.maxScanningWindSize)
+			if ((newPos - endCpg[0].chromPos) < this.walkParams.maxScanningWindSize)
 			{
 				done = true;
 			}
@@ -221,7 +280,7 @@ public class CpgWalker implements TabularOutput {
 			// First we set our summarizers.
 			// Take the last minCpgs as the sub-window.  Do it as an iterator since
 			// a linked list might be quicker iterating than using "get(i)".
-			Iterator<Cpg> backIt = window.descendingIterator();
+			Iterator<Cpg[]> backIt = window.descendingIterator();
 			int i = 0;
 			int lastPos = 0;
 			if (useSummarizers) this.resetSummarizers();
@@ -232,15 +291,18 @@ public class CpgWalker implements TabularOutput {
 				if (!backIt.hasNext()) System.err.println("Why did we run out of window elements?!"); // REMOVE
 				// ***** REMOVE THIS
 
-				Cpg backCpg = backIt.next();
+				Cpg[] backCpg = backIt.next();
 				//System.err.println("\t(i=" + i + ") cpg=" + backCpg.chromPos);
-				lastPos = backCpg.chromPos;
+				lastPos = backCpg[0].chromPos;
 				
 				if (useSummarizers)
 				{
-					methSummarizer.streamCpg(backCpg);
-					methSummarizerFw.streamCpg(backCpg);
-					methSummarizerRev.streamCpg(backCpg);
+					for (int t = 0; t < this.numTables(); t++)
+					{
+						methSummarizer.get(t).streamCpg(backCpg[t]);
+						methSummarizerFw.get(t).streamCpg(backCpg[t]);
+						methSummarizerRev.get(t).streamCpg(backCpg[t]);
+					}
 				}
 				
 				int windLen = newPos-lastPos;
@@ -255,7 +317,7 @@ public class CpgWalker implements TabularOutput {
 	//		System.err.printf("Checking size %d (minSizeReached=%s)\n",cpg.chromPos-lastPos+1,minSizeReached);
 			if (minSizeReached && (i>walkParams.minScanningWindCpgs))
 			{
-				this.processWindow(this.window.subList(this.window.size()-(i-1), this.window.size()));
+				this.processWindow(this.window.subList(this.window.size()-(i-1), this.window.size()), true);
 			}
 		}
 	}
@@ -263,7 +325,7 @@ public class CpgWalker implements TabularOutput {
 	/**
 	 * @param cpg
 	 */
-	public void streamCpg(Cpg cpg)
+	public void streamCpg(Cpg[] cpg)
 	{
 		//System.err.println("Streaming CpG: " + cpg.toStringExpanded());
 		//System.err.println("\tuseFixedStep=" + !this.walkParams.useVariableWindow);
@@ -277,6 +339,17 @@ public class CpgWalker implements TabularOutput {
 		}
 	}
 
+	/**
+	 * Include for backwards compatibility with single-table analyses
+	 * @param cpg
+	 */
+	public void streamCpg(Cpg cpg)
+	{
+		Cpg[] multi = new Cpg[1];
+		multi[0]  = cpg;
+		streamCpg(multi);
+	}
+	
 	public String lastProcessedWindStr(boolean longVers)
 	{
 		return windStr(this.getLastProcessedWindow(),longVers);
@@ -284,12 +357,17 @@ public class CpgWalker implements TabularOutput {
 
 	public String windStr()
 	{
-		return windStr(this.window);
+		return windStrMulti(this.window);
 	}
 	
-	public static String windStr(List<Cpg> inWind)
+	public static String windStrMulti(List<Cpg[]> inWind)
 	{
 		return windStr(inWind, false);
+	}
+
+	public static String windStr(List<Cpg> inWind)
+	{
+		return windStr(singleWindowToMulti(inWind), false);
 	}
 
 	public String windStr(boolean longVers)
@@ -298,12 +376,12 @@ public class CpgWalker implements TabularOutput {
 	}
 
 	
-	public static String windStr(List<Cpg> inWind, boolean longVers)
+	public static String windStr(List<Cpg[]> inWind, boolean longVers)
 	{
 		StringBuffer sb = new StringBuffer(10000);
 		
-		int e = windEnd(inWind);
-		int s = windStart(inWind);
+		int e = windEnd(inWind,true);
+		int s = windStart(inWind,true);
 		sb.append(String.format("Wind %d-%d (%d bp) has %d elements: ",
 				s, e, e-s+1, inWind.size()));
 		if (longVers)
@@ -311,8 +389,8 @@ public class CpgWalker implements TabularOutput {
 			for (int i = 0; i < inWind.size(); i++)
 			{
 				if (i>0) sb.append(", ");
-				Cpg cpg = inWind.get(i);
-				sb.append(cpg.chromPos);
+				Cpg[] cpg = inWind.get(i);
+				sb.append(cpg[0].chromPos);
 			}
 		}
 		
@@ -322,19 +400,37 @@ public class CpgWalker implements TabularOutput {
 
 	public int windLen()
 	{
-		return windLen(this.window);
+		return windLen(this.window,true);
 	}
 	
 	public int windStart()
 	{
-		return windStart(window);
+		return windStart(window,true);
 	}
 
 	public int windEnd()
 	{
-		return windEnd(window);
+		return windEnd(window,true);
 	}
 	
+	public static int windLen(List<Cpg[]> inWind, boolean fake)
+	{
+		return windEnd(inWind,fake) - windStart(inWind,fake) + 1;
+	}
+	
+	public static int windStart(List<Cpg[]> inWind, boolean fake)
+	{
+		if (inWind.size()==0) return -1;
+		return inWind.get(0)[0].chromPos;
+	}
+
+	public static int windEnd(List<Cpg[]> inWind, boolean fake)
+	{
+		if (inWind.size()==0) return -1;
+		return inWind.get(inWind.size()-1)[0].chromPos;
+	}
+	
+	// FOR BACKWARDS COMPATIBILITY	
 	public static int windLen(List<Cpg> inWind)
 	{
 		return windEnd(inWind) - windStart(inWind) + 1;
@@ -352,9 +448,46 @@ public class CpgWalker implements TabularOutput {
 		return inWind.get(inWind.size()-1).chromPos;
 	}
 
-	// !!! OVERRIDE THIS !!!
-	protected void processWindow(List<Cpg> inWindow)
+	
+	/***
+	 ******** OVERRIDE ONE OR BOTH OF THESE *********
+	 * @param inWindow
+	 */
+	protected static List<Cpg> multiWindowToSingle(List<Cpg[]> inMulti)
 	{
+		// Call into the single table version to provide backwards compatibility
+		List<Cpg> singleSampleWindow = new ArrayList<Cpg>(inMulti.size());
+		for (int i = 0; i < inMulti.size(); i++)
+		{
+			singleSampleWindow.add(inMulti.get(i)[0]);
+		}
+		return singleSampleWindow;
+	}
+	
+	protected static List<Cpg[]> singleWindowToMulti(List<Cpg> inSingle)
+	{
+		// Call into the single table version to provide backwards compatibility
+		List<Cpg[]> multi = new ArrayList<Cpg[]>(inSingle.size());
+		for (int i = 0; i < inSingle.size(); i++)
+		{
+			Cpg[] multiCpg = new Cpg[1];
+			multiCpg[0] = inSingle.get(i);
+			multi.add(multiCpg);
+		}
+		return multi;
+	}
+
+
+	protected void processWindow(List<Cpg[]> inWindow, boolean fake) // The fake is just to give it a different signature from the List<Cpg> version
+	{
+		// Call into the single table version to provide backwards compatibility
+		List<Cpg> singleSampleWindow = multiWindowToSingle(inWindow);
+		System.err.println("ProcessWindow, making single sample version: " + this.windStr());
+		processWindow(singleSampleWindow);
+		singleSampleWindow.clear();
+		
+		
+		// Now bookkeeping
 		lastProcessedWindow = inWindow;
 		
 		// Basic version does nothing except alert listeners
@@ -367,6 +500,13 @@ public class CpgWalker implements TabularOutput {
 		this.lastChrom = this.curChr;
 	}
 
+	/**
+	 * This was the version prior to making the class multi-sample.  It is called for backwards compatibility with old sub-classes
+	 * @param inWindow
+	 */
+	protected void processWindow(List<Cpg> inWindow)
+	{
+	}
 	
 	
 	/* (non-Javadoc)
