@@ -23,8 +23,8 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		pw = inPw;
 	}
 
-	public CpgWalkerDomainFinder(CpgWalkerParams inWalkParams, String chr, PrintWriter inPw, List<String> inTables) {
-		super(inWalkParams, inTables);
+	public CpgWalkerDomainFinder(CpgWalkerParams inWalkParams, String chr, PrintWriter inPw, int inNumTables) {
+		super(inWalkParams, inNumTables);
 		pw = inPw;
 	}
 	

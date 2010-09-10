@@ -151,6 +151,8 @@ public class MethylDbToMultisampleFeatAlignments {
 		String[][] chartMat = new String[nS][nFeatTypes];
 		for (String featFn : featFns)
 		{
+			try
+			{
 			onFeatType++;
 			ChromFeatures feats = new ChromFeatures(featFn, true);
 			feats = feats.filterBySize(0, this.maxFeatSize);
@@ -229,7 +231,11 @@ public class MethylDbToMultisampleFeatAlignments {
 				writer.printf("<H4>Variance</H4>\n");
 				writer.println(this.fVarianceMat.htmlChart(!this.combineStrands, true, false));
 			}
-
+			}
+			catch (Exception e)
+			{
+				System.err.println("Couldn't process feat " + featFn + "\n" + e.getMessage());
+			}
 			
 
 

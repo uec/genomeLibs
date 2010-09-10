@@ -41,7 +41,7 @@ public class MethylDbToWigs {
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected String withinFeat = null;
     @Option(name="-outPrefix",usage="Output files will have this name")
-    protected String outPrefix = "wiggleTester";
+    protected String outPrefix = null;
     @Option(name="-stepSize",usage="step size for wiggle (50)")
     protected int stepSize = 50;
     @Option(name="-windSize",usage="starting window size (500)")
@@ -79,8 +79,13 @@ public class MethylDbToWigs {
 		{
 			parser.parseArgument(args);
 
-			if(arguments.size() < 1 ) {
-				chrs = MethylDbUtils.CHROMS;
+			chrs = MethylDbUtils.TEST_CHROMS; // MethylDbUtils.CHROMS;
+			if(this.outPrefix==null)
+			{
+				System.err.println(C_USAGE);
+				// print the list of available options
+				parser.printUsage(System.err);
+				System.exit(0);
 			}
 			else
 			{
@@ -122,29 +127,48 @@ public class MethylDbToWigs {
 
 		// Setup output files.
 		List<PrintWriter> openFiles = new ArrayList<PrintWriter>(100);
+		
+		// Special cases for coloring
+		String colorA = "204,153,102";
+		String colorB = "204,102,0";
+		if (this.table1.toUpperCase().contains("H1"))
+		{
+			colorA = "0,102,0";
+			colorB = "0,102,255";
+		}
+		else if (this.table1.toUpperCase().contains("IMR90"))
+		{
+			colorB = "0,102,0";
+			colorA = "0,102,255";			
+		}
+
 		String outfnAs = this.outPrefix + "." + this.table1 + ".bare.wig";
 		PrintWriter pwAs = new PrintWriter(new FileOutputStream(outfnAs));
-		pwAs.printf("track type=wiggle_0 name=%sbare description=%sbare  color=204,153,102 visibility=full " +
+		pwAs.printf("track type=wiggle_0 name=%sbare description=%sbare  color=" + colorA + " visibility=full " +
 				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
 		openFiles.add(pwAs);
 	
 		String outfnBs = this.outPrefix + "." + this.table2 + ".bare.wig";
 		PrintWriter pwBs = new PrintWriter(new FileOutputStream(outfnBs));
-		pwBs.printf("track type=wiggle_0 name=%sbare description=%sbare color=204,102,0 visibility=full " +
+		pwBs.printf("track type=wiggle_0 name=%sbare description=%sbare color=" + colorB + " visibility=full " +
 				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
 		openFiles.add(pwBs);
 		
+		
+		
 		String outfnA = this.outPrefix + "." + this.table1 + ".wig";
 		PrintWriter pwA = new PrintWriter(new FileOutputStream(outfnA));
-		pwA.printf("track type=wiggle_0 name=%s description=%s  color=204,153,102 visibility=full " +
+		pwA.printf("track type=wiggle_0 name=%s description=%s  color=" + colorA + " visibility=full " +
 				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
 		openFiles.add(pwA);
 	
 		String outfnB = this.outPrefix + "." + this.table2 + ".wig";
 		PrintWriter pwB = new PrintWriter(new FileOutputStream(outfnB));
-		pwB.printf("track type=wiggle_0 name=%s description=%s color=204,102,0 visibility=full " +
+		pwB.printf("track type=wiggle_0 name=%s description=%s color=" + colorB + " visibility=full " +
 				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
 		openFiles.add(pwB);
+		
+		
 		
 		// HEMI
 		String outfnHemiA = this.outPrefix + ".hemimeth." + this.table1 + ".wig";
@@ -195,7 +219,7 @@ public class MethylDbToWigs {
 		for (String chr : chrs)
 		{
 
-			if (!chrEndSet)
+			if (!chrEndSet || (chrEnd<=0))
 			{
 				chrEnd = GoldAssembly.chromLengthStatic(chr, "hg18");
 			}

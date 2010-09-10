@@ -25,7 +25,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinder;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinderMethRange;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerMultisampleMethRange;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerMultisampleMethRange_DEPR;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
 
@@ -175,8 +175,8 @@ public class MethylDbToMultisampleDomains {
 		
 			
 		// And domain finder
-		CpgWalkerMultisampleMethRange domainFinder = 
-			new CpgWalkerMultisampleMethRange(walkerParams,nTables, pw, this.minMeth, this.maxMeth);
+		CpgWalkerMultisampleMethRange_DEPR domainFinder = 
+			new CpgWalkerMultisampleMethRange_DEPR(walkerParams,nTables, pw, this.minMeth, this.maxMeth);
 
 		
 		MethylDbQuerier params = new MethylDbQuerier();

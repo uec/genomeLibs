@@ -21,10 +21,11 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
-import edu.usc.epigenome.genomeLibs.MethylDb.CpgMethDiff;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorRandomized;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinder;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinderMethDiffs;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinderMethRange;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
@@ -32,32 +33,52 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
 public class MethylDbToDiffDomains {
 
-	public int STEP = (int)1E6;
+	public int STEP = (int)5E6;
+	public int MINCOORD = 0;
 	public int MAXCOORD = (int)2.8E8;
 	
 	
-	private static final String C_USAGE = "Use: MethylDbToDiffDomains -outPrefix out -table methylCGsRich_normal010310_ " + 
-		" -windSize 100000 -minCpgs 6 -minMeth 0.4 -maxMeth 0.6 -minCTreads 2 -maxOppStrandAfrac 0.10 -noNonconvFilter table1 table2";
+	private static final String C_USAGE = "Use: MethylDbToDomains -outPrefix out -table methylCGsRich_normal010310_ -tableLowMeth methylCGsRich_normalM030510_ " + 
+		" -tableHighMeth methylCGsRich_tumorM030510_ -windSize 100000 -minCpgs 6 -minMeth 0.4 -maxMeth 0.6 -minCTreads 2 -maxOppStrandAfrac 0.10 -noNonconvFilter";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
+    @Option(name="-debug",usage="only does a test segment, more debug output")
+    protected boolean debug = false;
+    @Option(name="-debugDomain",usage="only does a test segment")
+    protected boolean debugDomain = false;
+    @Option(name="-randomized",usage="Randomizes methylation values (default methylCGsRich_normal010310_)")
+    protected boolean randomized = false;
+    @Option(name="-tableLowMeth",usage="Prefix for DB table (e.g. methylCGsRich_normalM030510_)")
+    protected String tableLowMeth = null;
+    @Option(name="-tableHighMeth",usage="Prefix for DB table (e.g. methylCGsRich_tumorM030510_)")
+    protected String tableHighMeth = null;    
     @Option(name="-withinFeat",usage="A featType from the features table")
     protected String withinFeat = null;
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
+    @Option(name="-minOutputWindSize",usage="only output windows this big or bigger (0)")
+    protected int minOutputWindSize = 0;
     @Option(name="-windSize",usage="starting window size (500)")
     protected int windSize = 500;
-    @Option(name="-minCpgs",usage="starting window size (500)")
+    @Option(name="-variableWindowMaxWind",usage="If set , we expand window up to this size to get at least minCpgs (required but slower)")
+    protected int variableWindowMaxWind = -1;
+    @Option(name="-minCpgs",usage="minimum number of Cpgs in window")
     protected int minCpgs = 8;
-    @Option(name="-minMeth",usage="minimum average methylation for domain (0.4)")
-    protected double minMeth = 0.4;
-    @Option(name="-maxMeth",usage="maximum average methylation for domain (0.6)")
-    protected double maxMeth = 0.6;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 2;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
     		"This sets a maximum number of observed As on the opposite strand (default 0.1)")
     protected double maxOppStrandAfrac = 0.1;
+    @Option(name="-maxNextNonGfrac",usage="If the base following the C has more than this ratio of non-G bases, we don't count it. (default 0.1)")
+    protected double maxNextNonGfrac = 0.1;
+  
+    @Option(name="-tableLowMethMaxMeth",usage="maximum average methylation for domain (e.g. 0.2)")
+    protected double tableLowMethMaxMeth = -1.0;
+    @Option(name="-tableHighMethMinMeth",usage="minimum average methylation for domain (e.g. 0.5)")
+    protected double tableHighMethMinMeth = -1.0;
+    
+    
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -79,11 +100,30 @@ public class MethylDbToDiffDomains {
 		{
 			parser.parseArgument(args);
 
-
-			if( arguments.size() != 2 ) {
+			if( (tableLowMeth==null) || (tableHighMeth==null) )
+			{
+				System.err.println("Must specify both -tableLowMeth and -tableHighMeth");
 				System.err.println(C_USAGE);
+				parser.printUsage(System.err);
 				System.exit(1);
 			}
+
+			if( (this.tableLowMethMaxMeth<0) || (this.tableHighMethMinMeth<0) || (this.tableLowMethMaxMeth>this.tableHighMethMinMeth))
+			{
+				System.err.println("Must provide a -tableLowMethMaxMeth and -tableHighMethMinMeth, and tableLowMethMaxMeth must be larger");
+				System.err.println(C_USAGE);
+				parser.printUsage(System.err);
+				System.exit(1);
+			}
+
+			if( arguments.size() != 0 ) {
+				System.err.println(C_USAGE);
+				parser.printUsage(System.err);
+				System.exit(1);
+			}
+
+
+
 		}
 		catch (CmdLineException e)
 		{
@@ -96,73 +136,139 @@ public class MethylDbToDiffDomains {
 		}
 		
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
-		List<String> tables = arguments;
-//		int nTables = tables.size();
-		
 		
 
-		// Setup output files and print domain finders
-		List<PrintWriter> pws = new ArrayList<PrintWriter>();
+		// We do fixed step or fixed wind
+		// depending on input params
 		CpgWalkerParams walkerParams = new CpgWalkerParams();
-		walkerParams.maxScanningWindSize = this.windSize;
+		walkerParams.debug = this.debug;
 		walkerParams.minScanningWindCpgs = this.minCpgs;
-
-		String outFn = String.format("%s.DiffA-%s.DiffB-%s.wind%d.minCpg%d.meth%.2f-%.2f.bed", 
-				this.outPrefix, tables.get(0), tables.get(1), this.windSize, this.minCpgs, this.minMeth, this.maxMeth);
+		walkerParams.minOutputWindSize = this.minOutputWindSize;
+		if (this.variableWindowMaxWind >= 0)
+		{
+			if (this.windSize>this.variableWindowMaxWind)
+			{
+				System.err.println("-windSize must be smaller than -variableWindowMaxWind");
+				System.err.println(C_USAGE);
+				parser.printUsage(System.err);
+				System.err.println();
+				return;
+			}
+				
+			walkerParams.minScanningWindSize = this.windSize;
+			walkerParams.maxScanningWindSize = this.variableWindowMaxWind;
+			walkerParams.useVariableWindow = true;
+		}
+		else
+		{
+			walkerParams.maxScanningWindSize = this.windSize;
+		}
+			
+		// Setup output files and print domain finders.  
+		List<PrintWriter> pws = new ArrayList<PrintWriter>();
+		String fixedSec = (walkerParams.useVariableWindow) ? String.format(".varMaxWind%d", variableWindowMaxWind) : "";
+		String outFn = String.format("%s.lowTab-%s.highTab-%s%s.wind%d.minOutput%d.minCpg%d.lowMeth%.2f.highMeth%.2f.bed", 
+				this.outPrefix, tableLowMeth, tableHighMeth, fixedSec, this.windSize, this.minOutputWindSize, this.minCpgs, 
+				this.tableLowMethMaxMeth, this.tableHighMethMinMeth);
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
+		pw.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",outFn, outFn);
 		pws.add(pw);
 
-		// Header
-		pw.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
-				outFn, outFn);
-		CpgWalkerDomainFinder domainFinder = new CpgWalkerDomainFinderMethRange(walkerParams, null, pw,
-				this.minMeth, this.maxMeth);
+		int nTables = 1;
+		CpgWalkerDomainFinder[] domainFinders = new CpgWalkerDomainFinder[nTables];
+		domainFinders[0] = new CpgWalkerDomainFinderMethDiffs(walkerParams, null, pw, this.tableLowMethMaxMeth, 
+				this.tableHighMethMinMeth, 0, 1);
+
 		
-		// And the querier params
+		
 		MethylDbQuerier params = new MethylDbQuerier();
 		params.setMinCTreads(this.minCTreads);
 		params.setUseNonconversionFilter(!this.noNonconvFilter);
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+		params.setMaxNextNonGfrac(this.maxNextNonGfrac);
 		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
 
-		for (String chr : MethylDbUtils.CHROMS) //Arrays.asList("chr1")) //  
+
+
+		List<String> chrs = (this.debug||this.debugDomain) ? Arrays.asList("chr11") : MethylDbUtils.CHROMS;
+		for (String chr : chrs)
 		{
+			
+			
 			// Set chromosomes on the domain finders
-			domainFinder.setCurChr(chr);
+			for (int i = 0; i < nTables; i++)
+			{
+				domainFinders[i].setCurChr(chr);
+			}
+		
 
 			// Iterator uses DB connection and can use a ton of memory because
 			// it loads all rows at once.  This stuff should really be added to iterator
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
-			for (int c = 0; c < MAXCOORD; c += STEP)
-//			MAXCOORD = 2981976;
-//			for (int c = 2964914 ; c < MAXCOORD; c+=STEP)
+			
+//			if (this.debug || this.debugDomain)
+//			{
+//				MINCOORD = 8000000;
+//				MAXCOORD = 10000000;
+//				STEP = Math.min(STEP, MAXCOORD - MINCOORD + 1);
+//			}
+			
+			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
 				System.err.printf("LOADING NEW WIND: %d-%d\n",c,c+STEP-1);
 
 				params.clearRangeFilters();
-				int last = Math.min(c+STEP-1, MAXCOORD);
-				params.addRangeFilter(chr, c, last);
-				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tables);
+				params.addRangeFilter(chr, c, c+STEP-1); // *** TESTING , REPLACE ****
+
+				
+				List<String> tables = new ArrayList<String>(2);
+				tables.add(this.tableLowMeth);
+				tables.add(this.tableHighMeth);
+				Iterator<Cpg[]> cpgit = new CpgIteratorMultisample(params, tables);
+				
+	
 				//int numCpgs = cpgit.getCurNumRows();
 				while (cpgit.hasNext())
 				{
 					Cpg[] cpgs = cpgit.next();
-					
-					// Make a consensus CpG where the methyl level is the differential.
-					CpgMethDiff diffCpg = new CpgMethDiff(cpgs[0],cpgs[1]);
 
-					domainFinder.streamCpg(diffCpg);
+					// Stream Cpgs
+					domainFinders[0].streamCpg(cpgs);
 
 					//
-					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, domainFinder.windStr());
+					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, domainFinders[0].windStr());
 					onCpg++;
 				}
 
 
 			}
+			
+			// Finish chromosomes on the domain finders
+			for (int i = 0; i < nTables; i++)
+			{
+				domainFinders[i].finishChr();
+			}
+			
 		}
 		
+//		for (int i = 0; i < nTables; i++)
+//		{
+//			String tab = this.tables.get(i);
+//			CpgWalkerDomainFinder domainFinder = domainFinders[i];
+//			
+//
+//
+//			
+//			List<GenomicRange> domains = domainFinders[i].getDomains();
+//			for (GenomicRange gr : domains)
+//			{
+//				String strandStr = (gr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
+//				pw.append(MethylDbUtils.bedLine(gr.getChrom(), gr.getStart(), gr.getEnd(), strandStr, gr.getScore()));
+//				pw.println();
+//			}
+//		}
+//		
 			
 		for (PrintWriter pwi : pws)
 		{

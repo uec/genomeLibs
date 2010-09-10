@@ -21,6 +21,7 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIterator;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorRandomized;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinder;
@@ -31,7 +32,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
 public class MethylDbToDomains {
 
-	public int STEP = (int)1E6;
+	public int STEP = (int)5E6;
 	public int MINCOORD = 0;
 	public int MAXCOORD = (int)2.8E8;
 	
@@ -45,6 +46,8 @@ public class MethylDbToDomains {
     protected boolean debug = false;
     @Option(name="-debugDomain",usage="only does a test segment")
     protected boolean debugDomain = false;
+    @Option(name="-randomized",usage="Randomizes methylation values (default methylCGsRich_normal010310_)")
+    protected boolean randomized = false;
     @Option(name="-table",usage="Prefix for DB table (default methylCGsRich_normal010310_)")
     protected List<String> tables = new ArrayList<String>();
     @Option(name="-withinFeat",usage="A featType from the features table")
@@ -97,6 +100,17 @@ public class MethylDbToDomains {
 				System.err.println(C_USAGE);
 				parser.printUsage(System.err);
 				System.exit(1);
+			}
+
+			if( tables.size() > 1)
+			{
+				if (this.randomized)
+				{
+					System.err.println("-randomized currently doesn't work with multiple -table entries");
+					System.err.println(C_USAGE);
+					parser.printUsage(System.err);
+					System.exit(1);
+				}
 			}
 
 			if( arguments.size() != 0 ) {
@@ -203,8 +217,8 @@ public class MethylDbToDomains {
 			
 			if (this.debug || this.debugDomain)
 			{
-				MINCOORD = 0;
-				MAXCOORD = 40000000;
+				MINCOORD = 20000000;
+				MAXCOORD = 30000000;
 				STEP = Math.min(STEP, MAXCOORD - MINCOORD + 1);
 			}
 			
@@ -214,11 +228,38 @@ public class MethylDbToDomains {
 
 				params.clearRangeFilters();
 				params.addRangeFilter(chr, c, c+STEP-1); // *** TESTING , REPLACE ****
-				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, this.tables);
+
+				Iterator cpgit = null;
+				
+				if (nTables > 1)
+				{
+					cpgit = (Iterator<Cpg[]>)(new CpgIteratorMultisample(params, this.tables));
+				}
+				else
+				{
+					if (this.randomized)
+					{
+						cpgit = (Iterator<Cpg>)(new CpgIteratorRandomized(params, this.tables.get(0)));
+					}
+					else
+					{
+						cpgit = (Iterator<Cpg>)(new CpgIterator(params, this.tables.get(0)));
+					}
+				}
+				
 				//int numCpgs = cpgit.getCurNumRows();
 				while (cpgit.hasNext())
 				{
-					Cpg[] cpgs = cpgit.next();
+					Cpg[] cpgs = null;
+					if (nTables>1)
+					{
+						cpgs = (Cpg[])cpgit.next();
+					}
+					else
+					{
+						cpgs = new Cpg[1];
+						cpgs[0] = (Cpg)cpgit.next();
+					}
 
 					// Stream Cpgs
 					for (int i = 0; i < nTables; i++)

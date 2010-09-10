@@ -37,7 +37,8 @@ public class CpgWalker implements TabularOutput {
 	protected boolean useSummarizers = true;
 	public static final int PROCESS_WINDOW_EVENT = 1;
 	protected List<Cpg[]> lastProcessedWindow = null;
-	protected List<String> tables = new ArrayList<String>();
+	//protected List<String> tables = new ArrayList<String>();
+	protected int nTables = 0;
 	
 	
 	// List management
@@ -56,15 +57,24 @@ public class CpgWalker implements TabularOutput {
 	/**
 	 * 
 	 */
-	public CpgWalker(CpgWalkerParams inWalkParams, List<String>inTables) {
+//	public CpgWalker(CpgWalkerParams inWalkParams, List<String>inTables) {
+//		super();
+//		this.walkParams = inWalkParams;
+//		this.setnTables(inTables.size());
+////		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
+////				"test", "test");
+//
+//	}
+	
+	public CpgWalker(CpgWalkerParams inWalkParams, int inNumTables) {
 		super();
 		this.walkParams = inWalkParams;
-		this.setTables(inTables);
+		this.setnTables(inNumTables);
 //		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
 //				"test", "test");
 
 	}
-	
+
 	/**
 	 * Constructor for single table analysis
 	 * @param inWalkParams
@@ -74,10 +84,12 @@ public class CpgWalker implements TabularOutput {
 		super();
 		this.walkParams = inWalkParams;
 		
-		List<String> newTables = new ArrayList<String>();
-		String methylTable = "hi"; // inWalkParams.methylParams.methylTablePrefix
-		newTables.add(methylTable);
-		this.setTables(newTables);
+//		List<String> newTables = new ArrayList<String>();
+//		String methylTable = (inWalkParams.methylParams!=null) ? inWalkParams.methylParams.methylTablePrefix : "fakeTable";
+//		newTables.add(methylTable);
+//		this.setTables(newTables);
+
+		this.setnTables(1);
 //		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
 //				"test", "test");
 
@@ -85,23 +97,24 @@ public class CpgWalker implements TabularOutput {
 
 	
 	/**
-	 * @return the tables
+	 * @return the nTables
 	 */
-	public List<String> getTables() {
-		return tables;
-	}
-	
-	public int numTables()
-	{
-		return this.getTables().size();
+	public int getnTables() {
+		return nTables;
 	}
 
 	/**
-	 * @param tables the tables to set
+	 * @param nTables the nTables to set
 	 */
-	public void setTables(List<String> tables) {
-		this.tables = tables;
+	public void setnTables(int nTables) {
+		this.nTables = nTables;
 	}
+
+	public int numTables()
+	{
+		return this.getnTables();
+	}
+
 
 
 
@@ -329,6 +342,14 @@ public class CpgWalker implements TabularOutput {
 	{
 		//System.err.println("Streaming CpG: " + cpg.toStringExpanded());
 		//System.err.println("\tuseFixedStep=" + !this.walkParams.useVariableWindow);
+		
+		// Sanity check
+		if (cpg.length != this.numTables())
+		{
+			System.err.printf("Trying to stream CpGIterator with %d samples to CpGWalker with %d samples, exiting.\n",cpg.length,this.numTables());
+			System.exit(1);
+		}
+		
 		if (this.walkParams.useVariableWindow)
 		{
 			this.streamCpgVariableWind(cpg);

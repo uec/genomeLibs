@@ -160,7 +160,14 @@ public class MethylDbToAutocorrByread {
 					this.outPrefix, tab, featSec, this.windSize);
 			
 			final int N_CONDITIONS = 5;
-			for (int i = 1; i <= N_CONDITIONS; i++)
+			final int START_COND = 1;
+			final int END_COND = 5;
+
+//			final int N_CONDITIONS = 1;
+//			final int START_COND = 3;
+//			final int END_COND = 3;
+			
+			for (int i = START_COND; i <= END_COND; i++)
 			{
 				String typeStr = null;
 				boolean sameStrand = false;
@@ -218,7 +225,7 @@ public class MethylDbToAutocorrByread {
 	{
 
 
-		for (String chr : MethylDbUtils.CHROMS) //  Arrays.asList("chr2","chr3"))// 
+		for (String chr : Arrays.asList("chr2")) // MethylDbUtils.CHROMS) //  
 		{
 
 
@@ -228,7 +235,7 @@ public class MethylDbToAutocorrByread {
 			int onCpg = 0;
 
 //			MINCOORD = 7000000;
-//			MAXCOORD = 20000000;
+//			MAXCOORD = 7010000;
 //			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
 			
 
