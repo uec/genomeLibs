@@ -26,6 +26,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinder;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinderMethDiffs;
+import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinderMethMeans;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerDomainFinderMethRange;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalkerParams;
 
@@ -57,6 +58,8 @@ public class MethylDbToDiffDomains {
     protected String withinFeat = null;
     @Option(name="-outPrefix",usage="Output files will have this name")
     protected String outPrefix = "wiggleTester";
+    @Option(name="-chr",usage="Chroms (chr1, chr2, etc.)")
+    protected List<String> chrs = new ArrayList<String>();
     @Option(name="-minOutputWindSize",usage="only output windows this big or bigger (0)")
     protected int minOutputWindSize = 0;
     @Option(name="-windSize",usage="starting window size (500)")
@@ -122,6 +125,10 @@ public class MethylDbToDiffDomains {
 				System.exit(1);
 			}
 
+			if (this.chrs.size() == 0)
+			{
+				chrs = (this.debug||this.debugDomain) ? Arrays.asList("chr11") : MethylDbUtils.CHROMS;
+			}
 
 
 		}
@@ -170,14 +177,20 @@ public class MethylDbToDiffDomains {
 		String outFn = String.format("%s.lowTab-%s.highTab-%s%s.wind%d.minOutput%d.minCpg%d.lowMeth%.2f.highMeth%.2f.bed", 
 				this.outPrefix, tableLowMeth, tableHighMeth, fixedSec, this.windSize, this.minOutputWindSize, this.minCpgs, 
 				this.tableLowMethMaxMeth, this.tableHighMethMinMeth);
+		String outAllFn = outFn.replace(".bed", ".allwinds.csv");
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 		pw.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",outFn, outFn);
 		pws.add(pw);
+		
+		PrintWriter allpw = new PrintWriter(new FileOutputStream(outAllFn));
+		pws.add(allpw);
 
-		int nTables = 1;
-		CpgWalkerDomainFinder[] domainFinders = new CpgWalkerDomainFinder[nTables];
+		int nWalkers = 2;
+		CpgWalkerDomainFinder[] domainFinders = new CpgWalkerDomainFinder[nWalkers];
 		domainFinders[0] = new CpgWalkerDomainFinderMethDiffs(walkerParams, null, pw, this.tableLowMethMaxMeth, 
 				this.tableHighMethMinMeth, 0, 1);
+		domainFinders[1] = new CpgWalkerDomainFinderMethMeans(walkerParams, null, allpw, Arrays.asList(this.tableLowMeth, 
+				this.tableHighMeth));
 
 		
 		
@@ -190,13 +203,12 @@ public class MethylDbToDiffDomains {
 
 
 
-		List<String> chrs = (this.debug||this.debugDomain) ? Arrays.asList("chr11") : MethylDbUtils.CHROMS;
 		for (String chr : chrs)
 		{
 			
 			
 			// Set chromosomes on the domain finders
-			for (int i = 0; i < nTables; i++)
+			for (int i = 0; i < nWalkers; i++)
 			{
 				domainFinders[i].setCurChr(chr);
 			}
@@ -207,12 +219,12 @@ public class MethylDbToDiffDomains {
 			// class, but until it is , just iterate here over the chromosome
 			int onCpg = 0;
 			
-//			if (this.debug || this.debugDomain)
-//			{
-//				MINCOORD = 8000000;
-//				MAXCOORD = 10000000;
-//				STEP = Math.min(STEP, MAXCOORD - MINCOORD + 1);
-//			}
+			if (this.debug || this.debugDomain)
+			{
+				MINCOORD = 8000000;
+				MAXCOORD = 10000000;
+				STEP = Math.min(STEP, MAXCOORD - MINCOORD + 1);
+			}
 			
 			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
@@ -234,7 +246,10 @@ public class MethylDbToDiffDomains {
 					Cpg[] cpgs = cpgit.next();
 
 					// Stream Cpgs
-					domainFinders[0].streamCpg(cpgs);
+					for (int i = 0; i < nWalkers; i++)
+					{
+						domainFinders[i].streamCpg(cpgs);
+					}
 
 					//
 					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, domainFinders[0].windStr());
@@ -245,7 +260,7 @@ public class MethylDbToDiffDomains {
 			}
 			
 			// Finish chromosomes on the domain finders
-			for (int i = 0; i < nTables; i++)
+			for (int i = 0; i < nWalkers; i++)
 			{
 				domainFinders[i].finishChr();
 			}

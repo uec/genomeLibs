@@ -70,9 +70,8 @@ public class CpgWalker implements TabularOutput {
 		super();
 		this.walkParams = inWalkParams;
 		this.setnTables(inNumTables);
-//		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
-//				"test", "test");
 
+		init();
 	}
 
 	/**
@@ -90,11 +89,17 @@ public class CpgWalker implements TabularOutput {
 //		this.setTables(newTables);
 
 		this.setnTables(1);
-//		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
-//				"test", "test");
+		
+		init();
 
 	}
 
+	protected void init()
+	{
+//		System.out.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",
+//		"test", "test");
+	
+	}
 	
 	/**
 	 * @return the nTables
@@ -165,7 +170,7 @@ public class CpgWalker implements TabularOutput {
 	{
 		window = new LinkedList<Cpg[]>();
 		this.resetSummarizers();
-		System.err.println("CpgWalker reset()");
+		System.err.printf("CpgWalker reset(%s)\n",this.getCurChr());
 	}
 	
 	public void resetSummarizers()

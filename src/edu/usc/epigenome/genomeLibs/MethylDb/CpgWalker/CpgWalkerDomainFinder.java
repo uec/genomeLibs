@@ -163,10 +163,7 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 			int len = lastGr.getEnd()-lastGr.getStart()+1;
 			if (len >= this.walkParams.minOutputWindSize)
 			{
-				if (this.walkParams.debug) System.err.printf("Output domain: %s\n", lastGr.toString());
-				String strandStr = (lastGr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
-				pw.append(MethylDbUtils.bedLine(lastGr.getChrom(), lastGr.getStart(), lastGr.getEnd(), strandStr, lastGr.getScore()));
-				pw.println();
+				outputCurWind(lastGr);
 			}
 			domains.remove(0);
 			foundOne = true;
@@ -174,6 +171,13 @@ abstract public class CpgWalkerDomainFinder extends CpgWalker {
 		return foundOne;
 	}
 	
+	protected void outputCurWind(GenomicRange gr)
+	{
+		if (this.walkParams.debug) System.err.printf("Output domain: %s\n", gr.toString());
+		String strandStr = (gr.getStrand() == StrandedFeature.NEGATIVE) ? "-" : "+";
+		pw.append(MethylDbUtils.bedLine(gr.getChrom(), gr.getStart(), gr.getEnd(), strandStr, gr.getScore()));
+		pw.println();	
+	}
 	
 	public List<GenomicRange> getDomains() {
 		return domains;
