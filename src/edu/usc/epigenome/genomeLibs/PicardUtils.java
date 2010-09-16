@@ -350,6 +350,14 @@ public class PicardUtils {
 		return (refC == 'G') ; 
 	}
 	
+	public static boolean isAdenine(int pos, String refStr)
+	{
+		char refC = refStr.charAt(pos);
+		
+		return (refC == 'A') ; 
+	}
+	
+	
 	public static boolean isConverted(int pos, String refStr, String seqStr)
 	{
 		char refC = refStr.charAt(pos);
