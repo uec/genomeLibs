@@ -131,7 +131,7 @@ public abstract class FeatAligner {
 			{
 				this.downscaleFact  = (double)this.downscaleCols / (double)(1+(rangeEnd-rangeStart));
 			}
-			int newRelPos = (int)Math.min(Math.round((double)relPos*this.downscaleFact), this.downscaleCols-1);
+			int newRelPos = (int)Math.round((double)relPos*this.downscaleFact);
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
 					"Downscaling from %d to %d (downscaleCols=%d, downscaleFact=%f)\n",
 					relPos, newRelPos,downscaleCols,downscaleFact));

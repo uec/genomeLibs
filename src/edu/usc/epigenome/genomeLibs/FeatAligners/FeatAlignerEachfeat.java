@@ -113,7 +113,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		this.sortVals[featInd] = new Double(sortVal);
 		
 		// is it in range
-		if ( (colInd>=0) && (colInd<arr[0].length) )
+		if ( (colInd>=0) && (colInd<arr[0][0].length) )
 		{
 
 			// Flip the strand of the scores if features are flipped
