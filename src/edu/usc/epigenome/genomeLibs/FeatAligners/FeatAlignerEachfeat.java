@@ -112,17 +112,22 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		int colInd = this.getColumnInd(genomeRelPos, featCoord, featStrand, true);
 		this.sortVals[featInd] = new Double(sortVal);
 		
-		// Flip the strand of the scores if features are flipped
-		double fwScoreRel = (featStrand==StrandedFeature.NEGATIVE) ? revStrandScore : fwStrandScore;
-		double revScoreRel = (featStrand==StrandedFeature.NEGATIVE) ? fwStrandScore : revStrandScore;
+		// is it in range
+		if ( (colInd>=0) && (colInd<arr[0].length) )
+		{
 
-		// Add it to old score
-		arr[0][featInd][colInd] = MatUtils.nanSum(fwScoreRel, arr[0][featInd][colInd]);
-		arr[1][featInd][colInd] = MatUtils.nanSum(revScoreRel, arr[1][featInd][colInd]);
+			// Flip the strand of the scores if features are flipped
+			double fwScoreRel = (featStrand==StrandedFeature.NEGATIVE) ? revStrandScore : fwStrandScore;
+			double revScoreRel = (featStrand==StrandedFeature.NEGATIVE) ? fwStrandScore : revStrandScore;
 
-		// And add to totals
-		if (!Double.isNaN(fwScoreRel)) arr[2][featInd][colInd] = MatUtils.nanSum(1.0, arr[2][featInd][colInd]);
-		if (!Double.isNaN(revScoreRel))  arr[3][featInd][colInd] = MatUtils.nanSum(1.0, arr[3][featInd][colInd]);
+			// Add it to old score
+			arr[0][featInd][colInd] = MatUtils.nanSum(fwScoreRel, arr[0][featInd][colInd]);
+			arr[1][featInd][colInd] = MatUtils.nanSum(revScoreRel, arr[1][featInd][colInd]);
+
+			// And add to totals
+			if (!Double.isNaN(fwScoreRel)) arr[2][featInd][colInd] = MatUtils.nanSum(1.0, arr[2][featInd][colInd]);
+			if (!Double.isNaN(revScoreRel))  arr[3][featInd][colInd] = MatUtils.nanSum(1.0, arr[3][featInd][colInd]);
+		}
 		
 		return Tuple.from(featInd, colInd);
 	}
