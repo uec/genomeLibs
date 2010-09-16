@@ -130,11 +130,15 @@ public abstract class FeatAligner {
 			if (this.downscaleFact < 0)
 			{
 				this.downscaleFact  = (double)this.downscaleCols / (double)(1+(rangeEnd-rangeStart));
+				System.err.printf("Setting downscale fact %.4f (%d/%d)\n",this.downscaleFact,this.downscaleCols, rangeEnd-rangeStart+1);
 			}
 			int newRelPos = (int)Math.round((double)relPos*this.downscaleFact);
-			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
-					"Downscaling from %d to %d (downscaleCols=%d, downscaleFact=%f)\n",
-					relPos, newRelPos,downscaleCols,downscaleFact));
+			//if ( (Math.abs(relPos-newRelPos)>0))
+//			if (relPos <0)
+//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(String.format(
+//					"Downscaling from %d to %d (downscaleCols=%d, downscaleFact=%f)\n",
+//					relPos, newRelPos,downscaleCols,downscaleFact));
+
 			relPos = newRelPos;
 		}
 		
