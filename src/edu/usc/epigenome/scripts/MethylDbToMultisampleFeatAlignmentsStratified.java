@@ -44,6 +44,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean skipUnoriented = false;
 	@Option(name="-combineStrands",usage="If set, combine strands into a single line")
 	protected boolean combineStrands = false;
+	@Option(name="-extendRead",usage="If set, extends the start position of the read by the indicated amount (in a strand-aware way)")
+	protected int extendRead = 0;
 	@Option(name="-heatmap",usage="If set, make a java heatmap")
 	protected boolean heatmap = false;
 	@Option(name="-nomatlab",usage="If set, don't make matlab output files (default false)")
@@ -91,7 +93,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 
 
 	// class vars
-	FeatAlignerEachfeat[][] fStatMats = null; // n-> sample number, m -> 0=readCount, 1=nCpGs, 2=mLevel
+	FeatAlignerEachfeat[][] fStatMats = null; // n-> sample number, m -> 0=readCount, 1=nCpGs, 2=mLevel, 3=cpg weights
 //	FeatAligner[] fDeltaMats = null; // n -> (nS*(nS-1))/2  (all pairwise)
 //	FeatAligner fVarianceMat = null;
 	int fCurFeatInd = 0;
@@ -192,16 +194,17 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			
 			// Create arrays
 			System.err.println("About to initialize aligners");
-			fStatMats = new FeatAlignerEachfeat[nS][3];
+			fStatMats = new FeatAlignerEachfeat[nS][4];
 //			fDeltaMats = new FeatAligner[(nS*(nS-1))/2];
 //			fVarianceMat = new FeatAlignerAveraging(flankSize,false);
 			int onDeltaMat = 0;
 			for (int i = 0; i < nS; i++)
 			{
-				// 0=readCount, 1=nCpGs, 2=mLevel
+				// 0=readCount, 1=nCpGs, 2=mLevel, 3= CpG weights
 				if (readCounts) fStatMats[i][0] = new FeatAlignerEachfeat(flankSize,!this.censor, nFeats,this.downscaleCols); // Changed this to start with NaN.  Now we explicitly zero out features to allow censoring
 //				fStatMats[i][1] = new FeatAlignerEachfeat(flankSize,true, nFeats,500);
 				if (!nometh) fStatMats[i][2] = new FeatAlignerEachfeat(flankSize,false, nFeats,this.downscaleCols);
+				if (!nometh) fStatMats[i][3] = new FeatAlignerEachfeat(flankSize,false, nFeats,this.downscaleCols);
 //				for (int j = (i+1); j < nS; j++)
 //				{
 //					fDeltaMats[onDeltaMat++] = new FeatAlignerAveraging(flankSize,false);
@@ -287,15 +290,20 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					if (this.readCounts)
 					{
 						PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
-								String.format("%s.%s.featType%d.flank%d.readCounts.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize)));
+								String.format("%s.%s.featType%d.flank%d.extend%d.readCounts.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize, this.extendRead)));
 						this.fStatMats[i][0].matlabCsv(alignmentWriter, !this.combineStrands, this.includeCoords);
 						alignmentWriter.close();
 					}
 					else
 					{
 						PrintWriter alignmentWriter = new PrintWriter(new FileOutputStream(
-								String.format("%s.%s.featType%d.flank%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize)));
+								String.format("%s.%s.featType%d.flank%d.extend%d.alignments.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize, this.extendRead)));
 						this.fStatMats[i][2].matlabCsv(alignmentWriter, !this.combineStrands, this.includeCoords);
+						alignmentWriter.close();
+
+						alignmentWriter = new PrintWriter(new FileOutputStream(
+								String.format("%s.%s.featType%d.flank%d.extend%d.alignmentWeights.csv", outputPrefix, tablePrefixes.get(i), onFeatType, this.flankSize, this.extendRead)));
+						this.fStatMats[i][3].matlabCsv(alignmentWriter, !this.combineStrands, this.includeCoords);
 						alignmentWriter.close();
 					}
 					
@@ -408,8 +416,8 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			GenomicRangeWithRefpoint flankRange = FeatAligner.getAlignmentpointAndFlank(rec, 
 					this.flankSize, this.alignToStart, this.alignToEnd, this.censor);
 			int alignmentPoint = flankRange.getRefPoint();
-			int flankStart = flankRange.getStart();
-			int flankEnd = flankRange.getEnd();
+			int flankStart = flankRange.getStart() - this.extendRead;
+			int flankEnd = flankRange.getEnd() + this.extendRead;
 			
 			
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(String.format(
@@ -452,6 +460,23 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					int chromPos = cpgs[0].chromPos;
 					StrandedFeature.Strand cpgStrand = cpgs[0].getStrand();
 
+					if (this.extendRead > 0)
+					{
+						int strandMult = 0;
+						if (cpgStrand == StrandedFeature.POSITIVE)
+						{
+							strandMult = 1;
+						}
+						else if (cpgStrand == StrandedFeature.NEGATIVE)
+						{
+							strandMult = -1;
+						}
+						else
+						{
+							System.err.println("Why did we get  astrandless CpG?");
+						}
+						chromPos += (  strandMult * this.extendRead );
+					}
 
 					// First individual stats
 					double mLevels[] = new double[nS];
@@ -461,10 +486,17 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 						mLevels[i] = mLevel;
 						if (!this.nometh)
 						{
+							// Meth val
 							this.fStatMats[i][2].addAlignmentPos(
 									chromPos,
 									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
 											(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
+													featName, chrStr, alignmentPoint, featStrand, sortVal);
+							// And the weights
+							this.fStatMats[i][3].addAlignmentPos(
+									chromPos,
+									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : cpgs[i].getCpgWeight(),
+											(cpgStrand == StrandedFeature.NEGATIVE) ? cpgs[i].getCpgWeight() : Double.NaN,
 													featName, chrStr, alignmentPoint, featStrand, sortVal);
 						}
 
