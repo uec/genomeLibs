@@ -16,16 +16,19 @@ foreach my $f (@files)
 
 
 #    print OUTF "track type=wiggle_0 name=$fbase description=$fbase visibility=2 maxHeightPixels=128:25:11 graphType=bar windowingFunction=mean autoScale=off\n";
-    print OUTF "track name=$fbase description=$fbase visibility=2\n";
+
+#    print OUTF "track name=$fbase description=$fbase visibility=2\n";
 
     my $last_c = 0;
     my $last_s = -1;
     my $last_e = -1;
     my $misorders_seen = 0;
+    my $elCount = 0;
     while (my $line = <F>)
     {
-
+	  
 	next if ($line =~ /track/);
+	  $elCount++;
 	chomp $line;
 
 	my @flds = split(/\t/,$line);
@@ -46,7 +49,7 @@ foreach my $f (@files)
 	    $s = $last_e + 1;
 	}
 
-	    my $out = join("\t",$c,$s,$e,$score);
+	    my $out = join("\t",$c,$s,$e,"el${elCount}",int($score));
 	    print OUTF $out."\n";
 
 
