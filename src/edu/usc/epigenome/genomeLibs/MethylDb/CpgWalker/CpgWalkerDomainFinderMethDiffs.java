@@ -11,15 +11,16 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 
 	protected final int MIN_WEIGHTING_WIND_SIZE = 5000; // I admit, this is arbitrary and driven by CGI size
 	
-	protected double tableLowMethMaxMeth = -1.0;
-	protected double tableHighMethMinMeth = -1.0;
+	protected double tableLowMethMaxMeth = 1.01;
+	protected double tableHighMethMinMeth = -0.01;
+	protected double minMethDiff = 0.0;
 	protected int lowMethIndex = 0;
 	protected int highMethIndex = 1;
 //	protected boolean useWeighting = false;
 	
 	public CpgWalkerDomainFinderMethDiffs(CpgWalkerParams inWalkParams,
 			String chr, PrintWriter pw, double inTableLowMethMaxMeth, double inTableHighMethMinMeth,
-			int inLowMethIndex, int inHighMethIndex) {
+			double inMinMethDiff, int inLowMethIndex, int inHighMethIndex) {
 		super(inWalkParams, chr, pw,2);
 		
 		if (this.numTables()!=2)
@@ -32,6 +33,7 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 		this.highMethIndex = inHighMethIndex;
 		this.tableLowMethMaxMeth = inTableLowMethMaxMeth;
 		this.tableHighMethMinMeth = inTableHighMethMinMeth;
+		this.minMethDiff = inMinMethDiff;
 		
 //		useWeighting = (inWalkParams.maxWindSize >= MIN_WEIGHTING_WIND_SIZE);
 //		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(
@@ -46,11 +48,15 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 		// We use the walker's built in meth summarizer
 		double methlow = this.methSummarizer.get(this.lowMethIndex).getValMean(useWeighting);
 		double methhigh = this.methSummarizer.get(this.highMethIndex).getValMean(useWeighting);
+		double diff = methhigh - methlow;
 		
-		if (this.walkParams.debug) System.err.printf("\tTesting window\t%s\n\tmethlow=%.2f\tmethhigh=%.2f\n", 
-				CpgWalker.windStr(inWindow,false),methlow,methhigh);
+//		if (this.walkParams.debug) System.err.printf("\tTesting window\t%s\n\tmethlow=%.2f\tmethhigh=%.2f\n", 
+//				CpgWalker.windStr(inWindow,false),methlow,methhigh);
 
-		boolean passes = (methlow <= this.tableLowMethMaxMeth) && (methhigh >= this.tableHighMethMinMeth);
+		boolean passes = 
+			(methlow <= this.tableLowMethMaxMeth) && 
+			(methhigh >= this.tableHighMethMinMeth) &&
+			(diff >= this.minMethDiff);
 
 		if (this.walkParams.debug && passes) System.err.printf("\t\tFound passing window\t%s\n", CpgWalker.windStr(inWindow,false));
 //		if (this.walkParams.debug && passes) System.err.printf("\t\tFound passing window, meth =%.2f\tsize=%d (%d CpGs)\n",
