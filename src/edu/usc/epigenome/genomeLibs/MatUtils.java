@@ -3,15 +3,25 @@ package edu.usc.epigenome.genomeLibs;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
-import org.apache.commons.math.stat.StatUtils;
+import org.apache.commons.math.distribution.BinomialDistribution;
+import org.apache.commons.math.distribution.DistributionFactory;
+import org.apache.commons.math.random.RandomData;
+import org.apache.commons.math.random.RandomDataImpl;
+import org.apache.commons.math.random.RandomGenerator;
+
+//import org.apache.commons.math.stat.StatUtils;
 
 public class MatUtils {
 	
 	protected static Map<String,double[]> cachedExponentialWeights = new TreeMap<String,double[]>();
+	
+	protected static Random randomGenerator = new Random();
+	protected static RandomData randomDataGenerator = new RandomDataImpl();
 
 	public static double nanMean(double[] arr)
 	{
@@ -1152,6 +1162,30 @@ public class MatUtils {
 		
 		
 		return out;
+	}
+	
+	
+	// - - - - - PROBABILITY - - - - - - 
+	
+	public static int randomBinomialGeneratedCount(int trials, double probability)
+	{
+		
+		int count = 0;
+		
+		// Is there a faster way to do this?  I guess I could use poisson approximation.
+		for (int i = 0; i < trials; i++)
+		{
+			if (randomGenerator.nextDouble() <= probability) count++;
+		}
+		
+//		// THIS IS EVEN SLOWER, AND PERFORMS REALLY BAD FOR SMALL NUMBERS
+//		double mean = (double)trials * probability;
+//		if (mean>0.0)
+//		{
+//			count = (int)randomDataGenerator.nextPoisson(mean);
+//		}
+		
+		return count;
 	}
 
 	
