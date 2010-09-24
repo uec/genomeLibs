@@ -8,7 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.math.distribution.BinomialDistribution;
+import org.apache.commons.math.distribution.DistributionFactory;
 import org.biojava.bio.seq.StrandedFeature;
+
+import edu.usc.epigenome.genomeLibs.MatUtils;
 
 public class Cpg implements Comparable, Cloneable {
 
@@ -64,35 +68,35 @@ public class Cpg implements Comparable, Cloneable {
 		this.negStrand = negStrand;
 	}
 	
-	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
-			short cReadsNonconversionFilt, short tReads, short agReads,
-			short totalReadsOpposite, short aReadsOpposite, int cpgWeight) {
-		super();
-		this.chromPos = chromPos;
-		this.negStrand = negStrand;
-		this.totalReads = totalReads;
-		this.cReads = cReads;
-		this.cReadsNonconversionFilt = cReadsNonconversionFilt;
-		this.tReads = tReads;
-		this.agReads = agReads;
-		this.totalReadsOpposite = totalReadsOpposite;
-		this.aReadsOpposite = aReadsOpposite;
-		
-		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
-		if (cpgWeight < 0)
-		{
-			System.err.printf("Got negative cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
-			cpgWeight = 100;
-		}
-		else if (cpgWeight > 5000)
-		{
-			System.err.printf("Got extra-large cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
-			cpgWeight = 100;
-		}
-		
-		// It's actually divided by two since we're looking at both strands.
-		this.cpgWeight = (double)cpgWeight/2.0;
-	}
+//	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
+//			short cReadsNonconversionFilt, short tReads, short agReads,
+//			short totalReadsOpposite, short aReadsOpposite, int cpgWeight) {
+//		super();
+//		this.chromPos = chromPos;
+//		this.negStrand = negStrand;
+//		this.totalReads = totalReads;
+//		this.cReads = cReads;
+//		this.cReadsNonconversionFilt = cReadsNonconversionFilt;
+//		this.tReads = tReads;
+//		this.agReads = agReads;
+//		this.totalReadsOpposite = totalReadsOpposite;
+//		this.aReadsOpposite = aReadsOpposite;
+//		
+//		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
+//		if (cpgWeight < 0)
+//		{
+//			System.err.printf("Got negative cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
+//			cpgWeight = 100;
+//		}
+//		else if (cpgWeight > 5000)
+//		{
+//			System.err.printf("Got extra-large cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
+//			cpgWeight = 100;
+//		}
+//		
+//		// It's actually divided by two since we're looking at both strands.
+//		this.cpgWeight = (double)cpgWeight/2.0;
+//	}
 	
 	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
 			short cReadsNonconversionFilt, short tReads, short agReads,
@@ -379,7 +383,7 @@ public class Cpg implements Comparable, Cloneable {
 	protected Object clone() throws CloneNotSupportedException {
 		Cpg out = (Cpg)super.clone();
 		
-		System.err.printf("Cloning cpg, old tReads=%d, new tReads=%d\n",  this.tReads, out.tReads);
+		//System.err.printf("Cloning cpg, old tReads=%d, new tReads=%d\n",  this.tReads, out.tReads);
 		return out;
 	}
 
@@ -424,10 +428,46 @@ public class Cpg implements Comparable, Cloneable {
 	public Cpg downsample(double downsamplingFactor) {
 		// TODO Auto-generated method stub
 		
-		System.err.println("Cpg::downsample not yet supported");
-		System.exit(1);
 		
-		return null;
+		Cpg out = null;
+		try
+		{
+			out = (Cpg)this.clone();
+			
+			// For positive strand, we have all the counts so we can sample every flavor separately
+			out.cReads = (short)MatUtils.randomBinomialGeneratedCount(this.cReads, downsamplingFactor);
+			out.cReadsNonconversionFilt = (short)MatUtils.randomBinomialGeneratedCount(this.cReadsNonconversionFilt, downsamplingFactor);
+			out.tReads = (short)MatUtils.randomBinomialGeneratedCount(this.tReads, downsamplingFactor);
+			out.agReads = (short)MatUtils.randomBinomialGeneratedCount(this.agReads, downsamplingFactor);
+			out.totalReads = (short)(out.cReads + out.cReadsNonconversionFilt + out.tReads + out.agReads);
+			
+			// For reverse strand and next base, we only have counts for one variant, so we have to resample the total
+			// and then sample the single variant based on the observed fraction
+			out.totalReadsOpposite = (short)MatUtils.randomBinomialGeneratedCount(this.totalReadsOpposite, downsamplingFactor);
+			out.aReadsOpposite = (short)MatUtils.randomBinomialGeneratedCount(out.totalReadsOpposite, this.fracOppositeA());
+			out.nextBaseTotalReads = (short)MatUtils.randomBinomialGeneratedCount(this.nextBaseTotalReads, downsamplingFactor);
+			out.nextBaseGreads = (short)MatUtils.randomBinomialGeneratedCount(out.nextBaseTotalReads, this.fracNextBaseG());
+		}
+		catch (Exception e)
+		{
+			System.err.printf("Problem downsampling: %s\n",e.toString());
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+		// - - - REMOVE --- REMOVE --- REMOVE !!!
+//		System.out.printf("%d,%.2f,%.2f,%.2f,%.2f\n", this.totalReads, this.fracMeth(true), out.fracMeth(true), this.fracMeth(false), out.fracMeth(false));
+
+		
+//		System.err.printf("Before: %s\n",this.toStringExpanded());
+//		System.err.printf("After: %s\n\n",out.toStringExpanded());
+			
+		
+		
+//		System.err.println("Cpg::downsample not yet supported");
+//		System.exit(1);
+		
+		return out;
 	}
 	
 	

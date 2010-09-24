@@ -144,7 +144,6 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 	 */
 	public boolean hasNext() 
 	{
-		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.0");
 		boolean out = false;
 		try
 		{
@@ -153,11 +152,8 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 			}
 			else
 			{
-				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.1");
 				out = curRS.next();
-				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.2");
 				curRS.previous(); // Roll back
-				Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("HERE8.3");
 			}
 		}
 		catch (Exception e)
@@ -194,7 +190,11 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 						(short)curRS.getInt("cpg" + i + ".agReads"),
 						(short)curRS.getInt("cpg" + i + ".totalReadsOpposite"),
 						(short)curRS.getInt("cpg" + i + ".aReadsOpposite"),
-						curRS.getInt("cpg" + i + ".cpgWeight"));
+						curRS.getInt("cpg" + i + ".cpgWeight"),
+						(short)curRS.getInt("cpg" + i + ".nextBaseGreads"),
+						(short)curRS.getInt("cpg" + i + ".nextBaseTotalReads"),
+						'0' // This is not in our main schema
+				);
 
 				// Downsample data.
 				double downsamplingFactor = this.params.getSamplingFactor();
@@ -265,7 +265,7 @@ public class CpgIteratorMultisample implements Iterator<Cpg[]> {
 		{
 			prep = cConn.prepareStatement(sql);
 			stmts.put(sql, prep);
-//			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("Making prepared statement: " + sql );
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Making prepared statement: " + sql );
 		}
 		return prep;
 	}
