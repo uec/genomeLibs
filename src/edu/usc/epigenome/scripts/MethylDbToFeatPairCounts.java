@@ -144,7 +144,7 @@ public class MethylDbToFeatPairCounts {
 		{
 			List<String> feats = new ArrayList<String>(1);
 			feats.add(featType);
-			long count = printCounts(feats, savedCounts, vennPw, csvPw);
+			long count = calculateAndPrintCounts(feats, savedCounts); // , vennPw, csvPw);
 		}
 
 		// Then feat pairs
@@ -153,7 +153,7 @@ public class MethylDbToFeatPairCounts {
 			for (int i = 0; i < nFeats; i++)
 			{
 				List<String> feats = Arrays.asList(this.masterFeat, featTypes.get(i));
-				long count = printCounts(feats, savedCounts, vennPw, csvPw);
+				long count = calculateAndPrintCounts(feats, savedCounts, vennPw, csvPw);
 			}
 		}
 		else
@@ -167,7 +167,7 @@ public class MethylDbToFeatPairCounts {
 						List<String> feats = new ArrayList<String>(2);
 						feats.add(featTypes.get(i));
 						feats.add(featTypes.get(j));
-						long count = printCounts(feats, savedCounts, vennPw, csvPw);
+						long count = calculateAndPrintCounts(feats, savedCounts, vennPw, csvPw);
 					}
 				}
 			}
@@ -186,7 +186,7 @@ public class MethylDbToFeatPairCounts {
 							feats.add(featTypes.get(i));
 							feats.add(featTypes.get(j));
 							feats.add(featTypes.get(k));
-							printCounts(feats, savedCounts, vennPw, csvPw);
+							calculateAndPrintCounts(feats, savedCounts, vennPw, csvPw);
 						}
 					}
 				}
@@ -209,7 +209,7 @@ public class MethylDbToFeatPairCounts {
 								feats.add(featTypes.get(k));
 								feats.add(featTypes.get(l));
 								// Put null since we can't do the venns
-								printCounts(feats, savedCounts, null,csvPw);
+								calculateAndPrintCounts(feats, savedCounts, null,csvPw);
 							}
 						}
 					}
@@ -221,7 +221,13 @@ public class MethylDbToFeatPairCounts {
 		csvPw.close();
 	}
 
-	protected long printCounts(List<String> featTypes, Map<String,Long> savedCounts, 
+	protected long calculateAndPrintCounts(List<String> featTypes, Map<String,Long> savedCounts)
+	throws Exception
+	{
+		return calculateAndPrintCounts(featTypes, savedCounts, null, null);
+	}
+	
+	protected long calculateAndPrintCounts(List<String> featTypes, Map<String,Long> savedCounts, 
 			PrintWriter vennPw, PrintWriter csvPw) 
 	throws Exception
 	{
@@ -251,8 +257,13 @@ public class MethylDbToFeatPairCounts {
 			// Iterator uses DB connection and can use a ton of memory because
 			// it loads all rows at once.  This stuff should really be added to iterator
 			// class, but until it is , just iterate here over the chromosome
+			int MINCOORD = 0;
 			MAXCOORD = GoldAssembly.chromLengthStatic(chr, "hg18");
-			for (int c = 0; c < MAXCOORD; c += STEP)
+			
+//			MINCOORD = 8000000;
+//			MAXCOORD = 10000000;
+
+			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
 				int last = Math.min(c+STEP-1, MAXCOORD);
 				params.clearRangeFilters();
@@ -321,22 +332,27 @@ public class MethylDbToFeatPairCounts {
 			vennPw.printf("<IMG SRC=\"%s\">\n", url);
 		}
 
-        
-		// Output
-		sb.append(String.format("%d,%s",count,featStr));
-		for (int i = 0; i < nFeats; i++)
+
+		// CSV Output
+		if (csvPw != null)
 		{
-			Long singleCount = savedCounts.get(featTypes.get(i));
-			if (singleCount != null)
+			sb.append(String.format("%s,%d",featStr,count));
+			for (int i = 0; i < nFeats; i++)
 			{
-				sb.append(String.format(",%.2f%%", 100.0*(double)count/(double)singleCount));
+				Long singleCount = savedCounts.get(featTypes.get(i));
+				if (singleCount != null)
+				{
+					sb.append(String.format(",%.2f%%,%d", 100.0*(double)count/(double)singleCount, singleCount-count));
+				}
 			}
+
+			sb.append("\n");
+			System.err.println("Setting " + featStr + ": " + count);
+			csvPw.append(sb);
 		}
-		
-		sb.append("\n");
+
 		savedCounts.put(featStr, count);
-		System.err.println("Setting " + featStr + ": " + count);
-		csvPw.append(sb);
+
 		return count;
 	}
 	
