@@ -72,7 +72,7 @@ public class MethylDbToFeatPairCounts {
     @Option(name="-masterFeat",usage="If a master feat is specified, we only do pairwise against that")
     protected String masterFeat = null;
     @Option(name="-methylDbPrefix",usage="use this table to get CpGs")
-    protected String methylDbPrefix = "methylCGsRich_normal010310_";
+    protected String methylDbPrefix = "methylCGsRich_normalM030510_";
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;  // For this, we just care about whole genome stats
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
