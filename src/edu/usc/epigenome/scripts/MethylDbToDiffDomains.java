@@ -39,8 +39,9 @@ public class MethylDbToDiffDomains {
 	public int MAXCOORD = (int)2.8E8;
 	
 	
-	private static final String C_USAGE = "Use: MethylDbToDomains -outPrefix out -table methylCGsRich_normal010310_ -tableLowMeth methylCGsRich_normalM030510_ " + 
-		" -tableHighMeth methylCGsRich_tumorM030510_ -windSize 100000 -minCpgs 6 -minMeth 0.4 -maxMeth 0.6 -minCTreads 2 -maxOppStrandAfrac 0.10 -noNonconvFilter";
+	private static final String C_USAGE = "Use: MethylDbToDomains -outPrefix out -tableLowMeth methylCGsRich_normalM030510_ -tableHighMeth methylCGsRich_tumorM030510_ " + 
+		" -windSize 100000 -minCpgs 6 -tableHighMethMinMeth 0.5 -tableLowMethMaxMeth 0.06 -minMethDiff 0.1 " +
+		" -minCTreads 2 -maxOppStrandAfrac 0.10 -noNonconvFilter";
 	
     @Option(name="-noNonconvFilter",usage="override the nonconversion filter (default false)")
     protected boolean noNonconvFilter = false;
@@ -48,6 +49,8 @@ public class MethylDbToDiffDomains {
     protected boolean debug = false;
     @Option(name="-debugDomain",usage="only does a test segment")
     protected boolean debugDomain = false;
+    @Option(name="-dumpAllWinds",usage="Dumps the mean of every single window, for matlab (can be very large)")
+    protected boolean dumpAllWinds = false;
     @Option(name="-randomized",usage="Randomizes methylation values (default methylCGsRich_normal010310_)")
     protected boolean randomized = false;
     @Option(name="-tableLowMeth",usage="Prefix for DB table (e.g. methylCGsRich_normalM030510_)")
@@ -66,6 +69,8 @@ public class MethylDbToDiffDomains {
     protected int windSize = 500;
     @Option(name="-variableWindowMaxWind",usage="If set , we expand window up to this size to get at least minCpgs (required but slower)")
     protected int variableWindowMaxWind = -1;
+    @Option(name="-downsampleFactor",usage="Use only a fraction of the available reads (0.0 < f <= 1.0)")
+    protected double downsampleFactor = 1.0;
     @Option(name="-minCpgs",usage="minimum number of Cpgs in window")
     protected int minCpgs = 8;
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
@@ -76,10 +81,14 @@ public class MethylDbToDiffDomains {
     @Option(name="-maxNextNonGfrac",usage="If the base following the C has more than this ratio of non-G bases, we don't count it. (default 0.1)")
     protected double maxNextNonGfrac = 0.1;
   
-    @Option(name="-tableLowMethMaxMeth",usage="maximum average methylation for domain (e.g. 0.2)")
-    protected double tableLowMethMaxMeth = -1.0;
-    @Option(name="-tableHighMethMinMeth",usage="minimum average methylation for domain (e.g. 0.5)")
-    protected double tableHighMethMinMeth = -1.0;
+    @Option(name="-tableLowMethMaxMeth",usage="maximum average methylation for domain (e.g. 0.05)")
+    protected double tableLowMethMaxMeth = 1.01;
+    @Option(name="-tableHighMethMinMeth",usage="minimum average methylation for domain (e.g. 0.50)")
+    protected double tableHighMethMinMeth = -0.01;
+    @Option(name="-minMethDiff",usage="maximum average methylation diff (e.g. 0.1)")
+    protected double minMethDiff = -1.0;
+    @Option(name="-bothTablesLowMeth",usage="Only use -tableLowMethMaxMeth value and apply it to both -tableHighMeth and -tableLowMeth")
+    protected boolean bothTablesLowMeth = false;
     
     
 	// receives other command line parameters than options
@@ -111,7 +120,27 @@ public class MethylDbToDiffDomains {
 				System.exit(1);
 			}
 
-			if( (this.tableLowMethMaxMeth<0) || (this.tableHighMethMinMeth<0) || (this.tableLowMethMaxMeth>this.tableHighMethMinMeth))
+			if ( this.minMethDiff > 0.0)
+			{
+				if ((this.tableHighMethMinMeth>0.0) || (this.tableLowMethMaxMeth<1.0))
+				{
+				System.err.println("Can not specify both -minMethDiff and -tableHighMethMinMeth");
+				System.err.println(C_USAGE);
+				parser.printUsage(System.err);
+				System.exit(1);
+				}
+			}
+			else if (this.bothTablesLowMeth )
+			{
+				if (this.tableLowMethMaxMeth<0)
+				{
+					System.err.println("Must provide a -tableLowMethMaxMeth");
+					System.err.println(C_USAGE);
+					parser.printUsage(System.err);
+					System.exit(1);
+				}
+			}
+			else if( (this.tableLowMethMaxMeth<0) || (this.tableHighMethMinMeth<0)) // || (this.tableLowMethMaxMeth>this.tableHighMethMinMeth))
 			{
 				System.err.println("Must provide a -tableLowMethMaxMeth and -tableHighMethMinMeth, and tableLowMethMaxMeth must be larger");
 				System.err.println(C_USAGE);
@@ -120,6 +149,14 @@ public class MethylDbToDiffDomains {
 			}
 
 			if( arguments.size() != 0 ) {
+				System.err.println(C_USAGE);
+				parser.printUsage(System.err);
+				System.exit(1);
+			}
+			
+			if ((this.downsampleFactor<=0.0) || (this.downsampleFactor>1.0))
+			{
+				System.err.println("Downsample factor out of range ( 0.0 < f <= 1.0)");
 				System.err.println(C_USAGE);
 				parser.printUsage(System.err);
 				System.exit(1);
@@ -142,7 +179,7 @@ public class MethylDbToDiffDomains {
 			return;
 		}
 		
-		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel( (this.debug) ? Level.FINE : Level.SEVERE);
 		
 
 		// We do fixed step or fixed wind
@@ -151,6 +188,8 @@ public class MethylDbToDiffDomains {
 		walkerParams.debug = this.debug;
 		walkerParams.minScanningWindCpgs = this.minCpgs;
 		walkerParams.minOutputWindSize = this.minOutputWindSize;
+		
+		
 		if (this.variableWindowMaxWind >= 0)
 		{
 			if (this.windSize>this.variableWindowMaxWind)
@@ -174,9 +213,25 @@ public class MethylDbToDiffDomains {
 		// Setup output files and print domain finders.  
 		List<PrintWriter> pws = new ArrayList<PrintWriter>();
 		String fixedSec = (walkerParams.useVariableWindow) ? String.format(".varMaxWind%d", variableWindowMaxWind) : "";
-		String outFn = String.format("%s.lowTab-%s.highTab-%s%s.wind%d.minOutput%d.minCpg%d.lowMeth%.2f.highMeth%.2f.bed", 
+		String methSec = "";
+		if (this.bothTablesLowMeth)
+		{
+			methSec += String.format(".bothTablesLowMeth%.2f", this.tableLowMethMaxMeth); 
+		}
+		else if (this.tableHighMethMinMeth>0.0)
+		{
+			methSec += String.format(".lowMeth%.2f.highMeth%.2f", 
+					this.tableLowMethMaxMeth, this.tableHighMethMinMeth);
+		}
+		
+		if (this.minMethDiff > 0.0)
+		{
+			methSec += String.format(".minMethDiff%.2f", this.minMethDiff);
+		}
+		
+		String outFn = String.format("%s.lowTab-%s.highTab-%s%s.wind%d.minOutput%d.minCpg%d%s.minCTreads%d.bed", 
 				this.outPrefix, tableLowMeth, tableHighMeth, fixedSec, this.windSize, this.minOutputWindSize, this.minCpgs, 
-				this.tableLowMethMaxMeth, this.tableHighMethMinMeth);
+				methSec, this.minCTreads);
 		String outAllFn = outFn.replace(".bed", ".allwinds.csv");
 		PrintWriter pw = new PrintWriter(new FileOutputStream(outFn));
 		pw.printf("track name=\"%s\" description=\"%s\" useScore=0 itemRgb=On visibility=4\n",outFn, outFn);
@@ -185,12 +240,15 @@ public class MethylDbToDiffDomains {
 		PrintWriter allpw = new PrintWriter(new FileOutputStream(outAllFn));
 		pws.add(allpw);
 
-		int nWalkers = 2;
+		int nWalkers = (this.dumpAllWinds) ? 2 : 1;
 		CpgWalkerDomainFinder[] domainFinders = new CpgWalkerDomainFinder[nWalkers];
 		domainFinders[0] = new CpgWalkerDomainFinderMethDiffs(walkerParams, null, pw, this.tableLowMethMaxMeth, 
-				this.tableHighMethMinMeth, 0, 1);
-		domainFinders[1] = new CpgWalkerDomainFinderMethMeans(walkerParams, null, allpw, Arrays.asList(this.tableLowMeth, 
-				this.tableHighMeth));
+				this.tableHighMethMinMeth, this.minMethDiff, this.bothTablesLowMeth, 0, 1);
+		if (this.dumpAllWinds)
+		{
+			domainFinders[1] = new CpgWalkerDomainFinderMethMeans(walkerParams, null, allpw, Arrays.asList(this.tableLowMeth, 
+					this.tableHighMeth));
+		}
 
 		
 		
@@ -201,6 +259,10 @@ public class MethylDbToDiffDomains {
 		params.setMaxNextNonGfrac(this.maxNextNonGfrac);
 		if (this.withinFeat!=null) params.addFeatFilter(this.withinFeat, 0);
 
+		if (this.downsampleFactor<1.0)
+		{
+			params.setSamplingFactor(this.downsampleFactor);
+		}
 
 
 		for (String chr : chrs)
@@ -252,7 +314,7 @@ public class MethylDbToDiffDomains {
 					}
 
 					//
-					if ((onCpg % 1E5)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, domainFinders[0].windStr());
+					if ((onCpg % 1E4)==0) System.err.printf("On Cpg #%d, domain %s\n", onCpg, domainFinders[0].windStr());
 					onCpg++;
 				}
 

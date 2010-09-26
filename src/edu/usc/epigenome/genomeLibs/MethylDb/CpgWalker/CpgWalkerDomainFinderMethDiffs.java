@@ -13,6 +13,7 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 	
 	protected double tableLowMethMaxMeth = 1.01;
 	protected double tableHighMethMinMeth = -0.01;
+	protected boolean useOnlyLowMeth = false;
 	protected double minMethDiff = 0.0;
 	protected int lowMethIndex = 0;
 	protected int highMethIndex = 1;
@@ -20,7 +21,7 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 	
 	public CpgWalkerDomainFinderMethDiffs(CpgWalkerParams inWalkParams,
 			String chr, PrintWriter pw, double inTableLowMethMaxMeth, double inTableHighMethMinMeth,
-			double inMinMethDiff, int inLowMethIndex, int inHighMethIndex) {
+			double inMinMethDiff, boolean inUseOnlyLowMeth, int inLowMethIndex, int inHighMethIndex) {
 		super(inWalkParams, chr, pw,2);
 		
 		if (this.numTables()!=2)
@@ -34,6 +35,7 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 		this.tableLowMethMaxMeth = inTableLowMethMaxMeth;
 		this.tableHighMethMinMeth = inTableHighMethMinMeth;
 		this.minMethDiff = inMinMethDiff;
+		this.useOnlyLowMeth = inUseOnlyLowMeth;
 		
 //		useWeighting = (inWalkParams.maxWindSize >= MIN_WEIGHTING_WIND_SIZE);
 //		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(
@@ -53,10 +55,19 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 //		if (this.walkParams.debug) System.err.printf("\tTesting window\t%s\n\tmethlow=%.2f\tmethhigh=%.2f\n", 
 //				CpgWalker.windStr(inWindow,false),methlow,methhigh);
 
-		boolean passes = 
-			(methlow <= this.tableLowMethMaxMeth) && 
-			(methhigh >= this.tableHighMethMinMeth) &&
-			(diff >= this.minMethDiff);
+		boolean passes = (diff >= this.minMethDiff);
+		
+		if (this.useOnlyLowMeth)
+		{
+			passes &= (methlow >= this.tableLowMethMaxMeth); 
+			passes &= (methhigh >= this.tableLowMethMaxMeth);
+		}
+		else
+		{
+			passes &= (methlow <= this.tableLowMethMaxMeth); 
+			passes &= (methhigh >= this.tableHighMethMinMeth);
+		}
+		
 
 		if (this.walkParams.debug && passes) System.err.printf("\t\tFound passing window\t%s\n", CpgWalker.windStr(inWindow,false));
 //		if (this.walkParams.debug && passes) System.err.printf("\t\tFound passing window, meth =%.2f\tsize=%d (%d CpGs)\n",
