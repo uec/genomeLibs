@@ -145,13 +145,13 @@ public class MethylDbToWigs {
 		String outfnAs = this.outPrefix + "." + this.table1 + ".bare.wig";
 		PrintWriter pwAs = new PrintWriter(new FileOutputStream(outfnAs));
 		pwAs.printf("track type=wiggle_0 name=%sbare description=%sbare  color=" + colorA + " visibility=full " +
-				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
+				" graphType=points autoScale=off alwaysZero=off windowingFunction=mean maxHeightPixels=80:55:10 viewLimits=0:100\n", this.table1, this.table1);
 		openFiles.add(pwAs);
 	
 		String outfnBs = this.outPrefix + "." + this.table2 + ".bare.wig";
 		PrintWriter pwBs = new PrintWriter(new FileOutputStream(outfnBs));
 		pwBs.printf("track type=wiggle_0 name=%sbare description=%sbare color=" + colorB + " visibility=full " +
-				" graphType=points autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
+				" graphType=points autoScale=off alwaysZero=off windowingFunction=mean maxHeightPixels=80:55:10 viewLimits=0:100\n", this.table2, this.table2);
 		openFiles.add(pwBs);
 		
 		
@@ -159,13 +159,13 @@ public class MethylDbToWigs {
 		String outfnA = this.outPrefix + "." + this.table1 + ".wig";
 		PrintWriter pwA = new PrintWriter(new FileOutputStream(outfnA));
 		pwA.printf("track type=wiggle_0 name=%s description=%s  color=" + colorA + " visibility=full " +
-				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table1, this.table1);
+				" autoScale=off alwaysZero=off maxHeightPixels=80:55:10 viewLimits=0:100\n", this.table1, this.table1);
 		openFiles.add(pwA);
 	
 		String outfnB = this.outPrefix + "." + this.table2 + ".wig";
 		PrintWriter pwB = new PrintWriter(new FileOutputStream(outfnB));
 		pwB.printf("track type=wiggle_0 name=%s description=%s color=" + colorB + " visibility=full " +
-				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:100\n", this.table2, this.table2);
+				" autoScale=off alwaysZero=off maxHeightPixels=80:55:10 viewLimits=0:100\n", this.table2, this.table2);
 		openFiles.add(pwB);
 		
 		
@@ -199,13 +199,13 @@ public class MethylDbToWigs {
 		String outfnDplus = this.outPrefix + ".deltaplus.wig";
 		PrintWriter pwDplus = new PrintWriter(new FileOutputStream(outfnDplus));
 		pwDplus.printf("track type=wiggle_0 name=%s description=%s color=255,0,0 visibility=full " + 
-				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=0:60\n", "deltaplus", "deltaplus");
+				" autoScale=off alwaysZero=off maxHeightPixels=45:28:10 viewLimits=0:60\n", "deltaplus", "deltaplus");
 		openFiles.add(pwDplus);
 
 		String outfnDminus = this.outPrefix + ".deltaMinus.wig";
 		PrintWriter pwDminus = new PrintWriter(new FileOutputStream(outfnDminus));
 		pwDminus.printf("track type=wiggle_0 name=%s description=%s color=0,255,0 visibility=full " + 
-				" autoScale=off alwaysZero=off maxHeightPixels=64:32:10 viewLimits=-60:0\n", "deltaMinus", "deltaMinus");
+				" autoScale=off alwaysZero=off maxHeightPixels=45:28:10 viewLimits=-60:0\n", "deltaMinus", "deltaMinus");
 		openFiles.add(pwDminus);
 
 		
@@ -253,6 +253,7 @@ public class MethylDbToWigs {
 
 			boolean inSpan = false;
 			boolean[] posSeen = new boolean[250000000];
+			int maxPosSeen = -1;
 			for (int mp = chrSt; mp <= chrEnd; mp += this.stepSize, mpCount++)
 			{
 				if ((mpCount % 1E2)==0) System.err.printf("Chr %s\tOn mp=%d (#%d)\n",chr, mp, mpCount);
@@ -360,12 +361,14 @@ public class MethylDbToWigs {
 								
 								
 								// And add the raw ones straight away
+								// UCSC will barf if we put one that's before our last one, so prevent that.
 								int pos = cpgs[0].chromPos;
-								if (this.bare && !posSeen[pos])
+								if (this.bare && !posSeen[pos] && (pos>maxPosSeen))
 								{
 									pwAs.printf("%d\t%d\n",pos,(int)Math.round(100.0*metha));
 									pwBs.printf("%d\t%d\n",pos,(int)Math.round(100.0*methb));
 									posSeen[pos] = true;
+									maxPosSeen = pos;
 								}
 							}
 						} // foreach Cpgs
