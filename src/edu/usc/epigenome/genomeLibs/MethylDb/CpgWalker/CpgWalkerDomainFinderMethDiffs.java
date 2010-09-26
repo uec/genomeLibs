@@ -59,8 +59,8 @@ public class CpgWalkerDomainFinderMethDiffs extends CpgWalkerDomainFinder {
 		
 		if (this.useOnlyLowMeth)
 		{
-			passes &= (methlow >= this.tableLowMethMaxMeth); 
-			passes &= (methhigh >= this.tableLowMethMaxMeth);
+			passes &= (methlow <= this.tableLowMethMaxMeth); 
+			passes &= (methhigh <= this.tableLowMethMaxMeth);
 		}
 		else
 		{
