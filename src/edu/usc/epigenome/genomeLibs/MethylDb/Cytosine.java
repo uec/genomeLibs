@@ -31,16 +31,21 @@ public class Cytosine implements Comparable, Cloneable {
 	public short preBaseTotalReads = 0;
 	public short preBaseGreads = 0;
 	
-	public short refCReads = 0; 
-	public short alleleCReads = 0;
-	public short refTReads = 0;
-	public short alleleTReads = 0;
+	public int alleleChromPos = -1;
+	protected char A_BaseUpperCase = '0';
+	protected char B_BaseUpperCase = '0';
+	public short A_CReads = 0; 
+	public short B_CReads = 0;
+	public short A_TReads = 0;
+	public short B_TReads = 0;
 	
 	// This is actually for non-cpgs
 	protected char nextBaseRefUpperCase = '0';
 	protected char preBaseRefUpperCase = '0';
 	
 	protected double methyDens = Double.NaN;
+	protected double methyA_Dens = Double.NaN;
+	protected double methyB_Dens = Double.NaN;
 	
 	// This is for weighted averages
 	protected double gchWeight = Double.NaN;
@@ -71,6 +76,13 @@ public class Cytosine implements Comparable, Cloneable {
 		super();
 		this.chromPos = chromPos;
 		this.negStrand = negStrand;
+	}
+	
+	public Cytosine(int chromPos, boolean negStrand, int alleleChromPos) {
+		super();
+		this.chromPos = chromPos;
+		this.negStrand = negStrand;
+		this.alleleChromPos = alleleChromPos;
 	}
 	
 	public Cytosine(int chromPos, boolean negStrand, short totalReads, short cReads,
@@ -134,8 +146,9 @@ public class Cytosine implements Comparable, Cloneable {
 	
 	public Cytosine(int chromPos, boolean negStrand, short totalReads, short cReads,
 			short cReadsNonconversionFilt, short tReads, short agReads,
-			short totalReadsOpposite, short aReadsOpposite, short refCReads, short alleleCReads, short refTReads, short alleleTReads, 
-			String preBaseRefUpperCase, String nextBaseRefUpperCase, double fracMeth, int gchWeight,  int gcgWeight, int hcgWeight ) {
+			short totalReadsOpposite, short aReadsOpposite, int alleleChromPos,
+			char A_BaseUpperCase, char B_BaseUpperCase, short A_CReads, short B_CReads, short A_TReads, short B_TReads, 
+			String preBaseRefUpperCase, String nextBaseRefUpperCase, double fracMeth, double fracA_Meth, double fracB_Meth, int gchWeight,  int gcgWeight, int hcgWeight ) {
 		super();
 		this.chromPos = chromPos;
 		this.negStrand = negStrand;
@@ -146,15 +159,21 @@ public class Cytosine implements Comparable, Cloneable {
 		this.agReads = agReads;
 		this.totalReadsOpposite = totalReadsOpposite;
 		this.aReadsOpposite = aReadsOpposite;
-		this.refCReads = refCReads; 
-		this.alleleCReads = alleleCReads;
-		this.refTReads = refTReads;
-		this.alleleTReads = alleleTReads;
+		this.alleleChromPos = alleleChromPos;
+		this.A_CReads = A_CReads; 
+		this.B_CReads = B_CReads;
+		this.A_TReads = A_TReads;
+		this.B_TReads = B_TReads;
 		
+		setA_BaseUpperCase(A_BaseUpperCase);
+		setB_BaseUpperCase(B_BaseUpperCase);
 		setPreBaseRef(preBaseRefUpperCase);
 		setNextBaseRef(nextBaseRefUpperCase);
 		
 		this.methyDens = fracMeth;
+		this.methyA_Dens = fracA_Meth;
+		this.methyB_Dens = fracB_Meth;
+		
 		
 		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
 		if (gchWeight < 0)
@@ -283,13 +302,23 @@ public class Cytosine implements Comparable, Cloneable {
 		return (double)cs / ((double)cs + (double)this.tReads);
 	}
 	
+	public double fracA_Meth()
+	{ 
+		return (double)this.A_CReads / ((double)this.A_CReads + (double)this.A_TReads);
+	}
+	
+	public double fracB_Meth()
+	{ 
+		return (double)this.B_CReads / ((double)this.B_CReads + (double)this.B_TReads);
+	}
+	
 	public String variableStepWigLine(boolean useNonconvFilter)
 	{
 		return String.format("%d\t%f",chromPos, this.fracMeth(useNonconvFilter));
 	}
 
 	
-	public static void outputCytocinesToFile(PrintWriter pw, Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
+	public static void outputCytocinesToFile(PrintWriter pw, Map<String, Cytosine> cytocineMap, String prefix, String sampleName, String chr)
 	throws IOException
 	{
 		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
@@ -321,7 +350,7 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
-	public static void outputCytocinesToFile(PrintWriter pw, Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr, boolean asmFlag)
+	public static void outputCytocinesToFile(PrintWriter pw, Map<String, Cytosine> cytocineMap, String prefix, String sampleName, String chr, boolean asmFlag)
 	throws IOException
 	{
 		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
@@ -335,7 +364,7 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
-	public static PrintWriter outputChromToFile(Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
+	public static PrintWriter outputChromToFile(Map<String,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
 	throws IOException
 	{
 		
@@ -348,7 +377,7 @@ public class Cytosine implements Comparable, Cloneable {
 		return writer;
 	}
 	
-	public static PrintWriter outputChromToFile(Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr, boolean asmFlag)
+	public static PrintWriter outputChromToFile(Map<String, Cytosine> cytocineMap, String prefix, String sampleName, String chr, boolean asmFlag)
 	throws IOException
 	{
 		
@@ -386,7 +415,7 @@ public class Cytosine implements Comparable, Cloneable {
 	
 	public String toString(boolean asmFlag) {
 
-		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%d\t%d\t%c\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f", 
+		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%d\t%d\t%c\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,
@@ -396,10 +425,13 @@ public class Cytosine implements Comparable, Cloneable {
 				agReads,
 				totalReadsOpposite,
 				aReadsOpposite,
-				refCReads, 
-				alleleCReads, 
-				refTReads, 
-				alleleTReads,
+				alleleChromPos, 
+				A_BaseUpperCase, 
+				B_BaseUpperCase, 
+				A_CReads,
+				B_CReads,
+				A_TReads,
+				B_TReads,
 				preBaseGreads,
 				preBaseTotalReads,
 				preBaseRefUpperCase,
@@ -407,6 +439,8 @@ public class Cytosine implements Comparable, Cloneable {
 				nextBaseTotalReads,
 				nextBaseRefUpperCase,
 				100*this.fracMeth(true),
+				100*this.fracA_Meth(),
+				100*this.fracB_Meth(),
 				100*this.fracPreBaseG(),
 				100*this.fracNextBaseG(),
 				this.gchWeight,
@@ -493,6 +527,22 @@ public class Cytosine implements Comparable, Cloneable {
 		this.preBaseRefUpperCase = Character.toUpperCase(preBaseRef);
 	}
 
+	public char getA_BaseUpperCase() {
+		return A_BaseUpperCase;
+	}
+	
+	public void setA_BaseUpperCase(char A_BaseUpperCase){
+		this.A_BaseUpperCase = Character.toUpperCase(A_BaseUpperCase);
+	}
+	
+	public char getB_BaseUpperCase() {
+		return B_BaseUpperCase;
+	}
+	
+	public void setB_BaseUpperCase(char B_BaseUpperCase){
+		this.B_BaseUpperCase = Character.toUpperCase(B_BaseUpperCase);
+	}
+	
 	public StrandedFeature.Strand getStrand()
 	{
 		return (this.negStrand) ? StrandedFeature.NEGATIVE : StrandedFeature.POSITIVE;
