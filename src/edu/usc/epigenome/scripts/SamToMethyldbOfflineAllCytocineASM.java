@@ -7,8 +7,12 @@ import net.sf.samtools.util.CloseableIterator;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -29,10 +33,11 @@ public class SamToMethyldbOfflineAllCytocineASM {
 	 * @param args
 	 */
 		
-		final private static String prefix = "methylCGsRich_";
-		final private static String USAGE = "SamToMethyldbOffling [opts] sampleName file1.bam file2.bam ...";
+		final private static String prefix = "methylCGsRich_ASM_";
+		final private static String USAGE = "SamToMethyldbOfflineAllCytocineASM [opts] sampleName file1.bam file2.bam ...";
 
 		final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
+		final private static int ALLELE_GA_NUMBER = 1; //for each reads, when there are more than 1 GA position is different from reference sequence, we define it belongs to another allele. 
 
 		
 		/**
@@ -64,6 +69,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 		@Option(name="-debug",usage=" Debugging statements (default false)")
 		protected boolean debug = false;
 
+		private boolean asmFlag = true;
 		
 		// receives other command line parameters than options
 		@Argument
@@ -118,8 +124,8 @@ public class SamToMethyldbOfflineAllCytocineASM {
 			if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 			for (final String chr : chrs)
 			{
-				SortedMap<Integer,Cytosine> cytosines = new TreeMap<Integer,Cytosine>();
-				PrintWriter outWriter = Cytosine.outputChromToFile(cytosines, prefix, sampleName, chr);
+				SortedMap<String,Cytosine> cytosines = new TreeMap<String,Cytosine>();
+				PrintWriter outWriter = Cytosine.outputChromToFile(cytosines, prefix, sampleName, chr, asmFlag);
 
 				
 				for (final String fn : stringArgs)
@@ -129,25 +135,34 @@ public class SamToMethyldbOfflineAllCytocineASM {
 					final SAMFileReader inputSam = new SAMFileReader(inputSamOrBamFile);
 					inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
 					
-					CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
+					
+					
 					
 					// We can only purge if we are the only input file and we are sorted.
 					boolean canPurge = ((inputSam.hasIndex()) && (stringArgs.size() == 1));
+					//boolean canPurge = false;
 					Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).info(String.format("Able to purge at interval %d? %s\n", 
 							PURGE_INTERVAL, (canPurge) ? "Yes" : "Purging not available - either unsorted BAM or multiple BAMs for the same chrom"));
 					int lastBaseSeen = 0;
 					int lastPurge = 0;
+					
+					TreeSet<Integer> allelePosition = allelePos( inputSam, canPurge, chr );
+					
+					CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
+					
 					record: while (chrIt.hasNext())
 					{
+						
 						if (canPurge && (lastBaseSeen > (lastPurge+PURGE_INTERVAL)))
 						{
+							
 							//System.err.printf("On base %d, purging everything before %d\n", lastBaseSeen,lastPurge);
-							Cytosine.outputCytocinesToFile(outWriter, cytosines.headMap(new Integer(lastPurge)), prefix, sampleName, chr);
+							Cytosine.outputCytocinesToFile(outWriter, cytosines.headMap(Integer.toString(lastPurge)), prefix, sampleName, chr, asmFlag);
 							
 							// Weird, if i just set cytosines to be the tailMap (as in 1, below) garbage collection doesn't actually clean up
 							// the old part (just backed by the original data structure). So i actually have to copy it to a new map. (as in 2)
 							//(1) cytosines = cytosines.tailMap(new Integer(lastPurge));
-							cytosines = new TreeMap<Integer,Cytosine>(cytosines.tailMap(new Integer(lastPurge))); // (2)
+							cytosines = new TreeMap<String,Cytosine>(cytosines.tailMap(Integer.toString(lastPurge))); // (2)
 							
 							lastPurge = lastBaseSeen;
 						}
@@ -162,7 +177,6 @@ public class SamToMethyldbOfflineAllCytocineASM {
 							continue record;
 						}
 
-
 						String seq = PicardUtils.getReadString(samRecord, true);
 
 						recCounter++;
@@ -172,11 +186,11 @@ public class SamToMethyldbOfflineAllCytocineASM {
 							if (canPurge) System.gc();
 						}
 
-
 						try
 						{
 							String ref = PicardUtils.refStr(samRecord, true);
-
+							
+							
 							if (seq.length() != ref.length())
 							{
 								System.err.println("SeqLen(" + seq.length() + ") != RefLen(" + ref.length() + ")");
@@ -196,11 +210,36 @@ public class SamToMethyldbOfflineAllCytocineASM {
 							lastBaseSeen = alignmentS;
 								
 								
-
+							
 							int numConverted = 0;
 							int convStart = Integer.MAX_VALUE;
 							int seqLen = Math.min(seq.length(), ref.length());
-							boolean seqFlag = alleleOfReads(seq, ref, seqLen);
+							
+							//TreeSet<Integer> AlleleCoord = alleleOfReads(seq, ref, seqLen, onRefCoord, negStrand);
+							//Iterator<Integer> AlleleCoordIt = AlleleCoord.iterator();
+							int alleleChromPos = -1;
+							//if( !AlleleCoord.isEmpty() )
+							//	closeAlleleCoord = AlleleCoord.first();
+							boolean seqFlag = true;
+							int readsStart = samRecord.getUnclippedEnd() <= alignmentS ? samRecord.getUnclippedEnd() : alignmentS;
+							int readsEnd = samRecord.getUnclippedEnd() <= alignmentS ? alignmentS : samRecord.getUnclippedEnd();
+							TreeSet<Integer> allelePosSub = new TreeSet<Integer>();
+								if (!allelePosition.subSet(readsStart, readsEnd).isEmpty()){
+									
+									Iterator<Integer> allelePosIt = allelePosition.subSet(readsStart, readsEnd).iterator();
+									allelePosSub.add(allelePosIt.next());
+									 while (allelePosIt.hasNext()){
+										 int pos = allelePosIt.next();
+										 int relativePos = negStrand ? pos - readsEnd : pos - readsStart;
+										 if( (ref.charAt(relativePos) == 'G' && seq.charAt(relativePos) == 'A') || (ref.charAt(relativePos) == 'A' && seq.charAt(relativePos) == 'G')){
+											 seqFlag = false;
+											 allelePosSub.add(pos);
+										 }
+									 }
+								}
+							char A_BaseUpperCase = '0';
+							char B_BaseUpperCase = '0';
+							
 							for (int i = 0; i < seqLen; i++)
 							{
 								char refi = ref.charAt(i);
@@ -209,11 +248,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 								char preBaseSeq = PicardUtils.preBaseSeq(i, seq);
 								char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 								char nextBaseSeq = PicardUtils.nextBaseSeq(i, seq);
-								
-								if (PicardUtils.isGuanine(i,ref) || PicardUtils.isAdenine(i,ref) && (nextBaseRef != 'C' && preBaseRef != 'C')){
-									
-								}
-
+								//System.err.printf("%d\t%d\t%d\t%c\t%c\n",readsStart,readsEnd,i,refi,seqi);
 								//if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref)) // The last one is too tricky to deal with since we don't know context
 								if (PicardUtils.isCytosine(i,ref,false) && PicardUtils.isCytosine(i,seq,true)) // The last one is too tricky to deal with since we don't know context
 								{
@@ -244,10 +279,63 @@ public class SamToMethyldbOfflineAllCytocineASM {
 										
 									}
 									else{
-										Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, negStrand, preBaseRef, nextBaseRef);
-										if (cytosine.getNextBaseRef() == '0') cytosine.setNextBaseRef(nextBaseRef);
-										if (cytosine.getPreBaseRef() == '0') cytosine.setPreBaseRef(preBaseRef);
-										this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq);
+										if (seqFlag){
+											Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, negStrand, preBaseRef, nextBaseRef, A_BaseUpperCase, B_BaseUpperCase, alleleChromPos);
+											if (cytosine.getNextBaseRef() == '0') cytosine.setNextBaseRef(nextBaseRef);
+											if (cytosine.getPreBaseRef() == '0') cytosine.setPreBaseRef(preBaseRef);
+											this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq, seqFlag);
+										}
+										else{
+											int alleleUpperPos = Integer.MAX_VALUE;
+											int alleleLowerPos = Integer.MIN_VALUE;
+											if(!allelePosition.tailSet(onRefCoord).isEmpty())
+												alleleUpperPos = allelePosition.tailSet(onRefCoord).first();
+											if(!allelePosition.headSet(onRefCoord).isEmpty())
+												alleleLowerPos = allelePosition.headSet(onRefCoord).last();
+											if( allelePosition.subSet(readsStart, readsEnd).contains(alleleUpperPos) && allelePosition.subSet(readsStart, readsEnd).contains(alleleLowerPos) ){
+												alleleChromPos = Math.abs(alleleUpperPos - onRefCoord) > Math.abs(alleleLowerPos - onRefCoord) ? alleleLowerPos : alleleUpperPos;
+											}
+											else if (allelePosition.subSet(readsStart, readsEnd).contains(alleleUpperPos) && !allelePosition.subSet(readsStart, readsEnd).contains(alleleLowerPos)){
+												alleleChromPos = alleleUpperPos;
+											}
+											else if (allelePosition.subSet(readsStart, readsEnd).contains(alleleLowerPos) && !allelePosition.subSet(readsStart, readsEnd).contains(alleleUpperPos)){
+												alleleChromPos = alleleLowerPos;
+											}
+											else{
+												System.err.printf("error here!");
+											}
+											int alleleRelativePos = negStrand ? Math.abs(alleleChromPos - readsEnd) : Math.abs(alleleChromPos - readsStart);
+											A_BaseUpperCase = ref.charAt(alleleRelativePos);
+											boolean converted = PicardUtils.isConverted(alleleRelativePos, ref, seq);
+											if (seq.charAt(alleleRelativePos) == A_BaseUpperCase || converted)
+												seqFlag = true;
+											else
+												B_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(seq.charAt(alleleRelativePos)) : seq.charAt(alleleRelativePos);
+											/*if( A_BaseUpperCase != '0' && (A_BaseUpperCase == 'T' || A_BaseUpperCase == 'C') ){
+												System.err.println(ref);
+												System.err.println(seq);
+												System.err.println(negStrand);
+												System.err.println(onRefCoord);
+												System.err.println(A_BaseUpperCase);
+												System.err.println( alleleChromPos);
+												System.err.println(readsStart);
+												System.err.println(readsEnd);
+												System.err.println(i);
+												System.err.println(ref.charAt(alleleRelativePos));
+												System.err.println(allelePosition.subSet(readsStart, readsEnd));
+												//System.out.printf("%c\t%d\t%c\t%d\t%d\t%d\n", negStrand, onRefCoord, A_BaseUpperCase, alleleChromPos, readsStart, readsEnd);
+												System.exit(1);
+											}*/
+											A_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(ref.charAt(alleleRelativePos)) : ref.charAt(alleleRelativePos);
+											Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, negStrand, preBaseRef, nextBaseRef, A_BaseUpperCase, B_BaseUpperCase, alleleChromPos);
+											if (cytosine.getNextBaseRef() == '0') cytosine.setNextBaseRef(nextBaseRef);
+											if (cytosine.getPreBaseRef() == '0') cytosine.setPreBaseRef(preBaseRef);
+											if (cytosine.getA_BaseUpperCase() == '0') cytosine.setA_BaseUpperCase(A_BaseUpperCase);
+											if (cytosine.getB_BaseUpperCase() == '0') cytosine.setB_BaseUpperCase(B_BaseUpperCase);
+											this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq, seqFlag);
+											seqFlag = false;
+										}
+										
 									}
 									
 									
@@ -299,7 +387,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 									
 									char nextBaseRefRev = PicardUtils.nextBaseRef(i, ref, true);
 									char preBaseRefRev = PicardUtils.preBaseRef(i, ref, true);
-									Cytosine oppositeCytosine = findOrCreateCytosine(cytosines, onRefCoord, !negStrand, preBaseRefRev, nextBaseRefRev);
+									Cytosine oppositeCytosine = findOrCreateCytosine(cytosines, onRefCoord, !negStrand, preBaseRefRev, nextBaseRefRev, A_BaseUpperCase, B_BaseUpperCase, alleleChromPos);
 							//		
 									this.incrementOppositeCytosine(oppositeCytosine, seqi);
 								}
@@ -338,7 +426,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 				}
 
 				// And output the chrom
-				if (cytosines != null) 	Cytosine.outputCytocinesToFile(outWriter, cytosines, prefix, sampleName, chr);
+				if (cytosines != null) 	Cytosine.outputCytocinesToFile(outWriter, cytosines, prefix, sampleName, chr, asmFlag);
 				outWriter.close();
 
 			}
@@ -352,16 +440,21 @@ public class SamToMethyldbOfflineAllCytocineASM {
 		}
 
 
-		protected static Cytosine findOrCreateCytosine(Map<Integer,Cytosine> cytosines, int onRefCoord, boolean negStrand, char preBaseRef, char nextBaseRef)
+		protected static Cytosine findOrCreateCytosine(Map<String,Cytosine> cytosines, int onRefCoord, boolean negStrand, char preBaseRef, char nextBaseRef, char A_BaseUpperCase, char B_BaseUpperCase, int alleleChromPos)
 		{
-			Cytosine cytosine = cytosines.get(new Integer(onRefCoord));
+			
+			String index = Integer.toString(onRefCoord).concat(Integer.toString(alleleChromPos));
+			Cytosine cytosine = cytosines.get(index);
+			
 			if (cytosine == null)
 			{
-				cytosine = new Cytosine(onRefCoord,negStrand);
+				cytosine = new Cytosine(onRefCoord,negStrand,alleleChromPos);
 				cytosine.setNextBaseRef(nextBaseRef);
 				cytosine.setPreBaseRef(preBaseRef);
+				cytosine.setA_BaseUpperCase(A_BaseUpperCase);
+				cytosine.setB_BaseUpperCase(B_BaseUpperCase);
 				
-				cytosines.put(new Integer(onRefCoord), cytosine);
+				cytosines.put(index, cytosine);
 			}
 			return cytosine;
 		}
@@ -396,10 +489,10 @@ public class SamToMethyldbOfflineAllCytocineASM {
 			cytosine.totalReadsOpposite += totalReadsOpposite;
 		}
 		
-		protected void incrementCytosine(Cytosine cytosine, char seqChar, boolean nonconvFilter, char preBaseSeq, char nextBaseSeq) 
+		protected void incrementCytosine(Cytosine cytosine, char seqChar, boolean nonconvFilter, char preBaseSeq, char nextBaseSeq, boolean seqFlag) 
 		throws Exception
 		{
-			int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0, preBaseGreads = 0, preBaseTotalReads = 0, nextBaseGreads = 0, nextBaseTotalReads = 0;
+			int totalReads = 0, cReads = 0, tReads = 0, cReadsNonconvFilt = 0, agReads = 0, preBaseGreads = 0, preBaseTotalReads = 0, nextBaseGreads = 0, nextBaseTotalReads = 0, A_CReads = 0, B_CReads = 0, A_TReads = 0, B_TReads = 0; 
 			
 			switch (seqChar)
 			{
@@ -414,10 +507,14 @@ public class SamToMethyldbOfflineAllCytocineASM {
 			case 'T':
 				tReads = 1;
 				totalReads = 1;
+				if ( seqFlag ) A_TReads = 1; 
+				else B_TReads = 1;
 				break;
 			case 'C':
 				if (nonconvFilter) cReadsNonconvFilt = 1; else cReads = 1;
 				totalReads = 1;
+				if ( seqFlag ) A_CReads = 1;
+				else B_CReads = 1;
 				break;
 			default:
 				throw new Exception("Can't recognize seq char: " + seqChar);
@@ -471,28 +568,117 @@ public class SamToMethyldbOfflineAllCytocineASM {
 			cytosine.preBaseTotalReads += preBaseTotalReads;
 			cytosine.nextBaseGreads += nextBaseGreads;
 			cytosine.nextBaseTotalReads += nextBaseTotalReads;
+			
+			cytosine.A_CReads += A_CReads; 
+			cytosine.B_CReads +=B_CReads;
+			cytosine.A_TReads += A_TReads;
+			cytosine.B_TReads += B_TReads;
 		}
 
-		protected boolean alleleOfReads(String seq, String ref, int seqLen)
+		
+		protected TreeSet<Integer> allelePos( SAMFileReader inputSam, boolean canPurge, String chr )
 		throws Exception{
-			for (int i = 0; i < seqLen; i++)
+			CloseableIterator<SAMRecord> chrItForAllele = inputSam.query(chr, 0, 0, false);
+			int lastBaseSeen = 0;
+			int lastPurge = 0;
+			int recCounter = 0;
+			TreeSet<Integer> allelePosition = new TreeSet<Integer>();
+			
+			recordSub: while (chrItForAllele.hasNext())
 			{
-				char refi = ref.charAt(i);
-				char seqi = seq.charAt(i);
-				char preBaseRef = PicardUtils.preBaseRef(i, ref);
-				char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
+				if (canPurge && (lastBaseSeen > (lastPurge+PURGE_INTERVAL)))
+				{
+					
+					lastPurge = lastBaseSeen;
+				}
 				
-				if (PicardUtils.isGuanine(i,ref) || PicardUtils.isAdenine(i,ref) && (nextBaseRef != 'C' && preBaseRef != 'C')){
-					if(refi == seqi){
-						continue;
+				SAMRecord samRecord = chrItForAllele.next();
+
+				// Filter low qual
+				int mapQual = samRecord.getMappingQuality();
+				boolean unmapped = samRecord.getReadUnmappedFlag();
+				if (unmapped || (mapQual < minMapQ))
+				{
+					continue recordSub;
+				}
+
+
+				String seq = PicardUtils.getReadString(samRecord, true);
+
+				recCounter++;
+				if ((recCounter % 1E5)==0)
+				{
+					System.err.printf("On new record #%d\n",recCounter);
+					if (canPurge) System.gc();
+				}
+
+
+				try
+				{
+					String ref = PicardUtils.refStr(samRecord, true);
+
+					if (seq.length() != ref.length())
+					{
+						System.err.println("SeqLen(" + seq.length() + ") != RefLen(" + ref.length() + ")");
+						System.err.println(seq + "\n" + ref);
 					}
-					else{
-						return false;
+					//System.err.println(seq + "\n" + ref);
+
+					boolean negStrand = samRecord.getReadNegativeStrandFlag();
+					int alignmentS = samRecord.getAlignmentStart();
+					int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; 
+					int readsStart = samRecord.getUnclippedEnd() <= alignmentS ? samRecord.getUnclippedEnd() : alignmentS;
+					//int readsEnd = samRecord.getUnclippedEnd() <= alignmentS ? alignmentS : samRecord.getUnclippedEnd();
+
+					if ((this.outputHcphs) && (alignmentS < lastBaseSeen))
+					{
+						System.err.printf("BAM must be ordered in order to handle -outputCphs: %d<%d\n",alignmentS, lastBaseSeen);
+						System.exit(1);
+					}
+					lastBaseSeen = alignmentS;
+
+					int seqLen = Math.min(seq.length(), ref.length());
+					
+					for (int i = 0; i < seqLen; i++){
+						char refi = ref.charAt(i);
+						//char seqi = seq.charAt(i);
+						char preBaseRef = PicardUtils.preBaseRef(i, ref);
+						char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
+
+						if(negStrand){
+							
+						}
+						else{
+							if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq)) && (nextBaseRef != 'C' && preBaseRef != 'C')){
+								Integer readPos = readsStart + i;
+								allelePosition.add(readPos);
+							}
+						}
+						
+						if (refi == '-')
+						{
+							// It's a deletion in reference, don't advance
+						}
+						else
+						{
+							int inc = (negStrand) ? -1 : 1;
+							onRefCoord += inc;
+						}
 					}
 				}
+				catch (Exception f)
+				{
+					System.err.println("-----------------------------------------");
+					System.err.println("Couldn't handle seq #" + recCounter);
+					System.err.println(seq);
+					f.printStackTrace(System.err);
+					System.err.println("-----------------------------------------");
+				}
 			}
-			return true;
+			chrItForAllele.close();
+			return allelePosition;
 		}
+		
 
 
 }
