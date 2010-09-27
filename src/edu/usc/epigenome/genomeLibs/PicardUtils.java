@@ -357,6 +357,31 @@ public class PicardUtils {
 		return (refC == 'A') ; 
 	}
 	
+	public static char revNucleotide(char nucleotide)
+	throws Exception
+	{
+		switch(nucleotide){
+		case 'N':
+			break;
+		case 'A':
+			nucleotide = 'T';
+			break;
+		case 'T':
+			nucleotide = 'A';
+			break;
+		case 'G':
+			nucleotide = 'C';
+			break;
+		case 'C':
+			nucleotide = 'G';
+			break;
+		default:
+			throw new Exception("Can't recognize seq char: " + nucleotide);
+		}
+		return nucleotide;
+		
+	}
+	
 	
 	public static boolean isConverted(int pos, String refStr, String seqStr)
 	{
