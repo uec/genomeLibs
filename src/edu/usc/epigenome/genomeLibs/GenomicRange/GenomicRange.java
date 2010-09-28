@@ -1,5 +1,6 @@
 package edu.usc.epigenome.genomeLibs.GenomicRange;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import org.usckeck.genome.ChromFeatures;
 import edu.usc.epigenome.genomeLibs.BiojavaUtils;
 import edu.usc.epigenome.genomeLibs.GoldAssembly;
 import edu.usc.epigenome.genomeLibs.ChromStringComparator;
+import edu.usc.epigenome.genomeLibs.ListUtils;
 
 
 public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
@@ -93,7 +95,14 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	 * @return the chrom
 	 */
 	public String getChrom() {
-		return chrom;
+		
+		String chr = this.chrom;
+
+		chr = chr.replace('x', 'X');
+		chr = chr.replace('y', 'Y');
+		chr = chr.replace('m', 'M');
+		
+		return chr;
 	}
 
 
@@ -111,7 +120,7 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	 * @return the start
 	 */
 	public int getStart() {
-		return start;
+		return (int)start;
 	}
 
 
@@ -137,7 +146,7 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	 * @return the end
 	 */
 	public int getEnd() {
-		return end;
+		return (int)end;
 	}
 
 
@@ -294,6 +303,24 @@ public class GenomicRange implements Cloneable, Comparable<GenomicRange> {
 	public String commaSeparatedLine()
 	{
 		return this.commaSeparatedLine(false);
+	}	
+
+	public String gffStr()
+	{
+
+		String[] cols = {
+					this.getChrom(),
+					"DEFAULT",
+					"exon",
+					String.format("%d",this.getStart()),
+					String.format("%d",this.getEnd()),
+					String.format("%.1f",this.getScore()),
+					Character.toString(BiojavaUtils.strandToSymbol(this.getStrand())),
+					"."
+		};
+		
+		return ListUtils.tabbedLine(Arrays.asList(cols));
+		
 	}	
 
 	public String commaSeparatedLine(boolean intChrom)

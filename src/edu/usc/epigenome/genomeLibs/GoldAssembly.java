@@ -8,11 +8,17 @@ import org.biojava.bio.seq.Sequence;
 import org.biojavax.bio.seq.RichSequence.IOTools;
 import org.biojavax.bio.seq.RichSequenceIterator;
 
+import com.mallardsoft.tuple.Pair;
+import com.mallardsoft.tuple.Tuple;
+
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
+
 
 public class GoldAssembly {
 
 	public static Map<String,Integer> c_chr_map; // "mm9__chr1"
 	public static Map<String,Long> cGlobalOffsets;
+	public static Map<String, Map<String,Pair<Long,Long>>> cChromMap = new HashMap<String, Map<String,Pair<Long,Long>>>(); // key to first Map is genome, key to second map is chromosome. Pair is the start and end coords of the chromosome, in global coords
 
 	
 	public static boolean chromExists(String chr, String genome)
@@ -91,6 +97,40 @@ public class GoldAssembly {
 	 * File offsets (all are zero-based coordinates)
 	 */
 	
+	public static GenomicRange getLocalCoordinate(long globalOffset, String genome)
+	{
+		Map<String,Pair<Long,Long>> genomeChromMap = cChromMap.get(genome);
+		
+		GenomicRange grange = null;
+		Iterator<String> chrIt = genomeChromMap.keySet().iterator();
+		boolean done = false;
+		while (!done && chrIt.hasNext())
+		{
+			String chr = chrIt.next();
+
+			Pair<Long,Long> range = genomeChromMap.get(chr);
+			if (range == null)
+			{
+				System.err.println("GoldAssembly::getLocalCoordinate could not find entry for chrom: " + chr);
+				return null;
+			}
+
+			chr = chr.replace('x', 'X');
+			chr = chr.replace('y', 'Y');
+			chr = chr.replace('m', 'M');
+			
+			if ((globalOffset >= Pair.get1(range)) && (globalOffset < Pair.get2(range)))
+			{
+				int localOffset = (int)(globalOffset-Pair.get1(range));
+				grange = new GenomicRange(chr, localOffset , localOffset);
+				//System.err.printf("chr=%s\tgrange=%s\n",chr, grange.commaSeparatedLine());
+				done = true;
+			}
+		}
+		
+		return grange;
+	}
+	
 	public static long getGlobalOffset(String chrom, String genome, int localOffset)
 	{
 		String key = genome + "__" + chrom;
@@ -117,16 +157,27 @@ public class GoldAssembly {
 		
 		long offset = 0;
 
+
 		try
 		{
+
+			Map<String,Pair<Long,Long>> genomeChromMap = new HashMap<String,Pair<Long,Long>>();
+			
 			while (chrs.hasNext())
 			{
 				String chr = chrs.next();
 				String key = genome + "__" + chr;
 				cGlobalOffsets.put(key, new Long(offset));
+				long oldOffset = offset;
 				offset += (long)GoldAssembly.chromLengthStatic(chr, genome);
+				
+				Pair<Long,Long> range = new Pair<Long,Long>(oldOffset,offset);
+				genomeChromMap.put(chr, range);
 			}
-			
+
+			// Add out chrom map to the global hash
+			cChromMap.put(genome, genomeChromMap);
+
 			// Add a size
 			cGlobalOffsets.put(genome, offset);
 		}
@@ -278,7 +329,7 @@ public class GoldAssembly {
 		c_chr_map.put("mm8__chrx", new Integer(165556469));
 		c_chr_map.put("mm8__chrx_random", new Integer(39696));
 		c_chr_map.put("mm8__chry", new Integer(16029404));
-		c_chr_map.put("mm8__chry_random", new Integer(14577732));
+		c_chr_map.put("mm8__chru_random", new Integer(14577732));
 		c_chr_map.put("mm8__chrun_random", new Integer(1540053));
 		c_chr_map.put("mm8__chrm", new Integer(16299));
 		GoldAssembly.initializeGlobalOffsets("mm8");
