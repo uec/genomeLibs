@@ -5,6 +5,7 @@ use File::Basename;
 
 my @files = @ARGV;
 
+$::MIN_SCORE = 0;
 
 foreach my $f (@files)
 {
@@ -25,10 +26,13 @@ foreach my $f (@files)
 	else
 	{
 	    my @flds = split(/\t/,$line);
+	    if (($flds[5] eq '.') || ($flds[5]>$::MIN_SCORE))
+	    {
 	    my $src = @flds[2];
 	    $src =~ s/[\/]//g;
 	    $src =~ s/\./-/g;
 	    $src_h->{$src} .= $line;
+	    }
 	}
 	
 	print STDERR "On line $on_line\n" if (($on_line%10000)==0);
@@ -45,7 +49,16 @@ foreach my $f (@files)
 
 	my $str = $src_h->{$src};
 	$src =~ s/\/\#\://g;
-	my $outfn = $path.$name."_$src".$suf;
+	my $minSec = ($::MIN_SCORE>0) ? ".minScore".$::MIN_SCORE : "";
+	my $outfn = $path.$name."_$src".$minSec.$suf;
+	
+	# Special cases
+	$outfn =~ s/wgEncodeRegTfbsClustered_/ENCODEclst_/g;
+	$outfn =~ s/minScore/min/g;
+	$outfn =~ s/.gtf//g;
+	
+	
+	
 	print "Writing to $outfn\n";
 
 	if (1)
