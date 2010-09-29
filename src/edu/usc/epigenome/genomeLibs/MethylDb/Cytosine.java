@@ -318,7 +318,7 @@ public class Cytosine implements Comparable, Cloneable {
 	}
 
 	
-	public static void outputCytocinesToFile(PrintWriter pw, Map<String, Cytosine> cytocineMap, String prefix, String sampleName, String chr)
+	public static void outputCytocinesToFile(PrintWriter pw, Map<Integer, Cytosine> cytocineMap, String prefix, String sampleName, String chr)
 	throws IOException
 	{
 		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
@@ -364,7 +364,7 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
-	public static PrintWriter outputChromToFile(Map<String,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
+	public static PrintWriter outputChromToFile(Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
 	throws IOException
 	{
 		
@@ -376,6 +376,7 @@ public class Cytosine implements Comparable, Cloneable {
 		//writer.close();
 		return writer;
 	}
+	
 	
 	public static PrintWriter outputChromToFile(Map<String, Cytosine> cytocineMap, String prefix, String sampleName, String chr, boolean asmFlag)
 	throws IOException
