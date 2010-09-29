@@ -149,7 +149,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 					TreeSet<Integer> allelePosition = allelePos( inputSam, canPurge, chr );
 					
 					CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
-					
+					//System.err.println(allelePosition.isEmpty());
 					record: while (chrIt.hasNext())
 					{
 						
@@ -180,6 +180,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 						String seq = PicardUtils.getReadString(samRecord, true);
 
 						recCounter++;
+						
 						if ((recCounter % 1E5)==0)
 						{
 							System.err.printf("On new record #%d, purged tree size:%d\n",recCounter,cytosines.size());
@@ -292,8 +293,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 														if (cytosine.getPreBaseRef() == '0') cytosine.setPreBaseRef(preBaseRef);
 														if (cytosine.getA_BaseUpperCase() == '0') cytosine.setA_BaseUpperCase(A_BaseUpperCase);
 														if (cytosine.getB_BaseUpperCase() == '0') cytosine.setB_BaseUpperCase(B_BaseUpperCase);
-														this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq, seqFlag2
-																);
+														this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq, seqFlag2);
 												 }
 												 seqFlag = false;
 											}
@@ -474,7 +474,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 		
 		
 		
-		protected void incrementOppositeCytosine(Cytosine cytosine, char seqChar) 
+/*		protected void incrementOppositeCytosine(Cytosine cytosine, char seqChar) 
 		throws Exception
 		{
 			int aReadsOpposite = 0, totalReadsOpposite = 0;
@@ -501,6 +501,7 @@ public class SamToMethyldbOfflineAllCytocineASM {
 			cytosine.aReadsOpposite += aReadsOpposite;
 			cytosine.totalReadsOpposite += totalReadsOpposite;
 		}
+*/
 		
 		protected void incrementCytosine(Cytosine cytosine, char seqChar, boolean nonconvFilter, char preBaseSeq, char nextBaseSeq, boolean seqFlag) 
 		throws Exception
@@ -655,14 +656,15 @@ public class SamToMethyldbOfflineAllCytocineASM {
 					for (int i = 0; i < seqLen; i++){
 						char refi = ref.charAt(i);
 						//char seqi = seq.charAt(i);
-						char preBaseRef = PicardUtils.preBaseRef(i, ref);
-						char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
+						//char preBaseRef = PicardUtils.preBaseRef(i, ref);
+						//char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 
 						if(negStrand){
 							
 						}
 						else{
-							if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq)) && (nextBaseRef != 'C' && preBaseRef != 'C')){
+							//if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq)) && (nextBaseRef != 'C' && preBaseRef != 'C')){
+							if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
 								Integer readPos = readsStart + i;
 								allelePosition.add(readPos);
 							}
