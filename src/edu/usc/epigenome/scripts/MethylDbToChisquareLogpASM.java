@@ -1,0 +1,151 @@
+package edu.usc.epigenome.scripts;
+
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+
+import com.sun.org.apache.xalan.internal.xsltc.compiler.Pattern;
+
+import edu.usc.epigenome.genomeLibs.GoldAssembly;
+
+import edu.usc.epigenome.genomeLibs.MethylDb.Cytosine;
+import edu.usc.epigenome.genomeLibs.MethylDb.CytosineIterator;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
+import org.apache.commons.math.stat.inference.ChiSquareTestImpl;
+
+
+
+public class MethylDbToChisquareLogpASM {
+
+	/**
+	 * @param args
+	 */
+	private static final String C_USAGE = "Use: MethylDbToChisquareLogpASM -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
+	" CpG sample chr [startPos] [endPos]";
+	public static String connStr = "jdbc:mysql://localhost/asm_cr";
+	
+    @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
+    protected String tablePrefix = "methylCGsRich_ASM_";
+    @Option(name="-CpG",usage=" just withdarw CpG sites or all of the cytosine sites")
+    protected boolean Cpg = true;
+    @Option(name="-sample",usage=" input the sample name: normal010310 or tumor011010")
+    protected String sample = "normal010310";
+    
+    
+	// receives other command line parameters than options
+	@Argument
+	private List<String> arguments = new ArrayList<String>();
+	
+	public static void main(String[] args) 
+	throws Exception{
+		// TODO Auto-generated method stub
+		new MethylDbToChisquareLogpASM().doMain(args);
+	}
+
+	public void doMain(String[] args)
+	throws Exception
+	{
+		CmdLineParser parser = new CmdLineParser(this);
+		// if you have a wider console, you could increase the value;
+		// here 80 is also the default
+		int chrStart = -1, chrEnd = -1;
+		String chr;
+		parser.setUsageWidth(80);
+		try
+		{
+			parser.parseArgument(args);
+
+			if(arguments.size() < 1 ) {
+				System.err.println(C_USAGE);
+				System.exit(1);
+			}
+
+			chr = arguments.get(0);
+			if (!chr.startsWith("chr")) chr = "chr" + chr;
+			if (arguments.size() > 1)
+			{
+				chrStart = Integer.parseInt(arguments.get(1));
+				chrEnd = Integer.parseInt(arguments.get(2));
+			}
+
+		}
+		catch (CmdLineException e)
+		{
+			System.err.println(e.getMessage());
+			System.err.println(C_USAGE);
+			// print the list of available options
+			parser.printUsage(System.err);
+			System.err.println();
+			return;
+		}
+		this.tablePrefix += sample;
+		this.tablePrefix += "_";
+		
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.INFO);
+		
+		MethylDbQuerier params = new MethylDbQuerier();
+		if (this.tablePrefix != null) params.methylTablePrefix = this.tablePrefix;
+		params.setMinCTreads(0);
+		params.setUseNonconversionFilter(false);
+
+		if (chrStart<0)
+		{
+			chrStart = 1;
+			chrEnd = GoldAssembly.chromLengthStatic(chr, "hg18");
+			//System.out.println(chrEnd);
+		}
+		
+		params.clearRangeFilters();
+		params.addRangeFilter(chr, chrStart, chrEnd);
+		
+		String fn = this.tablePrefix + chr + "_pValue" + ".txt";
+		PrintWriter outWriter = new PrintWriter(new File(fn));
+		
+		String sqlStatement = getSql(params);
+		
+		CytosineIterator it = new CytosineIterator(params,connStr,sqlStatement);
+		while(it.hasNext()){
+			Cytosine methyCpg = it.next();
+			ChiSquareTestImpl chiTest = new ChiSquareTestImpl();
+			long[] reads1 = {0,0};
+			long[] reads2 = {0,0};
+			reads1[0] = methyCpg.getA_CReads();
+			reads1[1] = methyCpg.getA_TReads();
+			reads2[0] = methyCpg.getB_CReads();
+			reads2[1] = methyCpg.getB_TReads();
+			double pValue = chiTest.chiSquareTestDataSetsComparison(reads1,reads2);
+			double logPValue = Math.log10(pValue);
+			String line = " chr\t position\t Cytosine position\t P_Value\t logP_Value\t A_CReads\t A_TReads\t B_CReads\t B_TReads\n";
+			outWriter.println(line);
+		}
+
+		outWriter.close();
+		
+	}
+	
+	protected String getSql(MethylDbQuerier params){
+		String methTable = params.getMethylTable();
+		//String methTable = params.methylTablePrefix;
+		String sql = String.format("select * from %s WHERE ", methTable);
+		MethylDbQuerier.HelperOutput output = params.sqlWhereSecHelperAsm(prep, null, 1);
+		
+		sql += "nextBaseRefUpperCase = 'G'";
+		//sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
+		sql += " ORDER BY chromPos ;";
+		
+		return sql;
+	}
+	
+}
+
+
