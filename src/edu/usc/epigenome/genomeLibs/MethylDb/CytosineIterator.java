@@ -42,6 +42,13 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		this.init(inParams);
 	}
 
+	public CytosineIterator(MethylDbQuerier inParams, String connStrCytosine, String sqlStatement)
+	throws Exception 
+	{
+		super();
+		this.init(inParams, connStrCytosine, sqlStatement);
+	}
+	
 	//public double methyDensIterater(){
 		//CytosineIterator it = new  
 	//}
@@ -108,6 +115,26 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		return numRows;
 	}
 	
+	public int init(MethylDbQuerier inParams, String connStrCytosine, String sqlStatement)
+	throws Exception
+	{
+		this.params = inParams;
+
+		// Check if we've started DB connection
+		if (cConn == null) setupDb(connStrCytosine);
+		
+		PreparedStatement prep = CytosineIterator.getPrep(sqlStatement);
+		CytosineIterator.fillPrep(params, prep);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Starting query execute");
+		curRS = prep.executeQuery();		
+		curRS.last();
+		int numRows = curRS.getRow();
+		curRS.beforeFirst();
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Finished query execute");
+		//this.methyDens = methyDensIterater();
+		this.curNumRows = numRows;
+		return numRows;
+	}
 	
 	
 	public CytosineIterator()
@@ -308,6 +335,20 @@ public class CytosineIterator implements Iterator<Cytosine> {
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			System.err.println("Getting connection for " + connStr);
 			cConn = DriverManager.getConnection(connStr, "yaping", "lyping1986");
+		}
+		
+	}
+	
+	protected static void setupDb(String connStrCytosine)
+	throws Exception
+	{
+		if (CytosineIterator.cConn == null)
+		{
+			String connStr = connStrCytosine;
+			//String connStr = MethylDbQuerier.connStr;
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			System.err.println("Getting connection for " + connStr);
+			cConn = DriverManager.getConnection(connStrCytosine, "yaping", "lyping1986");
 		}
 		
 	}
