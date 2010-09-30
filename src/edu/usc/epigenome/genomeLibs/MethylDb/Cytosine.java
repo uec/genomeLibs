@@ -544,6 +544,22 @@ public class Cytosine implements Comparable, Cloneable {
 		this.B_BaseUpperCase = Character.toUpperCase(B_BaseUpperCase);
 	}
 	
+	public short getA_CReads() {
+		return this.A_CReads;
+	}
+	
+	public short getA_TReads() {
+		return this.A_TReads;
+	}
+	
+	public short getB_CReads() {
+		return this.B_CReads;
+	}
+	
+	public short getB_TReads() {
+		return this.B_TReads;
+	}
+	
 	public StrandedFeature.Strand getStrand()
 	{
 		return (this.negStrand) ? StrandedFeature.NEGATIVE : StrandedFeature.POSITIVE;
