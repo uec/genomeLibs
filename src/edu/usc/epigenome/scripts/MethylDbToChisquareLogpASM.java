@@ -35,7 +35,7 @@ public class MethylDbToChisquareLogpASM {
 	public static String connStr = "jdbc:mysql://localhost/asm_cr";
 	
     @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
-    protected String tablePrefix = "methylCGsRich_ASM_";
+    protected String tablePrefix = "methylCGsRich_test_";
     @Option(name="-CpG",usage=" just withdarw CpG sites or all of the cytosine sites")
     protected boolean Cpg = true;
     @Option(name="-sample",usage=" input the sample name: normal010310 or tumor011010")
@@ -123,9 +123,11 @@ public class MethylDbToChisquareLogpASM {
 			reads1[1] = methyCpg.getA_TReads();
 			reads2[0] = methyCpg.getB_CReads();
 			reads2[1] = methyCpg.getB_TReads();
+			//System.err.printf("%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			double pValue = chiTest.chiSquareTestDataSetsComparison(reads1,reads2);
 			double logPValue = Math.log10(pValue);
 			String line = String.format("%d\t%d\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
+			System.out.printf("%d\t%d\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			outWriter.println(line);
 		}
 
@@ -139,8 +141,12 @@ public class MethylDbToChisquareLogpASM {
 		//String methTable = params.methylTablePrefix;
 		String sql = String.format("select * from %s WHERE ", methTable);
 		sql += "ABaseRefUpperCase != '0'";
-		sql += "BBaseRefUpperCase != '0'";
-		sql += "nextBaseRefUpperCase = 'G'";
+		sql += " AND BBaseRefUpperCase != '0'";
+		sql += " AND (ACReads != 0 OR ATReads != 0)";
+		sql += " AND (BCReads != 0 OR BTReads != 0)";
+		sql += " AND (ACReads != 0 OR BCReads != 0)";
+		sql += " AND (ATReads != 0 OR BTReads != 0)";
+		sql += " AND nextBaseRefUpperCase = 'G'";
 		//sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
 		sql += " ORDER BY chromPos,alleleChromPos ;";
 		
