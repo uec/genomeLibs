@@ -115,7 +115,7 @@ public class MethylDbToChisquareLogpASM {
 		
 		CytosineIterator it = new CytosineIterator(params,connStr,sqlStatement);
 		while(it.hasNext()){
-			Cytosine methyCpg = it.next();
+			Cytosine methyCpg = it.next(true);
 			ChiSquareTestImpl chiTest = new ChiSquareTestImpl();
 			long[] reads1 = {0,0};
 			long[] reads2 = {0,0};
@@ -125,7 +125,7 @@ public class MethylDbToChisquareLogpASM {
 			reads2[1] = methyCpg.getB_TReads();
 			double pValue = chiTest.chiSquareTestDataSetsComparison(reads1,reads2);
 			double logPValue = Math.log10(pValue);
-			String line = " chr\t position\t Cytosine position\t P_Value\t logP_Value\t A_CReads\t A_TReads\t B_CReads\t B_TReads\n";
+			String line = String.format("%d\t%d\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			outWriter.println(line);
 		}
 
@@ -133,15 +133,16 @@ public class MethylDbToChisquareLogpASM {
 		
 	}
 	
-	protected String getSql(MethylDbQuerier params){
+	protected String getSql(MethylDbQuerier params) 
+	throws Exception{
 		String methTable = params.getMethylTable();
 		//String methTable = params.methylTablePrefix;
 		String sql = String.format("select * from %s WHERE ", methTable);
-		MethylDbQuerier.HelperOutput output = params.sqlWhereSecHelperAsm(prep, null, 1);
-		
+		sql += "ABaseRefUpperCase != '0'";
+		sql += "BBaseRefUpperCase != '0'";
 		sql += "nextBaseRefUpperCase = 'G'";
 		//sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
-		sql += " ORDER BY chromPos ;";
+		sql += " ORDER BY chromPos,alleleChromPos ;";
 		
 		return sql;
 	}
