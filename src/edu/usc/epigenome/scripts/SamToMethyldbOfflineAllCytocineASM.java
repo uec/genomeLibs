@@ -227,12 +227,13 @@ public class SamToMethyldbOfflineAllCytocineASM {
 							if (!allelePosition.subSet(readsStart, readsEnd).isEmpty()){									
 								seqFlag = false;
 							}
-							char A_BaseUpperCase = '0';
-							char B_BaseUpperCase = '0';
+							
 							
 							for (int i = 0; i < seqLen; i++)
 							{
 								int alleleChromPos = -1;
+								char A_BaseUpperCase = '0';
+								char B_BaseUpperCase = '0';
 								char refi = ref.charAt(i);
 								char seqi = seq.charAt(i);
 								char preBaseRef = PicardUtils.preBaseRef(i, ref);
@@ -284,15 +285,37 @@ public class SamToMethyldbOfflineAllCytocineASM {
 													 int pos = negStrand ? Math.abs(alleleChromPos - readsEnd) : Math.abs(alleleChromPos - readsStart);
 													 A_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(ref.charAt(pos)) : ref.charAt(pos);
 													 boolean seqFlag2 = true;
+													 if(alleleChromPos == 7008664 && onRefCoord==7008651){
+															System.err.println(A_BaseUpperCase);
+															System.err.println(B_BaseUpperCase);
+															System.err.println(ref.charAt(pos));
+															System.err.println(seq.charAt(pos));
+														}
 													 if( (ref.charAt(pos) == 'G' && seq.charAt(pos) == 'A') || (ref.charAt(pos) == 'A' && seq.charAt(pos) == 'G')){
-														 B_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(ref.charAt(pos)) : seq.charAt(pos); 
+														 B_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(seq.charAt(pos)) : seq.charAt(pos); 
 														 seqFlag2 = false;
 													 }
+														if(alleleChromPos == 7008664 && onRefCoord==7008651){
+															System.err.println(ref);
+															System.err.println(seq);
+															System.err.println(negStrand);
+															System.err.println(onRefCoord);
+															System.err.println(A_BaseUpperCase);
+															System.err.println(B_BaseUpperCase);
+															System.err.println(ref.charAt(pos));
+															System.err.println(seq.charAt(pos));
+															System.err.println( pos);
+															System.err.println(readsStart);
+															System.err.println(readsEnd);
+															System.err.println(i);
+															System.err.println(seqFlag2);
+															System.err.println(allelePosition.subSet(readsStart, readsEnd));
+														}
 													 Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, negStrand, preBaseRef, nextBaseRef, A_BaseUpperCase, B_BaseUpperCase, alleleChromPos);
 														if (cytosine.getNextBaseRef() == '0') cytosine.setNextBaseRef(nextBaseRef);
 														if (cytosine.getPreBaseRef() == '0') cytosine.setPreBaseRef(preBaseRef);
 														if (cytosine.getA_BaseUpperCase() == '0') cytosine.setA_BaseUpperCase(A_BaseUpperCase);
-														if (cytosine.getB_BaseUpperCase() == '0') cytosine.setB_BaseUpperCase(B_BaseUpperCase);
+														if (!seqFlag2) cytosine.setB_BaseUpperCase(B_BaseUpperCase);
 														this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq, seqFlag2);
 												 }
 												 seqFlag = false;
