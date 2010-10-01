@@ -124,7 +124,7 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		if (cConn == null) setupDb(connStrCytosine);
 		
 		PreparedStatement prep = CytosineIterator.getPrep(sqlStatement);
-		CytosineIterator.fillPrep(params, prep);
+		//CytosineIterator.fillPrep(params, prep, true);
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Starting query execute");
 		curRS = prep.executeQuery();		
 		curRS.last();
@@ -217,6 +217,55 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		
 		return out;
 	}
+	
+	public Cytosine next(boolean asmFlag) {
+
+		Cytosine out = null;
+		try
+		{
+			curRS.next();
+			
+			out = new Cytosine(curRS.getInt("chromPos"),
+					curRS.getString("strand").equals("-"),
+					curRS.getShort("totalReads"),
+					curRS.getShort("cReads"),
+					curRS.getShort("cReadsNonconversionFilt"),
+					curRS.getShort("tReads"),
+					curRS.getShort("agReads"),
+					curRS.getShort("totalReadsOpposite"),
+					curRS.getShort("aReadsOpposite"),
+					curRS.getInt("alleleChromPos"),
+					curRS.getString("ABaseRefUpperCase"),
+					curRS.getString("BBaseRefUpperCase"),
+					curRS.getShort("ACReads"),
+					curRS.getShort("BCReads"),
+					curRS.getShort("ATReads"),
+					curRS.getShort("BTReads"),
+					curRS.getString("preBaseRefUpperCase"),
+					curRS.getString("nextBaseRefUpperCase"),
+					curRS.getDouble("fracMeth"),
+					curRS.getDouble("fracAMeth"),
+					curRS.getDouble("fracBMeth"),
+					curRS.getInt("gchWeight"),
+					curRS.getInt("gcgWeight"),
+					curRS.getInt("hcgWeight"));
+			// Downsample data.
+			/*double downsamplingFactor = this.params.getSamplingFactor();
+			if (downsamplingFactor != 0.0)
+			{
+				out = out.downsample(downsamplingFactor);
+			}*/
+
+			
+		}
+		catch (Exception e)
+		{
+			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("next() error: " + e.getMessage());
+			System.exit(1);
+		}
+		
+		return out;
+	}
 
 	/* (non-Javadoc)
 	 * @see java.util.Iterator#remove()
@@ -237,6 +286,8 @@ public class CytosineIterator implements Iterator<Cytosine> {
 	{
 		sqlHelper(params, prep);
 	}
+	
+
 	
 
 	protected static PreparedStatement getPrep(MethylDbQuerier inParams)
@@ -308,6 +359,7 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		
 		return sql;
 	}
+	
 	
 /*	private static String sqlHelperMethyFrac(MethylDbQuerier params, PreparedStatement prep)
 	throws Exception
