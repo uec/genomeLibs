@@ -147,7 +147,7 @@ public class Cytosine implements Comparable, Cloneable {
 	public Cytosine(int chromPos, boolean negStrand, short totalReads, short cReads,
 			short cReadsNonconversionFilt, short tReads, short agReads,
 			short totalReadsOpposite, short aReadsOpposite, int alleleChromPos,
-			char A_BaseUpperCase, char B_BaseUpperCase, short A_CReads, short B_CReads, short A_TReads, short B_TReads, 
+			String A_BaseUpperCase, String B_BaseUpperCase, short A_CReads, short B_CReads, short A_TReads, short B_TReads, 
 			String preBaseRefUpperCase, String nextBaseRefUpperCase, double fracMeth, double fracA_Meth, double fracB_Meth, int gchWeight,  int gcgWeight, int hcgWeight ) {
 		super();
 		this.chromPos = chromPos;
@@ -532,12 +532,20 @@ public class Cytosine implements Comparable, Cloneable {
 		return A_BaseUpperCase;
 	}
 	
+	public void setA_BaseUpperCase(String A_BaseUpperCase){
+		this.A_BaseUpperCase = A_BaseUpperCase.charAt(0);
+	}
+	
 	public void setA_BaseUpperCase(char A_BaseUpperCase){
 		this.A_BaseUpperCase = Character.toUpperCase(A_BaseUpperCase);
 	}
 	
 	public char getB_BaseUpperCase() {
 		return B_BaseUpperCase;
+	}
+	
+	public void setB_BaseUpperCase(String B_BaseUpperCase){
+		this.B_BaseUpperCase = B_BaseUpperCase.charAt(0);
 	}
 	
 	public void setB_BaseUpperCase(char B_BaseUpperCase){
