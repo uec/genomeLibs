@@ -33,6 +33,7 @@ public class MethylDbToChisquareLogpASM {
 	private static final String C_USAGE = "Use: MethylDbToChisquareLogpASM -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
 	" CpG sample chr [startPos] [endPos]";
 	public static String connStr = "jdbc:mysql://localhost/asm_cr";
+	//mysql_db_server: epifire2.epigenome.usc.edu
 	
     @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
     protected String tablePrefix = "methylCGsRich_test_";
