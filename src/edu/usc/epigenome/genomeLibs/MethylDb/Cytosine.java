@@ -6,8 +6,13 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.sql.*;
 
 import org.biojava.bio.seq.StrandedFeature;
+
+import edu.usc.epigenome.genomeLibs.GoldAssembly;
+import edu.usc.epigenome.genomeLibs.MethylDb.CytosineIterator;
+import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
 public class Cytosine implements Comparable, Cloneable {
 
@@ -52,7 +57,9 @@ public class Cytosine implements Comparable, Cloneable {
 	protected double gcgWeight = Double.NaN;
 	protected double hcgWeight = Double.NaN;
 
+	protected static Connection conn = null;
 
+	
 
 	/**
 	 * 
@@ -364,6 +371,31 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
+	public static void outputCytocinesToDb(Map<String, Cytosine> cytocineMap, String tableName, boolean asmFlag)
+	throws IOException
+	{
+		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
+		Iterator<Cytosine> cytocineIt = cytocineMap.values().iterator();
+		 while (cytocineIt.hasNext())
+		{
+			Cytosine cytocine = cytocineIt.next();
+			
+			String line = cytocine.toString(asmFlag,true);
+			String insertString = "INSERT INTO " + tableName +
+								" VALUES (" + line + ")";
+			try {
+				//step 4: create a statement
+				Statement stmt = conn.createStatement();
+				//step 5: execute a query or update.
+				stmt.executeUpdate(insertString);
+
+			}catch(SQLException ex) {
+							System.err.println("Insertion: " + ex.getMessage());
+			}
+			
+		}
+	}
+	
 	public static PrintWriter outputChromToFile(Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
 	throws IOException
 	{
@@ -391,6 +423,66 @@ public class Cytosine implements Comparable, Cloneable {
 		return writer;
 	}
 
+	public static void outputChromToDb(Map<String, Cytosine> cytocineMap, String tableName, Connection cConn, boolean asmFlag)
+	throws IOException
+	{
+		
+		conn=cConn;
+		creatTableInDb(tableName);
+		outputCytocinesToDb(cytocineMap, tableName, asmFlag);
+
+	}
+	
+	
+	public static void creatTableInDb(String tableName){
+		Statement stmt;
+		String createString = "CREATE TABLE " + tableName +
+        					"(`chromPos` INT UNSIGNED NOT NULL," +
+        					"`strand` enum('+','-') NOT NULL," +
+        					"`totalReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`cReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`cReadsNonconversionFilt` SMALLINT UNSIGNED NOT NULL," +
+        					"`tReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`agReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`totalReadsOpposite` SMALLINT UNSIGNED NOT NULL," +
+        					"`aReadsOpposite` SMALLINT UNSIGNED NOT NULL," +
+        					"`alleleChromPos` INT UNSIGNED NOT NULL," +
+        					"`ABaseRefUpperCase` CHAR(1)," +
+        					"`BBaseRefUpperCase` CHAR(1)," +
+        					"`ACReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`BCReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`ATReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`BTReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`preBaseGreads` SMALLINT UNSIGNED NOT NULL default '0'," +
+        					"`preBaseTotalReads` SMALLINT UNSIGNED NOT NULL default '0'," +
+        					"`preBaseRefUpperCase` CHAR(1)," +
+        					"`nextBaseGreads` SMALLINT UNSIGNED NULL default '0'," +
+        					"`nextBaseTotalReads` SMALLINT UNSIGNED NULL default '0'," +
+        					"`nextBaseRefUpperCase` CHAR(1)," +
+        					"`fracMeth` FLOAT(5,2) NOT NULL," +
+        					"`fracAMeth` FLOAT(5,2) NOT NULL," +
+        					"`fracBMeth` FLOAT(5,2) NOT NULL," +
+        					"`fracPreBaseG` FLOAT(5,2) NOT NULL," +
+        					"`fracNextBaseG` FLOAT(5,2) NOT NULL," +
+        					"`gchWeight` FLOAT(5,2) NOT NULL," +
+        					"`gcgWeight` FLOAT(5,2) NOT NULL," +
+        					"`hcgWeight` FLOAT(5,2) NOT NULL," +
+        					"PRIMARY KEY (chromPos,alleleChromPos))";
+		//String dropString = "DROP TABLE "+ tableName;
+		try {
+//step 4: create a statement
+			stmt = conn.createStatement();
+//step 5: execute a query or update.
+			//stmt.execute(dropString);//if exists, drop it, get new one
+			stmt.executeUpdate(createString);
+			System.err.println("CreateTable: " + tableName);
+
+		}catch(SQLException ex) {
+			System.err.println("CreateTable: " + ex.getMessage());
+		}
+	}
+	
+	
 	@Override
 	public String toString() {
 
@@ -417,6 +509,42 @@ public class Cytosine implements Comparable, Cloneable {
 	public String toString(boolean asmFlag) {
 
 		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%d\t%d\t%c\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f", 
+				chromPos,
+				(negStrand) ? '-' : '+',
+				totalReads,
+				cReads,
+				cReadsNonconversionFilt,
+				tReads,
+				agReads,
+				totalReadsOpposite,
+				aReadsOpposite,
+				alleleChromPos, 
+				A_BaseUpperCase, 
+				B_BaseUpperCase, 
+				A_CReads,
+				B_CReads,
+				A_TReads,
+				B_TReads,
+				preBaseGreads,
+				preBaseTotalReads,
+				preBaseRefUpperCase,
+				nextBaseGreads,
+				nextBaseTotalReads,
+				nextBaseRefUpperCase,
+				100*this.fracMeth(true),
+				100*this.fracA_Meth(),
+				100*this.fracB_Meth(),
+				100*this.fracPreBaseG(),
+				100*this.fracNextBaseG(),
+				this.gchWeight,
+				this.gcgWeight,
+				this.hcgWeight
+				);
+	}
+	
+	public String toString(boolean asmFlag, boolean online) {
+
+		return String.format("%d,'%c',%d,%d,%d,%d,%d,%d,%d,%d,'%c','%c',%d,%d,%d,%d,%d,%d,'%c',%d,%d,'%c',%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,

@@ -136,6 +136,22 @@ public class CytosineIterator implements Iterator<Cytosine> {
 		return numRows;
 	}
 	
+	public void init(MethylDbQuerier inParams, String connStrCytosine, String sqlStatement, boolean insertion)
+	throws Exception
+	{
+		this.params = inParams;
+
+		// Check if we've started DB connection
+		if (cConn == null) setupDb(connStrCytosine);
+		
+		PreparedStatement prep = CytosineIterator.getPrep(sqlStatement);
+		//CytosineIterator.fillPrep(params, prep, true);
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Starting insertion execute");
+		prep.executeQuery();		
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("Finished insertion execute");
+		//this.methyDens = methyDensIterater();
+
+	}
 	
 	public CytosineIterator()
 	throws Exception 
