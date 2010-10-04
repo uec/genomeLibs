@@ -155,7 +155,7 @@ public class Cytosine implements Comparable, Cloneable {
 			short cReadsNonconversionFilt, short tReads, short agReads,
 			short totalReadsOpposite, short aReadsOpposite, int alleleChromPos,
 			String A_BaseUpperCase, String B_BaseUpperCase, short A_CReads, short B_CReads, short A_TReads, short B_TReads, 
-			String preBaseRefUpperCase, String nextBaseRefUpperCase, double fracMeth, double fracA_Meth, double fracB_Meth, int gchWeight,  int gcgWeight, int hcgWeight ) {
+			String preBaseRefUpperCase, String nextBaseRefUpperCase ) {
 		super();
 		this.chromPos = chromPos;
 		this.negStrand = negStrand;
@@ -176,50 +176,7 @@ public class Cytosine implements Comparable, Cloneable {
 		setB_BaseUpperCase(B_BaseUpperCase);
 		setPreBaseRef(preBaseRefUpperCase);
 		setNextBaseRef(nextBaseRefUpperCase);
-		
-		this.methyDens = fracMeth;
-		this.methyA_Dens = fracA_Meth;
-		this.methyB_Dens = fracB_Meth;
-		
-		
-		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
-		if (gchWeight < 0)
-		{
-			System.err.printf("Got negative gchWeight: pos=%d, weight=%d\n",chromPos,gchWeight);
-			gchWeight = 100;
-		}
-		else if (gchWeight > 5000)
-		{
-			System.err.printf("Got extra-large gchWeight: pos=%d, weight=%d\n",chromPos,gchWeight);
-			gchWeight = 100;
-		}
-		
-		if (gcgWeight < 0)
-		{
-			System.err.printf("Got negative gcgWeight: pos=%d, weight=%d\n",chromPos,gcgWeight);
-			gcgWeight = 100;
-		}
-		else if (gcgWeight > 5000)
-		{
-			System.err.printf("Got extra-large gcgWeight: pos=%d, weight=%d\n",chromPos,gcgWeight);
-			gcgWeight = 100;
-		}
-		
-		if (hcgWeight < 0)
-		{
-			System.err.printf("Got negative hcgWeight: pos=%d, weight=%d\n",chromPos,hcgWeight);
-			hcgWeight = 100;
-		}
-		else if (hcgWeight > 5000)
-		{
-			System.err.printf("Got extra-large hcgWeight: pos=%d, weight=%d\n",chromPos,hcgWeight);
-			hcgWeight = 100;
-		}
-		
-		// It's actually divided by two since we're looking at both strands.
-		this.gchWeight = (double)gchWeight/2.0;
-		this.gcgWeight = (double)gcgWeight/2.0;
-		this.hcgWeight = (double)hcgWeight/2.0;
+
 	}
 	
 	/*** Overridden Comparable methods
@@ -383,9 +340,12 @@ public class Cytosine implements Comparable, Cloneable {
 			String line = cytocine.toString(asmFlag,true);
 			String insertString = "INSERT INTO " + tableName +
 								" VALUES (" + line + ")";
+			
 			try {
 				//step 4: create a statement
 				Statement stmt = conn.createStatement();
+			//	testResult = stmt.executeQuery(queryString);
+				
 				//step 5: execute a query or update.
 				stmt.executeUpdate(insertString);
 
@@ -435,7 +395,10 @@ public class Cytosine implements Comparable, Cloneable {
 	
 	
 	public static void creatTableInDb(String tableName){
-		Statement stmt;
+		Statement stmtDrop, stmtCreate, stmtCheck;
+		//ResultSet tempCheck;
+		String dropString = "DROP TABLE " + tableName;
+		String checkString = "SHOW TABLES LIKE " + "\"" + tableName + "\"";
 		String createString = "CREATE TABLE " + tableName +
         					"(`chromPos` INT UNSIGNED NOT NULL," +
         					"`strand` enum('+','-') NOT NULL," +
@@ -446,7 +409,7 @@ public class Cytosine implements Comparable, Cloneable {
         					"`agReads` SMALLINT UNSIGNED NOT NULL," +
         					"`totalReadsOpposite` SMALLINT UNSIGNED NOT NULL," +
         					"`aReadsOpposite` SMALLINT UNSIGNED NOT NULL," +
-        					"`alleleChromPos` INT UNSIGNED NOT NULL," +
+        					"`alleleChromPos` INT NOT NULL," +
         					"`ABaseRefUpperCase` CHAR(1)," +
         					"`BBaseRefUpperCase` CHAR(1)," +
         					"`ACReads` SMALLINT UNSIGNED NOT NULL," +
@@ -459,22 +422,29 @@ public class Cytosine implements Comparable, Cloneable {
         					"`nextBaseGreads` SMALLINT UNSIGNED NULL default '0'," +
         					"`nextBaseTotalReads` SMALLINT UNSIGNED NULL default '0'," +
         					"`nextBaseRefUpperCase` CHAR(1)," +
-        					"`fracMeth` FLOAT(5,2) NOT NULL," +
+        					/*"`fracMeth` FLOAT(5,2) NOT NULL," +
         					"`fracAMeth` FLOAT(5,2) NOT NULL," +
         					"`fracBMeth` FLOAT(5,2) NOT NULL," +
         					"`fracPreBaseG` FLOAT(5,2) NOT NULL," +
         					"`fracNextBaseG` FLOAT(5,2) NOT NULL," +
         					"`gchWeight` FLOAT(5,2) NOT NULL," +
         					"`gcgWeight` FLOAT(5,2) NOT NULL," +
-        					"`hcgWeight` FLOAT(5,2) NOT NULL," +
+        					"`hcgWeight` FLOAT(5,2) NOT NULL," +*/
         					"PRIMARY KEY (chromPos,alleleChromPos))";
 		//String dropString = "DROP TABLE "+ tableName;
 		try {
 //step 4: create a statement
-			stmt = conn.createStatement();
+			stmtCheck = conn.createStatement();
 //step 5: execute a query or update.
 			//stmt.execute(dropString);//if exists, drop it, get new one
-			stmt.executeUpdate(createString);
+			//tempCheck = stmtCheck.executeQuery(checkString);
+			if (stmtCheck.executeQuery(checkString).next()){
+				stmtDrop = conn.createStatement();
+				stmtDrop.execute(dropString);
+				System.err.println( tableName + " exist! Drop the table!");
+			}
+			stmtCreate = conn.createStatement();
+			stmtCreate.executeUpdate(createString);
 			System.err.println("CreateTable: " + tableName);
 
 		}catch(SQLException ex) {
@@ -544,7 +514,7 @@ public class Cytosine implements Comparable, Cloneable {
 	
 	public String toString(boolean asmFlag, boolean online) {
 
-		return String.format("%d,'%c',%d,%d,%d,%d,%d,%d,%d,%d,'%c','%c',%d,%d,%d,%d,%d,%d,'%c',%d,%d,'%c',%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", 
+		return String.format("%d,'%c',%d,%d,%d,%d,%d,%d,%d,%d,'%c','%c',%d,%d,%d,%d,%d,%d,'%c',%d,%d,'%c'", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,
@@ -566,15 +536,15 @@ public class Cytosine implements Comparable, Cloneable {
 				preBaseRefUpperCase,
 				nextBaseGreads,
 				nextBaseTotalReads,
-				nextBaseRefUpperCase,
-				100*this.fracMeth(true),
+				nextBaseRefUpperCase
+			/*	100*this.fracMeth(true),
 				100*this.fracA_Meth(),
 				100*this.fracB_Meth(),
 				100*this.fracPreBaseG(),
 				100*this.fracNextBaseG(),
 				this.gchWeight,
 				this.gcgWeight,
-				this.hcgWeight
+				this.hcgWeight*/
 				);
 	}
 	
