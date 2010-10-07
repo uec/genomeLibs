@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.Number;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -32,16 +34,18 @@ public class MethylDbToChisquareLogpASM {
 	 */
 	private static final String C_USAGE = "Use: MethylDbToChisquareLogpASM -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
 	" CpG sample chr [startPos] [endPos]";
+	//public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/asm_cr";
 	public static String connStr = "jdbc:mysql://localhost/asm_cr";
 	//mysql_db_server: epifire2.epigenome.usc.edu
 	
     @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
-    protected String tablePrefix = "methylCGsRich_test_";
+    protected String tablePrefix = "methylCGsRich_ASM_";
+    //protected String tablePrefix = "methylCGsRich_test_";
     @Option(name="-CpG",usage=" just withdarw CpG sites or all of the cytosine sites")
     protected boolean Cpg = true;
     @Option(name="-sample",usage=" input the sample name: normal010310 or tumor011010")
     protected String sample = "normal010310";
-    
+   // protected String sample = "";
     
 	// receives other command line parameters than options
 	@Argument
@@ -115,8 +119,30 @@ public class MethylDbToChisquareLogpASM {
 		String sqlStatement = getSql(params);
 		
 		CytosineIterator it = new CytosineIterator(params,connStr,sqlStatement);
+		TreeMap<Integer,Cytosine> totalReadsSum = new TreeMap<Integer,Cytosine>();
+		//get rid of duplicate cytosine position. 
 		while(it.hasNext()){
 			Cytosine methyCpg = it.next(true);
+			
+			if(totalReadsSum.containsKey(methyCpg.chromPos)){
+				if(methyCpg.totalReads > totalReadsSum.get(methyCpg.chromPos).totalReads){
+					totalReadsSum.put(methyCpg.chromPos, methyCpg);
+				}
+				else{
+					continue;
+				}
+			}
+			else{
+				totalReadsSum.put(methyCpg.chromPos, methyCpg);
+			}
+			
+						
+		}
+		
+		Iterator<Cytosine> cytocineOutput = totalReadsSum.values().iterator();
+		while (cytocineOutput.hasNext())
+		{
+			Cytosine methyCpg = cytocineOutput.next();
 			ChiSquareTestImpl chiTest = new ChiSquareTestImpl();
 			long[] reads1 = {0,0};
 			long[] reads2 = {0,0};
@@ -124,13 +150,15 @@ public class MethylDbToChisquareLogpASM {
 			reads1[1] = methyCpg.getA_TReads();
 			reads2[0] = methyCpg.getB_CReads();
 			reads2[1] = methyCpg.getB_TReads();
-			//System.err.printf("%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			double pValue = chiTest.chiSquareTestDataSetsComparison(reads1,reads2);
 			double logPValue = Math.log10(pValue);
 			String line = String.format("%d\t%d\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			System.out.printf("%d\t%d\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			outWriter.println(line);
+			//System.err.printf("%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
+
 		}
+		
 
 		outWriter.close();
 		
@@ -147,7 +175,8 @@ public class MethylDbToChisquareLogpASM {
 		sql += " AND (BCReads != 0 OR BTReads != 0)";
 		sql += " AND (ACReads != 0 OR BCReads != 0)";
 		sql += " AND (ATReads != 0 OR BTReads != 0)";
-		sql += " AND nextBaseRefUpperCase = 'G'";
+		if (Cpg)
+			sql += " AND nextBaseRefUpperCase = 'G'";
 		//sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
 		sql += " ORDER BY chromPos,alleleChromPos ;";
 		
