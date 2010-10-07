@@ -5,6 +5,8 @@ import net.sf.samtools.util.CloseableIterator;
 
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -31,13 +33,14 @@ public class SamToMethyldbOnlineAllCytocineASM {
 	 * @param args
 	 */
 		
-		final private static String prefix = "methylCGsRich_";
+		final private static String prefix = "methylCGsRich_ASM_";
 		final private static String USAGE = "SamToMethyldbOfflineAllCytocineASM [opts] sampleName file1.bam file2.bam ...";
 
 		final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
-		final private static int ALLELE_GA_NUMBER = 1; //for each reads, when there are more than 1 GA position is different from reference sequence, we define it belongs to another allele. 
+		//final private static int ALLELE_GA_NUMBER = 1; //for each reads, when there are more than 1 GA position is different from reference sequence, we define it belongs to another allele. 
 
 		public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/asm_cr";
+		//public static String connStr = "jdbc:mysql://hpc1643/asm_cr";
 		protected static Connection cConn = null;
 		//mysql_db_server: epifire2.epigenome.usc.edu
 		
@@ -64,6 +67,12 @@ public class SamToMethyldbOnlineAllCytocineASM {
 		protected boolean outputHcphs = false;
 		@Option(name="-minMapQ",usage="minimum mapping quality (default 0)")
 		protected int minMapQ = 0;
+		@Option(name="-minBaseQual",usage="minimum Base quality (default 10)")
+		protected int minBaseQual = 33;
+		@Option(name="-minAlleleCount",usage="minimum Base quality (default 2)")
+		protected int minAlleleCount = 3;
+		@Option(name="-minAlleleFreq",usage="minimum Base quality (default 0.15)")
+		protected double minAlleleFreq = 0.2;
 //		@Option(name="-minHcphCoverage",usage="the minimum number of total reads to include a HCph (default 10)")
 //		protected int minHcphCoverage = 10;
 //		@Option(name="-minHcphFrac",usage="minimum methylation fraction to include a HCph")
@@ -151,7 +160,7 @@ public class SamToMethyldbOnlineAllCytocineASM {
 					int lastBaseSeen = 0;
 					int lastPurge = 0;
 					
-					TreeSet<Integer> allelePosition = allelePos( inputSam, canPurge, chr );
+					TreeMap<Integer,Integer[]> allelePosition = allelePos( inputSam, canPurge, chr );
 					
 					CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
 					//System.err.println(allelePosition.isEmpty());
@@ -229,7 +238,7 @@ public class SamToMethyldbOnlineAllCytocineASM {
 							boolean seqFlag = true;
 							int readsStart = samRecord.getUnclippedEnd() <= alignmentS ? samRecord.getUnclippedEnd() : alignmentS;
 							int readsEnd = samRecord.getUnclippedEnd() <= alignmentS ? alignmentS : samRecord.getUnclippedEnd();
-							if (!allelePosition.subSet(readsStart, readsEnd).isEmpty()){									
+							if (!allelePosition.subMap(readsStart, readsEnd).isEmpty()){									
 								seqFlag = false;
 							}
 							
@@ -283,10 +292,14 @@ public class SamToMethyldbOnlineAllCytocineASM {
 											this.incrementCytosine(cytosine, seqi, i<convStart, preBaseSeq, nextBaseSeq, seqFlag);
 										}
 										else{
-											if (!allelePosition.subSet(readsStart, readsEnd).isEmpty()){									
-												Iterator<Integer> allelePosIt = allelePosition.subSet(readsStart, readsEnd).iterator();
+											if (!allelePosition.subMap(readsStart, readsEnd).isEmpty()){									
+												Iterator<Integer> allelePosIt = allelePosition.subMap(readsStart, readsEnd).keySet().iterator();
 												 while (allelePosIt.hasNext()){
 													 alleleChromPos = allelePosIt.next();
+													 /*Integer[] tempInt = allelePosition.get(alleleChromPos);
+													 if(tempInt[0] < minAlleleCount || tempInt[0]/(tempInt[0] + tempInt[1]) < minAlleleFreq){
+														 continue;
+													 }*/
 													 int pos = negStrand ? Math.abs(alleleChromPos - readsEnd) : Math.abs(alleleChromPos - readsStart);
 													 A_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(ref.charAt(pos)) : ref.charAt(pos);
 													 boolean seqFlag2 = true;
@@ -517,13 +530,15 @@ public class SamToMethyldbOnlineAllCytocineASM {
 		}
 
 		
-		protected TreeSet<Integer> allelePos( SAMFileReader inputSam, boolean canPurge, String chr )
+		protected TreeMap<Integer,Integer[]> allelePos( SAMFileReader inputSam, boolean canPurge, String chr )
 		throws Exception{
 			CloseableIterator<SAMRecord> chrItForAllele = inputSam.query(chr, 0, 0, false);
 			int lastBaseSeen = 0;
 			int lastPurge = 0;
 			int recCounter = 0;
-			TreeSet<Integer> allelePosition = new TreeSet<Integer>();
+			List<Integer> readsDepth = new ArrayList<Integer>();
+			int j = 0;
+			TreeMap<Integer,Integer[]> allelePosition = new TreeMap<Integer,Integer[]>();
 			
 			recordSub: while (chrItForAllele.hasNext())
 			{
@@ -537,6 +552,7 @@ public class SamToMethyldbOnlineAllCytocineASM {
 
 				// Filter low qual
 				int mapQual = samRecord.getMappingQuality();
+				byte[] baseQual = samRecord.getBaseQualities();
 				boolean unmapped = samRecord.getReadUnmappedFlag();
 				if (unmapped || (mapQual < minMapQ))
 				{
@@ -585,17 +601,37 @@ public class SamToMethyldbOnlineAllCytocineASM {
 						//char seqi = seq.charAt(i);
 						//char preBaseRef = PicardUtils.preBaseRef(i, ref);
 						//char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
-
-						if(negStrand){
-							
-						}
-						else{
-							//if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq)) && (nextBaseRef != 'C' && preBaseRef != 'C')){
-							if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
-								Integer readPos = readsStart + i;
-								allelePosition.add(readPos);
+						if(baseQual[i] > minBaseQual){
+							if(negStrand){
+								
+							}
+							else{
+								//if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq)) && (nextBaseRef != 'C' && preBaseRef != 'C')){
+								if(allelePosition.containsKey(onRefCoord)){
+									if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
+										Integer[] tempInt = allelePosition.get(onRefCoord);
+										tempInt[0] ++;// allele reads number
+										
+										allelePosition.put(onRefCoord,tempInt);
+									}
+								}
+								else{
+									if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
+										Integer[] tempInt = new Integer[2];
+										tempInt[0] = 1;
+										tempInt[1] = 0;
+										readsDepth.add(onRefCoord);
+										/*CloseableIterator<SAMRecord> alleleOverlap = inputSam.queryOverlapping(chr, onRefCoord, onRefCoord);
+										while(alleleOverlap.hasNext()){
+											tempInt[1]++;
+										}*/
+										allelePosition.put(onRefCoord,tempInt);
+									}
+								}
+								
 							}
 						}
+						
 						
 						if (refi == '-')
 						{
@@ -618,6 +654,29 @@ public class SamToMethyldbOnlineAllCytocineASM {
 				}
 			}
 			chrItForAllele.close();
+			for(int i = 0; i <= readsDepth.size(); i++){
+				int snpPosition = readsDepth.get(i);
+				CloseableIterator<SAMRecord> alleleOverlap = inputSam.queryOverlapping(chr, snpPosition, snpPosition);
+				Integer[] tempInt = allelePosition.get(snpPosition);
+				while(alleleOverlap.hasNext()){
+					tempInt[1]++;
+				}
+				if(tempInt[0] < minAlleleCount || tempInt[0]/(tempInt[0] + tempInt[1]) < minAlleleFreq){
+					allelePosition.remove(snpPosition);
+				}
+				else{
+					allelePosition.put(snpPosition,tempInt);
+				}
+				
+			}
+			/*Iterator<Integer> keyIt = allelePosition.keySet().iterator();
+			while(keyIt.hasNext()){
+				Integer key = keyIt.next();
+				inputSam.queryOverlapping(chr, key, key).hasNext();
+				Integer[] tempInt = allelePosition.get(key);
+				tempInt[1] = 
+			}*/
+			outputSNP(allelePosition);
 			return allelePosition;
 		}
 		
@@ -640,6 +699,18 @@ public class SamToMethyldbOnlineAllCytocineASM {
 		throws Exception
 		{
 			cConn.close();
+		}
+		
+		protected static void outputSNP(TreeMap<Integer,Integer[]> allelePosition)
+		throws FileNotFoundException{
+			Iterator<Integer> it = allelePosition.keySet().iterator();
+			String fn = prefix + "_chr11_SNP" + ".txt";
+			PrintWriter writer = new PrintWriter(new File(fn));
+			while(it.hasNext()){	
+				Integer snp = it.next();
+				writer.println(snp);
+			}
+			writer.close();
 		}
 
 }
