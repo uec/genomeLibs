@@ -258,13 +258,13 @@ public class CytosineIterator implements Iterator<Cytosine> {
 					curRS.getShort("ATReads"),
 					curRS.getShort("BTReads"),
 					curRS.getString("preBaseRefUpperCase"),
-					curRS.getString("nextBaseRefUpperCase"),
-					curRS.getDouble("fracMeth"),
-					curRS.getDouble("fracAMeth"),
-					curRS.getDouble("fracBMeth"),
-					curRS.getInt("gchWeight"),
-					curRS.getInt("gcgWeight"),
-					curRS.getInt("hcgWeight"));
+					curRS.getString("nextBaseRefUpperCase"));
+					//curRS.getDouble("fracMeth"),
+					//curRS.getDouble("fracAMeth"),
+					//curRS.getDouble("fracBMeth"),
+					//curRS.getInt("gchWeight"),
+					//curRS.getInt("gcgWeight"),
+					//curRS.getInt("hcgWeight"));
 			// Downsample data.
 			/*double downsamplingFactor = this.params.getSamplingFactor();
 			if (downsamplingFactor != 0.0)
