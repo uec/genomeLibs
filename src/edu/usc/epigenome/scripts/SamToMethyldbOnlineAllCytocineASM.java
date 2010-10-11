@@ -300,11 +300,12 @@ public class SamToMethyldbOnlineAllCytocineASM {
 													 Integer[] tempInt = allelePosition.get(alleleChromPos);
 													 double tempDouble1 = tempInt[0];
 													 double tempDouble2 = tempInt[1];
-													 double freq = tempDouble1/(tempDouble1+tempDouble2);
+													 double freq1 = tempDouble1/tempDouble2;
+													 double freq2 = (tempDouble2-tempDouble1)/tempDouble2;
 													 //System.err.println(tempDouble1);
 													 //System.err.println(tempDouble2);
 													 //System.err.println(freq);
-													 if(tempInt[0] < minAlleleCount || freq < minAlleleFreq){
+													 if(tempInt[0] < minAlleleCount || (tempInt[1] - tempInt[0]) < minAlleleCount || freq1 < minAlleleFreq || freq2 < minAlleleFreq){
 														 //allelePosition.remove(alleleChromPos);
 														 continue;
 													 }
@@ -313,7 +314,10 @@ public class SamToMethyldbOnlineAllCytocineASM {
 														 //System.err.println(tempInt[1]);
 													 //}
 													 int pos = negStrand ? Math.abs(alleleChromPos - readsEnd) : Math.abs(alleleChromPos - readsStart);
-													 A_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(ref.charAt(pos)) : ref.charAt(pos);
+													 if (!PicardUtils.isAdenine(pos,seq) && !PicardUtils.isGuanine(pos,seq))
+														 continue;
+													 A_BaseUpperCase = ref.charAt(pos);
+													 //A_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(ref.charAt(pos)) : ref.charAt(pos);
 													 boolean seqFlag2 = true;
 													/* if(alleleChromPos == 7008664 && onRefCoord==7008651){
 															System.err.println(A_BaseUpperCase);
@@ -322,7 +326,8 @@ public class SamToMethyldbOnlineAllCytocineASM {
 															System.err.println(seq.charAt(pos));
 														}*/
 													 if( (ref.charAt(pos) == 'G' && seq.charAt(pos) == 'A') || (ref.charAt(pos) == 'A' && seq.charAt(pos) == 'G')){
-														 B_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(seq.charAt(pos)) : seq.charAt(pos); 
+														 B_BaseUpperCase = seq.charAt(pos);
+														 //B_BaseUpperCase = negStrand ? PicardUtils.revNucleotide(seq.charAt(pos)) : seq.charAt(pos); 
 														 seqFlag2 = false;
 													 }
 														/*if(alleleChromPos == 7008664 && onRefCoord==7008651){
@@ -615,23 +620,15 @@ public class SamToMethyldbOnlineAllCytocineASM {
 						//char preBaseRef = PicardUtils.preBaseRef(i, ref);
 						//char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 						if(baseQual[i] > minBaseQual){
-							if(negStrand){
-								if(allelePosition.containsKey(onRefCoord)){
-									Integer[] tempInt = allelePosition.get(onRefCoord);
-									tempInt[1]++;// allele reads number
-									if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
-										
-										tempInt[0]++;// allele reads number
-										
-										allelePosition.put(onRefCoord,tempInt);
-									}
-								}
-							}
-							else{
+							//if(negStrand){
+								
+							//}
+							//else{
 								//if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq)) && (nextBaseRef != 'C' && preBaseRef != 'C')){
 								if(allelePosition.containsKey(onRefCoord)){
 									Integer[] tempInt = allelePosition.get(onRefCoord);
-									tempInt[1]++;// allele reads number
+									if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq))
+										tempInt[1]++;//  total reads number
 									if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
 										
 										tempInt[0]++;// allele reads number
@@ -653,7 +650,7 @@ public class SamToMethyldbOnlineAllCytocineASM {
 									}
 								}
 								
-							}
+							//}
 						}
 						
 						
