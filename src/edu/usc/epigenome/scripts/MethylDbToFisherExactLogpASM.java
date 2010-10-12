@@ -34,8 +34,8 @@ public class MethylDbToFisherExactLogpASM {
 	 */
 	private static final String C_USAGE = "Use: MethylDbToChisquareLogpASM -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
 	" CpG sample chr [startPos] [endPos]";
+	public static String connStr = "jdbc:mysql://hpc2721/asm_cr";
 	//public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/asm_cr";
-	public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/asm_cr";
 	//mysql_db_server: epifire2.epigenome.usc.edu
 	
     @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
@@ -44,8 +44,11 @@ public class MethylDbToFisherExactLogpASM {
     @Option(name="-CpG",usage=" just withdarw CpG sites or all of the cytosine sites")
     protected boolean Cpg = true;
     @Option(name="-sample",usage=" input the sample name: normal010310 or tumor011010")
-    //protected String sample = "normal010310";
-    protected String sample = "test";
+    protected String sample = "normal010310";
+    //protected String sample = "test";
+    
+    //protected int minAlleleCount = 3;
+    //protected double minAlleleFreq = 0.10;
     
 	// receives other command line parameters than options
 	@Argument
@@ -149,8 +152,8 @@ public class MethylDbToFisherExactLogpASM {
 			int B_CReads = methyCpg.getB_CReads();
 			int B_TReads = methyCpg.getB_TReads();
 			double pValue = fisherExact.getTwoTailedP(A_CReads,A_TReads,B_CReads,B_TReads);
-			double logPValue = Math.log10(pValue);
-			String line = String.format("%d\t%d\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%c\t%c\t%c", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, A_CReads,A_TReads,B_CReads,B_TReads,methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
+			double logPValue = 0-Math.log10(pValue);
+			String line = String.format("%d\t%d\t%f\t%f\t%d\t%d\t%d\t%d\t%c\t%c\t%c", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, A_CReads,A_TReads,B_CReads,B_TReads,methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			System.out.printf("%d\t%d\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, pValue, logPValue, A_CReads,A_TReads,B_CReads,B_TReads,methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
 			outWriter.println(line);
 			//System.err.printf("%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%c\n", methyCpg.alleleChromPos, methyCpg.chromPos, reads1[0], reads1[1],reads2[0],reads2[1],methyCpg.getA_BaseUpperCase(), methyCpg.getB_BaseUpperCase(), methyCpg.getNextBaseRef());
@@ -169,10 +172,12 @@ public class MethylDbToFisherExactLogpASM {
 		String sql = String.format("select * from %s WHERE ", methTable);
 		sql += "ABaseRefUpperCase != '0'";
 		sql += " AND BBaseRefUpperCase != '0'";
-		sql += " AND (ACReads != 0 OR ATReads != 0)";
-		sql += " AND (BCReads != 0 OR BTReads != 0)";
+		sql += " AND (ACReads + ATReads >= 3)";
+		sql += " AND (BCReads + BTReads >= 3)";
 		sql += " AND (ACReads != 0 OR BCReads != 0)";
 		sql += " AND (ATReads != 0 OR BTReads != 0)";
+		sql += " AND (ACReads + ATReads)/totalReads >= 0.30";
+		sql += " AND (BCReads + BTReads)/totalReads >= 0.30";
 		if (Cpg)
 			sql += " AND nextBaseRefUpperCase = 'G'";
 		//sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
