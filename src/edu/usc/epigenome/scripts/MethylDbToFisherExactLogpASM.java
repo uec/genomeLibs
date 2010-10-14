@@ -79,7 +79,11 @@ public class MethylDbToFisherExactLogpASM {
 			}
 
 			chr = arguments.get(0);
-			if (!chr.startsWith("chr")) chr = "chr" + chr;
+			if (!chr.startsWith("chr")) {
+				chr = chr.toUpperCase();
+				chr = "chr" + chr;
+			}
+			System.err.println(chr);
 			if (arguments.size() > 1)
 			{
 				chrStart = Integer.parseInt(arguments.get(1));
@@ -119,7 +123,7 @@ public class MethylDbToFisherExactLogpASM {
 		String fn = this.tablePrefix + chr + "_pValue" + ".txt";
 		PrintWriter outWriter = new PrintWriter(new File(fn));
 		
-		String sqlStatement = getSql(params);
+		String sqlStatement = getSql(params, chr);
 		
 		CytosineIterator it = new CytosineIterator(params,connStr,sqlStatement);
 		TreeMap<Integer,Cytosine> totalReadsSum = new TreeMap<Integer,Cytosine>();
@@ -165,9 +169,10 @@ public class MethylDbToFisherExactLogpASM {
 		
 	}
 	
-	protected String getSql(MethylDbQuerier params) 
+	protected String getSql(MethylDbQuerier params, String chr) 
 	throws Exception{
-		String methTable = params.getMethylTable();
+		//String methTable = params.getMethylTable();
+		String methTable = tablePrefix + chr;
 		//String methTable = params.methylTablePrefix;
 		String sql = String.format("select * from %s WHERE ", methTable);
 		sql += "ABaseRefUpperCase != '0'";
