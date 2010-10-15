@@ -193,7 +193,7 @@ public class MethylDbToFeatPairCounts {
 			}
 
 			// Don't have a way to draw quadruplets, but we can output them
-			if (threeWay && (nFeats>3))
+			if (fourWay && (nFeats>3))
 			{
 				for (int i = 0; i < nFeats; i++)
 				{
@@ -234,6 +234,8 @@ public class MethylDbToFeatPairCounts {
 		StringBuffer sb = new StringBuffer(10000);
 		int nFeats = featTypes.size();
 		
+		System.err.printf("About to calculateAndPrintCounts for: %s\n", ListUtils.excelLine(featTypes));
+		
 		// And the querier params
 		MethylDbQuerier params = new MethylDbQuerier();
 		params.methylTablePrefix = this.methylDbPrefix;
@@ -244,16 +246,16 @@ public class MethylDbToFeatPairCounts {
 		// Feat filts
 		params.addFeatFilters(featTypes);
 		
-		ListUtils.setDelim("+");
+		ListUtils.setDelim(",");
 		String featStr = ListUtils.excelLine(featTypes);
 		
 		// Count can be over the INT 32-bit limit
 		long count = 0;
 		
-		for (String chr :  MethylDbUtils.CHROMS) //  Arrays.asList("chr21")) //
+		for (String chr :  Arrays.asList("chrX")) // MethylDbUtils.CHROMS) //  Arrays.asList("chr21")) //
 		{		
 			
-			System.err.printf("Feats=%s, %s\n",featStr, chr);
+			System.err.printf("Feats=%s\tchr=%s\n",featStr, chr);
 			// Iterator uses DB connection and can use a ton of memory because
 			// it loads all rows at once.  This stuff should really be added to iterator
 			// class, but until it is , just iterate here over the chromosome
@@ -297,6 +299,15 @@ public class MethylDbToFeatPairCounts {
 
 		if ((nFeats > 1) && (vennPw != null))
 		{
+			vennPw.printf("<H3>%s</H3>\n", featStr);
+			if (count==0)
+			{
+				vennPw.printf("<H4>0 base pairs in common</H4>\n");
+			}
+			else
+			{
+
+			
 			// If you make them too long
 			String a = featTypes.get(0) + "(" + savedCounts.get(featTypes.get(0)) + ")"; 
 			String b = featTypes.get(1) + "(" + savedCounts.get(featTypes.get(1)) + ")";
@@ -328,21 +339,24 @@ public class MethylDbToFeatPairCounts {
 			// EXAMPLE CODE END. Use this url string in your web or
 			// Internet application.
 
-			vennPw.printf("<H3>%s</H3>\n", featStr);
 			vennPw.printf("<IMG SRC=\"%s\">\n", url);
+		}
 		}
 
 
 		// CSV Output
 		if (csvPw != null)
 		{
-			sb.append(String.format("%s,%d",featStr,count));
+			sb.append(String.format("%s",featStr));
 			for (int i = 0; i < nFeats; i++)
 			{
 				Long singleCount = savedCounts.get(featTypes.get(i));
 				if (singleCount != null)
 				{
-					sb.append(String.format(",%.2f%%,%d", 100.0*(double)count/(double)singleCount, singleCount-count));
+					Long remainder = singleCount-count;
+					double sens = (double)count/(double)singleCount;
+					sb.append(String.format(",%d,%.4f", count, sens)); 
+					sb.append(String.format(",%d,%.4f", remainder, 1-sens)); 
 				}
 			}
 
