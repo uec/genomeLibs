@@ -55,8 +55,11 @@ public class MethylDbToWindowMeth {
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;
     @Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
-    		"This sets a maximum number of observed As on the opposite strand (default 0.1)")
-    protected double maxOppStrandAfrac = 0.1;
+    		"This sets a maximum number of observed As on the opposite strand (default 0.101)")
+    protected double maxOppStrandAfrac = 0.101;
+    @Option(name="-maxNextNonGfrac",usage="non Gs at the next position are evidence for CpH. " +
+    		"This sets a maximum number of observed non-Gs at the next position (default 0.101)")
+	protected double maxNextNonGfrac = 0.101;
 	@Option(name="-featFilter",usage="We will take the intersection with this feature (only for -windSize windows, NOT for primary feats). Must be a featType in the features table")
 	protected List<String> featFilters = new ArrayList<String>(5);
 	// receives other command line parameters than options
@@ -130,9 +133,28 @@ public class MethylDbToWindowMeth {
 		int nFeatTypes = featFns.size();
 
 		// Setup writer
-		PrintWriter writer = new PrintWriter(new FileOutputStream(String.format("%s.windAvs.csv", outputPrefix)));
+		String minReadsSec = ".minCTreads" + this.minCTreads;
+		String maxOppaSec = ".maxOppAreads" + this.maxOppStrandAfrac;
+		String maxNextnongSec = ".maxNextNonG" + this.maxNextNonGfrac;
+		ListUtils.setDelim("-");
+		String featfiltSec = (this.featFilters.size()==0) ? ".featFilt" : ListUtils.excelLine(this.featFilters);
 		
-
+		String weightSec = (this.useSpatialCpgWeighting) ? ".useSpatialWeighting" : ".noSpatialWeighting";
+		PrintWriter writer = new PrintWriter(new FileOutputStream(String.format("%s%s%s%s%s%s.windAvs.csv", outputPrefix,weightSec,minReadsSec,maxOppaSec,maxNextnongSec,featfiltSec)));
+		
+		// Write a header
+		boolean onFirst = true;
+		for (Integer s : this.windSizes)
+		{
+			for (String tab : tablePrefixes)
+			{
+				if (!onFirst) writer.print(",");
+				writer.printf("%s-wind%d", tab, s);
+				
+				onFirst = false;
+			}
+		}
+		writer.println();
 	
 		// Start the actual work.  Go through each GFF file.
 		int onFeatType = 0;
@@ -219,6 +241,7 @@ public class MethylDbToWindowMeth {
 					}
 					params.setMinCTreads(this.minCTreads);
 					params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+					params.setMaxNextNonGfrac(this.maxNextNonGfrac);
 					params.addRangeFilter(chrStr,featS_w,featE_w);
 
 					CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
