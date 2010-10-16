@@ -23,6 +23,26 @@ public class MatUtils {
 	protected static Random randomGenerator = new Random();
 	protected static RandomData randomDataGenerator = new RandomDataImpl();
 
+	
+	public static double mean(int i1, int i2)
+	{
+		int[] arr = new int[] {i1, i2};
+		return mean(arr);
+	}
+	
+	public static double mean(int[] ints)
+	{
+		double[] ds = new double[ints.length];
+		for (int i = 0; i < ints.length; i++)
+		{
+			ds[i] = (double)ints[i];
+		}
+		
+		double mean = nanMean(ds);
+		return mean;
+	}
+
+	
 	public static double nanMean(double[] arr)
 	{
 		return nanMean(arr, 0, arr.length);
