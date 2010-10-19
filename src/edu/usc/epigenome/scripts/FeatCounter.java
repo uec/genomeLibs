@@ -50,6 +50,8 @@ public class FeatCounter {
 	protected List<String> features = new ArrayList<String>(25);
 	@Option(name="-flank",multiValued=false,usage="Flanking sequence for each feature")
 	protected int flank = 0;
+	@Option(name="-expressionTerm",usage="One or more expression from the infiniumExpr_chr table")
+	protected List<String> expressionTerms = new ArrayList<String>(5);
 
 	// receives other command line parameters than options
 	@Argument
@@ -117,7 +119,8 @@ public class FeatCounter {
 		// Go through target feats one by one
 		int[] totals = new int[features.size()+1];
 		ListUtils.setDelim(",");
-		System.out.printf("%s,%s,%s,%s,%s\n","chrom","start","end",ListUtils.excelLine(features),"No overlap");
+		String expressionSec = (this.expressionTerms.size()==0) ? "" : ("," + ListUtils.excelLine(this.expressionTerms));
+		System.out.printf("%s,%s,%s%s,%s,%s\n","chrom","start","end",expressionSec, ListUtils.excelLine(features),"No overlap");
 		for (String chrStr : chrs)
 		{
 			// Some of my files have these forms.
@@ -178,6 +181,12 @@ public class FeatCounter {
 						if (n==0)
 						{
 							System.out.printf("%s,%d,%d",chrStr,target.getStart(),target.getEnd());
+							for (String expressionTerm : expressionTerms)
+							{
+								double term = MethylDbUtils.fetchMeanExpression(chrStr, GFFUtils.getGffRecordName(target), 
+										expressionTerm);
+								System.out.printf(",%.5f", term);
+							}
 						}
 						System.out.printf(",%d",(overlap)?1:0);	
 

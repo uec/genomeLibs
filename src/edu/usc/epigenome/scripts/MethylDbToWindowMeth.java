@@ -62,6 +62,8 @@ public class MethylDbToWindowMeth {
 	protected double maxNextNonGfrac = 0.101;
 	@Option(name="-featFilter",usage="We will take the intersection with this feature (only for -windSize windows, NOT for primary feats). Must be a featType in the features table")
 	protected List<String> featFilters = new ArrayList<String>(5);
+	@Option(name="-expressionTerm",usage="One or more expression from the infiniumExpr_chr table")
+	protected List<String> expressionTerms = new ArrayList<String>(5);
 	// receives other command line parameters than options
 	@Argument
 	private List<String> arguments = new ArrayList<String>();
@@ -144,6 +146,12 @@ public class MethylDbToWindowMeth {
 		
 		// Write a header
 		boolean onFirst = true;
+		writer.printf("chr,featStart,featEnd,featStrand");
+		onFirst = false;
+		for (String expressionTerm : expressionTerms)
+		{
+			writer.printf(",%s", expressionTerm);
+		}
 		for (Integer s : this.windSizes)
 		{
 			for (String tab : tablePrefixes)
@@ -208,7 +216,18 @@ public class MethylDbToWindowMeth {
 			String featName = null; // rec.getSeqName();
 			int featS = rec.getStart();
 			int featE = rec.getEnd();
+			
+			writer.printf("%d,%d,%d,%d", chr,featS,featE,featStrand.getValue());
+			
+			// Get expression terms
+			for (String expressionTerm : expressionTerms)
+			{
+				double term = MethylDbUtils.fetchMeanExpression(chrStr, GFFUtils.getGffRecordName(rec), 
+						expressionTerm);
+				writer.printf(",%.5f", term);
+			}
 
+			
 			for (Integer windSize : windSizes)
 			{
 
@@ -221,8 +240,14 @@ public class MethylDbToWindowMeth {
 					{
 						double windFlank = (double)windSize / 2.0;
 						double windC = Math.round(MatUtils.mean(featS, featE));
-						featS_w = (int)Math.round(windC - windFlank);
-						featE_w = (int)Math.round(windC + windFlank);
+//						featS_w = (int)Math.round(windC - windFlank);
+//						featE_w = (int)Math.round(windC + windFlank);
+						
+						// Make the window not include the central feature itself.
+						featS_w = (int)Math.round(featS_w - windFlank);
+						featE_w = (int)Math.round(featE_w + windFlank);
+
+					
 					}
 					
 					
@@ -281,7 +306,7 @@ public class MethylDbToWindowMeth {
 					
 					for (int i =0; i<nS; i++)
 					{
-						writer.printf("%.2f,", summarizers[i].getValMean(this.useSpatialCpgWeighting));
+						writer.printf(",%.5f", summarizers[i].getValMean(this.useSpatialCpgWeighting));
 					}
 
 
