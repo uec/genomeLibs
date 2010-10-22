@@ -6,6 +6,8 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.sql.*;
 
 import org.biojava.bio.seq.StrandedFeature;
@@ -356,6 +358,39 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
+	public static void outputCytocinesToDb(SortedMap<Integer,TreeMap<Integer,Cytosine>> cytocineMap, String tableName, boolean asmFlag)
+	throws IOException
+	{
+		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
+		Iterator<TreeMap<Integer,Cytosine>> alleleCytocineIt = cytocineMap.values().iterator();
+		 while (alleleCytocineIt.hasNext())
+		{
+			 TreeMap<Integer,Cytosine> alleleCytocine = alleleCytocineIt.next();
+			 Iterator<Cytosine> cytocineIt = alleleCytocine.values().iterator();
+			 while(cytocineIt.hasNext()){
+				 Cytosine cytocine = cytocineIt.next();
+				 String line = cytocine.toString(asmFlag,true);
+					String insertString = "INSERT INTO " + tableName +
+										" VALUES (" + line + ")";
+					
+					try {
+						//step 4: create a statement
+						Statement stmt = conn.createStatement();
+					//	testResult = stmt.executeQuery(queryString);
+						
+						//step 5: execute a query or update.
+						stmt.executeUpdate(insertString);
+
+					}catch(SQLException ex) {
+									System.err.println("Insertion: " + ex.getMessage());
+					}
+				 
+			 }
+			
+			
+		}
+	}
+	
 	public static PrintWriter outputChromToFile(Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
 	throws IOException
 	{
@@ -393,6 +428,17 @@ public class Cytosine implements Comparable, Cloneable {
 
 	}
 	
+	
+	
+	public static void outputChromToDb(SortedMap<Integer,TreeMap<Integer,Cytosine>> cytocineMap, String tableName, Connection cConn, boolean asmFlag)
+	throws IOException
+	{
+		
+		conn=cConn;
+		creatTableInDb(tableName);
+		outputCytocinesToDb(cytocineMap, tableName, asmFlag);
+
+	}
 	
 	public static void creatTableInDb(String tableName){
 		Statement stmtDrop, stmtCreate, stmtCheck;
