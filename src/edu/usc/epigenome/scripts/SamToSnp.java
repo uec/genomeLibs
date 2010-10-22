@@ -127,7 +127,7 @@ public class SamToSnp {
 						PURGE_INTERVAL, (canPurge) ? "Yes" : "Purging not available - either unsorted BAM or multiple BAMs for the same chrom"));
 				
 				TreeMap<Integer,Integer[]> allelePosition = allelePos( inputSam, canPurge, chr );
-				
+				//TreeMap<Integer,Integer[]> allelePositionReadsum = readsDepth( inputSam, allelePosition, canPurge, chr );
 				TreeMap<Integer,List<Byte>> alleleReadsMem = alleleReads( inputSam, allelePosition, canPurge, chr );
 				outputSNP(allelePosition, alleleReadsMem, tableName);
 				System.err.println("finished!");
@@ -142,7 +142,7 @@ public class SamToSnp {
 			int lastPurge = 0;
 			int recCounter = 0;
 			
-			List<Integer> readsDepth = new ArrayList<Integer>();
+			TreeMap<Integer, Integer> readsDepth = new TreeMap<Integer, Integer>();
 			//int j = 0;
 			TreeMap<Integer,Integer[]> allelePosition = new TreeMap<Integer,Integer[]>();
 			
@@ -222,19 +222,25 @@ public class SamToSnp {
 										
 							}
 							else{
+								Integer[] tempInt = new Integer[2];
 								if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
-									readsDepth.add(onRefCoord);
+									tempInt[1] = readsDepth.get(onRefCoord);
+									if(tempInt[1] != null)
+										tempInt[1]++;
+									else
+										tempInt[1] = 1;
+									readsDepth.put(onRefCoord,tempInt[1]);
 								}
 									
 								if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
-										Integer[] tempInt = new Integer[2];
+										
 										tempInt[0] = 1;
-										tempInt[1] = 0;
-										Integer objRemove = onRefCoord;
+										tempInt[1] = readsDepth.get(onRefCoord);
+										/*Integer objRemove = onRefCoord;
 										while(readsDepth.contains(objRemove)){
 											readsDepth.remove(objRemove);
 											tempInt[1]++;
-										}
+										}*/
 										allelePosition.put(onRefCoord,tempInt);
 								}
 							}
@@ -252,7 +258,7 @@ public class SamToSnp {
 							int inc = (negStrand) ? -1 : 1;
 							onRefCoord += inc;
 						}
-						System.err.println(onRefCoord);
+						//System.err.println(onRefCoord);
 					}
 				}
 				catch (Exception f)
@@ -269,13 +275,14 @@ public class SamToSnp {
 			
 		}
 		
+		
+		
 		protected TreeMap<Integer,List<Byte>> alleleReads( SAMFileReader inputSam, TreeMap<Integer,Integer[]> allelePosition, boolean canPurge, String chr)
 		throws Exception{
 			CloseableIterator<SAMRecord> chrItForAllele = inputSam.query(chr, 0, 0, false);
 			int lastBaseSeen = 0;
 			int lastPurge = 0;
 			int recCounter = 0;
-			System.err.println("-----------------------------------------");
 			//List<Integer> readsDepth = new ArrayList<Integer>();
 			//int j = 0;
 			TreeMap<Integer,List<Byte>> alleleReadsMem = new TreeMap<Integer,List<Byte>>();
@@ -342,7 +349,9 @@ public class SamToSnp {
 							
 							if(allelePosition.containsKey(onRefCoord)){
 									if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
-										 List<Byte> tempQuality = alleleReadsMem.get(onRefCoord);
+										 List<Byte> tempQuality = new ArrayList<Byte>();
+										 if(alleleReadsMem.containsKey(onRefCoord))
+											 tempQuality = alleleReadsMem.get(onRefCoord);
 										tempQuality.add(baseQual[i]);
 										alleleReadsMem.put(onRefCoord, tempQuality);
 									}
@@ -378,13 +387,13 @@ public class SamToSnp {
 			
 		}
 		
-		protected static void outputSNP(TreeMap<Integer,Integer[]> allelePosition, TreeMap<Integer,List<Byte>> alleleReadsMem, String tableName)
+		protected void outputSNP(TreeMap<Integer,Integer[]> allelePosition, TreeMap<Integer,List<Byte>> alleleReadsMem, String tableName)
 		throws FileNotFoundException{
 			Iterator<Integer> it = allelePosition.keySet().iterator();
 			System.err.println("-----------------------------------------");
-			String fn = tableName + "_SNP" + ".txt";
-			String fnBase = tableName + "_baseQuality" + ".txt";
-			PrintWriter writer = new PrintWriter(new File(fn));
+			//String fn = tableName + "_SNP" + ".txt";
+			String fnBase = tableName + "_allBaseQuality" + ".txt";
+			//PrintWriter writer = new PrintWriter(new File(fn));
 			PrintWriter writerBase = new PrintWriter(new File(fnBase));
 			while(it.hasNext()){	
 				Integer snp = it.next();
@@ -405,7 +414,7 @@ public class SamToSnp {
 					 continue;
 				 }
 				 else{
-					 writer.printf("%d\t%d\n",snp,tempInt[1]);
+					 //writer.printf("%d\t%d\n",snp,tempInt[1]);
 					  //qantileList(tempByte, writerBase, snp); 
 					 Iterator<Byte> listIt = tempByte.iterator();
 					 while(listIt.hasNext()){
@@ -415,7 +424,7 @@ public class SamToSnp {
 				 }
 				
 			}
-			writer.close();
+			//writer.close();
 			writerBase.close();
 		}
 		
