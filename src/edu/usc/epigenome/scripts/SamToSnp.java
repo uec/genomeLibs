@@ -47,8 +47,8 @@ public class SamToSnp {
 	protected boolean outputHcphs = false;
 	@Option(name="-minMapQ",usage="minimum mapping quality (default 30)")
 	protected int minMapQ = 30;
-	@Option(name="-minBaseQual",usage="minimum Base quality (default 10)")
-	protected int minBaseQual = 0;
+	@Option(name="-minBaseQual",usage="minimum Base quality (default 30)")
+	protected int minBaseQual = 30;
 	@Option(name="-minAlleleCount",usage="minimum Allele Count (default 3)")
 	protected static int minAlleleCount = 3;
 	@Option(name="-minAlleleFreq",usage="minimum BAllele Frequency (default 0.3)")
@@ -127,9 +127,9 @@ public class SamToSnp {
 						PURGE_INTERVAL, (canPurge) ? "Yes" : "Purging not available - either unsorted BAM or multiple BAMs for the same chrom"));
 				
 				TreeMap<Integer,Integer[]> allelePosition = allelePos( inputSam, canPurge, chr );
-				//TreeMap<Integer,Integer[]> allelePositionReadsum = readsDepth( inputSam, allelePosition, canPurge, chr );
-				TreeMap<Integer,List<Byte>> alleleReadsMem = alleleReads( inputSam, allelePosition, canPurge, chr );
-				outputSNP(allelePosition, alleleReadsMem, tableName);
+				//TreeMap<Integer,List<Byte>> alleleReadsMem = alleleReads( inputSam, allelePosition, canPurge, chr );
+				//outputSNP(allelePosition, alleleReadsMem, tableName);
+				outputSNP(allelePosition, tableName);
 				System.err.println("finished!");
 			}
 		}
@@ -205,50 +205,39 @@ public class SamToSnp {
 					for (int i = 0; i < seqLen; i++){
 						char refi = ref.charAt(i);
 						//char seqi = seq.charAt(i);
-						if(baseQual[i] < minBaseQual && (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)))
-								continue;
 						
+						if(baseQual[i] >= minBaseQual && (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq))){
 							if(allelePosition.containsKey(onRefCoord)){
-									Integer[] tempInt = allelePosition.get(onRefCoord);
-									if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
-										tempInt[1]++;//  total reads number
-									}
-										
-									if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){	
-										tempInt[0]++;// allele reads number
-									}
-									allelePosition.put(onRefCoord,tempInt);
+								Integer[] tempInt = allelePosition.get(onRefCoord);
+								//if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
+									tempInt[1]++;//  total reads number
+								//}
+									
+								if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){	
+									tempInt[0]++;// allele reads number
+								}
+								allelePosition.put(onRefCoord,tempInt);
 
-										
+									
 							}
 							else{
 								Integer[] tempInt = new Integer[2];
-								if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
+								//if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
 									tempInt[1] = readsDepth.get(onRefCoord);
 									if(tempInt[1] != null)
 										tempInt[1]++;
 									else
 										tempInt[1] = 1;
 									readsDepth.put(onRefCoord,tempInt[1]);
-								}
-									
-								if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
-										
-										tempInt[0] = 1;
-										tempInt[1] = readsDepth.get(onRefCoord);
-										/*Integer objRemove = onRefCoord;
-										while(readsDepth.contains(objRemove)){
-											readsDepth.remove(objRemove);
-											tempInt[1]++;
-										}*/
-										allelePosition.put(onRefCoord,tempInt);
+								//}
+								
+								if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){	
+									tempInt[0] = 1;
+									//tempInt[1] = readsDepth.get(onRefCoord);
+									allelePosition.put(onRefCoord,tempInt);
 								}
 							}
-								
-							//}
-						//}
-						
-						
+						}
 						if (refi == '-')
 						{
 							// It's a deletion in reference, don't advance
@@ -387,12 +376,44 @@ public class SamToSnp {
 			
 		}
 		
+		protected void outputSNP(TreeMap<Integer,Integer[]> allelePosition, String tableName)
+		throws FileNotFoundException{
+			Iterator<Integer> it = allelePosition.keySet().iterator();
+			System.err.println("-----------------------------------------");
+			String fn = tableName + "_SNP_afterBaseQfilter" + ".txt";
+			PrintWriter writer = new PrintWriter(new File(fn));
+			while(it.hasNext()){	
+				Integer snp = it.next();
+				Integer[] tempInt = allelePosition.get(snp);
+				 double tempDouble1 = tempInt[0];
+				 double tempDouble2 = tempInt[1];
+				 double freq1 = tempDouble1/tempDouble2;
+				 double freq2 = (tempDouble2-tempDouble1)/tempDouble2;
+				 //System.err.println(tempDouble1);
+				 //System.err.println(tempDouble2);
+				 //System.err.println(freq);
+				 if(tempInt[1] <= 10 && (tempInt[0] < minAlleleCount || (tempInt[1] - tempInt[0]) < minAlleleCount) ){
+					 //allelePosition.remove(alleleChromPos);
+					 continue;
+				 }
+				 else if(tempInt[1] > 10 && (freq1 < minAlleleFreq || freq2 < minAlleleFreq)){
+					 continue;
+				 }
+				 else{
+					 writer.printf("%d\t%d\t%d\n",snp,tempInt[1],tempInt[0]);
+					 
+				 }
+				
+			}
+			writer.close();
+		}
+		
 		protected void outputSNP(TreeMap<Integer,Integer[]> allelePosition, TreeMap<Integer,List<Byte>> alleleReadsMem, String tableName)
 		throws FileNotFoundException{
 			Iterator<Integer> it = allelePosition.keySet().iterator();
 			System.err.println("-----------------------------------------");
 			//String fn = tableName + "_SNP" + ".txt";
-			String fnBase = tableName + "_allBaseQuality" + ".txt";
+			String fnBase = tableName + "_BaseQuality" + ".txt";
 			//PrintWriter writer = new PrintWriter(new File(fn));
 			PrintWriter writerBase = new PrintWriter(new File(fnBase));
 			while(it.hasNext()){	
