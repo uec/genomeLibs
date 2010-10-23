@@ -67,8 +67,8 @@ public class SamToMethyldbOnlineCpgLessMem {
 		protected boolean outputHcphs = false;
 		@Option(name="-minMapQ",usage="minimum mapping quality (default 30)")
 		protected int minMapQ = 30;
-		@Option(name="-minBaseQual",usage="minimum Base quality (default 10)")
-		protected int minBaseQual = 0;
+		//@Option(name="-minBaseQual",usage="minimum Base quality (default 10)")
+		//protected int minBaseQual = 0;
 		@Option(name="-minAlleleCount",usage="minimum Allele Count (default 3)")
 		protected static int minAlleleCount = 3;
 		@Option(name="-minAlleleFreq",usage="minimum BAllele Frequency (default 0.3)")

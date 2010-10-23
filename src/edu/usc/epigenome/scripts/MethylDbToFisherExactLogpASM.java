@@ -44,11 +44,11 @@ public class MethylDbToFisherExactLogpASM {
     @Option(name="-CpG",usage=" just withdarw CpG sites or all of the cytosine sites")
     protected boolean Cpg = true;
     @Option(name="-sample",usage=" input the sample name: normal010310 or tumor011010")
-    protected String sample = "normal010310";
-    //protected String sample = "test";
+    //protected String sample = "normal010310";
+    protected String sample = "test";
     
-    //protected int minAlleleCount = 3;
-    //protected double minAlleleFreq = 0.10;
+    protected int minAlleleCount = 3;
+    protected double minAlleleFreq = 0.30;
     
 	// receives other command line parameters than options
 	@Argument
@@ -177,14 +177,16 @@ public class MethylDbToFisherExactLogpASM {
 		String sql = String.format("select * from %s WHERE ", methTable);
 		sql += "ABaseRefUpperCase != '0'";
 		sql += " AND BBaseRefUpperCase != '0'";
-		sql += " AND (ACReads + ATReads >= 3)";
-		sql += " AND (BCReads + BTReads >= 3)";
+		sql += " AND (ACReads + ATReads >= " + minAlleleCount + ")";
+		sql += " AND (BCReads + BTReads >= " + minAlleleCount + ")";
 		sql += " AND (ACReads != 0 OR BCReads != 0)";
 		sql += " AND (ATReads != 0 OR BTReads != 0)";
-		sql += " AND (ACReads + ATReads)/totalReads >= 0.30";
-		sql += " AND (BCReads + BTReads)/totalReads >= 0.30";
-		if (Cpg)
+		sql += " AND (ACReads + ATReads)/totalReads >= " + minAlleleFreq;
+		sql += " AND (BCReads + BTReads)/totalReads >= " + minAlleleFreq;
+		if (Cpg){
 			sql += " AND nextBaseRefUpperCase = 'G'";
+		}
+			
 		//sql += " GROUP BY chromPos "; // If you don't do this, you get multiple instances of the same CpG if it overlaps multiple features.
 		sql += " ORDER BY chromPos,alleleChromPos ;";
 		
