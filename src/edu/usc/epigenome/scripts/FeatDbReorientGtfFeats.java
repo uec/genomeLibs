@@ -39,12 +39,14 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 public class FeatDbReorientGtfFeats {
 
-	private static final String C_USAGE = "Use: FeatDbReorientGtfFeats -chrom chr1 -chrom chr2 featsToBeReoriented.gtf referenceFeatType";
+	private static final String C_USAGE = "Use: FeatDbReorientGtfFeats -flank 0 -chrom chr1 -chrom chr2 featsToBeReoriented.gtf referenceFeatType";
 	
 //	@Option(name="-skipUnoriented",usage="If set, skip any unoriented feature (default false)")
 //	protected boolean skipUnoriented = false;
 	@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. -chrom chr1 -chrom chr5")
 	protected List<String> chrs = new ArrayList<String>(25);
+	@Option(name="-flank",multiValued=true,usage="Search this many base pairs flanking the features of interes")
+	protected int flank = 0;
 
 	// receives other command line parameters than options
 	@Argument
@@ -118,7 +120,7 @@ public class FeatDbReorientGtfFeats {
 
 				// Get the overlapping feats
 				FeatDbQuerier params = new FeatDbQuerier();
-				params.addRangeFilter(target.getSeqName(), target.getStart(), target.getEnd());
+				params.addRangeFilter(target.getSeqName(), target.getStart()-this.flank, target.getEnd()+this.flank);
 				params.addFeatFilter(featType);
 				FeatIterator feats = new FeatIterator(params);
 
@@ -169,9 +171,12 @@ public class FeatDbReorientGtfFeats {
 				}
 				
 				
-				Logger.getAnonymousLogger().fine(String.format("GFF %s\t%d overlapping recs\tsawFw=%s\tsawRev=%s\tnewStrand=%s\n", 
-						GFFUtils.gffBetterString(target),nOvs,""+ overlapsFw,"" + overlapsRev, ""+newStrand));
+//				Logger.getAnonymousLogger().severe(String.format("GFF %s\t%d overlapping recs\tsawFw=%s\tsawRev=%s\tnewStrand=%s\n", 
+//						GFFUtils.gffBetterString(target),nOvs,""+ overlapsFw,"" + overlapsRev, ""+newStrand));
+//				System.err.printf("CGI found %d names: %s\n", 
+//						newNames.size(),ListUtils.excelLine(newNames.toArray(new String[1])));
 
+				
 				outFeats.add_feature(target);
 			}
 		}
