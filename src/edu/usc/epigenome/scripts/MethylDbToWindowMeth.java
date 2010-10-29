@@ -191,7 +191,7 @@ public class MethylDbToWindowMeth {
 //					String.format("%s.flank%d.featType%d.sortVals.csv", outputPrefix, this.flankSize, onFeatType)));
 //			
 
-			for (String chrStr : MethylDbUtils.SMALL_CHROMS) // Arrays.asList("chr11")) //
+			for (String chrStr : MethylDbUtils.CHROMS) // Arrays.asList("chr11")) //
 			{
 				processChrom(chrStr, feats, tablePrefixes, writer);
 			}
