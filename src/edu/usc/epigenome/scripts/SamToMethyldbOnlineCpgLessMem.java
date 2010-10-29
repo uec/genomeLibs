@@ -23,6 +23,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import edu.usc.epigenome.genomeLibs.PicardUtils;
+import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cytosine;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
@@ -67,8 +68,8 @@ public class SamToMethyldbOnlineCpgLessMem {
 		protected boolean outputHcphs = false;
 		@Option(name="-minMapQ",usage="minimum mapping quality (default 30)")
 		protected int minMapQ = 30;
-		//@Option(name="-minBaseQual",usage="minimum Base quality (default 10)")
-		//protected int minBaseQual = 0;
+		@Option(name="-minBaseQual",usage="minimum Base quality (default 30)")
+		protected int minBaseQual = 30;
 		@Option(name="-minAlleleCount",usage="minimum Allele Count (default 3)")
 		protected static int minAlleleCount = 3;
 		@Option(name="-minAlleleFreq",usage="minimum BAllele Frequency (default 0.3)")
@@ -131,14 +132,14 @@ public class SamToMethyldbOnlineCpgLessMem {
 			BufferedReader br = new BufferedReader(new FileReader(snpFileName));
 			TreeSet<Integer> allelePosition = new TreeSet<Integer>();
 			String line;
-			int a = 0;
+			//int a = 0;
 			while( (line = br.readLine()) != null){
 				String[] tmpArray = line.split("\t");
 				allelePosition.add(Integer.parseInt(tmpArray[0]));
-				System.err.println(Integer.parseInt(tmpArray[0]));
-				a++;
+				//System.err.println(Integer.parseInt(tmpArray[0]));
+				//a++;
 			}
-			System.err.println(a);
+			//System.err.println(a);
 			int recCounter = 0;
 			int usedCounter = 0;
 			int filteredOutCounter = 0;
@@ -203,6 +204,7 @@ public class SamToMethyldbOnlineCpgLessMem {
 
 						// Filter low qual
 						int mapQual = samRecord.getMappingQuality();
+						byte[] baseQual = samRecord.getBaseQualities();
 						boolean unmapped = samRecord.getReadUnmappedFlag();
 						if (unmapped || (mapQual < minMapQ))
 						{
@@ -317,6 +319,8 @@ public class SamToMethyldbOnlineCpgLessMem {
 												 while (allelePosIt.hasNext()){
 													 alleleChromPos = allelePosIt.next();
 													 int pos = negStrand ? Math.abs(alleleChromPos - readsEnd) : Math.abs(alleleChromPos - readsStart);
+													 if (!PicardUtils.isAdenine(pos,seq) && !PicardUtils.isGuanine(pos,seq))
+														 continue;
 													 if(pos - i == 0){
 														 Iterator<String> cpgCreatedIt = cpgCreated.iterator();
 														 while(cpgCreatedIt.hasNext()){
@@ -324,7 +328,8 @@ public class SamToMethyldbOnlineCpgLessMem {
 														 }
 														 break;
 													 }
-													 if (!PicardUtils.isAdenine(pos,seq) && !PicardUtils.isGuanine(pos,seq))
+													 byte baseQS = (negStrand) ? baseQual[seqLen-1-pos] : baseQual[pos];
+													 if(baseQS < minBaseQual)
 														 continue;
 													 
 													 if( pos - i == 1){
@@ -415,6 +420,47 @@ public class SamToMethyldbOnlineCpgLessMem {
 
 
 
+								}
+								
+								boolean oppositeCpg = PicardUtils.isOppositeCpg(i,ref);
+								if (oppositeCpg)
+								{
+									// Look for cpg on opposite strand
+									// Be careful, the "nextBaseRef" is now on the opposite strand!!
+									char nextBaseRefRev = PicardUtils.nextBaseRef(i, ref, true);
+									char preBaseRefRev = PicardUtils.preBaseRef(i, ref, true);
+									
+									
+									if (!allelePosition.subSet(readsStart, readsEnd).isEmpty()){									
+										Iterator<Integer> allelePosIt = allelePosition.subSet(readsStart, readsEnd).iterator();
+										//boolean noAllele = true;
+										List<String> cpgCreated = new ArrayList<String>();
+										 while (allelePosIt.hasNext()){
+											 alleleChromPos = allelePosIt.next();
+											 int pos = negStrand ? Math.abs(alleleChromPos - readsEnd) : Math.abs(alleleChromPos - readsStart);
+											 if (PicardUtils.isAdenine(pos,seq) || PicardUtils.isGuanine(pos,seq))
+												 continue;
+											 if(pos - i == 0){
+												 Iterator<String> cpgCreatedIt = cpgCreated.iterator();
+												 while(cpgCreatedIt.hasNext()){
+													 cytosines.remove(cpgCreatedIt.next());
+												 }
+												 break;
+											 }
+											 
+											 if( pos - i == -1){
+												 Iterator<String> cpgCreatedIt = cpgCreated.iterator();
+												 while(cpgCreatedIt.hasNext()){
+													 cytosines.remove(cpgCreatedIt.next());
+												 }
+												 break;
+											 }
+											 Cytosine cytosine = findOrCreateCytosine(cytosines, onRefCoord, !negStrand, preBaseRefRev, nextBaseRefRev, A_BaseUpperCase, B_BaseUpperCase, alleleChromPos);
+											 this.incrementOppositeCpg(cytosine, seqi);
+											 String temp = Integer.toString(onRefCoord) + "-" + Integer.toString(alleleChromPos);
+											 cpgCreated.add(temp);
+										 }
+									}
 								}
 								
 
@@ -569,6 +615,34 @@ public class SamToMethyldbOnlineCpgLessMem {
 			cytosine.B_CReads +=B_CReads;
 			cytosine.A_TReads += A_TReads;
 			cytosine.B_TReads += B_TReads;
+		}
+		
+		protected void incrementOppositeCpg(Cytosine cytosine, char seqChar) 
+		throws Exception
+		{
+			int aReadsOpposite = 0, totalReadsOpposite = 0;
+			
+			
+			switch (seqChar)
+			{
+			case 'N':
+			case '0':
+				break;
+			case 'A':
+				aReadsOpposite = 1;
+				totalReadsOpposite = 1;
+				break;
+			case 'G':
+			case 'T':
+			case 'C':
+				totalReadsOpposite = 1;
+				break;
+			default:
+				throw new Exception("Can't recognize seq char: " + seqChar);
+			}
+
+			cytosine.aReadsOpposite += aReadsOpposite;
+			cytosine.totalReadsOpposite += totalReadsOpposite;
 		}
 		
 

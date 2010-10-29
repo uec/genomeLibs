@@ -205,8 +205,13 @@ public class SamToSnp {
 					for (int i = 0; i < seqLen; i++){
 						char refi = ref.charAt(i);
 						//char seqi = seq.charAt(i);
+						//if( onRefCoord == 2718538 && (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq))){
+						//	System.err.println(baseQual[i]);
+						//	System.err.println(i);
+						//}
+						byte baseQS = (negStrand) ? baseQual[seqLen-1-i] : baseQual[i];	
 						
-						if(baseQual[i] >= minBaseQual && (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq))){
+						if(baseQS >= minBaseQual && (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq))){
 							if(allelePosition.containsKey(onRefCoord)){
 								Integer[] tempInt = allelePosition.get(onRefCoord);
 								//if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
@@ -335,13 +340,13 @@ public class SamToSnp {
 					for (int i = 0; i < seqLen; i++){
 						char refi = ref.charAt(i);
 						//char seqi = seq.charAt(i);
-							
+						byte baseQS = (negStrand) ? baseQual[seqLen-1-i] : baseQual[i];
 							if(allelePosition.containsKey(onRefCoord)){
 									if (PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq)){
 										 List<Byte> tempQuality = new ArrayList<Byte>();
 										 if(alleleReadsMem.containsKey(onRefCoord))
 											 tempQuality = alleleReadsMem.get(onRefCoord);
-										tempQuality.add(baseQual[i]);
+										tempQuality.add(baseQS);
 										alleleReadsMem.put(onRefCoord, tempQuality);
 									}
 										
@@ -349,7 +354,8 @@ public class SamToSnp {
 								
 							//}
 						//}
-						
+						//if( onRefCoord == 2718538 && PicardUtils.isAdenine(i,seq) || PicardUtils.isGuanine(i,seq))
+						//	System.err.println(baseQual[i]);
 						
 						if (refi == '-')
 						{
@@ -412,9 +418,11 @@ public class SamToSnp {
 		throws FileNotFoundException{
 			Iterator<Integer> it = allelePosition.keySet().iterator();
 			System.err.println("-----------------------------------------");
-			//String fn = tableName + "_SNP" + ".txt";
-			String fnBase = tableName + "_BaseQuality" + ".txt";
-			//PrintWriter writer = new PrintWriter(new File(fn));
+			String fn = tableName + "_SNP" + ".txt";
+			String fnBase = tableName + "_allBaseQuality" + ".txt";
+			String fnQuantBase = tableName + "_baseQuality" + ".txt";
+			PrintWriter writer = new PrintWriter(new File(fn));
+			PrintWriter writerQuantBase = new PrintWriter(new File(fnQuantBase));
 			PrintWriter writerBase = new PrintWriter(new File(fnBase));
 			while(it.hasNext()){	
 				Integer snp = it.next();
@@ -435,8 +443,8 @@ public class SamToSnp {
 					 continue;
 				 }
 				 else{
-					 //writer.printf("%d\t%d\n",snp,tempInt[1]);
-					  //qantileList(tempByte, writerBase, snp); 
+					 writer.printf("%d\t%d\t%d\n",snp,tempInt[1],tempInt[0]);
+					  qantileList(tempByte, writerQuantBase, snp); 
 					 Iterator<Byte> listIt = tempByte.iterator();
 					 while(listIt.hasNext()){
 						 writerBase.printf("%d\t%d\n",snp,listIt.next());
@@ -445,7 +453,8 @@ public class SamToSnp {
 				 }
 				
 			}
-			//writer.close();
+			writer.close();
+			writerQuantBase.close();
 			writerBase.close();
 		}
 		
