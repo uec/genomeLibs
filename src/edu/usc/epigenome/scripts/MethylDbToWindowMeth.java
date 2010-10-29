@@ -48,6 +48,10 @@ public class MethylDbToWindowMeth {
     protected int maxFeatSize = Integer.MAX_VALUE;
 	@Option(name="-useSpatialCpgWeighting",usage="If set, weights a CpG by the spatial distance it covers, otherwise weight all CpGs equally (default false)")
     protected boolean useSpatialCpgWeighting = false;
+	@Option(name="-fivePrime",usage="If set, uses only the window 5' of the object of interest (throws out unoriented ones). Can not be used with -threePrime.")
+    protected boolean fivePrime = false;
+	@Option(name="-threePrime",usage="If set, uses only the window 3' of the object of interest (throws out unoriented ones). Can not be used with -fivePrime.")
+    protected boolean threePrime = false;
 	@Option(name="-windSize",usage="add one or more window sizes to be tested in addition to the domain of the feature itself")
     protected List<Integer> windSizes = new ArrayList<Integer>();
     @Option(name="-outputPrefix",usage="Prefix for output files (default methylDb)")
@@ -128,6 +132,14 @@ public class MethylDbToWindowMeth {
 			return;
 		}
 		
+		if( this.threePrime && this.fivePrime)
+		{
+			System.err.println("Can not use both -fivePrime and -threePrime\n" + C_USAGE);
+			parser.printUsage(System.err);
+			return;
+		}
+		
+		
 		windSizes.add(0, new Integer(0));
 
 		
@@ -138,11 +150,12 @@ public class MethylDbToWindowMeth {
 		String minReadsSec = ".minCTreads" + this.minCTreads;
 		String maxOppaSec = ".maxOppAreads" + this.maxOppStrandAfrac;
 		String maxNextnongSec = ".maxNextNonG" + this.maxNextNonGfrac;
+		String dirSec = (this.threePrime) ? ".threePrime" : ((this.fivePrime) ? ".fivePrime" : ".centered");
 		ListUtils.setDelim("-");
 		String featfiltSec = (this.featFilters.size()==0) ? ".featFilt" : ListUtils.excelLine(this.featFilters);
 		
 		String weightSec = (this.useSpatialCpgWeighting) ? ".useSpatialWeighting" : ".noSpatialWeighting";
-		PrintWriter writer = new PrintWriter(new FileOutputStream(String.format("%s%s%s%s%s%s.windAvs.csv", outputPrefix,weightSec,minReadsSec,maxOppaSec,maxNextnongSec,featfiltSec)));
+		PrintWriter writer = new PrintWriter(new FileOutputStream(String.format("%s%s%s%s%s%s%s.windAvs.csv", outputPrefix,weightSec,minReadsSec,maxOppaSec,maxNextnongSec,featfiltSec,dirSec)));
 		
 		// Write a header
 		boolean onFirst = true;
@@ -178,7 +191,7 @@ public class MethylDbToWindowMeth {
 //					String.format("%s.flank%d.featType%d.sortVals.csv", outputPrefix, this.flankSize, onFeatType)));
 //			
 
-			for (String chrStr : MethylDbUtils.CHROMS) // Arrays.asList("chr11")) //
+			for (String chrStr : MethylDbUtils.SMALL_CHROMS) // Arrays.asList("chr11")) //
 			{
 				processChrom(chrStr, feats, tablePrefixes, writer);
 			}
@@ -236,18 +249,46 @@ public class MethylDbToWindowMeth {
 
 					int featS_w = featS;
 					int featE_w = featE;
+					
 					if (windSize>0)
 					{
-						double windFlank = (double)windSize / 2.0;
-						double windC = Math.round(MatUtils.mean(featS, featE));
-//						featS_w = (int)Math.round(windC - windFlank);
-//						featE_w = (int)Math.round(windC + windFlank);
 						
-						// Make the window not include the central feature itself.
-						featS_w = (int)Math.round(featS_w - windFlank);
-						featE_w = (int)Math.round(featE_w + windFlank);
+						if (this.threePrime || this.fivePrime)
+						{
+								
+							int fiveS=0, fiveE=0, threeS=0, threeE=0;
+							int upS = (featS - windSize); 
+							int upE = featS;
+							int downS = featE;
+							int downE = (featE + windSize);
+							if (featStrand == StrandedFeature.POSITIVE)
+							{
+								featS_w = (this.fivePrime) ? upS : downS;
+								featE_w = (this.fivePrime) ? upE : downE;
+							}
+							else if (featStrand == StrandedFeature.NEGATIVE)
+							{
+								featS_w = (this.fivePrime) ? downS : upS;
+								featE_w = (this.fivePrime) ? downE : upE;
+							}
+							else
+							{
+								System.err.printf("Unoriented, skipping: %d,%d,%d,%d", chr,featS,featE,featStrand.getValue());
+							}
 
-					
+						}
+						else
+						{
+							// Centered window
+							double windFlank = (double)windSize / 2.0;
+							double windC = Math.round(MatUtils.mean(featS, featE));
+							//						featS_w = (int)Math.round(windC - windFlank);
+							//						featE_w = (int)Math.round(windC + windFlank);
+
+							// Make the window not include the central feature itself.
+							featS_w = (int)Math.round(featS_w - windFlank);
+							featE_w = (int)Math.round(featE_w + windFlank);
+						}
 					}
 					
 					
