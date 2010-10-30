@@ -26,8 +26,11 @@ import com.mallardsoft.tuple.Tuple;
 
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
+import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner;
 import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
+import edu.usc.epigenome.genomeLibs.FeatDb.FeatDbQuerier;
+import edu.usc.epigenome.genomeLibs.FeatDb.FeatIterator;
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRangeWithRefpoint;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgIteratorMultisample;
@@ -64,6 +67,14 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 	protected boolean censor = false;
 	@Option(name="-alignToStart",usage="If set, align to the left end (or 5' if available) of the feature.  Default is to align to center")
 	protected boolean alignToStart = false;
+	@Option(name="-featTableCenters",usage="Use counts from the feature table rather than methyl table. In this case, sample1_tab prefix is actually a featType")
+	protected boolean featTableCenters = false;
+	@Option(name="-featTableStarts",usage="Use counts from the feature table rather than methyl table. In this case, sample1_tab prefix is actually a featType")
+	protected boolean featTableStarts = false;
+	@Option(name="-featTableStartsAndEnds",usage="Use counts from the feature table rather than methyl table. In this case, sample1_tab prefix is actually a featType")
+	protected boolean featTableStartsAndEnds = false;
+	@Option(name="-featTableCompleteExtents",usage="Use counts from the feature table rather than methyl table. In this case, sample1_tab prefix is actually a featType")
+	protected boolean featTableCompleteExtents = false;
 	@Option(name="-readCounts",usage="Output read counts")
 	protected boolean readCounts = false;
 	@Option(name="-readCountsIgnoreTotalReads",usage="Used only if -readCounts is set. Instead of using totalReads field, counts each database row as 1 (useful for CpG densities). Default false")
@@ -162,6 +173,32 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			return;
 			
 		}
+		
+		if (this.alignToEnd && this.alignToEnd)
+		{
+			System.err.println("Can not include both -alignToStart and -alignToEnd");
+			System.err.println(C_USAGE);
+			parser.printUsage(System.err);
+			return;
+			
+		}
+
+		if ( ((this.featTableCenters?1:0) +
+				(this.featTableCompleteExtents?1:0) + 
+				(this.featTableStarts?1:0) + 
+				(this.featTableStartsAndEnds?1:0)) > 1) 
+		{
+			System.err.println("Only one of -featTableStarts, -featTableStartsAndEnds, -featTableCenters and -featTableCompleteExtents can be specified");
+			System.err.println(C_USAGE);
+			parser.printUsage(System.err);
+			return;
+		}
+		else if (this.featTableCenters || this.featTableCompleteExtents || this.featTableStarts || this.featTableStartsAndEnds)
+		{
+			this.readCounts = true;
+			this.nometh = true;
+		}
+		
 
 		// I don't think this is necessary.
 		//		if (this.censor && !this.skipUnoriented)
@@ -185,8 +222,9 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 		{
 			onFeatType++;
 			ChromFeatures feats = new ChromFeatures(featFn, true);
-			System.err.println("About to filter regions by size");
+			System.err.printf("About to filter regions by size, starting with %d\n", feats.num_features());
 			feats = feats.filterBySize(0, this.maxFeatSize);
+			System.err.printf("Filter regions by size, found %d between %d and %d\n", feats.num_features(), 0, this.maxFeatSize);
 			int nFeats = feats.num_features(); 
 			
 			PrintWriter sortWriter = new PrintWriter(new FileOutputStream(
@@ -373,7 +411,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 		int nS = tablePrefixes.size();
 
 		Iterator featit = feats.featureIterator(chr);
-		System.err.println("Processing " + chrStr);
+		System.err.printf("Processing %s, has %d feats\n", chrStr, feats.num_features(chr));
 		int featNum = 0;
 		FEAT: while (featit.hasNext())
 		{
@@ -424,7 +462,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					"Fetching coords: censor=%s\talignToStart=%s\tchr=%s\tfeatS=%d\tfeatE=%d\tfeatStrand=%s\talignmentPoint=%d\tflankS=%d\tflankEnd=%d\t\n",
 					""+this.censor, ""+this.alignToStart, chrStr, featS, featE, ""+featStrand, alignmentPoint, flankStart, flankEnd));
 					
-	
+
 			try 
 			{
 
@@ -437,105 +475,152 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 						this.fStatMats[i][0].zeroOutRange(flankStart, flankEnd, featName, chrStr, alignmentPoint, featStrand, sortVal);
 					}
 				}
-				
-				
-				// Meth
-				MethylDbQuerier params = new MethylDbQuerier();
-				for (String featFilter : this.featFilters)
+
+
+				// We can do this based on Feat iterator or CpG iterator
+				if (this.featTableCenters || this.featTableCompleteExtents || this.featTableStarts || this.featTableStartsAndEnds)
 				{
-					params.addFeatFilter(featFilter,flankSize);
-				}
-				params.setMinCTreads(this.minCTreads);
-				params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
-				params.addRangeFilter(chrStr,flankStart,flankEnd);
-				
-				CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
-
-				
-				
-				while (cpgit.hasNext()) 
-				{
-					Cpg[] cpgs = cpgit.next();
-
-					int chromPos = cpgs[0].chromPos;
-					StrandedFeature.Strand cpgStrand = cpgs[0].getStrand();
-
-					if (this.extendRead > 0)
-					{
-						int strandMult = 0;
-						if (cpgStrand == StrandedFeature.POSITIVE)
-						{
-							strandMult = 1;
-						}
-						else if (cpgStrand == StrandedFeature.NEGATIVE)
-						{
-							strandMult = -1;
-						}
-						else
-						{
-							System.err.println("Why did we get  astrandless CpG?");
-						}
-						chromPos += (  strandMult * this.extendRead );
-					}
-
-					// First individual stats
 					double mLevels[] = new double[nS];
 					for (int i = 0; i < nS; i++)
 					{
-						double mLevel = cpgs[i].fracMeth(params.getUseNonconversionFilter());
-						mLevels[i] = mLevel;
-						if (!this.nometh)
+						// Get the overlapping feats
+						FeatDbQuerier params = new FeatDbQuerier();
+						params.addRangeFilter(chrStr, flankStart,flankEnd);
+						params.addFeatFilter(tablePrefixes.get(i));
+						FeatIterator targets = new FeatIterator(params);
+						while (targets.hasNext())
 						{
-							// Meth val
-							this.fStatMats[i][2].addAlignmentPos(
-									chromPos,
-									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
-											(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
-													featName, chrStr, alignmentPoint, featStrand, sortVal);
-							// And the weights
-							this.fStatMats[i][3].addAlignmentPos(
-									chromPos,
-									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : cpgs[i].getCpgWeight(),
-											(cpgStrand == StrandedFeature.NEGATIVE) ? cpgs[i].getCpgWeight() : Double.NaN,
-													featName, chrStr, alignmentPoint, featStrand, sortVal);
-						}
+							GFFRecord targetRec = targets.next();
+							//System.err.println("\tFound target rec: " + GFFUtils.gffBetterString(targetRec));
 
-						double count = (readCountsIgnoreTotalReads) ? 1.0 : cpgs[i].totalReads;
-						if (this.readCounts)
-						{
-							this.fStatMats[i][0].addAlignmentPos(
-									chromPos,
-									(cpgStrand == StrandedFeature.NEGATIVE) ? 0.0 : count,
-											(cpgStrand == StrandedFeature.NEGATIVE) ? count : 0.0,
-													featName, chrStr, alignmentPoint, featStrand, sortVal);
+							StrandedFeature.Strand targetStrand = targetRec.getStrand();
+							StrandedFeature.Strand alignmentStrand = targetStrand;
+							int tS = targetRec.getStart();
+							int tE = targetRec.getEnd();
+							boolean done = false;
+							boolean doStartAndEnd = this.featTableStartsAndEnds || (this.featTableStarts && (targetStrand==StrandedFeature.UNKNOWN));
+							for (int p = tS; !done && (p<=tE); p++)
+							{
+								
+								int chromPos = p;
+								if (this.featTableCenters)
+								{
+									chromPos = (int)((tS+tE)/2); // Center
+									done = true;
+								}
+								else if (doStartAndEnd)
+								{
+									// if we're on p==tS, do start.  If we're on p==(tS+1), do end.  Otherwise we're done
+									if (p==tS)
+									{
+										chromPos = (targetStrand==StrandedFeature.NEGATIVE) ? tE : tS;
+										alignmentStrand = (targetStrand==StrandedFeature.UNKNOWN) ? StrandedFeature.POSITIVE : targetStrand;
+									}
+									else if (p==(tS+1))
+									{
+										chromPos = (targetStrand==StrandedFeature.NEGATIVE) ? tS : tE;
+										alignmentStrand = (targetStrand==StrandedFeature.UNKNOWN) ? StrandedFeature.NEGATIVE : targetStrand.flip();
+										done = true;
+									}
+								}
+								else if (this.featTableStarts)
+								{
+									// If we get here, we know it's oriented
+									chromPos = (targetStrand==StrandedFeature.NEGATIVE) ? tE : tS;
+									done = true;
+								}
+
+								int count = 1;
+
+								this.fStatMats[i][0].addAlignmentPos(
+										chromPos,
+										(alignmentStrand == StrandedFeature.NEGATIVE) ? 0.0 : count,
+												(alignmentStrand == StrandedFeature.NEGATIVE) ? count : 0.0,
+														featName, chrStr, alignmentPoint, featStrand, sortVal);
+							}
 						}
 					}
+				}
+				else
+				{
 
-					//				if (!this.noDeltas)
-					//				{
-					//					// Then variance
-					//					double mVar = MatUtils.nanVariance(mLevels);
-					//					this.fVarianceMat.addAlignmentPos(
-					//							chromPos,
-					//							(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mVar,
-					//									(cpgStrand == StrandedFeature.NEGATIVE) ? mVar: Double.NaN,
-					//											featName, chrStr, alignmentPoint, featStrand);
-					//
-					//					// Then pairwise.
-					//					int onMat = 0;
-					//					for (int i = 0; i < nS; i++)
-					//					{
-					//						for (int j = (i+1); j < nS; j++)
-					//						{
-					//							double absDiff = Math.abs(mLevels[i]-mLevels[j]);
-					//							this.fDeltaMats[onMat++].addAlignmentPos(
-					//									chromPos,
-					//									(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : absDiff,
-					//											(cpgStrand == StrandedFeature.NEGATIVE) ? absDiff : Double.NaN,
-					//													featName, chrStr, alignmentPoint, featStrand);
-					//						}
-					//					}
-					//				}
+					// Meth
+					MethylDbQuerier params = new MethylDbQuerier();
+					for (String featFilter : this.featFilters)
+					{
+						params.addFeatFilter(featFilter,flankSize);
+					}
+					params.setMinCTreads(this.minCTreads);
+					params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
+					params.addRangeFilter(chrStr,flankStart,flankEnd);
+
+					CpgIteratorMultisample cpgit = new CpgIteratorMultisample(params, tablePrefixes);
+
+
+
+					while (cpgit.hasNext()) 
+					{
+						Cpg[] cpgs = cpgit.next();
+
+						int chromPos = cpgs[0].chromPos;
+						StrandedFeature.Strand cpgStrand = cpgs[0].getStrand();
+
+
+
+
+						if (this.extendRead > 0)
+						{
+							int strandMult = 0;
+							if (cpgStrand == StrandedFeature.POSITIVE)
+							{
+								strandMult = 1;
+							}
+							else if (cpgStrand == StrandedFeature.NEGATIVE)
+							{
+								strandMult = -1;
+							}
+							else
+							{
+								System.err.println("Why did we get  astrandless CpG?");
+							}
+							chromPos += (  strandMult * this.extendRead );
+						}
+
+						// First individual stats
+						double mLevels[] = new double[nS];
+						for (int i = 0; i < nS; i++)
+						{
+							double mLevel = cpgs[i].fracMeth(params.getUseNonconversionFilter());
+							mLevels[i] = mLevel;
+							if (!this.nometh)
+							{
+								// Meth val
+								this.fStatMats[i][2].addAlignmentPos(
+										chromPos,
+										(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
+												(cpgStrand == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
+														featName, chrStr, alignmentPoint, featStrand, sortVal);
+								// And the weights
+								this.fStatMats[i][3].addAlignmentPos(
+										chromPos,
+										(cpgStrand == StrandedFeature.NEGATIVE) ? Double.NaN : cpgs[i].getCpgWeight(),
+												(cpgStrand == StrandedFeature.NEGATIVE) ? cpgs[i].getCpgWeight() : Double.NaN,
+														featName, chrStr, alignmentPoint, featStrand, sortVal);
+							}
+
+							double count = (readCountsIgnoreTotalReads) ? 1.0 : cpgs[i].totalReads;
+							if (this.readCounts)
+							{
+								this.fStatMats[i][0].addAlignmentPos(
+										chromPos,
+										(cpgStrand == StrandedFeature.NEGATIVE) ? 0.0 : count,
+												(cpgStrand == StrandedFeature.NEGATIVE) ? count : 0.0,
+														featName, chrStr, alignmentPoint, featStrand, sortVal);
+							}
+						}
+
+					}
+
 
 				}
 			}
