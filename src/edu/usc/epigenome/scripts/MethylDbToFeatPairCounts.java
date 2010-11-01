@@ -231,6 +231,8 @@ public class MethylDbToFeatPairCounts {
 			PrintWriter vennPw, PrintWriter csvPw) 
 	throws Exception
 	{
+		System.err.printf("About to calculateAndPrintCounts for %s\n", featTypes);
+
 		StringBuffer sb = new StringBuffer(10000);
 		int nFeats = featTypes.size();
 		
@@ -252,7 +254,7 @@ public class MethylDbToFeatPairCounts {
 		// Count can be over the INT 32-bit limit
 		long count = 0;
 		
-		for (String chr :  Arrays.asList("chr21")) //Arrays.asList("chrX")) // MethylDbUtils.CHROMS) //  
+		for (String chr :  MethylDbUtils.CHROMS) //Arrays.asList("chr21","chr22","chrX")) // Arrays.asList("chr21")) //MethylDbUtils.CHROMS) //  
 		{		
 			
 			System.err.printf("Feats=%s\tchr=%s\n",featStr, chr);
@@ -297,15 +299,19 @@ public class MethylDbToFeatPairCounts {
 		}
 		
 
+		System.err.printf("HERE1: About to calculateAndPrintCounts for %s\n", featTypes);
 		if ((nFeats > 1) && (vennPw != null))
 		{
 			vennPw.printf("<H3>%s</H3>\n", featStr);
 			if (count==0)
 			{
+				System.err.printf("HERE2a: About to calculateAndPrintCounts for %s\n", featTypes);
 				vennPw.printf("<H4>0 base pairs in common</H4>\n");
 			}
 			else
 			{
+
+				System.err.printf("HERE2b: About to calculateAndPrintCounts for %s\n", featTypes);
 
 			
 			// If you make them too long
@@ -316,9 +322,10 @@ public class MethylDbToFeatPairCounts {
 			double an = savedCounts.get(featTypes.get(0));
 			double bn = savedCounts.get(featTypes.get(1));
 			double cn = (nFeats>2) ? savedCounts.get(featTypes.get(2)) : 0;
-			double abn = (nFeats==2) ? count : savedCounts.get(featTypes.get(0) + "+" + featTypes.get(1));
-			double acn = (nFeats==2) ? 0 : savedCounts.get(featTypes.get(0) + "+" + featTypes.get(2));
-			double bcn = (nFeats==2) ? 0 : savedCounts.get(featTypes.get(1) + "+" + featTypes.get(2));
+			System.err.printf("nFeats=%d, count=%d, savedCounts=%s, featTypes=%s\n", nFeats, count, savedCounts, featTypes);
+			double abn = (nFeats==2) ? count : savedCounts.get(featTypes.get(0) + "," + featTypes.get(1));
+			double acn = (nFeats==2) ? 0 : savedCounts.get(featTypes.get(0) + "," + featTypes.get(2));
+			double bcn = (nFeats==2) ? 0 : savedCounts.get(featTypes.get(1) + "," + featTypes.get(2));
 			double abcn = (nFeats==2) ? 0 : count;
 			double[] allVals = {an, bn, cn, abn, acn, bcn, abcn};
 			ListUtils.setDelim(", ");
