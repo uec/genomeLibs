@@ -71,7 +71,7 @@ public class MethylDbToFeatPairCounts {
     protected String outPrefix = "featPairs";
     @Option(name="-masterFeat",usage="If a master feat is specified, we only do pairwise against that")
     protected String masterFeat = null;
-    @Option(name="-methylDbPrefix",usage="use this table to get CpGs")
+    @Option(name="-methylDbPrefix",usage="use this table to get CpGs (methylCGsRich_normalM030510_ by default)")
     protected String methylDbPrefix = "methylCGsRich_normalM030510_";
     @Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
     protected int minCTreads = 0;  // For this, we just care about whole genome stats
@@ -174,7 +174,7 @@ public class MethylDbToFeatPairCounts {
 
 			// Triplets. I know there's a fancy recursive way to do this, but 
 			// this produces a nice ordering for the time being.
-			if (threeWay && (nFeats>2))
+			if ((threeWay || fourWay) && (nFeats>2))
 			{
 				for (int i = 0; i < nFeats; i++)
 				{
@@ -252,7 +252,7 @@ public class MethylDbToFeatPairCounts {
 		// Count can be over the INT 32-bit limit
 		long count = 0;
 		
-		for (String chr :  Arrays.asList("chrX")) // MethylDbUtils.CHROMS) //  Arrays.asList("chr21")) //
+		for (String chr :  Arrays.asList("chr21")) //Arrays.asList("chrX")) // MethylDbUtils.CHROMS) //  
 		{		
 			
 			System.err.printf("Feats=%s\tchr=%s\n",featStr, chr);
