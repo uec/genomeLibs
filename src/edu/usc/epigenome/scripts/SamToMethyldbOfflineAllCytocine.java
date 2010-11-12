@@ -45,7 +45,7 @@ public class SamToMethyldbOfflineAllCytocine {
 		@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. --chrom chr1 --chrom chr5")
 		protected List<String> chrs = new ArrayList<String>(25);
 		@Option(name="-minConv",usage="minimum number of converted cytosines required")
-		protected int minConv = 0;
+		protected int minConv = 1;
 //		@Option(name="-numCycles",usage="Number of cycles to track")
 //		protected int numCycles = 100;
 //		@Option(name="-outputReads",usage=" Outputs one line per read (default false)")
@@ -121,6 +121,16 @@ public class SamToMethyldbOfflineAllCytocine {
 			int numHcphTotalWithFilt = 0;
 			int numHcphConvertedNoFilt = 0;
 			int numHcphTotalNoFilt = 0;
+			//CpG counters
+			int numCpgConvertedWithFilt = 0;
+			int numCpgTotalWithFilt = 0;
+			int numCpgConvertedNoFilt = 0;
+			int numCpgTotalNoFilt = 0;
+			//Gch counters
+			int numGchConvertedWithFilt = 0;
+			int numGchTotalWithFilt = 0;
+			int numGchConvertedNoFilt = 0;
+			int numGchTotalNoFilt = 0;
 
 			// Iterate through chroms
 			if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
@@ -227,7 +237,7 @@ public class SamToMethyldbOfflineAllCytocine {
 									boolean isgcg = PicardUtils.isGcg(i,ref);
 									boolean ishcg = PicardUtils.isHcg(i,ref);
 									boolean ishch = PicardUtils.isHch(i,ref);
-									//boolean iscpg = PicardUtils.isCpg(i,ref);
+									boolean iscpg = PicardUtils.isCpg(i,ref);
 									
 									boolean conv = PicardUtils.isConverted(i,ref,seq);
 									
@@ -239,10 +249,10 @@ public class SamToMethyldbOfflineAllCytocine {
 									
 
 									//if (conv && this.useCpgsToFilter || !iscpg) numConverted++;
-									if (conv && (this.useCpgsToFilter || (!ishcg & !isgcg))) numConverted++;
-									if (conv && (this.useGchsToFilter || !isgch)) gchNumConverted++;
+									if (conv && (this.useCpgsToFilter || !iscpg) && (i < (seqLen-1)) && nextBaseSeq != 'G') numConverted++;
+									if (conv && (this.useGchsToFilter || (ishch && preBaseSeq != 'G' && nextBaseSeq != 'G'))) gchNumConverted++;
 									// If this is the first legal one , note it
-									if ((convStart==Integer.MAX_VALUE) && (numConverted>=this.minConv) )
+									if ((convStart==Integer.MAX_VALUE) && (numConverted>=this.minConv) && (i < (seqLen-1)) )
 									{
 										convStart = i;
 									}
@@ -251,7 +261,7 @@ public class SamToMethyldbOfflineAllCytocine {
 										gchConvStart = i;
 									}
 									
-									if(!outputHcphs & ishch){
+									if(!outputHcphs && ishch){
 										
 									}
 									else{
@@ -264,40 +274,48 @@ public class SamToMethyldbOfflineAllCytocine {
 									
 
 									//if(iscpg)
-									if (isgcg || ishcg)
+									if (iscpg && (i < (seqLen-1)) && nextBaseSeq == 'G')
 									{
 										if (i<convStart)
 										{
 											// In the non-conversion filter zone
 											filteredOutCounter++;
 											//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
+											numCpgTotalNoFilt++;
+											if (conv) numCpgConvertedNoFilt++;
 										}
 										else
 										{
 											// Past the non-conversion filter, use it
 											usedCounter++;
+											numCpgTotalWithFilt++;
+											if (conv) numCpgConvertedWithFilt++;
 										}
 
 									}
 									
 									//if(isgch)
-									if (isgch)
+									if (isgch && preBaseSeq == 'G' && nextBaseSeq != 'G')
 									{
 										if (i<gchConvStart)
 										{
 											// In the non-conversion filter zone
 											gchFilteredOutCounter++;
 											//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
+											numGchTotalNoFilt++;
+											if (conv) numGchConvertedNoFilt++;
 										}
 										else
 										{
 											// Past the non-conversion filter, use it
 											gchUsedCounter++;
+											numGchTotalWithFilt++;
+											if (conv) numGchConvertedWithFilt++;
 										}
 
 									}
 									
-									if (isgch || ishch){
+									if (!iscpg && (i < (seqLen-1)) && nextBaseSeq != 'G'){
 										
 										numCphTotalNoFilt++;
 										if (conv) numCphConvertedNoFilt++;
@@ -309,7 +327,7 @@ public class SamToMethyldbOfflineAllCytocine {
 										}
 									}
 									
-									if (ishch){
+									if (ishch && preBaseSeq != 'G' && nextBaseSeq != 'G'){
 										
 										numHcphTotalNoFilt++;
 										if (conv) numHcphConvertedNoFilt++;
@@ -393,9 +411,17 @@ public class SamToMethyldbOfflineAllCytocine {
 			System.err.printf("CpH conversion rate: before filter=%f, after filter=%f\n",
 					100.0 * ((double)numCphConvertedNoFilt/(double)numCphTotalNoFilt),
 					100.0 * ((double)numCphConvertedWithFilt/(double)numCphTotalWithFilt));
+			System.err.printf("numCphConvertedNoFilt: %d, numCphTotalNoFilt: %d\n",
+					numCphConvertedNoFilt, numCphTotalNoFilt);
 			System.err.printf("HCpH conversion rate: before filter=%f, after filter=%f\n",
 					100.0 * ((double)numHcphConvertedNoFilt/(double)numHcphTotalNoFilt),
 					100.0 * ((double)numHcphConvertedWithFilt/(double)numHcphTotalWithFilt));
+			System.err.printf("CpG conversion rate: before filter=%f, after filter=%f\n",
+					100.0 * ((double)numCpgConvertedNoFilt/(double)numCpgTotalNoFilt),
+					100.0 * ((double)numCpgConvertedWithFilt/(double)numCpgTotalWithFilt));
+			System.err.printf("GCH conversion rate: before filter=%f, after filter=%f\n",
+					100.0 * ((double)numGchConvertedNoFilt/(double)numGchTotalNoFilt),
+					100.0 * ((double)numGchConvertedWithFilt/(double)numGchTotalWithFilt));
 		}
 
 
