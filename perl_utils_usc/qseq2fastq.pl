@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-#cat s_7_1_*_qseq.txt | awk -F '\t' '{gsub(/\./,"N", $9); if ($11 > 0) print "@"$1"_"$2":"$3":"$4":"$5":"$6"#"$7"/"$8"\n"$9"\n""+"$1$2$3$4$5$6$8"\n"$1 0}'
+@ARGV || die "usage: qseq2fastq.pl s_7_1_*qseq.txt\n";
 
 for $qseq (@ARGV)
 {
