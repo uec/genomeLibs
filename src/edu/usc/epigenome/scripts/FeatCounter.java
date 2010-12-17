@@ -50,8 +50,12 @@ public class FeatCounter {
 	protected List<String> features = new ArrayList<String>(25);
 	@Option(name="-flank",multiValued=false,usage="Flanking sequence for each feature")
 	protected int flank = 0;
+	@Option(name="-tssMaxFlank",multiValued=false,usage="This is the maximum flank we will use to get TSS expression")
+	protected int tssMaxFlank = 500000;
 	@Option(name="-expressionTerm",usage="One or more expression from the infiniumExpr_chr table")
 	protected List<String> expressionTerms = new ArrayList<String>(5);
+	@Option(name="-includeTssAndBorrowExpression",usage="If set, tss is the first feat, and we get expression from there")
+	protected boolean includeTssAndBorrowExpression = false;
 
 	// receives other command line parameters than options
 	@Argument
@@ -109,6 +113,8 @@ public class FeatCounter {
 		
 		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 		
+		int tssFlank = Math.max(this.tssMaxFlank, this.flank);
+		
 		ChromFeatures targetFeats = null;
 		if (arguments.size()>=1)
 		{
@@ -120,7 +126,8 @@ public class FeatCounter {
 		int[] totals = new int[features.size()+1];
 		ListUtils.setDelim(",");
 		String expressionSec = (this.expressionTerms.size()==0) ? "" : ("," + ListUtils.excelLine(this.expressionTerms));
-		System.out.printf("%s,%s,%s%s,%s,%s\n","chrom","start","end",expressionSec, ListUtils.excelLine(features),"No overlap");
+		String tssSec = (this.includeTssAndBorrowExpression) ? ",tss" : "";
+		System.out.printf("%s,%s,%s%s%s,%s,%s\n","chrom","start","end",expressionSec, tssSec, ListUtils.excelLine(features),"No overlap");
 		for (String chrStr : chrs)
 		{
 			// Some of my files have these forms.
@@ -128,7 +135,6 @@ public class FeatCounter {
 			if (chrStr.equalsIgnoreCase("chry")) chrStr = "chrY";
 			if (chrStr.equalsIgnoreCase("chrm")) chrStr = "chrM";
 
-			boolean overlapsSomething = false;
 			if (targetFeats == null)
 			{
 				int chrLen = GoldAssembly.chromLengthStatic(chrStr, "hg18");
@@ -157,44 +163,102 @@ public class FeatCounter {
 			else
 			{			
 				int nF = 0;
-				Iterator targetit = targetFeats.featureIterator((new ChromFeatures()).chrom_from_public_str(chrStr));
+				int chrNum = (new ChromFeatures()).chrom_from_public_str(chrStr);
+				Iterator targetit = targetFeats.featureIterator(chrNum);
 				while (targetit.hasNext())
 				{
 
 					SimpleGFFRecord target = (SimpleGFFRecord) targetit.next();
+					System.err.printf("Working on target: %s\n",GFFUtils.gffBetterString(target));
 
-
-					for (int n = 0; n < features.size(); n++)
+					boolean overlapsSomething = false;
+					int start = (includeTssAndBorrowExpression) ? -1 : 0; 
+					for (int n = start; n < features.size(); n++)
 					{
-						String featType = features.get(n);
+						String featType = (n>=0) ? features.get(n) : "tss";
 
 						// Get the overlapping feats
 						FeatDbQuerier params = new FeatDbQuerier();
-						params.addRangeFilter(target.getSeqName(), target.getStart()-flank, target.getEnd()+flank);
+						int thisFlank = (n>=0) ? flank : tssFlank;
+						params.addRangeFilter(target.getSeqName(), target.getStart()-thisFlank, target.getEnd()+thisFlank);
 						params.addFeatFilter(featType);
 						FeatIterator feats = new FeatIterator(params);
 
-						boolean overlap = (feats.hasNext());
-						if (overlap) totals[n]++;
+						// Find the closest feature
+						GFFRecord closestFeat = null;
+						int closestFeatDist = Integer.MAX_VALUE;
+						int featsSearched = 0;
+						while (feats.hasNext())
+						{
+							GFFRecord feat = feats.next(); // This is the "subject" feat (like tss)
+							StrandedFeature.Strand featStrand = feat.getStrand();
+							if (featStrand == StrandedFeature.UNKNOWN)
+							{
+//								System.err.printf("Why does feat have no strand? %s\n", GFFUtils.gffBetterString(feat));
+							}
+							
+							int dist;
+							if (feat.getStart() > target.getEnd())
+							{
+								dist = feat.getStart() - target.getEnd();
+								if (featStrand == StrandedFeature.POSITIVE) dist *= -1;
+							}
+							else if (feat.getEnd() < target.getStart())
+							{
+								dist = target.getStart() - feat.getEnd();
+								if (featStrand == StrandedFeature.NEGATIVE) dist *= -1;
+							}
+							else
+							{
+								// It's within the bounds
+								dist = 0;
+							}
+							if (Math.abs(dist)<Math.abs(closestFeatDist))
+							{
+								closestFeatDist = dist;
+								closestFeat = feat;
+							}
+							featsSearched++;
+//							System.err.printf("\tEvaluating feat with dist=%d (closest=%s): %s\n",dist, (closestFeat==feat),GFFUtils.gffBetterString(feat));
+						}
+//						System.err.printf("Searched %d overlapping %s feats for: %s\n", featsSearched, featType, GFFUtils.gffBetterString(target));
+						
+						
+//						boolean overlap = (feats.hasNext());
+						boolean overlap = (Math.abs(closestFeatDist) <= this.flank);
+						
+						
+						if ((n>=0) && overlap) totals[n]++;
 						overlapsSomething |= overlap;
 
-						if (n==0)
+						// Get the expression.  If we are using TSS, we have to make sure we have one within distance
+						if (((n==0) && !this.includeTssAndBorrowExpression) || ((n==-1) && this.includeTssAndBorrowExpression))
 						{
-							System.out.printf("%s,%d,%d",chrStr,target.getStart(),target.getEnd());
+							System.out.printf("%d,%d,%d",chrNum,target.getStart(),target.getEnd());
+
+							GFFRecord exprTarget = (this.includeTssAndBorrowExpression) ? closestFeat : target;
+							
 							for (String expressionTerm : expressionTerms)
 							{
-								double term = MethylDbUtils.fetchMeanExpression(chrStr, GFFUtils.getGffRecordName(target), 
-										expressionTerm);
+								double term = Double.NaN; 
+								if (exprTarget != null) term = MethylDbUtils.fetchMeanExpression(chrStr, GFFUtils.getGffRecordName(exprTarget),expressionTerm);
+								//System.out.printf(",%.5f (n=%d, name=%s)", term, n, GFFUtils.getGffRecordName(exprTarget));
 								System.out.printf(",%.5f", term);
 							}
 						}
-						System.out.printf(",%d",(overlap)?1:0);	
-
-						//					while (feats.hasNext())
-						//					{
-						//						feats.next();
-						//						nF++;
-						//					}
+						
+						// Now print the overlap. 
+						//System.out.printf(",%d",(overlap)?1:0);  // The old way, boolean
+						if (closestFeat == null)
+						{
+							System.out.printf(",NaN");
+						}
+						else
+						{
+							System.out.printf(",%d",closestFeatDist);
+						}
+						
+						
 					}
 					System.out.printf(",%d",(!overlapsSomething)?1:0);
 					if (!overlapsSomething) totals[features.size()]++;
@@ -204,7 +268,7 @@ public class FeatCounter {
 		}
 		
 		ListUtils.setDelim(",");
-		System.out.printf("%s,%s,%s,%s\n","totals","a","b",ListUtils.excelLine(totals));
+		//System.out.printf("%s,%s,%s,%s\n","totals","a","b",ListUtils.excelLine(totals));
 	}
 	
 	
