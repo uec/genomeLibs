@@ -191,7 +191,7 @@ public class MethylDbToWindowMeth {
 //					String.format("%s.flank%d.featType%d.sortVals.csv", outputPrefix, this.flankSize, onFeatType)));
 //			
 
-			for (String chrStr : MethylDbUtils.CHROMS) // Arrays.asList("chr11")) //
+			for (String chrStr : MethylDbUtils.CHROMS) //Arrays.asList("chrX")) // Arrays.asList("chr11")) //
 			{
 				processChrom(chrStr, feats, tablePrefixes, writer);
 			}
@@ -319,6 +319,8 @@ public class MethylDbToWindowMeth {
 					}
 
 
+//					System.err.println(String.format("windSize=%d", windSize));
+
 					int nCpgs = 0;
 					while (cpgit.hasNext()) 
 					{
@@ -331,9 +333,11 @@ public class MethylDbToWindowMeth {
 						for (int i=0; i<nS; i++)
 						{
 							summarizers[i].streamCpg(cpgs[i]);
+//							System.err.println(String.format("\tON CPG [%s] %s", tablePrefixes.get(i), cpgs[i].toString()));
 						}
 						
-						//						System.err.println(String.format("\tON CPG %s", cpgs[0].toString()));
+//						System.err.println(String.format("\t\tSummarizer[0] numSeen=%d, mean=%.3f\n", summarizers[0].getnCpgsSeen(), summarizers[0].getValMean(this.useSpatialCpgWeighting)));
+
 						nCpgs++;
 					}
 
@@ -347,6 +351,7 @@ public class MethylDbToWindowMeth {
 					
 					for (int i =0; i<nS; i++)
 					{
+//						System.err.println(String.format("\t\tSummarizer[%d] numSeen=%d, mean=%.3f", i, summarizers[i].getnCpgsSeen(), summarizers[i].getValMean(this.useSpatialCpgWeighting)));
 						writer.printf(",%.5f", summarizers[i].getValMean(this.useSpatialCpgWeighting));
 					}
 
