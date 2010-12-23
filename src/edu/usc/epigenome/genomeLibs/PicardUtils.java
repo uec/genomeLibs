@@ -233,6 +233,25 @@ public class PicardUtils {
 		}
 	}
 	
+	public static char nextBaseSeq(int pos, String seqStr, boolean revStrand)
+	{
+		if(revStrand){
+			if (pos == 0) return '0'; // At the last character
+			return MiscUtils.revCompNuc(seqStr.charAt(pos-1));
+		}
+		else{
+			if (pos >= (seqStr.length()-1))
+			{
+				return '0';
+			}
+			else
+			{
+				return seqStr.charAt(pos+1); 
+			}
+		}
+		
+	}
+	
 	public static char nextBaseRef(int pos, String refStr)
 	{
 		return nextBaseRef(pos, refStr, false);
@@ -272,6 +291,25 @@ public class PicardUtils {
 		{
 			return seqStr.charAt(pos-1); 
 		}
+	}
+	
+	public static char preBaseSeq(int pos, String seqStr, boolean revStrand)
+	{
+		if(revStrand){
+			if (pos == (seqStr.length()-1)) return '0'; // At the last character
+			return MiscUtils.revCompNuc(seqStr.charAt(pos+1));
+		}
+		else{
+			if (pos <=0 )
+			{
+				return '0';
+			}
+			else
+			{
+				return seqStr.charAt(pos-1); 
+			}
+		}
+		
 	}
 	
 	public static char preBaseRef(int pos, String refStr)
