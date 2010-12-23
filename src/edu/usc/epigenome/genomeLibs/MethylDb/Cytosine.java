@@ -55,9 +55,9 @@ public class Cytosine implements Comparable, Cloneable {
 	protected double methyB_Dens = Double.NaN;
 	
 	// This is for weighted averages
-	protected double gchWeight = Double.NaN;
-	protected double gcgWeight = Double.NaN;
-	protected double hcgWeight = Double.NaN;
+	protected double gchWeight = -1.00;
+	protected double gcgWeight = -1.00;
+	protected double hcgWeight = -1.00;
 
 	protected static Connection conn = null;
 
@@ -232,12 +232,24 @@ public class Cytosine implements Comparable, Cloneable {
 	
 	public double fracNextBaseG()
 	{
-		return (double)this.nextBaseGreads / ((double)this.nextBaseTotalReads);
+		if(((double)this.nextBaseTotalReads)!=0){
+			return (double)this.nextBaseGreads / ((double)this.nextBaseTotalReads);
+		}
+		else{
+			return -0.01;
+		}
+		
 	}
 	
 	public double fracPreBaseG()
 	{
-		return (double)this.preBaseGreads / ((double)this.preBaseTotalReads);
+		if(((double)this.preBaseTotalReads)!=0){
+			return (double)this.preBaseGreads / ((double)this.preBaseTotalReads);
+		}
+		else{
+			return -0.01;
+		}
+		
 	}
 
 	public double fracOppositeA()
@@ -265,7 +277,13 @@ public class Cytosine implements Comparable, Cloneable {
 	public double fracMeth(boolean useNonconvFilt)
 	{
 		int cs = (useNonconvFilt) ? this.cReads : (this.cReads + this.cReadsNonconversionFilt); 
-		return (double)cs / ((double)cs + (double)this.tReads);
+		if(((double)cs + (double)this.tReads) != 0){
+			return (double)cs / ((double)cs + (double)this.tReads);
+		}
+		else{
+			return -0.01;
+		}
+		
 	}
 	
 	public double fracA_Meth()
@@ -358,6 +376,40 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
+	public static void outputCytocinesToDb(Map<Integer, Cytosine> cytocineMap, String tableName, int minCphCoverage, double minCphMethFrac)
+	throws IOException
+	{
+		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
+		Iterator<Cytosine> cytocineIt = cytocineMap.values().iterator();
+		CYT: while (cytocineIt.hasNext())
+		{
+			Cytosine cytocine = cytocineIt.next();
+			if ((cytocine.getNextBaseRef() != 'G') && (cytocine.getPreBaseRef() != 'G'))// && (cpg.getNextBaseRef() != '0'))
+			{
+				if ((cytocine.totalReads < minCphCoverage) || (cytocine.fracMeth(true)<minCphMethFrac) || (!cytocine.passesOppositeAFilterDefault()))
+				{
+					continue CYT;
+				}
+			}
+			String line = cytocine.toStringExpanded(true);
+			String insertString = "INSERT INTO " + tableName +
+								" VALUES (" + line + ")";
+			
+			try {
+				//step 4: create a statement
+				Statement stmt = conn.createStatement();
+			//	testResult = stmt.executeQuery(queryString);
+				
+				//step 5: execute a query or update.
+				stmt.executeUpdate(insertString);
+
+			}catch(SQLException ex) {
+							System.err.println("Insertion: " + ex.getMessage());
+			}
+			
+		}
+	}
+	
 	public static void outputCytocinesToDb(SortedMap<Integer,TreeMap<Integer,Cytosine>> cytocineMap, String tableName, boolean asmFlag)
 	throws IOException
 	{
@@ -372,6 +424,7 @@ public class Cytosine implements Comparable, Cloneable {
 				 String line = cytocine.toString(asmFlag,true);
 					String insertString = "INSERT INTO " + tableName +
 										" VALUES (" + line + ")";
+					
 					
 					try {
 						//step 4: create a statement
@@ -423,8 +476,18 @@ public class Cytosine implements Comparable, Cloneable {
 	{
 		
 		conn=cConn;
-		creatTableInDb(tableName);
+		creatTableInDb(tableName, asmFlag);
 		outputCytocinesToDb(cytocineMap, tableName, asmFlag);
+
+	}
+	
+	public static void outputChromToDb(Map<Integer, Cytosine> cytocineMap, String tableName, Connection cConn, int minCphCoverage, double minCphMethFrac)
+	throws IOException
+	{
+		
+		conn=cConn;
+		creatTableInDb(tableName);
+		outputCytocinesToDb(cytocineMap, tableName, minCphCoverage, minCphMethFrac);
 
 	}
 	
@@ -435,12 +498,12 @@ public class Cytosine implements Comparable, Cloneable {
 	{
 		
 		conn=cConn;
-		creatTableInDb(tableName);
+		creatTableInDb(tableName, asmFlag);
 		outputCytocinesToDb(cytocineMap, tableName, asmFlag);
 
 	}
 	
-	public static void creatTableInDb(String tableName){
+	public static void creatTableInDb(String tableName, boolean asmFlag){
 		Statement stmtDrop, stmtCreate, stmtCheck;
 		//ResultSet tempCheck;
 		String dropString = "DROP TABLE " + tableName;
@@ -498,6 +561,54 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
+	public static void creatTableInDb(String tableName){
+		Statement stmtDrop, stmtCreate, stmtCheck;
+		//ResultSet tempCheck;
+		String dropString = "DROP TABLE " + tableName;
+		String checkString = "SHOW TABLES LIKE " + "\"" + tableName + "\"";
+		String createString = "CREATE TABLE " + tableName +
+        					"(`chromPos` INT UNSIGNED NOT NULL," +
+        					"`strand` enum('+','-') NOT NULL," +
+        					"`totalReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`cReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`cReadsNonconversionFilt` SMALLINT UNSIGNED NOT NULL," +
+        					"`tReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`agReads` SMALLINT UNSIGNED NOT NULL," +
+        					"`totalReadsOpposite` SMALLINT UNSIGNED NOT NULL," +
+        					"`aReadsOpposite` SMALLINT UNSIGNED NOT NULL," +
+        					"`preBaseGreads` SMALLINT UNSIGNED NOT NULL default '0'," +
+        					"`preBaseTotalReads` SMALLINT UNSIGNED NOT NULL default '0'," +
+        					"`preBaseRefUpperCase` CHAR(1)," +
+        					"`nextBaseGreads` SMALLINT UNSIGNED NULL default '0'," +
+        					"`nextBaseTotalReads` SMALLINT UNSIGNED NULL default '0'," +
+        					"`nextBaseRefUpperCase` CHAR(1)," +
+        					"`fracMeth` FLOAT(5,2) NOT NULL," +
+        					"`fracPreBaseG` FLOAT(5,2) NOT NULL," +
+        					"`fracNextBaseG` FLOAT(5,2) NOT NULL," +
+        					"`gchWeight` FLOAT(5,2) NOT NULL," +
+        					"`gcgWeight` FLOAT(5,2) NOT NULL," +
+        					"`hcgWeight` FLOAT(5,2) NOT NULL," +
+        					"PRIMARY KEY (chromPos))";
+		//String dropString = "DROP TABLE "+ tableName;
+		try {
+//step 4: create a statement
+			stmtCheck = conn.createStatement();
+//step 5: execute a query or update.
+			//stmt.execute(dropString);//if exists, drop it, get new one
+			//tempCheck = stmtCheck.executeQuery(checkString);
+			if (stmtCheck.executeQuery(checkString).next()){
+				stmtDrop = conn.createStatement();
+				stmtDrop.execute(dropString);
+				System.err.println( tableName + " exist! Drop the table!");
+			}
+			stmtCreate = conn.createStatement();
+			stmtCreate.executeUpdate(createString);
+			System.err.println("CreateTable: " + tableName);
+
+		}catch(SQLException ex) {
+			System.err.println("CreateTable: " + ex.getMessage());
+		}
+	}
 	
 	@Override
 	public String toString() {
@@ -592,6 +703,34 @@ public class Cytosine implements Comparable, Cloneable {
 				this.gcgWeight,
 				this.hcgWeight*/
 				);
+	}
+	
+	public String toStringExpanded(boolean online) 
+	{
+			return String.format("%d,'%c',%d,%d,%d,%d,%d,%d,%d,%d,%d,'%c',%d,%d,'%c',%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", 
+					chromPos,
+					(negStrand) ? '-' : '+',
+					totalReads,
+					cReads,
+					cReadsNonconversionFilt,
+					tReads,
+					agReads,
+					totalReadsOpposite,
+					aReadsOpposite,
+					preBaseGreads,
+					preBaseTotalReads,
+					preBaseRefUpperCase,
+					nextBaseGreads,
+					nextBaseTotalReads,
+					nextBaseRefUpperCase,
+					100*this.fracMeth(true),
+					100*this.fracPreBaseG(),
+					100*this.fracNextBaseG(),
+					this.gchWeight,
+					this.gcgWeight,
+					this.hcgWeight
+					);
+			
 	}
 	
 	public String toStringExpanded() 

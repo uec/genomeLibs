@@ -143,6 +143,7 @@ public class SamToFpFn {
 				//System.err.println(snpPosition);
 				boolean snpHomo = tmpArray[3].equalsIgnoreCase(tmpArray[4]);
 				boolean agFlag = false;
+				boolean agNegFlag = false;
 				
 				int totalNum = 0;
 				int alleleNum = 0;
@@ -209,6 +210,7 @@ public class SamToFpFn {
 							agFlag = true;
 							if(negStrand){
 								alleleNumNeg++;
+								agNegFlag = true;
 							}
 							else{
 								alleleNumPos++;
@@ -239,8 +241,14 @@ public class SamToFpFn {
 				}
 				chrIt.close();
 				if(agFlag){
-					alleleNum = alleleNumPos > alleleNumNeg ? alleleNumPos : alleleNumNeg;
-					totalNum = alleleNumPos > alleleNumNeg ? totalNumPos : totalNumNeg;
+					if(agNegFlag){
+						alleleNum = alleleNumNeg;
+						totalNum = totalNumNeg;
+					}
+					else{
+						alleleNum = alleleNumPos;
+						totalNum = totalNumPos;
+					}
 				}
 				else{
 					alleleNum = alleleNumPos + alleleNumNeg;
