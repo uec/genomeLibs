@@ -334,6 +334,29 @@ public class Cytosine implements Comparable, Cloneable {
 		}
 	}
 	
+	public static void outputCytocinesToFile(PrintWriter pw, Map<Integer, Cytosine> cytocineMap, String prefix, String sampleName, String chr, int minHcphCoverage, double minHcphMethFrac)
+	throws IOException
+	{
+		//System.err.println("About to write " + cpgMap.size() + " Cytosines to file");
+		Iterator<Cytosine> cytocineIt = cytocineMap.values().iterator();
+		CYT: while (cytocineIt.hasNext())
+		{
+			Cytosine cytocine = cytocineIt.next();
+			if ((cytocine.getNextBaseRef() != 'G') && (cytocine.getPreBaseRef() != 'G'))// && (cpg.getNextBaseRef() != '0'))
+			{
+				if ((cytocine.totalReads < minHcphCoverage) || (cytocine.fracMeth(true)<minHcphMethFrac) || (!cytocine.passesOppositeAFilterDefault()))
+				{
+					continue CYT;
+				}
+			}
+			
+			String line = cytocine.toString();
+			pw.println(line);
+		}
+	}
+	
+	
+	
 	public static void outputCytocinesToFile(PrintWriter pw, Map<String, Cytosine> cytocineMap, String prefix, String sampleName, String chr, boolean asmFlag)
 	throws IOException
 	{
@@ -442,6 +465,19 @@ public class Cytosine implements Comparable, Cloneable {
 			
 			
 		}
+	}
+	
+	public static PrintWriter outputChromToFile(Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr, int minHcphCoverage, double minHcphMethFrac)
+	throws IOException
+	{
+		
+		String fn = prefix + sampleName + "_" + chr + ".txt";
+		PrintWriter writer = new PrintWriter(new File(fn));
+		
+		outputCytocinesToFile(writer, cytocineMap, prefix, sampleName, chr, minHcphCoverage, minHcphMethFrac);
+		
+		//writer.close();
+		return writer;
 	}
 	
 	public static PrintWriter outputChromToFile(Map<Integer,Cytosine> cytocineMap, String prefix, String sampleName, String chr)
