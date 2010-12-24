@@ -41,15 +41,15 @@ public class SamToFpFn {
 		 */
 		
 		@Option(name="-minMapQ",usage="minimum mapping quality (default 30)")
-		protected int minMapQ = 0;
+		protected int minMapQ = 30;
 		@Option(name="-minReadCov",usage="minimum read coverage (default 4)")
 		protected int minReadCov = 4;
 		@Option(name="-minBaseQual",usage="minimum Base quality (default 10)")
-		protected int minBaseQual = 0;
+		protected int minBaseQual = 20;
 		@Option(name="-minAlleleCount",usage="minimum Allele Count (default 2)")
-		protected static int minAlleleCount = 2;
+		protected static int minAlleleCount = 1;
 		@Option(name="-minAlleleFreq",usage="minimum BAllele Frequency (default 0.2)")
-		protected static double minAlleleFreq = 0.20;
+		protected static double minAlleleFreq = 0.10;
 		@Option(name="-female",usage="the sample is female or male (default false for male)")
 		protected boolean female = false;
 		@Option(name="-debug",usage=" Debugging statements (default false)")
@@ -112,6 +112,7 @@ public class SamToFpFn {
 			int homoLociX = 0;
 			int snpHeterLociX = 0;
 			int snpHomoLociX = 0;
+			int snpHeterLociAll = 0;
 			String preChr = "chr1";
 			String fn = sampleName + "Merge_chr1.NODUPS.sorted.calmd.NODUPS.bam";
 			File inputSamOrBamFile = new File(bamFilePath,fn);
@@ -154,6 +155,9 @@ public class SamToFpFn {
 				String posSeq = "-";
 				String negSeq = "-";
 				
+				if(!snpHomo){
+					snpHeterLociAll++;
+				}
 				
 				CloseableIterator<SAMRecord> chrIt = inputSam.queryOverlapping(chr, snpPosition, snpPosition);
 				record: while (chrIt.hasNext())
@@ -162,7 +166,7 @@ public class SamToFpFn {
 					int mapQual = samRecord.getMappingQuality();
 					byte[] baseQual = samRecord.getBaseQualities();
 					boolean unmapped = samRecord.getReadUnmappedFlag();
-					if (unmapped || (mapQual < minMapQ))
+					if (unmapped || (mapQual <= minMapQ))
 					{
 						continue record;
 					}
@@ -183,7 +187,7 @@ public class SamToFpFn {
 						}
 						int seqLen = Math.min(seq.length(), ref.length());
 						byte baseQS = (negStrand) ? baseQual[seqLen-1-i] : baseQual[i];
-						if( baseQS < minBaseQual )
+						if( baseQS <= minBaseQual )
 						{
 							continue record;
 						}
@@ -391,6 +395,7 @@ public class SamToFpFn {
 			falseSnpWriter.close();
 			double falsePositive = (double)falseP/(double)heterLoci;
 			double falseNegative = (double)falseN/(double)snpHeterLoci;
+			double FN = (double)falseN/(double)snpHeterLociAll;
 			System.out.printf("heterozygous loci in 1M SNP array is: %d\n",snpHeterLoci);
 			System.out.printf("homozygous loci in 1M SNP array is: %d\n",snpHomoLoci);
 			System.out.printf("heterozygous loci in sequencing is: %d\n",heterLoci);
@@ -399,6 +404,7 @@ public class SamToFpFn {
 			System.out.printf("true negative number is: %d\n",trueN);
 			System.out.printf("false positive rate is: %f\n",falsePositive);
 			System.out.printf("false negative rate is: %f\n",falseNegative);
+			System.out.printf("FN rate is: %f\n",FN);
 			System.out.printf("X chromosome heterozygous locis in 1M SNP array is: %d\n",snpHeterLociX);
 			System.out.printf("X chromosome homozygous locis in 1M SNP array is: %d\n",snpHomoLociX);
 			System.out.printf("X chromosome heterozygous locis in sequencing is: %d\n",heterLociX);

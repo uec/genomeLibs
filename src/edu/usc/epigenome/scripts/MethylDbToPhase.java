@@ -40,23 +40,23 @@ public class MethylDbToPhase {
 	/**
 	 * @param args
 	 */
-	private static final String C_USAGE = "Use: MethylDbToPhase -tablePrefix " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + 
-	" -windowSize 10 -GCH -sample s5 gff_file chr [startPos] [endPos]";
-	//public static String connStr = null;
+	private static final String C_USAGE = "Use: MethylDbToPhase -tablePrefix " + "methylCGsRich_gnome_seq_merge_s5_s6_" + 
+	" -windowSize 10 -GCH gff_file";
+	public static String connStr = null;
 	protected static Connection cConn = null;
-	public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/gnome_seq";
+	//public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/gnome_seq";
 	protected int minOppoACount = 1;
     protected double minOppoAFreq = 0.10;
 	//mysql_db_server: epifire2.epigenome.usc.edu
 	
     @Option(name="-tablePrefix",usage="Prefix for DB table (default " + MethylDbQuerier.DEFAULT_METHYL_TABLE_PREFIX + ")")
-    protected String tablePrefix = "methylCGsRich_gnome_seq_";
+    protected String tablePrefix = "methylCGsRich_gnome_seq_merge_s5_s6_";
     @Option(name="-HCG",usage=" just withdarw HCpG sites")
     protected boolean Hcg = false;
     @Option(name="-GCH",usage=" just withdarw HCpG sites")
     protected boolean Gch = true;
-    @Option(name="-sample",usage=" input the sample name: s5 or s6")
-    protected String sample = "s6";
+    //@Option(name="-sample",usage=" input the sample name: s5 or s6")
+    //protected String sample = "s6";
     @Option(name="-windowSize",usage=" input the window size: default is 10bp")
     protected int windowSize = 10;
     @Option(name="-rangeSize",usage=" input the range size: default is 2000bp")
@@ -84,15 +84,15 @@ public class MethylDbToPhase {
 		{
 			parser.parseArgument(args);
 
-			if(arguments.size() < 2 ) {
+			if(arguments.size() < 1 ) {
 				System.err.println(C_USAGE);
 				System.exit(1);
 			}
 			String gffFileName = arguments.get(0);
 			BufferedReader br = new BufferedReader(new FileReader(gffFileName));
 			String line;
-			this.tablePrefix += sample;
-			this.tablePrefix += "_";
+			//this.tablePrefix += sample;
+			//this.tablePrefix += "_";
 			String fn1 = this.tablePrefix + "ctcf_table" + ".txt";
 			PrintWriter outWriter = new PrintWriter(new File(fn1));
 			String fn2 = this.tablePrefix + "ctcf_table_summary" + ".txt";
@@ -105,30 +105,70 @@ public class MethylDbToPhase {
 			}
 			setupDb(connStr);
 			//int a = 0;
+			//int gffLineNumber = 0;
+			TreeMap<Integer,List<Double>> methySum = new TreeMap<Integer,List<Double>>();
 			while( (line = br.readLine()) != null){
 				String[] tmpArray = line.split("\t");
 				String chr = tmpArray[0];
 				int chrStart = Integer.parseInt(tmpArray[3]); 
 				int chrEnd = Integer.parseInt(tmpArray[4]);
-				
-				
-				try {
-					//step 4: create a statement
-					String queryString = getSql(tablePrefix,chr,chrStart,chrEnd);
-					Statement stmt = cConn.createStatement();
-					ResultSet queryResult = stmt.executeQuery(queryString);
-					double methyValue = queryResult.getDouble(0);
-					queryResult.next();
-					double readCoverage = queryResult.getDouble(0);
-					outWriter.printf("%.2f\t%.2f\n", methyValue, readCoverage);
-				}catch(SQLException ex) {
-								System.err.println("Query: " + ex.getMessage());
+				int motifCenter = (chrEnd - chrStart)/2;
+				int rangeStart = motifCenter - rangeSize;
+				int rangeEnd = motifCenter + rangeSize;
+				System.err.println(line);
+				for(int windowStart = rangeStart, windowEnd = rangeStart + windowSize, i = 0; windowEnd <= rangeEnd; windowStart+=windowSize, windowEnd+=windowSize, i++){
+					try {
+						//step 4: create a statement
+						String queryString = getSql(tablePrefix,chr,windowStart,windowEnd);
+						Statement stmt = cConn.createStatement();
+						ResultSet queryResult = stmt.executeQuery(queryString);
+						queryResult.next();
+						
+						double methyValue = queryResult.getDouble(1);
+						
+						
+						int numC = queryResult.getInt(2);
+						if(numC != 0){
+							//System.err.println(queryString);
+							//System.err.println(methyValue);
+							//System.err.println(numC);
+							//outWriter.printf("%.2f\t%.2f\t", methyValue, readCoverage);
+							outWriter.printf("%.2f\t", methyValue);
+							List<Double> tempMethy = new ArrayList<Double>();
+							if(methySum.containsKey(i)){
+								tempMethy = methySum.get(i);
+							}
+							tempMethy.add(methyValue);
+							methySum.put(i, tempMethy);
+						}
+						else{
+							outWriter.printf("NA\t");
+						}
+						
+					}catch(SQLException ex) {
+									System.err.println("Query: " + ex.getMessage());
+					}
 				}
+				outWriter.printf("\n");
 				
 			}
 			cleanupDb();
 			outWriter.close();
+			Iterator<List<Double>> windowIt = methySum.values().iterator();
+			double methyValueSum = 0;
+			int count = 0;
+			while(windowIt.hasNext()){
+				List<Double> windowValue = windowIt.next();
+				Iterator<Double> methyIt = windowValue.iterator();
+				count = windowValue.size();
+				while(methyIt.hasNext()){
+					methyValueSum += methyIt.next();
+				}
+				outSumWriter.printf("%.2f\t",methyValueSum/(double)count);
+			}
+			outSumWriter.printf("\n");
 			outSumWriter.close();
+			
 
 		}
 		catch (CmdLineException e)
@@ -145,8 +185,8 @@ public class MethylDbToPhase {
 	protected String getSql(String tablePrefix, String chr, int chrStart, int chrEnd) 
 	throws Exception{
 		String methTable = tablePrefix + chr;
-		String sql = String.format("select AVG(cReads/(cReads+tReads)), AVG(totalReads) from %s WHERE", methTable);
-		sql += " AND totalReads != 0";
+		String sql = String.format("select AVG(cReads/(cReads+tReads)), COUNT(*) from %s WHERE", methTable);
+		sql += " totalReads != 0";
 		sql += " AND (cReads+tReads) != 0";
 		sql += " AND aReadsOpposite/totalReadsOpposite <= " + minOppoAFreq;
 		sql += " AND aReadsOpposite <= " + minOppoACount;
@@ -160,6 +200,7 @@ public class MethylDbToPhase {
 			sql += " AND nextBaseRefUpperCase = 'G'";
 			sql += " AND preBaseRefUpperCase != 'G'";
 		}
+		//System.err.println(sql);
 		return sql;
 	}
 	
