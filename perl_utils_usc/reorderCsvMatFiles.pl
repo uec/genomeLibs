@@ -155,7 +155,9 @@ sub betterLine
 	if (($oldFlds[14] eq "TOP") || ($oldFlds[14] eq "BOTTOM"))
 	{
 		print STDERR sprintf("%s: Comparing %d to %d\n",$oldFlds[0],$oldFlds[13],$newFlds[13]);
-		$lineToUse = ($oldFlds[13] >= $newFlds[13]) ? $oldLine : $newLine;
+		
+		# Use the lower of the two
+		$lineToUse = ($oldFlds[13] <= $newFlds[13]) ? $oldLine : $newLine;
 	}
 	
 	return $lineToUse;
