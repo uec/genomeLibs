@@ -1,7 +1,9 @@
 package edu.usc.epigenome.scripts;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,17 +44,17 @@ public class SamToSnpAllNew {
 	@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. --chrom chr1 --chrom chr5")
 	protected List<String> chrs = new ArrayList<String>(25);
 	@Option(name="-minMapQ",usage="minimum mapping quality (default 30)")
-	protected int minMapQ = 20;
+	protected int minMapQ = 10;
 	@Option(name="-minBaseQual",usage="minimum Base quality (default 10)")
 	protected int minBaseQual = 10;
 	@Option(name="-minReadCov",usage="minimum read coverage (default 4)")
 	protected int minReadCov = 4;
-	@Option(name="-minAlleleCount",usage="minimum Allele Count (default 3)")
-	protected static int minAlleleCount = 1;
+	@Option(name="-minAlleleCount",usage="minimum Allele Count (default 2)")
+	protected static int minAlleleCount = 2;
 	@Option(name="-minAlleleFreq",usage="minimum BAllele Frequency (default 0.2)")
-	protected static double minAlleleFreq = 0.10;
-	@Option(name="-female",usage="the sample is female or male (default false for male)")
-	protected boolean female = false;
+	protected static double minAlleleFreq = 0.15;
+	//@Option(name="-female",usage="the sample is female or male (default false for male)")
+	//protected boolean female = false;
 	@Option(name="-debug",usage=" Debugging statements (default false)")
 	protected boolean debug = false;
 
@@ -191,6 +193,14 @@ public class SamToSnpAllNew {
 						if (refi == '-')
 						{
 							// It's a deletion in reference, don't advance
+							allelePosition.remove(onRefCoord);
+							allelePosition.remove(onRefCoord-1);
+							allelePosition.remove(onRefCoord-2);
+							allelePosition.remove(onRefCoord-3);
+							int inc = (negStrand) ? -3 : 3;
+							onRefCoord += inc;
+							i+=3;
+							
 						}
 						else
 						{
@@ -220,10 +230,12 @@ public class SamToSnpAllNew {
 			System.err.println("-----------------------------------------");
 			String fn = tableName + "_SNP_all_afterBaseQfilter" + ".txt";
 			PrintWriter writer = new PrintWriter(new File(fn));
-			boolean xFlag = false;
-			if(chr.equalsIgnoreCase("chrX")){
-				xFlag = true;
-			}
+			int count = 0;
+			//boolean xFlag = false;
+			//if(chr.equalsIgnoreCase("chrX")){
+			//	xFlag = true;
+			//}
+			
 			while(it.hasNext()){	
 				Integer snpPosition = it.next();
 				boolean agFlag = false;
@@ -235,6 +247,8 @@ public class SamToSnpAllNew {
 				int alleleNumPos = 0;
 				int totalNumNeg = 0;
 				int alleleNumNeg = 0;
+				//char refBase;
+				//char alleleBase;
 				CloseableIterator<SAMRecord> chrIt = inputSam.queryOverlapping(chr, snpPosition, snpPosition);
 				record: while (chrIt.hasNext())
 				{
@@ -280,6 +294,8 @@ public class SamToSnpAllNew {
 						}
 						if((PicardUtils.isGuanine(i,ref) && PicardUtils.isAdenine(i,seq)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isGuanine(i,seq))){
 							agFlag = true;
+							//refBase = ref.charAt(i);
+							//alleleBase = seq.charAt(i);
 							if(negStrand){
 								alleleNumNeg++;
 								agNegFlag = true;
@@ -290,6 +306,8 @@ public class SamToSnpAllNew {
 						}
 						else if ((PicardUtils.isGuanine(i,ref) && PicardUtils.isCytosine(i, seq, true)) || (PicardUtils.isAdenine(i,ref) && PicardUtils.isCytosine(i, seq, true)) || (PicardUtils.isGuanine(i,seq) && PicardUtils.isCytosine(i, ref, true)) || (PicardUtils.isAdenine(i,seq) && PicardUtils.isCytosine(i, ref, true))){	
 							//alleleNum++;// allele reads number
+							//refBase = ref.charAt(i);
+							//alleleBase = seq.charAt(i);
 							if(negStrand){
 								alleleNumNeg++;
 							}
@@ -324,25 +342,34 @@ public class SamToSnpAllNew {
 					alleleNum = alleleNumPos + alleleNumNeg;
 					totalNum = totalNumPos + totalNumNeg;
 				}
-				if(totalNum < minReadCov & (!xFlag || female)){
-					continue;
-				}
-				else if(totalNum < minReadCov/2 & (xFlag && !female)){
-					continue;
-				}
+				if(totalNum < minReadCov){
+						continue;
+					}
+				//if(totalNum < minReadCov & (!xFlag || female)){
+				//	continue;
+				//}
+				//else if(totalNum < minReadCov/2 & (xFlag && !female)){
+				//	continue;
+				//}
 				
 				double freq1 = (double)alleleNum/(double)totalNum;
 				double freq2 = (double)(totalNum-alleleNum)/(double)totalNum;
 				if(totalNum >10 && freq1 >= minAlleleFreq && freq2 >= minAlleleFreq && alleleNum >= minAlleleCount && (totalNum - alleleNum) >= minAlleleCount){
 					writer.printf("%d\t%d\t%d\n",snpPosition,totalNum,alleleNum);
+					//System.out.println(snpPosition);
+					count++;
 				 }
 				else if(totalNum <= 10 && alleleNum >= minAlleleCount && (totalNum - alleleNum) >= minAlleleCount){
 					writer.printf("%d\t%d\t%d\n",snpPosition,totalNum,alleleNum);
+					//System.out.println(snpPosition);
+					count++;
 				}
 				
 			}
+			System.out.println(count);
 			writer.close();
 		}
+		
 		
 		
 }
