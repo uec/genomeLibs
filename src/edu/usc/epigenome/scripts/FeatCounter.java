@@ -48,8 +48,10 @@ public class FeatCounter {
 	protected List<String> chrs = new ArrayList<String>(25);
 	@Option(name="-feature",multiValued=true,usage="One or more features from features_ tables")
 	protected List<String> features = new ArrayList<String>(25);
-	@Option(name="-flank",multiValued=false,usage="Flanking sequence for each feature")
+	@Option(name="-flank",multiValued=false,usage="Flanking sequence to search for each feature (default 0=exact overlap)")
 	protected int flank = 0;
+	@Option(name="-includeSummaryCounts",multiValued=false,usage="If set, the last line are total counts for each column")
+	protected boolean includeSummaryCounts = false;
 	@Option(name="-tssMaxFlank",multiValued=false,usage="This is the maximum flank we will use to get TSS expression")
 	protected int tssMaxFlank = 500000;
 	@Option(name="-expressionTerm",usage="One or more expression from the infiniumExpr_chr table")
@@ -169,7 +171,7 @@ public class FeatCounter {
 				{
 
 					SimpleGFFRecord target = (SimpleGFFRecord) targetit.next();
-					System.err.printf("Working on target: %s\n",GFFUtils.gffBetterString(target));
+					//System.err.printf("Working on target: %s\n",GFFUtils.gffBetterString(target));
 
 					boolean overlapsSomething = false;
 					int start = (includeTssAndBorrowExpression) ? -1 : 0; 
@@ -268,7 +270,10 @@ public class FeatCounter {
 		}
 		
 		ListUtils.setDelim(",");
-		//System.out.printf("%s,%s,%s,%s\n","totals","a","b",ListUtils.excelLine(totals));
+		if (includeSummaryCounts)
+		{
+			System.out.printf("%s,%s,%s,%s\n","totals","a","b",ListUtils.excelLine(totals));
+		}
 	}
 	
 	
