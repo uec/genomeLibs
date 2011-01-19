@@ -79,7 +79,7 @@ public class MethylDbToWigs {
 		{
 			parser.parseArgument(args);
 
-			chrs = MethylDbUtils.TEST_CHROMS; // MethylDbUtils.CHROMS;
+			chrs = MethylDbUtils.CHROMS;
 			if(this.outPrefix==null)
 			{
 				System.err.println(C_USAGE);
@@ -87,7 +87,8 @@ public class MethylDbToWigs {
 				parser.printUsage(System.err);
 				System.exit(0);
 			}
-			else
+			
+			if (arguments.size()>0)
 			{
 				String chr = arguments.get(0);
 				if (!chr.startsWith("chr")) chr = "chr" + chr;
@@ -196,20 +197,20 @@ public class MethylDbToWigs {
 		openFiles.add(pwHemifakeB);
 
 		
-		String outfnDplus = this.outPrefix + ".deltaplus.wig";
+		String outfnDplus = this.outPrefix + "." + this.table1 + ".deltaplus.wig";
 		PrintWriter pwDplus = new PrintWriter(new FileOutputStream(outfnDplus));
 		pwDplus.printf("track type=wiggle_0 name=%s description=%s color=255,0,0 visibility=full " + 
-				" autoScale=off alwaysZero=off maxHeightPixels=45:28:10 viewLimits=0:60\n", "deltaplus", "deltaplus");
+				" autoScale=off alwaysZero=off maxHeightPixels=45:28:10 viewLimits=0:60\n", "deltaplus" + "." + this.table1, "deltaplus" + "." + this.table1);
 		openFiles.add(pwDplus);
 
-		String outfnDminus = this.outPrefix + ".deltaMinus.wig";
+		String outfnDminus = this.outPrefix + "." + this.table1 + ".deltaMinus.wig";
 		PrintWriter pwDminus = new PrintWriter(new FileOutputStream(outfnDminus));
 		pwDminus.printf("track type=wiggle_0 name=%s description=%s color=0,255,0 visibility=full " + 
-				" autoScale=off alwaysZero=off maxHeightPixels=45:28:10 viewLimits=-60:0\n", "deltaMinus", "deltaMinus");
+				" autoScale=off alwaysZero=off maxHeightPixels=45:28:10 viewLimits=-60:0\n", "deltaMinus" + "." + this.table1, "deltaMinus"+ "." + this.table1);
 		openFiles.add(pwDminus);
 
 		
-		String outCvg = this.outPrefix + ".cvgDelta.wig";
+		String outCvg = this.outPrefix + "." + this.table1 + ".cvgDelta.wig";
 		PrintWriter pwCvg = new PrintWriter(new FileOutputStream(outCvg));
 		pwCvg.printf("track type=wiggle_0 name=%s description=%s visibility=full " + 
 				" autoScale=off alwaysZero=off maxHeightPixels=64:48:10 viewLimits=-2:2\n", "CoverageDelta", "CoverageDelta");
