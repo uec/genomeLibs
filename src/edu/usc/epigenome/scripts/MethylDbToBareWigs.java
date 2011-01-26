@@ -39,6 +39,8 @@ public class MethylDbToBareWigs {
 	protected String outPrefix = "wiggleTester";
 	@Option(name="-minCTreads",usage="Minimum number of C or T reads to count as a methylation value")
 	protected int minCTreads = 2;
+	@Option(name="-extraCols",usage="print C and T read counts")
+	protected boolean extraCols = false;
 	@Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
 	"This sets a maximum number of observed As on the opposite strand (default 0.1)")
 	protected double maxOppStrandAfrac = 0.1;
@@ -95,6 +97,15 @@ public class MethylDbToBareWigs {
 		}
 
 		if (chrSt <= 0) chrSt = 1;
+		
+		if (tables.size()==0){
+			System.err.println("Error, must supply at least one table");
+			System.err.println(C_USAGE);
+			// print the list of available options
+			parser.printUsage(System.err);
+			System.err.println();
+			return;
+		}
 
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.SEVERE);
 
@@ -114,7 +125,8 @@ public class MethylDbToBareWigs {
 			String tab = tables.get(i);
 
 			// Setup output files.
-			String outfn = this.outPrefix + "." + tab + ".bare.wig";
+			String outfn = String.format("%s.%s.minCTreads%d.maxOppAfrac%.3f.bare.wig", 
+					outPrefix,tab,minCTreads,this.maxOppStrandAfrac);
 			PrintWriter pw = new PrintWriter(new FileOutputStream(outfn));
 			pws[i] = pw;
 			// Use -2 for view limit so you can see ones at 0
@@ -170,7 +182,9 @@ public class MethylDbToBareWigs {
 						if (!Double.isNaN(meth))
 						{					
 							int pos = cpgs[j].chromPos;
-							pws[j].printf("%d\t%d\n",pos,(int)Math.round(100.0*meth));
+							pws[j].printf("%d\t%d",pos,(int)Math.round(100.0*meth));
+							if (extraCols) pws[j].printf("\t%d\t%d",cpgs[j].cReads,cpgs[j].cReads+cpgs[j].tReads);
+							pws[j].println();
 						}
 					}
 
