@@ -22,6 +22,7 @@ public class FeatDbQuerier {
 	
 	protected String tablePrefix = DEFAULT_TABLE_PREFIX;
 	
+	public boolean outputSymbolInsteadOfRefseq = false;
 	
 	// Ranges
 	protected Set<GenomicRange> rangeFilters = new HashSet<GenomicRange>(1);
@@ -205,7 +206,7 @@ public class FeatDbQuerier {
 				// This is the best way to pick anything that OVERLAPS the range.
 				// Notice than CONTAINED WITHIN the range would be a different query
 
-				System.err.printf("Adding constraint: chr=%s, s=%d, e=%d\n",gr.getChrom(), gr.getStart(), gr.getEnd());
+				//System.err.printf("Adding constraint: chr=%s, s=%d, e=%d\n",gr.getChrom(), gr.getStart(), gr.getEnd());
 				if ((gr.getStart()==0) && (gr.getEnd()==0))
 				{
 					// Whole chromosome, don't add

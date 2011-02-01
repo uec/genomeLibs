@@ -176,6 +176,10 @@ public class FeatIterator implements Iterator<GFFRecord> {
             new HashMap(1));
 	
 			String name = curRS.getString("refseqId");
+			if (this.params.outputSymbolInsteadOfRefseq) name = curRS.getString("name");
+			
+			
+			
 			if ((name != null) && (!name.equalsIgnoreCase("null")))
 			{
 				GFFUtils.setGffRecordName(out, name);
