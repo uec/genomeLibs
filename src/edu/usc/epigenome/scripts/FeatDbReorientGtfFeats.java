@@ -47,6 +47,8 @@ public class FeatDbReorientGtfFeats {
 	protected List<String> chrs = new ArrayList<String>(25);
 	@Option(name="-flank",multiValued=true,usage="Search this many base pairs flanking the features of interes")
 	protected int flank = 0;
+	@Option(name="-dontRename",usage="If unset, we rename elements to match the feature used to reorient")
+	protected boolean dontRename = false;
 
 	// receives other command line parameters than options
 	@Argument
@@ -165,7 +167,7 @@ public class FeatDbReorientGtfFeats {
 							newNames.size(),ListUtils.excelLine(newNames.toArray(new String[1])));
 				}
 				
-				if (newNames.size()==1)
+				if (!dontRename && (newNames.size()==1))
 				{
 					GFFUtils.setGffRecordName(target, newNames.toArray(new String[1])[0]);
 				}
