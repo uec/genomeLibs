@@ -48,7 +48,7 @@ foreach my $dir (@ARGV)
 	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
 	            my $contamAdaptersN = seqCountFastqFiles($dir."${prefix}.contam.adapters.*");
 	            push(@flds,$contamAdaptersN); push(@headers,"contamAdaptersSeqs");
-	             my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.*");
+	             my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.tx*");
 	            push(@flds,$contamAdapterTrimN); push(@headers,"contamAdapterTrimSeqs");            
 	        }
 	
