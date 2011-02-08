@@ -42,7 +42,7 @@ foreach my $dir (@ARGV)
 	        {
 	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.fastq");
 	            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
-	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*");
+	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*txt");
 	            push(@flds,$contamN); push(@headers,"contamSeqs");
 	            my $contamPolyaN = seqCountFastqFiles($dir."${prefix}.contam.polya.*");
 	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
