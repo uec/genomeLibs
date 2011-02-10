@@ -174,7 +174,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 			
 		}
 		
-		if (this.alignToEnd && this.alignToEnd)
+		if (this.alignToStart && this.alignToEnd)
 		{
 			System.err.println("Can not include both -alignToStart and -alignToEnd");
 			System.err.println(C_USAGE);
@@ -484,6 +484,7 @@ public class MethylDbToMultisampleFeatAlignmentsStratified {
 					for (int i = 0; i < nS; i++)
 					{
 						// Get the overlapping feats
+						//System.err.println("\tGetting targets for " + tablePrefixes.get(i));
 						FeatDbQuerier params = new FeatDbQuerier();
 						params.addRangeFilter(chrStr, flankStart,flankEnd);
 						params.addFeatFilter(tablePrefixes.get(i));
