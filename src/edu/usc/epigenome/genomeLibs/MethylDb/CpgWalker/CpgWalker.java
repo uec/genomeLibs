@@ -170,11 +170,12 @@ public class CpgWalker implements TabularOutput {
 	{
 		window = new LinkedList<Cpg[]>();
 		this.resetSummarizers();
-		System.err.printf("CpgWalker reset(%s)\n",this.getCurChr());
+		//System.err.printf("CpgWalker reset(%s)\n",this.getCurChr());
 	}
 	
 	public void resetSummarizers()
 	{
+		//System.err.printf("resetting summarizers for %d tables (useSummarizers=%s)\n",this.numTables(),useSummarizers);
 		if (useSummarizers)
 		{
 			methSummarizer = new ArrayList<CpgSummarizer>();
@@ -368,10 +369,16 @@ public class CpgWalker implements TabularOutput {
 		//System.err.println("Streaming CpG: " + cpg.toStringExpanded());
 		//System.err.println("\tuseFixedStep=" + !this.walkParams.useVariableWindow);
 		
-		// Sanity check
+		// Sanity checks
 		if (cpg.length != this.numTables())
 		{
 			System.err.printf("Trying to stream CpGIterator with %d samples to CpGWalker with %d samples, exiting.\n",cpg.length,this.numTables());
+			System.exit(1);
+		}
+		
+		if (this.curChr == null)
+		{
+			System.err.printf("Trying to stream CpGIterator with without first calling walker.setCurChrom. Quitting\n");
 			System.exit(1);
 		}
 		
