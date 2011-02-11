@@ -189,6 +189,26 @@ public class CpgWalker implements TabularOutput {
 		}
 	}
 	
+//	public double methMean(boolean useSpaceWeightedMean)
+//	{
+//		return this.methMean(0, useSpaceWeightedMean);
+//	}
+//	
+//	public double methMean(int tableIndex, boolean useSpaceWeightedMean)
+//	{
+//		return this.getSummarizer(tableIndex).getValMean(useSpaceWeightedMean);
+//	}
+//	
+//	public CpgSummarizer getSummarizer()
+//	{
+//		return getSummarizer(0);
+//	}
+//	
+//	public CpgSummarizer getSummarizer(int tableIndex)
+//	{
+//		return this.methSummarizer.get(tableIndex);
+//	}
+	
 	public List<Cpg[]> getLastProcessedWindow() {
 		return lastProcessedWindow;
 	}
