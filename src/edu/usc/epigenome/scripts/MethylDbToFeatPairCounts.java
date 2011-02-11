@@ -65,6 +65,8 @@ public class MethylDbToFeatPairCounts {
     protected boolean threeWay = false;
     @Option(name="-fourWay",usage="Do feature quadruplets")
     protected boolean fourWay = false;
+    @Option(name="-featFlank",usage="Include flanking region for each feat")
+    protected int featFlank = 0;
     @Option(name="-cpgCounts",usage="Do counts based on raw number of Cpgs (rather than base pairs)")
     protected boolean cpgCounts = false;
     @Option(name="-outPrefix",usage="outputFilename")
@@ -246,7 +248,7 @@ public class MethylDbToFeatPairCounts {
 		params.setMaxOppstrandAfrac(this.maxOppStrandAfrac);
 
 		// Feat filts
-		params.addFeatFilters(featTypes);
+		params.addFeatFilters(featTypes, this.featFlank);
 		
 		ListUtils.setDelim(",");
 		String featStr = ListUtils.excelLine(featTypes);
