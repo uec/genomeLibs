@@ -218,6 +218,10 @@ public class Cpg implements Comparable, Cloneable {
 		return !(failFrac && failAbs);
 	}
 
+	public double fracReadsCorT()
+	{
+		return (double)totalReadsCorT(false) / ((double)totalReadsCorT(false)+(double)agReads);
+	}
 	
 	public double fracMeth(boolean useNonconvFilt)
 	{
