@@ -135,7 +135,7 @@ public class SamToConversionByCoverageMatrix {
 				inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
 				
 				int querys = 7000000;
-				int querye = 9000000;
+				int querye = 29000000;
 				querys = 0;
 				querye = 0;
 				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, querys, querye, false);
@@ -377,7 +377,8 @@ public class SamToConversionByCoverageMatrix {
 			
 			// Only count it if it looks like a true cytosine.  Use a minimum of 5 reads for both cytosine
 			// and CpG determination
-			if ((cytosine.totalReadsOpposite>=this.minOppStrandCoverage) && (cytosine.fracOppositeA() <= this.maxOppStrandAfrac))
+			if ((cytosine.totalReadsCorT(true) >=1) && (cytosine.fracReadsCorT()>(1-this.maxOppStrandAfrac)) && 
+					(cytosine.totalReadsOpposite>=this.minOppStrandCoverage) && (cytosine.fracOppositeA() <= this.maxOppStrandAfrac))
 			{
 				//System.err.printf("\t\tCytosine opp cvg>=5 %s\n",cytosine.toStringExpanded());
 
