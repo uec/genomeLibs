@@ -52,6 +52,11 @@ public class MethylDbQuerier {
 		featFilters = new ArrayList<MethylDbQuerier.FeatClass>(10);
 	}
 	
+	/**
+	 * @param featType
+	 * 
+	 * IMPLIES INTERSECTION
+	 */
 	public void addFeatFilter(String featType)
 	{
 		this.addFeatFilter(featType, 0);
