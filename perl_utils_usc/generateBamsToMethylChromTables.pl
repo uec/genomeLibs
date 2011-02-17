@@ -5,16 +5,19 @@ use File::Temp qw/ tempfile tempdir /;
 use strict;
 use Getopt::Long;
 
-my $USAGE = "generateBamsToMethylChromTables.pl [--noremoveTemps] [--useReadCGschema] tablePrefix f1.bam f2.bam f3.bam ...";
+my $USAGE = "generateBamsToMethylChromTables.pl [--noremoveTemps] [--useReadCGschema] [--dumpCoverageMatrices] tablePrefix f1.bam f2.bam f3.bam ...";
 my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
 	       "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
 	       "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM");
 #@regions = ("chr20","chr21");
 
-my $SAMDIR = "/home/uec-00/bberman/bin";
+my $SAMDIR = "/home/uec-00/shared/production/software/samtools";
 my $RMTMPS = 0;
 my $useReadCGschema = 0;
-GetOptions ('removeTemps!' => \$RMTMPS, 'useReadCGschema!' => \$useReadCGschema) || die "$USAGE\n";
+my $minCphFrac = 1.01;
+my $minCphCoverage = 10;
+my $dumpCoverageMatrices = 0;
+GetOptions ('removeTemps!' => \$RMTMPS, 'useReadCGschema!' => \$useReadCGschema, 'dumpCoverageMatrices!' => \$dumpCoverageMatrices, 'minCphFrac' => \$minCphFrac) || die "$USAGE\n";
 
 print STDERR "removeTemps=${RMTMPS}\n";
 
@@ -44,6 +47,7 @@ foreach my $region (@regions)
 
     # Generate regional bams within region directory
     my @regionalBamFns = ();
+#    my @dependJobsNext = ();
     foreach my $bamFn (@bamFns)
     {
 	if ($bamFn !~ /\.bam$/)
@@ -54,25 +58,31 @@ foreach my $region (@regions)
 	my ($name, $path, $suf) = fileparse($bamFn, qr/\.bam/);
 	my $regionalBamFn = "${tmpDir}/${name}_${region}.bam";
 	my $pullRegionJobid = pullRegions($bamFn, $regionalBamFn, $region, $tmpDir,\@dependJobs);
-	push(@dependJobs, $pullRegionJobid);
+#	push(@dependJobsNext, $pullRegionJobid); # If you want to run them all at once
+	push(@dependJobs, $pullRegionJobid); # If you want to run all for the same chromosome in series (to not kill the disk)
 	push(@regionalBamFns, $regionalBamFn);
     }
+#    push(@dependJobs, @dependJobsNext);
 
     # Merge maps within region directory
     my $mergeName = "${tmpDir}/${newname}_${region}${processingSec}";
     my ($mergeJobid, $mergeBamFn) = mergeBams($mergeName, \@dependJobs, \@regionalBamFns, $tmpDir);
 
     # Convert to methyldb table
-    my $cmd = "export CLASSPATH=/home/rcf-40/bberman/svn/genomeLibs/trunk/genomeLibs.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/UscKeck.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/sam-1.07.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/apps-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/biojava-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/bytecode.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/commons-math-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-cli.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-collections-2.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-dbcp-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-pool-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/demos-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/jgrapht-jdk1.5.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/junit-4.4.jar\n";
+    my $cmd = "export CLASSPATH=/home/rcf-40/bberman/svn/genomeLibs/trunk/genomeLibs.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/UscKeck.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/sam-1.26.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/apps-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/biojava-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/bytecode.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/commons-math-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-cli.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-collections-2.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-dbcp-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-pool-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/demos-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/jgrapht-jdk1.5.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/junit-4.4.jar\n";
 
-	if ($useReadCGschema)
-	{
+    if ($useReadCGschema)
+    {
     	$cmd .= "java -Xmx4000m edu.usc.epigenome.scripts.SamToMethylreadCGdbOffline -chrom ${region} -minMapQ 30 ${newname} $mergeBamFn";
-	}
-	else
-	{
-    	$cmd .= "java -Xmx4000m edu.usc.epigenome.scripts.SamToMethyldbOffline -minConv 1 -useCpgsToFilter -minMapQ 30 -chrom ${region} ${newname} $mergeBamFn";
-	}
+    }
+    elsif ($dumpCoverageMatrices)
+    {
+	$cmd .= "java -Xmx4000m edu.usc.epigenome.scripts.SamToConversionByCoverageMatrix -chrom ${region} -minMapQ 30 -outputCphs -minNextBaseCoverage 5 -minOppStrandCoverage 5 ${newname} $mergeBamFn";
+    }
+    else
+    {
+	$cmd .= "java -Xmx4000m edu.usc.epigenome.scripts.SamToMethyldbOffline -minConv 1 -useCpgsToFilter -minMapQ 30 -chrom ${region} ${newname} $mergeBamFn";
+    }
 
     my $curJobids = [runCmd($tmpDir,$cmd, "B2REG_createMehylTable", [$mergeJobid])];
 
