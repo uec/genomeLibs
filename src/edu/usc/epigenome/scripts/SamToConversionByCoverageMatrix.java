@@ -6,9 +6,11 @@ import net.sf.samtools.util.CloseableIterator;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -18,9 +20,11 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.PicardUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
+import edu.usc.epigenome.genomeLibs.MethylDb.CytosineStats;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
 
@@ -106,8 +110,8 @@ public class SamToConversionByCoverageMatrix {
 		String sampleName = stringArgs.remove(0);
 
 		int recCounter = 0;
-		int usedCounter = 0;
-		int filteredOutCounter = 0;
+		int cpgsUsedCounter = 0;
+		int cpgsFilteredOutCounter = 0;
 
 		// Cph counters
 		int numCphConvertedWithFilt = 0;
@@ -115,7 +119,10 @@ public class SamToConversionByCoverageMatrix {
 		int numCphConvertedNoFilt = 0;
 		int numCphTotalNoFilt = 0;
 		
-
+		int totalUniqueMappedBasesRead = 0;
+		short[] refCoordsCovered = new short[300000000]; // This really assumes a single chromosome
+		CytosineStats cytStats = new CytosineStats(this.maxOppStrandAfrac, this.maxNextNonGfrac);
+		
 		// Iterate through chroms
 		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 		for (final String chr : chrs)
@@ -151,7 +158,7 @@ public class SamToConversionByCoverageMatrix {
 					if (canPurge && (lastBaseSeen > (lastPurge+PURGE_INTERVAL)))
 					{
 						// First, increment counters
-						if (cytosines != null) incrementCytosineCounters(cytosines.headMap(new Integer(lastPurge)), cpgCounts, cphCounts);
+						if (cytosines != null) incrementCytosineCounters(cytosines.headMap(new Integer(lastPurge)), cpgCounts, cphCounts,cytStats);
 						//System.err.printf("Purging %d cs from %d-%d\n", cytosines.headMap(new Integer(lastPurge)).size(), lastPurge, lastBaseSeen);
 
 						
@@ -197,7 +204,7 @@ public class SamToConversionByCoverageMatrix {
 
 						boolean negStrand = samRecord.getReadNegativeStrandFlag();
 						int alignmentS = samRecord.getAlignmentStart();
-						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; 
+						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; // This will be incremented as we go along in the read
 
 						if ((this.outputCphs) && (alignmentS < lastBaseSeen))
 						{
@@ -213,14 +220,18 @@ public class SamToConversionByCoverageMatrix {
 						int seqLen = Math.min(seq.length(), ref.length());
 						for (int i = 0; i < seqLen; i++)
 						{
+							totalUniqueMappedBasesRead++;
+							refCoordsCovered[onRefCoord]++;
+							
 							char refi = ref.charAt(i);
 							char seqi = seq.charAt(i);
 							char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 							char nextBaseSeq = PicardUtils.nextBaseSeq(i, seq);
 
+							// We only look at cytosines in the reference
 							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref,false) && PicardUtils.isCytosine(i, seq,true)) // The last one is too tricky to deal with since we don't know context
 							{
-								boolean iscpg = PicardUtils.isCpg(i,ref);
+								boolean iscpg = PicardUtils.isCpg(i,ref,seq);
 								boolean conv = PicardUtils.isConverted(i,ref,seq);
 								
 								
@@ -239,15 +250,16 @@ public class SamToConversionByCoverageMatrix {
 									if (i<convStart)
 									{
 										// In the non-conversion filter zone
-										filteredOutCounter++;
+										if (iscpg) cpgsFilteredOutCounter++;
 										//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
 									}
 									else
 									{
 										// Past the non-conversion filter, use it
-										usedCounter++;
+										if (iscpg) cpgsUsedCounter++;
 									}
 
+									// onRefCoord is incremented below
 									Cpg cpg = findOrCreateCpg(cytosines, onRefCoord, negStrand, nextBaseRef);
 									// See if we can fix the context for this CpG
 									if (cpg.getNextBaseRef() == '0') cpg.setNextBaseRef(nextBaseRef);
@@ -318,7 +330,7 @@ public class SamToConversionByCoverageMatrix {
 			}
 
 			// Take care of last cytosines
-			if (cytosines != null) incrementCytosineCounters(cytosines, cpgCounts, cphCounts);
+			if (cytosines != null) incrementCytosineCounters(cytosines, cpgCounts, cphCounts,cytStats);
 
 			// And output the chrom
 			String fn = String.format("%s%s-%s-minOppCvg%d-minNextCvg%d-maxOppA%.3f-maxNextNonG%.3f-%s.csv", 
@@ -336,21 +348,104 @@ public class SamToConversionByCoverageMatrix {
 				outWriter.close();
 			}
 		}
-		double frac = (double)filteredOutCounter/((double)usedCounter+(double)filteredOutCounter);
-		System.err.printf("Lost %f%% due to non-converion filter\n%d CpGs filtered for non-conversion, %d CpGs used (MinConv=%d,UseCpgs=%s)\n",
-				frac*100.0, filteredOutCounter, usedCounter, this.minConv, String.valueOf(this.useCpgsToFilter));
-		System.err.printf("Found %d reads total\n", recCounter);
-		System.err.printf("Cph conversion rate: before filter=%f, after filter=%f\n",
-				100.0 * ((double)numCphConvertedNoFilt/(double)numCphTotalNoFilt),
-				100.0 * ((double)numCphConvertedWithFilt/(double)numCphTotalWithFilt));
+		
+
+		// Print some stats
+		String chrSec = (chrs.size()==1) ? ("-" + chrs.get(0)) : "";
+//		String fn = String.format("bamBisulfiteStats-%s-minMapQ%d-maxOppA%.3f-maxNextNonG%.3f%s.csv", 
+//				sampleName, this.minMapQ, this.maxOppStrandAfrac, this.maxNextNonGfrac, chrSec); 
+		String fn = String.format("bamBisulfiteStats-%s%s.csv", sampleName, chrSec); 
+		PrintWriter outWriter = new PrintWriter(new File(fn));
+
+		
+//		double frac = (double)cpgsFilteredOutCounter/((double)cpgsUsedCounter+(double)cpgsFilteredOutCounter);
+//		outWriter.printf("Lost %f%% due to non-converion filter\n%d CpGs filtered for non-conversion, %d CpGs used (MinConv=%d,UseCpgs=%s)\n",
+//				frac*100.0, cpgsFilteredOutCounter, cpgsUsedCounter, this.minConv, String.valueOf(this.useCpgsToFilter));
+//		outWriter.printf("Found %d reads total\n", recCounter);
+//		outWriter.printf("Cph conversion rate: before filter=%f, after filter=%f\n",
+//				100.0 * ((double)numCphConvertedNoFilt/(double)numCphTotalNoFilt),
+//				100.0 * ((double)numCphConvertedWithFilt/(double)numCphTotalWithFilt));
+//		
+		
+		
+		List<String> headers = new ArrayList<String>();
+		List<String> vals = new ArrayList<String>();
+
+		headers.add("Chrom");
+		vals.add(String.format("%s", chrs.get(0)));
+
+		headers.add("minMapQ"); 
+		vals.add(String.format("%d", this.minMapQ));
+
+		headers.add("maxOppStrandAfrac"); 
+		vals.add(String.format("%.3f", this.maxOppStrandAfrac));
+
+		headers.add("maxNextNonGfrac"); 
+		vals.add(String.format("%.3f", this.maxNextNonGfrac));
+
+		headers.add("minFivePrimeConverted"); 
+		vals.add(String.format("%d", this.minConv));
+
+		headers.add("totalReads");
+		vals.add(String.format("%d", recCounter));
+
+		headers.add("totalUniqueMappedBasesRead");
+		vals.add(String.format("%d", totalUniqueMappedBasesRead));
+		
+		if (chrs.size()==1) // Otherwise these are not valid
+		{
+			int totalRefCoordsCovered = 0;
+			int totalBases = 0;
+			for (int i = 0; i < refCoordsCovered.length; i++)
+			{
+				short b = refCoordsCovered[i];
+				if (b>0) totalRefCoordsCovered++;
+				totalBases += b;
+			}
+			headers.add("totalRefCoordsCovered");
+			vals.add(String.format("%d", totalRefCoordsCovered));
+
+			headers.add("totalBases");
+			vals.add(String.format("%d", totalBases));
+		}
+		
+		headers.add("cpgsFivePrimeFiltered");
+		vals.add(String.format("%d", cpgsFilteredOutCounter));
+
+		headers.add("cpgsNotFivePrimeFiltered");
+		vals.add(String.format("%d", cpgsUsedCounter));
+
+		headers.add("cphConversionPreFilter");
+		vals.add(String.format("%.3f%%", 100.0 * ((double)numCphConvertedNoFilt/(double)numCphTotalNoFilt)));
+		
+		
+		headers.addAll(cytStats.headerStrings());
+		vals.addAll(cytStats.summaryStrings());
+
+
+
+		
+		
+		outWriter.println(ListUtils.excelLine(headers));
+		outWriter.println(ListUtils.excelLine(vals));
+		
+		outWriter.close();
+
 	}
 
 
 	private void incrementCytosineCounters(SortedMap<Integer, Cpg> cytosines,
-			int[][] cpgCounts, int[][] cphCounts) 
+			int[][] cpgCounts, int[][] cphCounts, CytosineStats cytStats) 
 	{
 		incrementCytosineCounter(cytosines, cpgCounts, false);
 		if (this.outputCphs) incrementCytosineCounter(cytosines, cphCounts, true);
+		
+		Iterator<Cpg> cytosineIt = cytosines.values().iterator();
+		CPG: while (cytosineIt.hasNext())
+		{
+			Cpg cytosine = cytosineIt.next();
+			cytStats.streamCytosine(cytosine);
+		}
 	}
 
 	/**
