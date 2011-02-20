@@ -103,15 +103,20 @@ public class CytosineStats {
 		for (int cat = 0; cat < 4; cat++)
 		{
 			out.add(String.format("unique-%s", catToStr(cat)));
+			out.add(String.format("totalReads-%s", catToStr(cat)));
+			out.add(String.format("gte4-%s", catToStr(cat)));
+			out.add(String.format("gte5-%s", catToStr(cat)));
+			out.add(String.format("gte10-%s", catToStr(cat)));
+			out.add(String.format("meanPercentT-%s", catToStr(cat)));
+		}
+	
+		for (int cat = 0; cat < 4; cat++)
+		{
+			out.add(String.format("totalCTreads-%s", catToStr(cat)));
+			out.add(String.format("totalCreads-%s", catToStr(cat)));
 			out.add(String.format("e0-%s", catToStr(cat)));
 			out.add(String.format("e1-%s", catToStr(cat)));
 			out.add(String.format("e2-%s", catToStr(cat)));
-			out.add(String.format("gte5-%s", catToStr(cat)));
-			out.add(String.format("gte10-%s", catToStr(cat)));
-			out.add(String.format("totalReads-%s", catToStr(cat)));
-			out.add(String.format("totalCTreads-%s", catToStr(cat)));
-			out.add(String.format("totalCreads-%s", catToStr(cat)));
-			out.add(String.format("meanPercentT-%s", catToStr(cat)));
 		}
 		
 		return out;
@@ -124,16 +129,21 @@ public class CytosineStats {
 		{
 			int totalUnique = MatUtils.nanSum(uniqueCountsByCvg[cat]);
 			out.add(String.format("%d", totalUnique));
+			out.add(String.format("%d", totalReads[cat]));
+			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvg[cat],4,uniqueCountsByCvg[cat].length-4)));
+			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvg[cat],5,uniqueCountsByCvg[cat].length-5)));
+			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvg[cat],10,uniqueCountsByCvg[cat].length-10)));
+			out.add(String.format("%.4f", 1.0-(totalPercentC[cat]/(double)totalPercentCcount[cat])));
+		}
+		for (int cat = 0; cat < 4; cat++)
+		{
+			out.add(String.format("%d", totalCreads[cat]+totalTreads[cat]));
+			out.add(String.format("%d", totalCreads[cat]));
 			out.add(String.format("%d", uniqueCountsByCvg[cat][0]));
 			out.add(String.format("%d", uniqueCountsByCvg[cat][1]));
 			out.add(String.format("%d", uniqueCountsByCvg[cat][2]));
-			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvg[cat],5,uniqueCountsByCvg[cat].length-5)));
-			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvg[cat],10,uniqueCountsByCvg[cat].length-10)));
-			out.add(String.format("%d", totalReads[cat]));
-			out.add(String.format("%d", totalCreads[cat]+totalTreads[cat]));
-			out.add(String.format("%d", totalCreads[cat]));
-			out.add(String.format("%.4f", 1.0-(totalPercentC[cat]/(double)totalPercentCcount[cat])));
 		}
+		
 		return out;
 	}
 	
