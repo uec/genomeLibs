@@ -228,7 +228,22 @@ public class MatUtils {
 		return (!found) ? Double.NaN : total;
 	}
 
+	public static int nanSum(int[] arr)
+	{
+		return nanSum(arr, 0, arr.length);
+	}
 
+	public static int nanSum(int[] arr, int startInd, int len)
+	{
+		int total = 0;
+		
+		for (int i = startInd; i < (startInd+len) ; i++)
+		{
+			total += arr[i];
+		}
+		
+		return total;
+	}
 		
 	public static void initMat(int[] mat, int initVal)
 	{
