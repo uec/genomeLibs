@@ -119,7 +119,7 @@ public class SamToConversionByCoverageMatrix {
 		int numCphConvertedNoFilt = 0;
 		int numCphTotalNoFilt = 0;
 		
-		int totalUniqueMappedBasesRead = 0;
+		long totalUniqueMappedBasesRead = 0;
 		short[] refCoordsCovered = new short[300000000]; // This really assumes a single chromosome
 		CytosineStats cytStats = new CytosineStats(this.maxOppStrandAfrac, this.maxNextNonGfrac);
 		
@@ -389,13 +389,10 @@ public class SamToConversionByCoverageMatrix {
 		headers.add("totalReads");
 		vals.add(String.format("%d", recCounter));
 
-		headers.add("totalUniqueMappedBasesRead");
-		vals.add(String.format("%d", totalUniqueMappedBasesRead));
-		
 		if (chrs.size()==1) // Otherwise these are not valid
 		{
 			int totalRefCoordsCovered = 0;
-			int totalBases = 0;
+			long totalBases = 0;
 			for (int i = 0; i < refCoordsCovered.length; i++)
 			{
 				short b = refCoordsCovered[i];
@@ -406,7 +403,7 @@ public class SamToConversionByCoverageMatrix {
 			vals.add(String.format("%d", totalRefCoordsCovered));
 
 			headers.add("totalBases");
-			vals.add(String.format("%d", totalBases));
+			vals.add(String.format("%s", totalBases));
 		}
 		
 		headers.add("cpgsFivePrimeFiltered");
