@@ -9,7 +9,6 @@ my $USAGE = "generateMaqToBam.pl [--noremoveTemps] [--nopropagateOnlyRegions] ne
 my $region = "chr11";
 my $PROPAGATE_ONLY_REGIONS = 1;
 my $SAMDIR = "/home/uec-00/shared/production/software/samtools";
-#my $SAMDIR = "/home/uec-00/bberman/bin";
 my $RMTMPS = 1;
 my $BATCHSIZE = 50;
 GetOptions ('removeTemps!' => \$RMTMPS, 'propagateOnlyRegions!' => \$PROPAGATE_ONLY_REGIONS) || die "$USAGE\n";
@@ -199,6 +198,12 @@ sub runMapPipeline
     my $cmd = "${SAMDIR}/samtools view -bt /home/uec-00/shared/production/genomes/sambam/hg18.fai -o ${curOut} ${curIn}";
     $cmd .= "; rm -f ${curIn}" if ($RMTMPS);
     $curJobids = [runCmd($tmpdir,$cmd, "M2B_sam2fullbam", $curJobids)];
+
+    # Index full bam
+    $curIn = $curOut;
+    my $indexOut = "${mapFnBase}.bam.bai";
+    my $cmd = "${SAMDIR}/samtools index ${curIn} ${indexOut}";
+    $curJobids = [runCmd($tmpdir,$cmd, "M2B_fullindex", $curJobids)];
 
     # remove dups
     $curIn = $curOut;
