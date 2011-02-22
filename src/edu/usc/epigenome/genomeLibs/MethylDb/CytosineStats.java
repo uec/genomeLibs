@@ -84,8 +84,10 @@ public class CytosineStats {
 			System.err.printf("Following has 0 reads: %s\n",cyt.toString());
 		}
 		
-		uniqueCountsByCvg[cat][cyt.totalReads]++;
-		uniqueCountsByCvgDS[cat][cyt.totalReads+cyt.totalReadsOpposite]++;
+		
+		if (cyt.totalReads<MAXCOVERAGE) uniqueCountsByCvg[cat][cyt.totalReads]++;
+		if ((cyt.totalReads+cyt.totalReadsOpposite)<MAXCOVERAGE) uniqueCountsByCvgDS[cat][cyt.totalReads+cyt.totalReadsOpposite]++;
+		
 		totalReads[cat] += cyt.totalReads-cyt.cReadsNonconversionFilt;
 		totalCreads[cat] += cyt.cReadsNonconversionFilt;
 		totalTreads[cat] += cyt.tReads;
