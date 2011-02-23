@@ -32,7 +32,7 @@ public class SamToMethyldbOnlineAllCytocine {
 	 */
 		
 		final private static String prefix = "methylCGsRich_";
-		final private static String USAGE = "SamToMethyldbOnline [opts] sampleName file1.bam file2.bam ...";
+		final private static String USAGE = "SamToMethyldbOnlineAllCytocine [opts] sampleName file1.bam file2.bam ...";
 
 		final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
 		public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/gnome_seq";
@@ -70,7 +70,9 @@ public class SamToMethyldbOnlineAllCytocine {
 		@Option(name="-minHcphCoverage",usage="the minimum number of total reads to include a HCph (default 10)")
 		protected int minHcphCoverage = 10;
 		@Option(name="-minHcphFrac",usage="minimum methylation fraction to include a HCph")
-		protected double minHcphFrac = 0.2;
+		protected double minHcphFrac = 0;
+		@Option(name="-insertTable",usage="Dont's drop the exist table, just insert data (default false)")
+		protected boolean insertTable = false;
 		@Option(name="-debug",usage=" Debugging statements (default false)")
 		protected boolean debug = false;
 
@@ -162,7 +164,7 @@ public class SamToMethyldbOnlineAllCytocine {
 			{
 				SortedMap<Integer,Cytosine> cytosines = new TreeMap<Integer,Cytosine>();
 				String tableName = prefix + sampleName + "_" + chr;
-				Cytosine.outputChromToDb(cytosines, tableName, cConn, this.minHcphCoverage, this.minHcphFrac);
+				Cytosine.outputChromToDb(cytosines, tableName, cConn, this.minHcphCoverage, this.minHcphFrac, insertTable);
 
 				
 				for (final String fn : stringArgs)
@@ -190,6 +192,7 @@ public class SamToMethyldbOnlineAllCytocine {
 							// Weird, if i just set cytosines to be the tailMap (as in 1, below) garbage collection doesn't actually clean up
 							// the old part (just backed by the original data structure). So i actually have to copy it to a new map. (as in 2)
 							//(1) cytosines = cytosines.tailMap(new Integer(lastPurge));
+							cytosines.headMap(new Integer(lastPurge)).clear();
 							cytosines = new TreeMap<Integer,Cytosine>(cytosines.tailMap(new Integer(lastPurge))); // (2)
 							
 							lastPurge = lastBaseSeen;
@@ -214,6 +217,7 @@ public class SamToMethyldbOnlineAllCytocine {
 							System.err.printf("On new record #%d, purged tree size:%d\n",recCounter,cytosines.size());
 							if (canPurge) System.gc();
 						}
+						
 
 
 						try
