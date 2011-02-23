@@ -41,7 +41,7 @@ public class MethylDbToPhase {
 	 * @param args
 	 */
 	private static final String C_USAGE = "Use: MethylDbToPhase -tablePrefix " + "methylCGsRich_gnome_seq_merge_s5_s6_" + "-sample ctcf" +
-	" -windowSize 10 -GCH gff_file";
+	" -windowSize 20 -GCH gff_file";
 	public static String connStr = null;
 	protected static Connection cConn = null;
 	//public static String connStr = "jdbc:mysql://epifire2.epigenome.usc.edu/gnome_seq";
@@ -57,8 +57,8 @@ public class MethylDbToPhase {
     protected boolean Gch = false;
     @Option(name="-sample",usage=" input the sample name: ctcf")
     protected String sample = "ctcf";
-    @Option(name="-windowSize",usage=" input the window size: default is 10bp")
-    protected int windowSize = 10;
+    @Option(name="-windowSize",usage=" input the window size: default is 20bp")
+    protected int windowSize = 20;
     @Option(name="-rangeSize",usage=" input the range size: default is 2000bp")
     protected int rangeSize = 2000;
     @Option(name="-alignmentType",usage="alignment type(1: 5' end; 2: 3' end; 3: center) the default is 3")
@@ -95,8 +95,23 @@ public class MethylDbToPhase {
 			String line;
 			//this.tablePrefix += sample;
 			//this.tablePrefix += "_";
-			String fn1 = this.tablePrefix + sample + "_table" + ".txt";
+			String fn1 = this.tablePrefix + sample;
+			String fn2 = this.tablePrefix + sample;
+			if(Gch){
+				fn1 += "_gch_table.txt";
+				fn2 += "_gch_table.addtional.txt";
+			}
+			else if(Hcg){
+				fn1 += "_hcg_table.txt";
+				fn2 += "_hcg_table.addtional.txt";
+			}
+			else{
+				fn1 += "_table.txt";
+				fn2 += "_table.addtional.txt";
+			}
 			PrintWriter outWriter = new PrintWriter(new File(fn1));
+			//additional file to store c reads, t reads number detail
+			PrintWriter outWriter2 = new PrintWriter(new File(fn2));
 			//String fn2 = this.tablePrefix + sample + "_table_coverage" + ".txt";
 			//PrintWriter outCovWriter = new PrintWriter(new File(fn2));
 			//String fn2 = this.tablePrefix + sample + "_table_summary" + ".txt";
@@ -153,6 +168,8 @@ public class MethylDbToPhase {
 							
 							double methyValue = queryResult.getDouble(1);
 							int numC = queryResult.getInt(2);
+							double cReads = queryResult.getDouble(3);
+							double tReads = queryResult.getDouble(4);
 							//double readCov = queryResult.getDouble(3);
 							//outCovWriter.printf("%.2f\t", readCov);
 							if(numC != 0){
@@ -161,6 +178,7 @@ public class MethylDbToPhase {
 								//System.err.println(numC);
 								//outWriter.printf("%.2f\t%.2f\t", methyValue, readCoverage);
 								outWriter.printf("%.2f\t", methyValue);
+								outWriter2.printf("%d\t%.2f\t%.2f\t", numC, cReads, tReads);
 								//List<Double> tempMethy = new ArrayList<Double>();
 								//if(methySum.containsKey(i)){
 									//tempMethy = methySum.get(i);
@@ -170,6 +188,7 @@ public class MethylDbToPhase {
 							}
 							else{
 								outWriter.printf("NA\t");
+								outWriter2.printf("NA\tNA\tNA\t");
 							}
 							queryResult.close();
 							
@@ -191,6 +210,8 @@ public class MethylDbToPhase {
 							
 							
 							int numC = queryResult.getInt(2);
+							double cReads = queryResult.getDouble(3);
+							double tReads = queryResult.getDouble(4);
 							//double readCov = queryResult.getDouble(3);
 							//outCovWriter.printf("%.2f\t", readCov);
 							if(numC != 0){
@@ -199,6 +220,7 @@ public class MethylDbToPhase {
 								//System.err.println(numC);
 								//outWriter.printf("%.2f\t%.2f\t", methyValue, readCoverage);
 								outWriter.printf("%.2f\t", methyValue);
+								outWriter2.printf("%d\t%.2f\t%.2f\t", numC, cReads, tReads);
 								//List<Double> tempMethy = new ArrayList<Double>();
 								//if(methySum.containsKey(i)){
 									//tempMethy = methySum.get(i);
@@ -208,6 +230,7 @@ public class MethylDbToPhase {
 							}
 							else{
 								outWriter.printf("NA\t");
+								outWriter2.printf("NA\tNA\tNA\t");
 							}
 							queryResult.close();
 							
@@ -218,11 +241,13 @@ public class MethylDbToPhase {
 				}
 				
 				outWriter.printf("\n");
+				outWriter2.printf("\n");
 				//outCovWriter.printf("\n");
 				
 			}
 			cleanupDb();
 			outWriter.close();
+			outWriter2.close();
 			//outCovWriter.close();
 			/*Iterator<List<Double>> windowIt = methySum.values().iterator();
 			double methyValueSum = 0;
@@ -255,7 +280,7 @@ public class MethylDbToPhase {
 	protected String getSql(String tablePrefix, String chr, int chrStart, int chrEnd) 
 	throws Exception{
 		String methTable = tablePrefix + chr;
-		String sql = String.format("select AVG(cReads/(cReads+tReads)), COUNT(*) from %s WHERE", methTable);
+		String sql = String.format("select AVG(cReads/(cReads+tReads)), COUNT(*), AVG(cReads), AVG(tReads) from %s WHERE", methTable);
 		sql += " totalReads != 0";
 		sql += " AND (cReads+tReads) != 0";
 		sql += " AND aReadsOpposite/totalReadsOpposite <= " + minOppoAFreq;
