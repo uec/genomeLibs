@@ -527,6 +527,17 @@ public class Cytosine implements Comparable, Cloneable {
 
 	}
 	
+	public static void outputChromToDb(Map<Integer, Cytosine> cytocineMap, String tableName, Connection cConn, int minCphCoverage, double minCphMethFrac, boolean insertTable)
+	throws IOException
+	{
+		
+		conn=cConn;
+		if(!insertTable){
+			creatTableInDb(tableName);
+		}
+		outputCytocinesToDb(cytocineMap, tableName, minCphCoverage, minCphMethFrac);
+
+	}
 	
 	
 	public static void outputChromToDb(SortedMap<Integer,TreeMap<Integer,Cytosine>> cytocineMap, String tableName, Connection cConn, boolean asmFlag)
@@ -645,6 +656,7 @@ public class Cytosine implements Comparable, Cloneable {
 			System.err.println("CreateTable: " + ex.getMessage());
 		}
 	}
+	
 	
 	@Override
 	public String toString() {
