@@ -93,8 +93,7 @@ public class MethylDbToPhase {
 			String gffFileName = arguments.get(0);
 			BufferedReader br = new BufferedReader(new FileReader(gffFileName));
 			String line;
-			//this.tablePrefix += sample;
-			//this.tablePrefix += "_";
+			
 			String fn1 = this.tablePrefix + sample;
 			String fn2 = this.tablePrefix + sample;
 			if(Gch){
@@ -112,10 +111,7 @@ public class MethylDbToPhase {
 			PrintWriter outWriter = new PrintWriter(new File(fn1));
 			//additional file to store c reads, t reads number detail
 			PrintWriter outWriter2 = new PrintWriter(new File(fn2));
-			//String fn2 = this.tablePrefix + sample + "_table_coverage" + ".txt";
-			//PrintWriter outCovWriter = new PrintWriter(new File(fn2));
-			//String fn2 = this.tablePrefix + sample + "_table_summary" + ".txt";
-			//PrintWriter outSumWriter = new PrintWriter(new File(fn2));
+
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.INFO);
 			if(connStr == null){
 				BufferedReader hostBr = new BufferedReader(new FileReader("/home/uec-00/shared/production/database/mysql.host.txt"));
@@ -123,9 +119,7 @@ public class MethylDbToPhase {
 				connStr = "jdbc:mysql://" + hostName + "/gnome_seq";
 			}
 			setupDb(connStr);
-			//int a = 0;
-			//int gffLineNumber = 0;
-			//TreeMap<Integer,List<Double>> methySum = new TreeMap<Integer,List<Double>>();
+
 			int recCounter = 0;
 			while( (line = br.readLine()) != null){
 				String[] tmpArray = line.split("\t");
@@ -170,21 +164,12 @@ public class MethylDbToPhase {
 							int numC = queryResult.getInt(2);
 							double cReads = queryResult.getDouble(3);
 							double tReads = queryResult.getDouble(4);
-							//double readCov = queryResult.getDouble(3);
-							//outCovWriter.printf("%.2f\t", readCov);
+
 							if(numC != 0){
-								//System.err.println(queryString);
-								//System.err.println(methyValue);
-								//System.err.println(numC);
-								//outWriter.printf("%.2f\t%.2f\t", methyValue, readCoverage);
+
 								outWriter.printf("%.2f\t", methyValue);
 								outWriter2.printf("%d\t%.2f\t%.2f\t", numC, cReads, tReads);
-								//List<Double> tempMethy = new ArrayList<Double>();
-								//if(methySum.containsKey(i)){
-									//tempMethy = methySum.get(i);
-								//}
-								//tempMethy.add(methyValue);
-								//methySum.put(i, tempMethy);
+
 							}
 							else{
 								outWriter.printf("NA\t");
@@ -212,21 +197,12 @@ public class MethylDbToPhase {
 							int numC = queryResult.getInt(2);
 							double cReads = queryResult.getDouble(3);
 							double tReads = queryResult.getDouble(4);
-							//double readCov = queryResult.getDouble(3);
-							//outCovWriter.printf("%.2f\t", readCov);
+
 							if(numC != 0){
-								//System.err.println(queryString);
-								//System.err.println(methyValue);
-								//System.err.println(numC);
-								//outWriter.printf("%.2f\t%.2f\t", methyValue, readCoverage);
+
 								outWriter.printf("%.2f\t", methyValue);
 								outWriter2.printf("%d\t%.2f\t%.2f\t", numC, cReads, tReads);
-								//List<Double> tempMethy = new ArrayList<Double>();
-								//if(methySum.containsKey(i)){
-									//tempMethy = methySum.get(i);
-								//}
-								//tempMethy.add(methyValue);
-								//methySum.put(i, tempMethy);
+
 							}
 							else{
 								outWriter.printf("NA\t");
@@ -242,28 +218,12 @@ public class MethylDbToPhase {
 				
 				outWriter.printf("\n");
 				outWriter2.printf("\n");
-				//outCovWriter.printf("\n");
+
 				
 			}
 			cleanupDb();
 			outWriter.close();
-			outWriter2.close();
-			//outCovWriter.close();
-			/*Iterator<List<Double>> windowIt = methySum.values().iterator();
-			double methyValueSum = 0;
-			int count = 0;
-			while(windowIt.hasNext()){
-				List<Double> windowValue = windowIt.next();
-				Iterator<Double> methyIt = windowValue.iterator();
-				count = windowValue.size();
-				while(methyIt.hasNext()){
-					methyValueSum += methyIt.next();
-				}
-				outSumWriter.printf("%.2f\t",methyValueSum/(double)count);
-			}*/
-			//outSumWriter.printf("\n");
-			//outSumWriter.close();
-			
+			outWriter2.close();		
 
 		}
 		catch (CmdLineException e)
