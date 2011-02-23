@@ -1,16 +1,20 @@
 package edu.usc.epigenome.scripts;
 
-import net.sf.samtools.*;
-import net.sf.samtools.util.CloseableIterator;
-
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.PrintWriter;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+
+import net.sf.samtools.SAMFileReader;
+import net.sf.samtools.SAMRecord;
+import net.sf.samtools.util.CloseableIterator;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -21,7 +25,6 @@ import edu.usc.epigenome.genomeLibs.PicardUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cytosine;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 
-
 public class SamToMethyldbOfflineAllCytocine {
 
 	/**
@@ -29,10 +32,9 @@ public class SamToMethyldbOfflineAllCytocine {
 	 */
 		
 		final private static String prefix = "methylCGsRich_";
-		final private static String USAGE = "SamToMethyldbOffling [opts] sampleName file1.bam file2.bam ...";
+		final private static String USAGE = "SamToMethyldbOfflineAllCytocine [opts] sampleName file1.bam file2.bam ...";
 
 		final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
-
 		
 		/**
 		 * object vars
@@ -46,10 +48,6 @@ public class SamToMethyldbOfflineAllCytocine {
 		protected List<String> chrs = new ArrayList<String>(25);
 		@Option(name="-minConv",usage="minimum number of converted cytosines required")
 		protected int minConv = 1;
-//		@Option(name="-numCycles",usage="Number of cycles to track")
-//		protected int numCycles = 100;
-//		@Option(name="-outputReads",usage=" Outputs one line per read (default false)")
-//		protected boolean outputReads = false;
 		@Option(name="-useCpgsToFilter",usage=" Use CpGs and CpHs to filter if true, otherwise just CpHs (default false)")
 		protected boolean useCpgsToFilter = false;
 		@Option(name="-useGchsToFilter",usage=" Use GCHs and HCpHs to filter if true, otherwise just HCpHs (default false)")
@@ -62,8 +60,8 @@ public class SamToMethyldbOfflineAllCytocine {
 		protected int minMapQ = 30;
 		@Option(name="-minHcphCoverage",usage="the minimum number of total reads to include a HCph (default 10)")
 		protected int minHcphCoverage = 10;
-		@Option(name="-minHcphFrac",usage="minimum methylation fraction to include a HCph")
-		protected double minHcphFrac = 0;
+		@Option(name="-minHcphMethFrac",usage="minimum methylation fraction to include a HCph")
+		protected double minHcphMethFrac = 0;
 		@Option(name="-debug",usage=" Debugging statements (default false)")
 		protected boolean debug = false;
 
@@ -141,13 +139,14 @@ public class SamToMethyldbOfflineAllCytocine {
 			int numHcgConvertedNoFilt = 0;
 			int numHcgTotalNoFilt = 0;
 			
+			
 			// Iterate through chroms
 			if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 			for (final String chr : chrs)
 			{
 				SortedMap<Integer,Cytosine> cytosines = new TreeMap<Integer,Cytosine>();
-				PrintWriter outWriter = Cytosine.outputChromToFile(cytosines, prefix, sampleName, chr, minHcphCoverage, minHcphFrac);
-
+				//String tableName = prefix + sampleName + "_" + chr;
+				PrintWriter pw = Cytosine.outputChromToFile(cytosines, prefix, sampleName, chr, this.minHcphCoverage, this.minHcphMethFrac);
 				
 				for (final String fn : stringArgs)
 				{
@@ -168,12 +167,9 @@ public class SamToMethyldbOfflineAllCytocine {
 					{
 						if (canPurge && (lastBaseSeen > (lastPurge+PURGE_INTERVAL)))
 						{
-							//System.err.printf("On base %d, purging everything before %d\n", lastBaseSeen,lastPurge);
-							Cytosine.outputCytocinesToFile(outWriter, cytosines.headMap(new Integer(lastPurge)), prefix, sampleName, chr, minHcphCoverage, minHcphFrac);
+							Cytosine.outputCytocinesToFile(pw, cytosines.headMap(new Integer(lastPurge)), prefix, sampleName, chr, this.minHcphCoverage, this.minHcphMethFrac);
 							
-							// Weird, if i just set cytosines to be the tailMap (as in 1, below) garbage collection doesn't actually clean up
-							// the old part (just backed by the original data structure). So i actually have to copy it to a new map. (as in 2)
-							//(1) cytosines = cytosines.tailMap(new Integer(lastPurge));
+							cytosines.headMap(new Integer(lastPurge)).clear();
 							cytosines = new TreeMap<Integer,Cytosine>(cytosines.tailMap(new Integer(lastPurge))); // (2)
 							
 							lastPurge = lastBaseSeen;
@@ -198,6 +194,7 @@ public class SamToMethyldbOfflineAllCytocine {
 							System.err.printf("On new record #%d, purged tree size:%d\n",recCounter,cytosines.size());
 							if (canPurge) System.gc();
 						}
+						
 
 
 						try
@@ -209,7 +206,6 @@ public class SamToMethyldbOfflineAllCytocine {
 								System.err.println("SeqLen(" + seq.length() + ") != RefLen(" + ref.length() + ")");
 								System.err.println(seq + "\n" + ref);
 							}
-							//System.err.println(seq + "\n" + ref);
 
 							boolean negStrand = samRecord.getReadNegativeStrandFlag();
 							int alignmentS = samRecord.getAlignmentStart();
@@ -217,7 +213,7 @@ public class SamToMethyldbOfflineAllCytocine {
 
 							if ((this.outputHcphs) && (alignmentS < lastBaseSeen))
 							{
-								System.err.printf("BAM must be ordered in order to handle -outputCphs: %d<%d\n",alignmentS, lastBaseSeen);
+								System.err.printf("BAM must be ordered in order to handle -outputHcphs: %d<%d\n",alignmentS, lastBaseSeen);
 								System.exit(1);
 							}
 							lastBaseSeen = alignmentS;
@@ -241,8 +237,8 @@ public class SamToMethyldbOfflineAllCytocine {
 								char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 								char nextBaseSeq = PicardUtils.nextBaseSeq(i, seq);
 
-								//if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref)) // The last one is too tricky to deal with since we don't know context
-								if (PicardUtils.isCytosine(i,ref,false) && PicardUtils.isCytosine(i,seq,true)) // The last one is too tricky to deal with since we don't know context
+								
+								if (PicardUtils.isCytosine(i,ref,false) && PicardUtils.isCytosine(i,seq,true)) 
 								{
 									boolean isgch = PicardUtils.isGch(i,ref);
 									boolean isgcg = PicardUtils.isGcg(i,ref);
@@ -252,14 +248,6 @@ public class SamToMethyldbOfflineAllCytocine {
 									
 									boolean conv = PicardUtils.isConverted(i,ref,seq);
 									
-//									if (iscpg && (nextBaseRef != 'G'))
-//									{
-//										System.err.printf("Cpg status and next base don't match:\nref=%s\nseq=%s\nref_%d=%c, seq_%d=%c\n",
-//												ref, seq, i, refi, i, seqi);
-//									}
-									
-
-									//if (conv && this.useCpgsToFilter || !iscpg) numConverted++;
 									if (conv && (this.useCpgsToFilter || (!iscpg && (i < (seqLen-1)) && nextBaseSeq != 'G'))) numConverted++;
 									if (conv && (this.useGchsToFilter || (ishch && preBaseSeq != 'G' && nextBaseSeq != 'G'))) gchNumConverted++;
 									if (conv && (this.useHcgsToFilter || (!ishcg && (preBaseSeq == 'G' || nextBaseSeq != 'G')))) hcgNumConverted++;
@@ -287,16 +275,12 @@ public class SamToMethyldbOfflineAllCytocine {
 										this.incrementCytosine(cytosine, seqi, i<convStart || i<gchConvStart, preBaseSeq, nextBaseSeq);
 									}
 									
-									
-
-									//if(iscpg)
 									if (iscpg && (i < (seqLen-1)) && nextBaseSeq == 'G')
 									{
 										if (i<convStart)
 										{
 											// In the non-conversion filter zone
 											filteredOutCounter++;
-											//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
 											numCpgTotalNoFilt++;
 											if (conv) numCpgConvertedNoFilt++;
 										}
@@ -310,14 +294,12 @@ public class SamToMethyldbOfflineAllCytocine {
 
 									}
 									
-									//if(isgch)
 									if (isgch && preBaseSeq == 'G' && nextBaseSeq != 'G')
 									{
 										if (i<gchConvStart)
 										{
 											// In the non-conversion filter zone
 											gchFilteredOutCounter++;
-											//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
 											numGchTotalNoFilt++;
 											if (conv) numGchConvertedNoFilt++;
 										}
@@ -331,14 +313,12 @@ public class SamToMethyldbOfflineAllCytocine {
 
 									}
 									
-									//if(ishcg)
 									if (ishcg && preBaseSeq != 'G' && nextBaseSeq == 'G')
 									{
 										if (i<hcgConvStart)
 										{
 											// In the non-conversion filter zone
 											hcgFilteredOutCounter++;
-											//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
 											numHcgTotalNoFilt++;
 											if (conv) numHcgConvertedNoFilt++;
 										}
@@ -385,10 +365,9 @@ public class SamToMethyldbOfflineAllCytocine {
 								boolean oppositeHcg = PicardUtils.isOppositeHcg(i,ref);
 								boolean oppositeHch = PicardUtils.isOppositeHch(i,ref);
 								
-								//if( oppositeGcg || oppositeHcg )
 								if (oppositeGch || oppositeGcg || oppositeHcg || (oppositeHch & outputHcphs))
 								{
-		//							// Look for cpg on opposite strand
+		//							// Look for hcg, gch, gcg on opposite strand
 			//						// Be careful, the "nextBaseRef" is now on the opposite strand!!
 									
 									char nextBaseRefRev = PicardUtils.nextBaseRef(i, ref, true);
@@ -420,8 +399,6 @@ public class SamToMethyldbOfflineAllCytocine {
 							System.err.println(seq);
 							e.printStackTrace(System.err);
 							System.err.println("-----------------------------------------");
-//							chrIt.close();
-//							System.exit(1);
 						}
 
 					} // record
@@ -432,9 +409,8 @@ public class SamToMethyldbOfflineAllCytocine {
 				}
 
 				// And output the chrom
-				if (cytosines != null) 	Cytosine.outputCytocinesToFile(outWriter, cytosines, prefix, sampleName, chr, minHcphCoverage, minHcphFrac);
-				outWriter.close();
-
+				if (cytosines != null) Cytosine.outputCytocinesToFile(pw, cytosines, prefix, sampleName, chr, this.minHcphCoverage, this.minHcphMethFrac);
+				
 			}
 			
 			
@@ -588,8 +564,5 @@ public class SamToMethyldbOfflineAllCytocine {
 			cytosine.nextBaseGreads += nextBaseGreads;
 			cytosine.nextBaseTotalReads += nextBaseTotalReads;
 		}
-
 		
-
-
 }
