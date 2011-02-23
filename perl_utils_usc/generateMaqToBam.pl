@@ -223,6 +223,8 @@ sub runMapPipeline
     # calmd
     $curIn = $curOut;
     $curOut = "${mapFnBase}.NODUPS.sorted.calmd.bam";
+    # This will generate messages like the following, because it was aligned to bisulfite genome
+    # [bam_fillmd1] different NM for read 'INA-DB1410_0001:5:78:9406:17380#0/1': 1 -> 22
     my $cmd = "${SAMDIR}/samtools calmd -b ${curIn} ${refFa} > ${curOut}";
     $cmd .= "; rm -f ${curIn}" if ($RMTMPS);
     $curJobids = [runCmd($tmpdir,$cmd, "M2B_calmd", $curJobids)];
