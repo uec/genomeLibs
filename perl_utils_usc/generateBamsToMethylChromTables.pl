@@ -11,6 +11,7 @@ my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "
 	       "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM");
 #@regions = ("chr20","chr21");
 #@regions = ("chrM");
+#more RE@regions = ("chr22");
 
 
 
@@ -65,7 +66,8 @@ foreach my $region (@regions)
 	}
 
 	my ($name, $path, $suf) = fileparse($bamFn, qr/\.bam/);
-	my $regionalBamFn = "${tmpDir}/${name}_${region}.bam";
+	my $calmdsec = ($addMdTags) ? ".calmd" : "";
+	my $regionalBamFn = "${tmpDir}/${name}_${region}${calmdsec}.bam";
 
 # Doing it all at once created more than a thousand jobs, which killed PBS       
 #	my $pullRegionJobid = pullRegions($bamFn, $regionalBamFn, $region, $tmpDir,\@dependJobs);
@@ -103,7 +105,7 @@ foreach my $region (@regions)
 }
 
 # Now we're ready to release the hounds
-my $regionSleepSecs = 10;
+my $regionSleepSecs = 60;
 print STDERR "About to start jobs by releasing $holdJobId after a $regionSleepSecs second break\n";
 sleep($regionSleepSecs);
 `qrls $holdJobId`;
@@ -187,6 +189,8 @@ sub mergeBams
 #     {
 # 	$curIn = $curOut;
 # 	$curOut =~ s/\.bam$/\.calmd\.bam/g;
+	# This will generate messages like the following, because it was aligned to bisulfite genome
+	# [bam_fillmd1] different NM for read 'INA-DB1410_0001:5:78:9406:17380#0/1': 1 -> 22
 # 	$cmd1 .= "; ${SAMDIR}/samtools calmd -b ${curIn} ${REFGENOME} > ${curOut}";
 # 	$cmd1 .= "; rm -f ${curIn}" if ($RMTMPS);
 #     }
@@ -215,15 +219,30 @@ sub pullRegionsCmdStr
 
     my $curIn = $inBamFn;
     my $curOut = $outBamFn;
+    $curOut .= "-preCalmd" if ($addMdTags);
 
-    # Put two commands in one job to half the number of jobs needed
+    # Put all the commands in one job to half the number of jobs needed
 
-    my $cmd1 = "${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
+    my $cmd1 = "";
+
+
+    # Sometimes the input file is not indexed, in which case the region pull will 
+    # fail.
+    my $curInIndex = "${curIn}.bai";
+    if (!(-f $curInIndex))
+    {
+	$cmd1 .= "${SAMDIR}/samtools index ${curIn} ${curInIndex} ; ";
+    }
+
+    
+    $cmd1 .= " ${SAMDIR}/samtools view -b -o ${curOut} ${curIn} ${region}";
 
     if ($addMdTags)
     {
 	$curIn = $curOut;
-	$curOut =~ s/\.bam$/\.calmd\.bam/g;
+	$curOut = $outBamFn;
+	# This will generate messages like the following, because it was aligned to bisulfite genome
+	# [bam_fillmd1] different NM for read 'INA-DB1410_0001:5:78:9406:17380#0/1': 1 -> 22
 	$cmd1 .= "; ${SAMDIR}/samtools calmd -b ${curIn} ${REFGENOME} > ${curOut}";
 	$cmd1 .= "; rm -f ${curIn}" if ($RMTMPS);
     }
