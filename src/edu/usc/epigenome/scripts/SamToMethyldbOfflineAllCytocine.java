@@ -54,14 +54,16 @@ public class SamToMethyldbOfflineAllCytocine {
 		protected boolean useCpgsToFilter = false;
 		@Option(name="-useGchsToFilter",usage=" Use GCHs and HCpHs to filter if true, otherwise just HCpHs (default false)")
 		protected boolean useGchsToFilter = false;
+		@Option(name="-useHcgsToFilter",usage=" Use HCGs and HCpHs to filter if true, otherwise just HCpHs (default false)")
+		protected boolean useHcgsToFilter = false;
 		@Option(name="-outputHcphs",usage=" Output HCpH cytosines (can't use more than 1 input file)")
 		protected boolean outputHcphs = false;
-		@Option(name="-minMapQ",usage="minimum mapping quality (default 0)")
-		protected int minMapQ = 0;
-//		@Option(name="-minHcphCoverage",usage="the minimum number of total reads to include a HCph (default 10)")
-//		protected int minHcphCoverage = 10;
-//		@Option(name="-minHcphFrac",usage="minimum methylation fraction to include a HCph")
-//		protected double minHcphFrac = 0;
+		@Option(name="-minMapQ",usage="minimum mapping quality (default 30)")
+		protected int minMapQ = 30;
+		@Option(name="-minHcphCoverage",usage="the minimum number of total reads to include a HCph (default 10)")
+		protected int minHcphCoverage = 10;
+		@Option(name="-minHcphFrac",usage="minimum methylation fraction to include a HCph")
+		protected double minHcphFrac = 0;
 		@Option(name="-debug",usage=" Debugging statements (default false)")
 		protected boolean debug = false;
 
@@ -111,6 +113,8 @@ public class SamToMethyldbOfflineAllCytocine {
 			int filteredOutCounter = 0;
 			int gchFilteredOutCounter = 0;
 			int gchUsedCounter = 0;
+			int hcgFilteredOutCounter = 0;
+			int hcgUsedCounter = 0;
 			// Cph counters
 			int numCphConvertedWithFilt = 0;
 			int numCphTotalWithFilt = 0;
@@ -131,13 +135,18 @@ public class SamToMethyldbOfflineAllCytocine {
 			int numGchTotalWithFilt = 0;
 			int numGchConvertedNoFilt = 0;
 			int numGchTotalNoFilt = 0;
-
+			//Hcg counters
+			int numHcgConvertedWithFilt = 0;
+			int numHcgTotalWithFilt = 0;
+			int numHcgConvertedNoFilt = 0;
+			int numHcgTotalNoFilt = 0;
+			
 			// Iterate through chroms
 			if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 			for (final String chr : chrs)
 			{
 				SortedMap<Integer,Cytosine> cytosines = new TreeMap<Integer,Cytosine>();
-				PrintWriter outWriter = Cytosine.outputChromToFile(cytosines, prefix, sampleName, chr);
+				PrintWriter outWriter = Cytosine.outputChromToFile(cytosines, prefix, sampleName, chr, minHcphCoverage, minHcphFrac);
 
 				
 				for (final String fn : stringArgs)
@@ -160,7 +169,7 @@ public class SamToMethyldbOfflineAllCytocine {
 						if (canPurge && (lastBaseSeen > (lastPurge+PURGE_INTERVAL)))
 						{
 							//System.err.printf("On base %d, purging everything before %d\n", lastBaseSeen,lastPurge);
-							Cytosine.outputCytocinesToFile(outWriter, cytosines.headMap(new Integer(lastPurge)), prefix, sampleName, chr);
+							Cytosine.outputCytocinesToFile(outWriter, cytosines.headMap(new Integer(lastPurge)), prefix, sampleName, chr, minHcphCoverage, minHcphFrac);
 							
 							// Weird, if i just set cytosines to be the tailMap (as in 1, below) garbage collection doesn't actually clean up
 							// the old part (just backed by the original data structure). So i actually have to copy it to a new map. (as in 2)
@@ -219,6 +228,8 @@ public class SamToMethyldbOfflineAllCytocine {
 							int convStart = Integer.MAX_VALUE;
 							int gchNumConverted = 0;
 							int gchConvStart = Integer.MAX_VALUE;
+							int hcgNumConverted = 0;
+							int hcgConvStart = Integer.MAX_VALUE;
 							
 							int seqLen = Math.min(seq.length(), ref.length());
 							for (int i = 0; i < seqLen; i++)
@@ -249,8 +260,9 @@ public class SamToMethyldbOfflineAllCytocine {
 									
 
 									//if (conv && this.useCpgsToFilter || !iscpg) numConverted++;
-									if (conv && (this.useCpgsToFilter || !iscpg) && (i < (seqLen-1)) && nextBaseSeq != 'G') numConverted++;
+									if (conv && (this.useCpgsToFilter || (!iscpg && (i < (seqLen-1)) && nextBaseSeq != 'G'))) numConverted++;
 									if (conv && (this.useGchsToFilter || (ishch && preBaseSeq != 'G' && nextBaseSeq != 'G'))) gchNumConverted++;
+									if (conv && (this.useHcgsToFilter || (!ishcg && (preBaseSeq == 'G' || nextBaseSeq != 'G')))) hcgNumConverted++;
 									// If this is the first legal one , note it
 									if ((convStart==Integer.MAX_VALUE) && (numConverted>=this.minConv) && (i < (seqLen-1)) )
 									{
@@ -259,6 +271,10 @@ public class SamToMethyldbOfflineAllCytocine {
 									if ((gchConvStart==Integer.MAX_VALUE) && (gchNumConverted>=this.minConv) )
 									{
 										gchConvStart = i;
+									}
+									if ((hcgConvStart==Integer.MAX_VALUE) && (hcgNumConverted>=this.minConv) )
+									{
+										hcgConvStart = i;
 									}
 									
 									if(!outputHcphs && ishch){
@@ -311,6 +327,27 @@ public class SamToMethyldbOfflineAllCytocine {
 											gchUsedCounter++;
 											numGchTotalWithFilt++;
 											if (conv) numGchConvertedWithFilt++;
+										}
+
+									}
+									
+									//if(ishcg)
+									if (ishcg && preBaseSeq != 'G' && nextBaseSeq == 'G')
+									{
+										if (i<hcgConvStart)
+										{
+											// In the non-conversion filter zone
+											hcgFilteredOutCounter++;
+											//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
+											numHcgTotalNoFilt++;
+											if (conv) numHcgConvertedNoFilt++;
+										}
+										else
+										{
+											// Past the non-conversion filter, use it
+											hcgUsedCounter++;
+											numHcgTotalWithFilt++;
+											if (conv) numHcgConvertedWithFilt++;
 										}
 
 									}
@@ -395,7 +432,7 @@ public class SamToMethyldbOfflineAllCytocine {
 				}
 
 				// And output the chrom
-				if (cytosines != null) 	Cytosine.outputCytocinesToFile(outWriter, cytosines, prefix, sampleName, chr);
+				if (cytosines != null) 	Cytosine.outputCytocinesToFile(outWriter, cytosines, prefix, sampleName, chr, minHcphCoverage, minHcphFrac);
 				outWriter.close();
 
 			}
@@ -403,8 +440,11 @@ public class SamToMethyldbOfflineAllCytocine {
 			
 			double frac = (double)filteredOutCounter/((double)usedCounter+(double)filteredOutCounter);
 			double gchFrac = (double)gchFilteredOutCounter/((double)gchUsedCounter+(double)gchFilteredOutCounter);
+			double hcgFrac = (double)hcgFilteredOutCounter/((double)hcgUsedCounter+(double)hcgFilteredOutCounter);
 			System.err.printf("Lost %f%% due to CpG non-converion filter\n%d CpGs filtered for non-conversion, %d CpGs used (MinConv=%d,UseCpgs=%s)\n",
 					frac*100.0, filteredOutCounter, usedCounter, this.minConv, String.valueOf(this.useCpgsToFilter));
+			System.err.printf("Lost %f%% due to Hcg non-converion filter\n%d Hcgs filtered for non-conversion, %d Hcgs used (MinConv=%d,UseHcgs=%s)\n",
+					hcgFrac*100.0, hcgFilteredOutCounter, hcgUsedCounter, this.minConv, String.valueOf(this.useHcgsToFilter));
 			System.err.printf("Lost %f%% due to Gch non-converion filter\n%d Gchs filtered for non-conversion, %d Gchs used (MinConv=%d,UseGchs=%s)\n",
 					gchFrac*100.0, gchFilteredOutCounter, gchUsedCounter, this.minConv, String.valueOf(this.useGchsToFilter));
 			System.err.printf("Found %d reads total\n", recCounter);
@@ -419,6 +459,9 @@ public class SamToMethyldbOfflineAllCytocine {
 			System.err.printf("CpG conversion rate: before filter=%f, after filter=%f\n",
 					100.0 * ((double)numCpgConvertedNoFilt/(double)numCpgTotalNoFilt),
 					100.0 * ((double)numCpgConvertedWithFilt/(double)numCpgTotalWithFilt));
+			System.err.printf("HCG conversion rate: before filter=%f, after filter=%f\n",
+					100.0 * ((double)numHcgConvertedNoFilt/(double)numHcgTotalNoFilt),
+					100.0 * ((double)numHcgConvertedWithFilt/(double)numHcgTotalWithFilt));
 			System.err.printf("GCH conversion rate: before filter=%f, after filter=%f\n",
 					100.0 * ((double)numGchConvertedNoFilt/(double)numGchTotalNoFilt),
 					100.0 * ((double)numGchConvertedWithFilt/(double)numGchTotalWithFilt));
