@@ -22,6 +22,7 @@ public class CytosineStats {
 	protected int uniqueCountsByCvg[][] = null;
 	protected int uniqueCountsByCvgDS[][] = null;
 	protected int totalReads[] = null;
+	protected int totalReadsDS[] = null;
 	protected int totalCreads[] = null;
 	protected int totalTreads[] = null;
 	protected double totalPercentC[] = null;
@@ -43,6 +44,7 @@ public class CytosineStats {
 		uniqueCountsByCvg = new int[4][MAXCOVERAGE];
 		uniqueCountsByCvgDS = new int[4][MAXCOVERAGE];
 		totalReads = new int[4];
+		totalReadsDS = new int[4];
 		totalCreads = new int[4];
 		totalTreads = new int[4];
 		totalPercentC = new double[4];
@@ -84,12 +86,26 @@ public class CytosineStats {
 			System.err.printf("Following has 0 reads: %s\n",cyt.toString());
 		}
 		
+		try
+		{
+			if (cyt.totalReads<MAXCOVERAGE) uniqueCountsByCvg[cat][cyt.totalReads]++;
+			if ((cyt.totalReads+cyt.totalReadsOpposite)<MAXCOVERAGE) uniqueCountsByCvgDS[cat][cyt.totalReads+cyt.totalReadsOpposite]++;
+		}
+		catch (Exception e)
+		{
+			System.err.println("-----------------------------------------");
+			System.err.println("Couldn't handle seq #" + cyt.toStringExpanded());
+			System.err.println(e.getMessage());
+			e.printStackTrace(System.err);
+			System.err.println("-----------------------------------------");
+			return;
+//			chrIt.close();
+//			System.exit(1);
+		}
 		
-		if (cyt.totalReads<MAXCOVERAGE) uniqueCountsByCvg[cat][cyt.totalReads]++;
-		if ((cyt.totalReads+cyt.totalReadsOpposite)<MAXCOVERAGE) uniqueCountsByCvgDS[cat][cyt.totalReads+cyt.totalReadsOpposite]++;
-		
-		totalReads[cat] += cyt.totalReads-cyt.cReadsNonconversionFilt;
-		totalCreads[cat] += cyt.cReadsNonconversionFilt;
+		totalReads[cat] += (cyt.totalReads-cyt.cReadsNonconversionFilt);
+		totalReadsDS[cat] += (cyt.totalReadsOpposite + cyt.totalReads - cyt.cReadsNonconversionFilt);
+		totalCreads[cat] += cyt.cReads;
 		totalTreads[cat] += cyt.tReads;
 		
 		double fracC = cyt.fracMeth(true);
@@ -108,7 +124,8 @@ public class CytosineStats {
 		for (int cat = 0; cat < 4; cat++)
 		{
 			out.add(String.format("unique-%s", catToStr(cat)));
-			out.add(String.format("totalReads-%s", catToStr(cat)));
+			out.add(String.format("totalReads-ss-%s", catToStr(cat)));
+			out.add(String.format("totalReads-ds-%s", catToStr(cat)));
 			out.add(String.format("gte5ss-%s", catToStr(cat)));
 			out.add(String.format("gte10ss-%s", catToStr(cat)));
 			out.add(String.format("gte5ds-%s", catToStr(cat)));
@@ -136,6 +153,7 @@ public class CytosineStats {
 			int totalUnique = MatUtils.nanSum(uniqueCountsByCvg[cat]);
 			out.add(String.format("%d", totalUnique));
 			out.add(String.format("%d", totalReads[cat]));
+			out.add(String.format("%d", totalReadsDS[cat]));
 			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvg[cat],5,uniqueCountsByCvg[cat].length-5)));
 			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvg[cat],10,uniqueCountsByCvg[cat].length-10)));
 			out.add(String.format("%d", MatUtils.nanSum(uniqueCountsByCvgDS[cat],5,uniqueCountsByCvgDS[cat].length-5)));
