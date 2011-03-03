@@ -118,13 +118,6 @@ public class MethylDbToAutocorrByread {
 
 		
 		
-		// Loop through within feats.  If more than one is specified, throw in a null one for fun.  Also add
-		// it if we haven't specified any
-		if (withinFeats.size() != 1) withinFeats.add(null);
-
-		for (String withinFeat : withinFeats)
-		{
-
 
 
 			// Setup streaming params
@@ -143,11 +136,15 @@ public class MethylDbToAutocorrByread {
 			walkerParams.minScanningWindSize = this.windSize;
 			walkerParams.minScanningWindCpgs = 2;
 			walkerParams.methylParams = params;
+		
 
 			
 			// For the background, it makes a big difference whether we add this filter
 			// before or after doing the 1st pass to calculate mean/sd.
-			if (withinFeat!=null) params.addFeatFilter(withinFeat, this.featFlank);
+			for (String feat : withinFeats)
+			{
+				params.addFeatFilter(feat, this.featFlank);
+			}
 
 
 			// Setup output files and autocorrs
@@ -155,7 +152,9 @@ public class MethylDbToAutocorrByread {
 			List<PrintWriter> pws = new ArrayList<PrintWriter>(10);
 			
 			String tab = this.table;
-			String featSec = String.format(".%s-f%d", (withinFeat==null)?"all":withinFeat, this.featFlank);
+			ListUtils.setDelim("-");
+			String featSec = String.format(".%s-f%d", (withinFeats.size()==0)?"all":
+				ListUtils.excelLine(withinFeats), this.featFlank);
 			String outFnPrefix = String.format("Autocorr.%s.%s%s.wind%d", 
 					this.outPrefix, tab, featSec, this.windSize);
 			
@@ -205,7 +204,6 @@ public class MethylDbToAutocorrByread {
 				pw.close();
 			}
 
-		}
 
 		
 	} // Main
@@ -228,6 +226,11 @@ public class MethylDbToAutocorrByread {
 		for (String chr : Arrays.asList("chr2")) // MethylDbUtils.CHROMS) //  
 		{
 
+			// Set chromosomes on the domain finders
+			for (int i = 0; i < autocorrs.size(); i++)
+			{
+				autocorrs.get(i).setCurChr(chr);
+			}
 
 			// Iterator uses DB connection and can use a ton of memory because
 			// it loads all rows at once.  This stuff should really be added to iterator
@@ -235,9 +238,12 @@ public class MethylDbToAutocorrByread {
 			int onCpg = 0;
 
 //			MINCOORD = 7000000;
-//			MAXCOORD = 7010000;
+//			MAXCOORD = 7020000;
 //			STEP = Math.min(STEP, MAXCOORD-MINCOORD+1);
-			
+
+//			MINCOORD = 7000000;
+//			MAXCOORD = 23000000;
+
 
 			for (int c = MINCOORD; c < MAXCOORD; c += STEP)
 			{
@@ -253,6 +259,7 @@ public class MethylDbToAutocorrByread {
 					
 					for (CpgWalkerAllpairs autocorr : autocorrs)
 					{
+						//System.err.printf("On Cpg #%d, autocorr %s\n", onCpg, autocorr);
 						autocorr.streamCpg(cpg);
 					}
 
@@ -264,6 +271,13 @@ public class MethylDbToAutocorrByread {
 
 
 			}
+			
+			// Finish chromosomes on the domain finders
+			for (int i = 0; i < autocorrs.size(); i++)
+			{
+				autocorrs.get(i).finishChr();
+			}
+
 		}
 	}
 	
