@@ -12,6 +12,10 @@ import net.sf.samtools.SAMRecord;
  * @author benb
  *
  */
+/**
+ * @author benb
+ *
+ */
 public class PicardUtils {
 
 	static final int BUFFERLEN = 1000;
@@ -350,6 +354,23 @@ public class PicardUtils {
 		char refCnext = refStr.charAt(pos+1);
 		
 		return ( isCytosine(pos,refStr,false) && (refCnext == 'G') );
+	}	
+
+	
+	/**
+	 * @param pos
+	 * @param refStr
+	 * @param seqStr If provided, we count if either the reference or the seq is a CpG
+	 * @return
+	 */
+	public static boolean isCpg(int pos, String refStr, String seqStr)
+	{
+		if (pos >= (refStr.length()-1)) return false; // At the last character
+		
+		char refCnext = refStr.charAt(pos+1);
+		char seqCnext = seqStr.charAt(pos+1);
+				
+		return ( isCytosine(pos,refStr,false) && ((refCnext == 'G') || (seqCnext == 'G')) );
 	}	
 
 	// The G opposit the CpG
