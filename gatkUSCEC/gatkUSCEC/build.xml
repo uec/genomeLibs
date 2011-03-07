@@ -1,0 +1,18 @@
+<project name="BuildGATKExamples">
+<description>Build the USC Epigenome Center examples</description>
+
+    <target name="init">
+        <echo message="build.dir = ${build.dir}" />
+        <echo message="dist.dir = ${dist.dir}" />
+        <echo message="gatk.classpath = ${gatk.classpath}" />        
+    </target>
+    
+    <target name="compile" depends="init">
+        <javac srcdir="." destdir="${build.dir}" classpath="${gatk.classpath}" />
+    </target>
+
+    <target name="dist" depends="init,compile">
+        <jar jarfile="${dist.dir}/gatkUSCEC.jar" basedir="${build.dir}" includes="org/broadinstitute/sting/gatk/uscec/**" />
+    </target>
+     	
+</project>

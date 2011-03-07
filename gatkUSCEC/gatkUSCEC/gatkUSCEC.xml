@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package name="uscec">
+  <version file="StingText.properties" property="org.broadinstitute.sting.gatk.version" />
+  <executable name="gatkUSCEC">
+    <main-class name="org.broadinstitute.sting.gatk.CommandLineGATK" />
+    <resource-bundle file="StingText.properties" />
+    <dependencies>
+      <!-- Walkers in this package -->
+      <class name="org.broadinstitute.sting.gatk.uscec.HelloWalker" />
+      <!-- Some additional dependencies that bcel is unable to find on its own -->
+      <package name="org.broad.tribble.*" />
+      <package name="org.broadinstitute.sting.commandline" />
+      <package name="org.broadinstitute.sting.gatk.filters" />
+    </dependencies>
+  </executable>
+</package>
