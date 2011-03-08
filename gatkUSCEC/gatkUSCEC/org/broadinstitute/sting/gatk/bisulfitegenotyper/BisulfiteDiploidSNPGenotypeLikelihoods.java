@@ -9,7 +9,7 @@ import org.broadinstitute.sting.utils.BaseUtils;
 
 public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 		DiploidSNPGenotypeLikelihoods {
-
+	protected BisulfiteDiploidSNPGenotypePriors priors = null;
     // TODO: don't calculate this each time through
 
     protected double Bisulfite_conversion_rate = 0.5;
@@ -18,13 +18,23 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 		// TODO Auto-generated constructor stub
 		super.priors = new DiploidSNPGenotypePriors();
         log10_PCR_error_3 = log10(DEFAULT_PCR_ERROR_RATE) - log10_3;
-
+        this.priors = new BisulfiteDiploidSNPGenotypePriors();
         setToZero();
 	}
 
 	public BisulfiteDiploidSNPGenotypeLikelihoods(
 			DiploidSNPGenotypePriors priors, double PCR_error_rate) {
 		super(priors, PCR_error_rate);
+		// TODO Auto-generated constructor stub
+        log10_PCR_error_3 = log10(PCR_error_rate) - log10_3;
+        this.priors = new BisulfiteDiploidSNPGenotypePriors();
+        setToZero();
+	}
+	
+	public BisulfiteDiploidSNPGenotypeLikelihoods(
+			BisulfiteDiploidSNPGenotypePriors priors, double PCR_error_rate) {
+		this.priors = priors;
+        log10_1_minus_PCR_error = log10(1.0 - PCR_error_rate);
 		// TODO Auto-generated constructor stub
         log10_PCR_error_3 = log10(PCR_error_rate) - log10_3;
 

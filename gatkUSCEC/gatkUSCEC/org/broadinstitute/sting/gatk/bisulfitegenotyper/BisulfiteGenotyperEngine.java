@@ -114,8 +114,10 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
 	@Override
     protected VariantContext calculateLikelihoods(RefMetaDataTracker tracker, ReferenceContext refContext, Map<String, StratifiedAlignmentContext> stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType type, Allele alternateAlleleToUse) {
-        if ( stratifiedContexts == null )
-            return null;
+		if ( stratifiedContexts == null ){
+			//System.out.println("no stratifiedContexts now");
+			 return null;
+		}
 
         // initialize the data for this thread if that hasn't been done yet
         if ( glcm.get() == null ) {
@@ -126,10 +128,14 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
         Allele refAllele = glcm.get().getLikelihoodsBs(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
 
-        if (refAllele != null)
-            return createVariantContextFromLikelihoodsBs(refContext, refAllele, GLs);
-        else
-            return null;
+        if (refAllele != null){
+        	//System.out.println("there is refAllele now");
+        	return createVariantContextFromLikelihoodsBs(refContext, refAllele, GLs);
+        }   
+        else{
+        	//System.out.println("no refAllele now");
+			 return null;
+        }
     }
 	
 
@@ -176,7 +182,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         GenomeLoc loc = refContext.getLocus();
         int endLoc = calculateEndPos(alleles, refAllele, loc);
 
-        return new VariantContext("UG_call",
+        return new VariantContext("BG_call",
                 loc.getContig(),
                 loc.getStart(),
                 endLoc,
@@ -186,5 +192,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
                 null,
                 null);
     }
+	
+	
 	
 }
