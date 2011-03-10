@@ -74,9 +74,11 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             initializeBestAlternateAllele(refBase, contexts);
 
         }
+        
+      
         //System.err.println("ok");
      // if there are no non-ref bases...
-        if ( bestAlternateAllele == null || secondBestAlternateAllele == null) {
+        if ( bestAlternateAllele == null) {
             // if we only want variants, then we don't need to calculate genotype likelihoods
             if ( UAC.OutputMode == UnifiedGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY )
                 return refAllele;
@@ -85,9 +87,15 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             bestAlternateAllele = (byte)(refBase != 'A' ? 'A' : 'C');
             secondBestAlternateAllele = (byte)(refBase != 'G' ? 'G' : 'T');
         }
+        
+        
 
         Allele altAllele = Allele.create(bestAlternateAllele, false);
-        Allele secondAltAllele = Allele.create(secondBestAlternateAllele, false);
+        Allele secondAltAllele = altAllele;
+        if(secondBestAlternateAllele != null){
+        	secondAltAllele = Allele.create(secondBestAlternateAllele, false);
+        }
+        
 
         for ( Map.Entry<String, StratifiedAlignmentContext> sample : contexts.entrySet() ) {
             ReadBackedPileup pileup = sample.getValue().getContext(contextType).getBasePileup();
@@ -103,16 +111,28 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             DiploidGenotype refGenotype = DiploidGenotype.createHomGenotype(refBase);
             DiploidGenotype hetGenotype = DiploidGenotype.createDiploidGenotype(refBase, bestAlternateAllele);
             DiploidGenotype homGenotype = DiploidGenotype.createHomGenotype(bestAlternateAllele);
-            DiploidGenotype homNonrefGenotype = DiploidGenotype.createDiploidGenotype(bestAlternateAllele,secondBestAlternateAllele);
-            GLs.put(sample.getKey(), new BisulfiteBiallelicGenotypeLikelihoods(sample.getKey(),
-                    refAllele,
-                    altAllele,
-                    secondAltAllele,
-                    likelihoods[refGenotype.ordinal()],
-                    likelihoods[hetGenotype.ordinal()],
-                    likelihoods[homGenotype.ordinal()],
-                    likelihoods[homNonrefGenotype.ordinal()],
-                    getFilteredDepth(pileup)));
+            if(secondBestAlternateAllele != null){
+            	DiploidGenotype homNonrefGenotype = DiploidGenotype.createDiploidGenotype(bestAlternateAllele,secondBestAlternateAllele);
+                GLs.put(sample.getKey(), new BisulfiteBiallelicGenotypeLikelihoods(sample.getKey(),
+                        refAllele,
+                        altAllele,
+                        secondAltAllele,
+                        likelihoods[refGenotype.ordinal()],
+                        likelihoods[hetGenotype.ordinal()],
+                        likelihoods[homGenotype.ordinal()],
+                        likelihoods[homNonrefGenotype.ordinal()],
+                        getFilteredDepth(pileup)));
+            }
+            else{
+            	GLs.put(sample.getKey(), new BisulfiteBiallelicGenotypeLikelihoods(sample.getKey(),
+                        refAllele,
+                        altAllele,
+                        likelihoods[refGenotype.ordinal()],
+                        likelihoods[hetGenotype.ordinal()],
+                        likelihoods[homGenotype.ordinal()],
+                        getFilteredDepth(pileup)));
+            }
+            
         }
 
         return refAllele;
@@ -130,7 +150,11 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
                 if ( p.isDeletion() ||
                      (p.getRead() instanceof GATKSAMRecord && !((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset())) )
                     continue;
-
+                if(p.getBase() != ref){
+                	if((p.getRead().getReadNegativeStrandFlag() && p.getBase() == 'A') || (!p.getRead().getReadNegativeStrandFlag() && p.getBase() == 'T'))
+                		continue;
+                }
+                
                 int index = BaseUtils.simpleBaseToBaseIndex(p.getBase());
                 if ( index >= 0 )
                     qualCounts[index] += p.getQual();
@@ -145,6 +169,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         for ( byte altAllele : BaseUtils.BASES ) {
             if ( altAllele == ref )
                 continue;
+            //if( altAllele == 'T')
+            	//continue;
             int index = BaseUtils.simpleBaseToBaseIndex(altAllele);
             if ( qualCounts[index] > maxCount ) {
             	secondMaxCount = maxCount;
@@ -159,6 +185,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	secondBestAlternateAllele = altAllele;
             }
         }
+
     }
 	
 	

@@ -38,6 +38,21 @@ public class BisulfiteBiallelicGenotypeLikelihoods{
         this.GLs = new double[]{log10AALikelihoods, log10ABLikelihoods, log10BBLikelihoods, log10BCLikelihoods};
         this.depth = depth;
     }
+    
+    public BisulfiteBiallelicGenotypeLikelihoods(String sample,
+            Allele A,
+            Allele B,
+            double log10AALikelihoods,
+            double log10ABLikelihoods,
+            double log10BBLikelihoods,
+            int depth) {
+    	this.sample = sample;
+    	this.A = A;
+    	this.B = B;
+    	this.C = B;
+    	this.GLs = new double[]{log10AALikelihoods, log10ABLikelihoods, log10BBLikelihoods};
+    	this.depth = depth;
+    }
 
     public String getSample() {
         return sample;
