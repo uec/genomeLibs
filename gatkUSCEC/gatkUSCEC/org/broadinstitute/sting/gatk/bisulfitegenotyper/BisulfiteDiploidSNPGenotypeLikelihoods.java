@@ -12,7 +12,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 	protected BisulfiteDiploidSNPGenotypePriors priors = null;
     // TODO: don't calculate this each time through
 
-    protected double Bisulfite_conversion_rate = 0.5;
+    protected double Bisulfite_conversion_rate = 0.95;
     
 	public BisulfiteDiploidSNPGenotypeLikelihoods() {
 		// TODO Auto-generated constructor stub
@@ -61,16 +61,22 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
             for ( byte fragmentBase : BaseUtils.BASES ) {
             	double log10FragmentLikelihood = 0;
             	if(trueBase == fragmentBase){
-            		if(trueBase == BaseUtils.C || trueBase == BaseUtils.T){
+            		if(trueBase == BaseUtils.C){
             			log10FragmentLikelihood = log10_1_minus_PCR_error + log10(1.0-Bisulfite_conversion_rate);
+            		}
+            		else if (trueBase == BaseUtils.T){
+            			log10FragmentLikelihood = log10(pow(10, log10_1_minus_PCR_error) + pow(10, log10_PCR_error_3 + + log10(Bisulfite_conversion_rate))); 
             		}
             		else{
             			log10FragmentLikelihood = log10_1_minus_PCR_error;
             		}
             	}
             	else{
-            		if((trueBase == BaseUtils.C && fragmentBase == BaseUtils.T)||(trueBase == BaseUtils.T && fragmentBase == BaseUtils.C)){
+            		if(trueBase == BaseUtils.C && fragmentBase == BaseUtils.T){
             			log10FragmentLikelihood = log10(pow(10, log10_1_minus_PCR_error + log10(Bisulfite_conversion_rate)) + pow(10, log10_PCR_error_3));
+            		}
+            		else if(trueBase == BaseUtils.T && fragmentBase == BaseUtils.C){
+            			log10FragmentLikelihood = log10_PCR_error_3 + log10(1.0-Bisulfite_conversion_rate);
             		}
             		else{
             			log10FragmentLikelihood = log10_PCR_error_3;
@@ -113,9 +119,12 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
        if ( observedBase == chromBase ) {
            // the base is consistent with the chromosome -- it's 1 - e
            //logP = oneMinusData[qual];
-    	   if(observedBase == BaseUtils.C || observedBase == BaseUtils.T){
-    		   logP = log10((1.0 - e)*(1-Bisulfite_conversion_rate));
+    	   if(chromBase == BaseUtils.C){
+    		   logP = log10(1.0 - e) + log10(1-Bisulfite_conversion_rate);
    			}
+    	   else if(chromBase == BaseUtils.T){
+    		   logP = log10(1.0 - e + e*Bisulfite_conversion_rate/3.0);
+    	   }
    			else{
    				logP = log10(1.0 - e);
    			}
@@ -123,9 +132,12 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
            
        } else {
            // the base is inconsistent with the chromosome -- it's e * P(chromBase | observedBase is an error)
-    	   if((observedBase == BaseUtils.C && chromBase == BaseUtils.T)||(observedBase == BaseUtils.T && chromBase == BaseUtils.C)){
+    	   if(chromBase == BaseUtils.C && observedBase == BaseUtils.T){
     		   logP = log10((1.0 - e)*Bisulfite_conversion_rate+e/3.0);
            }
+    	   else if(chromBase == BaseUtils.T && observedBase == BaseUtils.C){
+    		   logP = log10(e) + log10(1.0-Bisulfite_conversion_rate) - log10(3.0);
+    	   }
            else{
         	   logP = qual / -10.0 + (-log10_3);
            }

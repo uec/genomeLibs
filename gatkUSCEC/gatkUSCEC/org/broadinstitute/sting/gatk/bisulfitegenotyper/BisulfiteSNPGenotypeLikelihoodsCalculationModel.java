@@ -2,6 +2,8 @@ package org.broadinstitute.sting.gatk.bisulfitegenotyper;
 
 import java.util.Map;
 
+import net.sf.samtools.SAMRecord;
+
 import org.apache.log4j.Logger;
 import org.broad.tribble.util.variantcontext.Allele;
 import org.broad.tribble.util.variantcontext.VariantContext;
@@ -84,8 +86,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
                 return refAllele;
 
             // otherwise, choose any alternate allele (it doesn't really matter)
-            bestAlternateAllele = (byte)(refBase != 'A' ? 'A' : 'C');
-            secondBestAlternateAllele = (byte)(refBase != 'G' ? 'G' : 'T');
+            bestAlternateAllele = (byte)(refBase != BaseUtils.A ? BaseUtils.A : BaseUtils.C);
+            secondBestAlternateAllele = (byte)(refBase != BaseUtils.G ? BaseUtils.G : BaseUtils.T);
         }
         
         
@@ -107,10 +109,20 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
                 continue;
 
             double[] likelihoods = GL.getLikelihoods();
+            double[] posterir = GL.getPosteriors();
+            double[] prio = GL.getPriors();
+            
 
             DiploidGenotype refGenotype = DiploidGenotype.createHomGenotype(refBase);
             DiploidGenotype hetGenotype = DiploidGenotype.createDiploidGenotype(refBase, bestAlternateAllele);
             DiploidGenotype homGenotype = DiploidGenotype.createHomGenotype(bestAlternateAllele);
+            if((pileup.getLocation().getStart()) == 7201175){
+            	System.out.println("refBase: " + refBase + " bestAlternateAllele: " + bestAlternateAllele);
+            	System.out.println("nGoodBases " + nGoodBases);
+            	System.out.println("refGenotype " + likelihoods[refGenotype.ordinal()] + "\t" + prio[refGenotype.ordinal()] + "\t" + posterir[refGenotype.ordinal()]);
+            	System.out.println("hetGenotype " + likelihoods[hetGenotype.ordinal()] + "\t" + prio[hetGenotype.ordinal()] + "\t" + posterir[hetGenotype.ordinal()]);
+            	System.out.println("homGenotype " + likelihoods[homGenotype.ordinal()] + "\t" + prio[homGenotype.ordinal()] + "\t" + posterir[homGenotype.ordinal()]);
+            }
             if(secondBestAlternateAllele != null){
             	DiploidGenotype homNonrefGenotype = DiploidGenotype.createDiploidGenotype(bestAlternateAllele,secondBestAlternateAllele);
                 GLs.put(sample.getKey(), new BisulfiteBiallelicGenotypeLikelihoods(sample.getKey(),
@@ -141,20 +153,38 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	@Override
 	protected void initializeBestAlternateAllele(byte ref, Map<String, StratifiedAlignmentContext> contexts) {
         int[] qualCounts = new int[4];
-
+        int location = 0;
         for ( Map.Entry<String, StratifiedAlignmentContext> sample : contexts.entrySet() ) {
             // calculate the sum of quality scores for each base
             ReadBackedPileup pileup = sample.getValue().getContext(StratifiedAlignmentContext.StratifiedContextType.COMPLETE).getBasePileup();
             for ( PileupElement p : pileup ) {
                 // ignore deletions and filtered bases
+            	SAMRecord samRecord = p.getRead();
+            	
+            	boolean negStrand = samRecord.getReadNegativeStrandFlag();
+				int alignmentS = samRecord.getAlignmentStart();
+				int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+
+				if((pileup.getLocation().getStart()) == 7201175){
+					System.out.println("before filter:\t" + onRefCoord + "\t" + p.getOffset() + "\t" + negStrand + "\t" + pileup.getLocation().getStart() + "\t" + (char)p.getBase());
+					System.out.println("deletion: " + p.isDeletion());
+					System.out.println("GATKSAMRecord: " + (p.getRead() instanceof GATKSAMRecord));
+					System.out.println("isGoodBase: " + ((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset()));
+		                     
+				}
                 if ( p.isDeletion() ||
                      (p.getRead() instanceof GATKSAMRecord && !((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset())) )
                     continue;
-                if(p.getBase() != ref){
-                	if((p.getRead().getReadNegativeStrandFlag() && p.getBase() == 'A') || (!p.getRead().getReadNegativeStrandFlag() && p.getBase() == 'T'))
+                //if(p.getBase() != ref){
+                	if((p.getRead().getReadNegativeStrandFlag() && p.getBase() == BaseUtils.A) || (!p.getRead().getReadNegativeStrandFlag() && p.getBase() == BaseUtils.T))
                 		continue;
-                }
-                
+                //}
+                	
+                	
+					if((pileup.getLocation().getStart()) == 7201175){
+						System.out.println(onRefCoord + "\t" + p.getOffset() + "\t" + negStrand + "\t" + pileup.getLocation().getStart() + "\t" + (char)p.getBase());
+						location = pileup.getLocation().getStart();
+					}
                 int index = BaseUtils.simpleBaseToBaseIndex(p.getBase());
                 if ( index >= 0 )
                     qualCounts[index] += p.getQual();
@@ -184,6 +214,13 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	secondMaxCount = qualCounts[index];
             	secondBestAlternateAllele = altAllele;
             }
+        }
+        
+        if(location == 7201175){
+        	System.out.println("bestAlternateAllele: " + bestAlternateAllele + "\t" + maxCount);
+        	if(secondBestAlternateAllele != null){
+        		System.out.println("secondBestAlternateAllele: " + "\t" + secondBestAlternateAllele + "\t" + secondMaxCount);
+        	}
         }
 
     }

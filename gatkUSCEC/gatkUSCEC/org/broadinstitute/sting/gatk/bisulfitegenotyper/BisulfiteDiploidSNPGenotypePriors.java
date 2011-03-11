@@ -3,6 +3,7 @@ package org.broadinstitute.sting.gatk.bisulfitegenotyper;
 import java.util.Arrays;
 
 import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypePriors;
+import org.broadinstitute.sting.utils.BaseUtils;
 import org.broadinstitute.sting.utils.MathUtils;
 import org.broadinstitute.sting.utils.genotype.DiploidGenotype;
 
@@ -24,7 +25,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
      */
     public static final double PROB_OF_REFERENCE_ERROR = 1e-6;  // the reference is
     
-    protected static double Bisulfite_conversion_rate = 0.5;
+    protected static double Bisulfite_conversion_rate = 0.95;
 
     private final static double[] flatPriors = new double[DiploidGenotype.values().length];
 
@@ -178,7 +179,38 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
      * AC = AG = AT = (het - pTriStateGenotype) / 3
      * CC = GG = TT = hom-var / 3
      * CG = CT = GT = pTriStateGenotype / 3
-     *
+     * 
+     * when ref=A
+     * AA = hom-ref
+     * AG = (het - pTriStateGenotype) / 3
+     * AC = ((het - pTriStateGenotype) / 3) * (1 - Bisulfite_conversion_rate)
+     * AT = ((het - pTriStateGenotype) / 3) * (1 + Bisulfite_conversion_rate)
+     * GG = hom-var / 3
+     * CC = (hom-var / 3) * (1 - Bisulfite_conversion_rate)
+     * TT = hom-var / 3 + (pTriStateGenotype / 3) * Bisulfite_conversion_rate
+     * CG = (pTriStateGenotype / 3) * (1 - Bisulfite_conversion_rate)
+     * GT = pTriStateGenotype / 3
+     * CT = (pTriStateGenotype / 3) * (1 - Bisulfite_conversion_rate) + (hom-var / 3) * Bisulfite_conversion_rate
+     * 
+     * when ref=C
+     * CC = hom-ref * (1 - Bisulfite_conversion_rate)
+     * CA = CG = ((het - pTriStateGenotype) / 3) * (1 - Bisulfite_conversion_rate)
+     * CT = ((het - pTriStateGenotype) / 3) * (1 - Bisulfite_conversion_rate) + hom-ref * Bisulfite_conversion_rate
+     * AA = GG = hom-var / 3
+     * TT = hom-var / 3 + ((het - pTriStateGenotype) / 3) * Bisulfite_conversion_rate
+     * AG = pTriStateGenotype / 3
+     * AT = GT = pTriStateGenotype / 3 + ((het - pTriStateGenotype) / 3) * Bisulfite_conversion_rate
+     * 
+     * when ref=T
+     * TT = hom-ref + ((het - pTriStateGenotype) / 3) * Bisulfite_conversion_rate
+     * TA = TG = (het - pTriStateGenotype) / 3 + (pTriStateGenotype / 3) * Bisulfite_conversion_rate 
+     * CT = ((het - pTriStateGenotype) / 3) * (1 - Bisulfite_conversion_rate) + (hom-var / 3) * Bisulfite_conversion_rate
+     * AA = GG = hom-var / 3
+     * CC = (hom-var / 3) * (1 - Bisulfite_conversion_rate)
+     * AG = pTriStateGenotype / 3
+     * AC = GC = (pTriStateGenotype / 3) * (1 - Bisulfite_conversion_rate)
+     * 
+     * 
      * So that we get:
      *
      * hom-ref + 3 * (het - pTriStateGenotype) / 3 + 3 * hom-var / 3 + 3 * pTriStateGenotype
@@ -218,35 +250,86 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
             final double nHomVars = 3;
 
             if ( g.isHomRef(ref) ){  
-            	if(ref == 'C'|| ref == 'T'){
+            	if(ref == BaseUtils.C){
             		POfG = pHomRef*(1-Bisulfite_conversion_rate);
+            	}
+            	else if(ref == BaseUtils.T){
+            		POfG = pHomRef + (pHet - pTriStateGenotype) * Bisulfite_conversion_rate/3.0;
             	}
             	else{
             		POfG = pHomRef;
             	}
             }
             else if ( g.isHomVar(ref) ){ 
-            	if((ref == 'C' && g.base1 == 'T')|| (ref == 'T' && g.base2 == 'C')){
-            		POfG = pHomRef*Bisulfite_conversion_rate +  pHomVar/ nHomVars;
+            	if(ref == BaseUtils.C && g.base1 == BaseUtils.T){
+            		POfG = pHomVar/3.0 + (pHet - pTriStateGenotype) * Bisulfite_conversion_rate/3.0;
+            	}
+            	else if((ref == BaseUtils.A || ref == BaseUtils.G || ref == BaseUtils.T) && g.base1 == BaseUtils.C){
+            		POfG = (pHomVar/3.0) * (1.0 - Bisulfite_conversion_rate);
+            	}
+            	else if((ref == BaseUtils.A || ref == BaseUtils.G) && g.base1 == BaseUtils.T){
+            		 POfG = pHomVar/3.0 + (pTriStateGenotype / 3.0) * Bisulfite_conversion_rate;
             	}
             	else{
             		POfG = pHomVar / nHomVars;
             	}
             }
             else if ( g.isHetRef(ref) ){ 
-            	if((g.base1 == 'C' && g.base2 == 'T')|| (g.base1 == 'T' && g.base2 == 'C')){
-            		POfG = pHomRef*(1-Bisulfite_conversion_rate);
+            	if(ref == BaseUtils.C){
+            	     if((g.base1 == BaseUtils.C && g.base2 == BaseUtils.T)|| (g.base1 == BaseUtils.T && g.base2 == BaseUtils.C)){
+            	    	 POfG = ((pHet - pTriStateGenotype) / 3.0) * (1 - Bisulfite_conversion_rate) + pHomRef * Bisulfite_conversion_rate;
+            	     }
+            	     else{
+            	    	 POfG = ((pHet - pTriStateGenotype) / 3.0) * (1 - Bisulfite_conversion_rate);
+            	     }
+            	}
+            	else if(ref == BaseUtils.T){
+            		if((g.base1 == BaseUtils.C && g.base2 == BaseUtils.T)|| (g.base1 == BaseUtils.T && g.base2 == BaseUtils.C)){
+           	    	 	POfG = ((pHet - pTriStateGenotype) / 3.0) * (1 - Bisulfite_conversion_rate) + (pHomVar/3.0) * Bisulfite_conversion_rate;
+           	     	}
+           	     	else{
+           	     		POfG = (pHet - pTriStateGenotype) / 3.0 + (pTriStateGenotype / 3) * Bisulfite_conversion_rate;
+           	     	}
             	}
             	else{
-            		POfG = (pHet - pTriStateGenotype ) / nOnRefHets;
+            	     if((g.base1 == ref && g.base2 == BaseUtils.C)|| (g.base1 == BaseUtils.C && g.base2 == ref)){
+            	    	 POfG = ((pHet - pTriStateGenotype ) / 3.0) * (1 - Bisulfite_conversion_rate);
+            	     }
+            	     else if((g.base1 == ref && g.base2 == BaseUtils.T)|| (g.base1 == BaseUtils.T && g.base2 == ref)){
+            	    	 POfG = ((pHet - pTriStateGenotype ) / 3.0) * (1 + Bisulfite_conversion_rate);
+            	     }
+            	     else{
+            	    	 POfG = (pHet - pTriStateGenotype ) / 3.0;
+            	     }
             	}
             }
             else{ 
-            	if((g.base1 == 'T' && g.base2 == 'C') || (g.base1 == 'C' && g.base2 == 'T')){
-            		POfG = pHomVar*Bisulfite_conversion_rate +  pTriStateGenotype / nOffRefHets;
+            	if(ref == BaseUtils.C){
+            	     if((g.base1 == BaseUtils.A && g.base2 == BaseUtils.G)|| (g.base1 == BaseUtils.G && g.base2 == BaseUtils.A)){
+            	    	 POfG = pTriStateGenotype / 3.0;
+            	     }
+            	     else{
+            	    	 POfG = pTriStateGenotype / 3.0 + ((pHet - pTriStateGenotype) / 3.0) * Bisulfite_conversion_rate;
+            	     }
+            	}
+            	else if(ref == BaseUtils.T){
+            	     if((g.base1 == BaseUtils.A && g.base2 == BaseUtils.G)|| (g.base1 == BaseUtils.G && g.base2 == BaseUtils.A)){
+            	    	 POfG = pTriStateGenotype / 3.0;
+            	     }
+            	     else{
+            	    	 POfG = (pTriStateGenotype / 3.0) * (1 - Bisulfite_conversion_rate);
+            	     } 
             	}
             	else{
-            		POfG = pTriStateGenotype / nOffRefHets;
+            	     if((g.base1 == BaseUtils.C && g.base2 == BaseUtils.G)|| (g.base1 == BaseUtils.G && g.base2 == BaseUtils.C)){
+            	    	 POfG =  (pTriStateGenotype / 3.0) * (1 - Bisulfite_conversion_rate);
+            	     }
+            	     else if((g.base1 == BaseUtils.G && g.base2 == BaseUtils.T)|| (g.base1 == BaseUtils.T && g.base2 == BaseUtils.G)){
+            	    	 POfG = pTriStateGenotype / 3.0;
+            	     }
+            	     else{
+            	    	 POfG =  (pTriStateGenotype / 3.0) * (1 - Bisulfite_conversion_rate) + (pHomVar/3.0) * Bisulfite_conversion_rate;
+            	     }
             	}
             	 
             }
