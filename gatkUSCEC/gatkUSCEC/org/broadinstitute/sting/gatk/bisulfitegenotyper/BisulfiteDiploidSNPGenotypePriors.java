@@ -2,6 +2,10 @@ package org.broadinstitute.sting.gatk.bisulfitegenotyper;
 
 import java.util.Arrays;
 
+import org.broad.tribble.util.variantcontext.VariantContext;
+import org.broadinstitute.sting.gatk.contexts.ReferenceContext;
+import org.broadinstitute.sting.gatk.refdata.RefMetaDataTracker;
+import org.broadinstitute.sting.gatk.refdata.utils.helpers.DbSNPHelper;
 import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypePriors;
 import org.broadinstitute.sting.utils.BaseUtils;
 import org.broadinstitute.sting.utils.MathUtils;
@@ -16,6 +20,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     public static final double HUMAN_HETEROZYGOSITY = 1e-3;
     public static final double CEU_HETEROZYGOSITY = 1e-3;
     public static final double YRI_HETEROZYGOSITY = 1.0 / 850;
+    public static final double DBSNP_HETEROZYGOSITY = 0.5;
 
     
     /**
@@ -26,7 +31,8 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     public static final double PROB_OF_REFERENCE_ERROR = 1e-6;  // the reference is
     
     protected static double Bisulfite_conversion_rate = 0.95;
-
+    
+ 
     private final static double[] flatPriors = new double[DiploidGenotype.values().length];
 
     // --------------------------------------------------------------------------------------------------------------
@@ -57,6 +63,12 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     public BisulfiteDiploidSNPGenotypePriors(byte ref, double heterozygosity, double probOfTriStateGenotype) {
         priors = getReferencePolarizedPriors(ref, heterozygosity, probOfTriStateGenotype);
     }
+    
+    public BisulfiteDiploidSNPGenotypePriors(byte ref, double heterozygosity, double probOfTriStateGenotype, double bisulfiteConversionRate) {
+    	Bisulfite_conversion_rate = bisulfiteConversionRate;
+    	priors = getReferencePolarizedPriors(ref, heterozygosity, probOfTriStateGenotype);
+        
+    }
 
     /**
      * Create a new Genotypelike Likelhoods's object with priors (in log10 space) for each of the DiploteGenotypes
@@ -74,6 +86,18 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
      */
     public double[] getPriors() {
         return priors;
+    }
+    
+    public void setPriors(RefMetaDataTracker tracker, ReferenceContext ref, double heterozygosity, double probOfTriStateGenotype, double bisulfiteConversionRate) {
+    	Bisulfite_conversion_rate = bisulfiteConversionRate;
+    	String rsID = DbSNPHelper.rsIDOfFirstRealSNP(tracker.getReferenceMetaData(DbSNPHelper.STANDARD_DBSNP_TRACK_NAME));
+    	if ( rsID != null ){
+    		priors = getReferencePolarizedPriors(ref.getBase(), DBSNP_HETEROZYGOSITY, probOfTriStateGenotype);
+    	}
+    	else{
+    		priors = getReferencePolarizedPriors(ref.getBase(), heterozygosity, probOfTriStateGenotype);
+    	}
+    	
     }
 
     /**

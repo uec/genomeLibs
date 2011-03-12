@@ -8,6 +8,7 @@ public class BisulfiteBiallelicGenotypeLikelihoods{
     private double[] GLs;
     private Allele A, B, C;
     private int depth;
+    private boolean bisulfiteSpace;
 
     /**
      * Create a new object for sample with given alleles and genotype likelihoods
@@ -37,6 +38,7 @@ public class BisulfiteBiallelicGenotypeLikelihoods{
         this.C = C;
         this.GLs = new double[]{log10AALikelihoods, log10ABLikelihoods, log10BBLikelihoods, log10BCLikelihoods};
         this.depth = depth;
+        this.bisulfiteSpace = true;
     }
     
     public BisulfiteBiallelicGenotypeLikelihoods(String sample,
@@ -52,6 +54,7 @@ public class BisulfiteBiallelicGenotypeLikelihoods{
     	this.C = B;
     	this.GLs = new double[]{log10AALikelihoods, log10ABLikelihoods, log10BBLikelihoods};
     	this.depth = depth;
+    	this.bisulfiteSpace = false;
     }
 
     public String getSample() {
@@ -94,4 +97,7 @@ public class BisulfiteBiallelicGenotypeLikelihoods{
         return depth;
     }
     
+    public boolean getBisulfiteSpace() {
+        return bisulfiteSpace;
+    }
 }

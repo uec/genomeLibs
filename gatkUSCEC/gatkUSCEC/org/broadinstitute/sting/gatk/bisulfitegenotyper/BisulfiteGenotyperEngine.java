@@ -152,6 +152,9 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         }
     }
 	
+	
+	
+	
 
 	protected static BisulfiteSNPGenotypeLikelihoodsCalculationModel getGenotypeLikelihoodsCalculationObject(Logger logger, UnifiedArgumentCollection UAC) {
 		BisulfiteSNPGenotypeLikelihoodsCalculationModel glcm;
@@ -183,6 +186,9 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
                 addedAltAllele = true;
                 alleles.add(GL.getAlleleA());
                 alleles.add(GL.getAlleleB());
+                if(GL.getBisulfiteSpace()){
+                	alleles.add(GL.getAlleleC());
+                }
             }
 
             HashMap<String, Object> attributes = new HashMap<String, Object>();
