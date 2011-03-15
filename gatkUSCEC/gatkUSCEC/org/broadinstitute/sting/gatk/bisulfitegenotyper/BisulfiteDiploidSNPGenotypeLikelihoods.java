@@ -3,6 +3,10 @@ package org.broadinstitute.sting.gatk.bisulfitegenotyper;
 import static java.lang.Math.log10;
 import static java.lang.Math.pow;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
 import net.sf.samtools.SAMUtils;
 
 import org.broadinstitute.sting.gatk.contexts.ReferenceContext;
@@ -15,17 +19,19 @@ import org.broadinstitute.sting.utils.QualityUtils;
 import org.broadinstitute.sting.utils.exceptions.UserException;
 import org.broadinstitute.sting.utils.genotype.DiploidGenotype;
 import org.broadinstitute.sting.utils.pileup.PileupElement;
+import org.broadinstitute.sting.utils.pileup.ReadBackedPileup;
 
 public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 		DiploidSNPGenotypeLikelihoods {
 	protected BisulfiteDiploidSNPGenotypePriors priors = null;
     // TODO: don't calculate this each time through
 
-    protected double Bisulfite_conversion_rate = 0.5;
+    protected double Bisulfite_conversion_rate = 0;
     public static final double HUMAN_HETEROZYGOSITY = 1e-3;
     public static final double CEU_HETEROZYGOSITY = 1e-3;
     public static final double YRI_HETEROZYGOSITY = 1.0 / 850;
     public static final double PROB_OF_REFERENCE_ERROR = 1e-6;
+    protected boolean VERBOSE = false;
     
     static BisulfiteDiploidSNPGenotypeLikelihoods[][][][][] CACHE = new BisulfiteDiploidSNPGenotypeLikelihoods[BaseUtils.BASES.length][QualityUtils.MAX_QUAL_SCORE+1][BaseUtils.BASES.length+1][QualityUtils.MAX_QUAL_SCORE+1][MAX_PLOIDY];
     
@@ -68,6 +74,44 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 	}
 	
 	@Override
+	/**
+     * Updates likelihoods and posteriors to reflect the additional observations contained within the
+     * read-based pileup up by calling add(observedBase, qualityScore) for each base / qual in the
+     * pileup
+     *
+     * @param pileup                    read pileup
+     * @param ignoreBadBases            should we ignore bad bases?
+     * @param capBaseQualsAtMappingQual should we cap a base's quality by its read's mapping quality?
+     * @return the number of good bases found in the pileup
+     */
+    public int add(ReadBackedPileup pileup, boolean ignoreBadBases, boolean capBaseQualsAtMappingQual) {
+        int n = 0;
+
+        // TODO-- move this outside the UG, e.g. to ReadBackedPileup
+        // combine paired reads into a single fragment
+        HashMap<String, PerFragmentPileupElement> fragments = new HashMap<String, PerFragmentPileupElement>();
+        for ( PileupElement p : pileup ) {
+        	if((p.getRead().getReadNegativeStrandFlag() && p.getBase() == BaseUtils.A) || (!p.getRead().getReadNegativeStrandFlag() && p.getBase() == BaseUtils.T))
+        		continue;
+        	Set<PileupElement> fragment = new HashSet<PileupElement>();
+            String readName = p.getRead().getReadName();
+
+            if ( fragments.containsKey(readName) )
+                fragment.addAll(fragments.get(readName).getPileupElements());
+
+            fragment.add(p);
+            fragments.put(readName, new PerFragmentPileupElement(fragment));
+        }
+
+        // for each fragment, add to the likelihoods
+        for ( PerFragmentPileupElement fragment : fragments.values() ) {
+            n += add(fragment, ignoreBadBases, capBaseQualsAtMappingQual);
+        }
+
+        return n;
+    }
+	
+	@Override
 	public int add(PerFragmentPileupElement fragment, boolean ignoreBadBases, boolean capBaseQualsAtMappingQual) {
         // TODO-- Right now we assume that there are at most 2 reads per fragment.  This assumption is fine
         // TODO--   given the current state of next-gen sequencing, but may need to be fixed in the future.
@@ -79,7 +123,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 
             byte qual = p.getQual();
             if ( qual > SAMUtils.MAX_PHRED_SCORE )
-                throw new UserException.MalformedBam(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
+                throw new UserException.MalformedBAM(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
             if ( capBaseQualsAtMappingQual )
                 qual = (byte)Math.min((int)p.getQual(), p.getMappingQual());
 
@@ -139,7 +183,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 	        	BisulfiteDiploidSNPGenotypeLikelihoods gl = (BisulfiteDiploidSNPGenotypeLikelihoods)this.clone();
 	            gl.setToZero();
 
-	            int ccIndex=0, ttIndex=0, ctIndex=0;
+	            //int ccIndex=0, ttIndex=0, ctIndex=0;
 	            // we need to adjust for ploidy.  We take the raw p(obs | chrom) / ploidy, which is -log10(ploidy) in log space
 	            for ( DiploidGenotype g : DiploidGenotype.values() ) {
 
@@ -151,7 +195,8 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 
 	                gl.log10Likelihoods[g.ordinal()] += likelihood;
 	                gl.log10Posteriors[g.ordinal()] += likelihood;
-	                if(g.base1 == BaseUtils.C && g.base2 == BaseUtils.C){
+	            }
+	              /*if(g.base1 == BaseUtils.C && g.base2 == BaseUtils.C){
 	                	ccIndex = g.ordinal();
 	            	}
 	            	else if(g.base1 == BaseUtils.T && g.base2 == BaseUtils.T){
@@ -169,7 +214,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
                 gl.log10Posteriors[ttIndex] = pow(10, gl.log10Likelihoods[ttIndex]) + pow(10, tempct + log10(Bisulfite_conversion_rate));
                 gl.log10Likelihoods[ctIndex] = pow(10, tempcc + log10(Bisulfite_conversion_rate)) + pow(10, gl.log10Likelihoods[ctIndex] + log10(1-Bisulfite_conversion_rate));
                 gl.log10Posteriors[ctIndex] = pow(10, tempcc + log10(Bisulfite_conversion_rate)) + pow(10, gl.log10Likelihoods[ctIndex] + log10(1-Bisulfite_conversion_rate));
-	            
+	            */
 
 	            if ( VERBOSE ) {
 	                for ( DiploidGenotype g : DiploidGenotype.values() ) { System.out.printf("%s\t", g); }
@@ -183,7 +228,8 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
 	         } catch ( CloneNotSupportedException e ) {
 	             throw new RuntimeException(e);
 	         }
-	    }
+	 }
+	 
 	 
 	 protected BisulfiteDiploidSNPGenotypeLikelihoods getCachedGenotypeLikelihoods(byte observedBase1, byte qualityScore1, byte observedBase2, byte qualityScore2, int ploidy) {
 		 BisulfiteDiploidSNPGenotypeLikelihoods gl = getCache(CACHE, observedBase1, qualityScore1, observedBase2, qualityScore2, ploidy);

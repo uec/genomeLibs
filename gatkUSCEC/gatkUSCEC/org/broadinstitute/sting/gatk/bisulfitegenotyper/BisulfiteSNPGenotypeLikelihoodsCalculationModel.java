@@ -31,7 +31,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected Byte bestAlternateAllele = null;
 	protected Byte secondBestAlternateAllele = null;
 	protected final boolean useAlleleFromVCF;
-	protected int testLoc = 7152084;
+	protected int testLoc = 7253622;
 	
 	public BisulfiteSNPGenotypeLikelihoodsCalculationModel(
 			UnifiedArgumentCollection UAC, Logger logger) {
@@ -105,6 +105,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 
             // do not use this prior, this prior is flat prior intiated in genotypeEngine, so we actually do not transfer this priors...
             BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, UAC.PCR_error);
+            if((pileup.getLocation().getStart()) == testLoc)
+            	GL.VERBOSE=true;
             int nGoodBases = GL.add(pileup, true, true);
             if ( nGoodBases == 0 )
                 continue;

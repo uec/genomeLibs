@@ -20,7 +20,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     public static final double HUMAN_HETEROZYGOSITY = 1e-3;
     public static final double CEU_HETEROZYGOSITY = 1e-3;
     public static final double YRI_HETEROZYGOSITY = 1.0 / 850;
-    public static final double DBSNP_HETEROZYGOSITY = 0.5;
+    public static final double DBSNP_HETEROZYGOSITY = 0.2;
 
     
     /**
@@ -30,7 +30,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
      */
     public static final double PROB_OF_REFERENCE_ERROR = 1e-6;  // the reference is
     
-    protected static double Bisulfite_conversion_rate = 0.95;
+    protected static double Bisulfite_conversion_rate = 0;
     
  
     private final static double[] flatPriors = new double[DiploidGenotype.values().length];
