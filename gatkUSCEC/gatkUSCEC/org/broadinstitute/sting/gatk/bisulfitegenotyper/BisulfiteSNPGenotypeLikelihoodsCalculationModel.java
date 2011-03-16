@@ -31,12 +31,13 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected Byte bestAlternateAllele = null;
 	protected Byte secondBestAlternateAllele = null;
 	protected final boolean useAlleleFromVCF;
-	protected int testLoc = 7253622;
+	protected long testLoc;
 	
 	public BisulfiteSNPGenotypeLikelihoodsCalculationModel(
 			UnifiedArgumentCollection UAC, Logger logger) {
 		super(UAC, logger);
 		useAlleleFromVCF = UAC.GenotypingMode == GENOTYPING_MODE.GENOTYPE_GIVEN_ALLELES;
+		this.testLoc = UAC.testLocus;
 		// TODO Auto-generated constructor stub
 	}
 	
@@ -47,13 +48,15 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             StratifiedAlignmentContext.StratifiedContextType contextType,
             GenotypePriors priors,
             Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs,
-            Allele alternateAlleleToUse) {
+            Allele alternateAlleleToUse,
+            UnifiedArgumentCollection UAC) {
 		if ( !(priors instanceof BisulfiteDiploidSNPGenotypePriors) )
             throw new StingException("Only Bisulfite diploid-based SNP priors are supported in the SNP GL model");
 
         byte refBase = ref.getBase();
         Allele refAllele = Allele.create(refBase, true);
-        
+        //this.testLoc = UAC.testLocus;
+        //System.out.println(this.testLoc);
 
         // find the alternate allele with the largest sum of quality scores
         if ( alternateAlleleToUse != null ) {

@@ -166,7 +166,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
             throw new RuntimeException(String.format("Heterozygous value is bad %f", h));
         }
 
-        double v = 1.0 - (3.0 * h / 2.0);
+        double v = 1.0 - (3 * h / 2.0);
         if (MathUtils.isNegative(v)) {
             throw new RuntimeException(String.format("Heterozygous value is bad %f", h));
         }
@@ -363,6 +363,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
 
         return priors;
     }
+    
 
     static {
         for ( DiploidGenotype g : DiploidGenotype.values() ) {
