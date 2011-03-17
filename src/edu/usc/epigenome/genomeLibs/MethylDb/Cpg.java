@@ -139,6 +139,13 @@ public class Cpg implements Comparable, Cloneable {
 	public void addRead(CpgRead read)
 	{
 		readMap.put(read.readId, read);
+		
+		this.agReads += read.agRead;
+		this.tReads += read.tRead;
+		this.cReads += read.cRead;
+		this.totalReads += (read.agRead + read.tRead + read.cRead);
+		this.cReadsNonconversionFilt += read.cReadNonconversionFilt;
+		this.nextBaseGreads += read.nextBaseGread;
 	}
 	
 	public Map<Integer,CpgRead> getReads()
