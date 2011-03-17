@@ -34,6 +34,7 @@ public class Cpg implements Comparable, Cloneable {
 	public short nextBaseGreads = 0;
 	
 	// This is actually for non-cpgs
+	protected char prevBaseRefUpperCase = '0';
 	protected char nextBaseRefUpperCase = '0';
 	
 	// This is for weighted averages
@@ -316,7 +317,7 @@ public class Cpg implements Comparable, Cloneable {
 	public String toStringExpanded() 
 	{
 
-		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f\t%.2f\t%.2f", 
+		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%.2f\t%.2f\t%.2f", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,
@@ -329,6 +330,7 @@ public class Cpg implements Comparable, Cloneable {
 				nextBaseGreads,
 				nextBaseTotalReads,
 				nextBaseRefUpperCase,
+				prevBaseRefUpperCase,
 				100*this.fracMeth(true),
 				100*this.fracNextBaseG(),
 				this.cpgWeight
@@ -407,6 +409,20 @@ public class Cpg implements Comparable, Cloneable {
 		this.nextBaseRefUpperCase = Character.toUpperCase(nextBaseRef);
 	}
 
+	/**
+	 * @return the prevBaseRefUpperCase
+	 */
+	public char getPrevBaseRef() {
+		return prevBaseRefUpperCase;
+	}
+
+	/**
+	 * @param prevBaseRefUpperCase the prevBaseRefUpperCase to set
+	 */
+	public void setPrevBaseRef(char prevBaseRefUpperCase) {
+		this.prevBaseRefUpperCase = prevBaseRefUpperCase;
+	}
+	
 	public StrandedFeature.Strand getStrand()
 	{
 		return (this.negStrand) ? StrandedFeature.NEGATIVE : StrandedFeature.POSITIVE;
