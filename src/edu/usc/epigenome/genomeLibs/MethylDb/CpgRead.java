@@ -67,10 +67,16 @@ public class CpgRead {
 	}
 	
 
+	public boolean validNextBase()
+	{
+		return ((this.nextBaseUpperCase != 'N') &&
+				(this.nextBaseUpperCase != '0'));
+	}
+	
 	@Override
 	public String toString() {
 
-		return String.format("%d\t%d\t%d\t%d\t%d\t%d\t%c", 
+		return String.format("%020d\t%d\t%d\t%d\t%d\t%d\t%c", 
 						readId,
 						cRead,
 						cReadNonconversionFilt,
