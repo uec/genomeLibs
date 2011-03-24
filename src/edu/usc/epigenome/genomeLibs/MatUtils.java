@@ -48,6 +48,14 @@ public class MatUtils {
 		return nanMean(arr, 0, arr.length);
 	}
 	
+	public static double nanMin(double a, double b)
+	{
+		double[] arr = new double[2];
+		arr[0] = a;
+		arr[1] = b;
+		return nanMin(arr);
+	}
+	
 	public static double nanMin(double[] arr)
 	{
 		double val = Double.NaN;
@@ -68,6 +76,14 @@ public class MatUtils {
 		}
 		
 		return val;
+	}
+
+	public static double nanMax(double a, double b)
+	{
+		double[] arr = new double[2];
+		arr[0] = a;
+		arr[1] = b;
+		return nanMax(arr);
 	}
 
 	public static double nanMax(double[] arr)

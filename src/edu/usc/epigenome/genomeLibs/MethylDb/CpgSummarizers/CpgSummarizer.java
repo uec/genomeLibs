@@ -12,6 +12,7 @@ import javax.swing.text.html.HTML;
 
 import com.googlecode.charts4j.Color;
 
+import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
 
@@ -94,8 +95,8 @@ public abstract class CpgSummarizer {
 		numVals = 0.0;
 		valsTotal = 0.0;
 		valsSquareTotal = 0.0;
-		valsMin = Double.POSITIVE_INFINITY;
-		valsMax = Double.POSITIVE_INFINITY;
+		valsMin = Double.NaN;
+		valsMax = Double.NaN;
 
 //		this.lastCpgSeen = null;
 		this.valsWeightingTotal = 0.0;
@@ -104,6 +105,30 @@ public abstract class CpgSummarizer {
 		
 	}
 	
+
+	static public CpgSummarizer sumSummarizers(CpgSummarizer a, CpgSummarizer b)
+	{
+		CpgSummarizer out = null;
+		try {
+			out = a.getClass().cast(a.clone());
+			out.nCpgsSeen += b.nCpgsSeen;
+			out.numVals += b.numVals;
+			out.valsTotal += b.valsTotal;
+			out.valsWeightingTotal += b.valsWeightingTotal;
+			out.weightingTotal += b.weightingTotal;
+			out.valsSquareTotal += b.valsSquareTotal;
+			out.valsMin = MatUtils.nanMin(a.valsMin, b.valsMin);
+			out.valsMax = MatUtils.nanMax(a.valsMax, b.valsMax);
+			out.naturalMin = MatUtils.nanMin(a.naturalMin, b.naturalMin);
+			out.naturalMax = MatUtils.nanMax(a.naturalMax, b.naturalMax);
+			} 
+		catch (CloneNotSupportedException e) 
+		{
+			e.printStackTrace();
+		}
+
+		return out;
+	}
 	
 	/**
 	 * Override this!
@@ -158,7 +183,7 @@ public abstract class CpgSummarizer {
 	 * Use this to update summary stats
 	 * @param val
 	 */
-	protected void streamValue(double val, double weight)
+	public void streamValue(double val, double weight)
 	{
 		if (!Double.isNaN(val))
 		{
@@ -262,6 +287,11 @@ public abstract class CpgSummarizer {
 	
 	public double getValsTotal() {
 		return valsTotal;
+	}
+
+	
+	public double getNumVals() {
+		return numVals;
 	}
 
 	public double getValsSquareTotal() {
