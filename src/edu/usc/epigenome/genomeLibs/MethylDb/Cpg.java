@@ -271,7 +271,32 @@ public class Cpg implements Comparable, Cloneable {
 		}
 	}
 	
+	public String context()
+	{
+		return this.getPrevBaseRef() + "C" + this.getNextBaseRef();
+	}
+	
+	public boolean isCph(boolean onlyUseRef)
+	{
+		return isCph(onlyUseRef, 0.5);
+	}
+	
+	public boolean isCph(boolean onlyUseRef, double maxNextBaseGfrac)
+	{
+		boolean iscph = false;
+		
+		iscph = (this.getNextBaseRef() != 'G'); 
 
+		if (!onlyUseRef)
+		{
+			if (this.nextBaseTotalReads > 0)
+			{
+				iscph = (this.fracNextBaseG() < maxNextBaseGfrac);
+			}
+		}
+		
+		return iscph;
+	}
 
 	public static PrintWriter outputChromToFile(Map<Integer,Cpg> cpgMap, String prefix, String sampleName, String chr, int minCphCoverage, double minCphMethFrac)
 	throws IOException
