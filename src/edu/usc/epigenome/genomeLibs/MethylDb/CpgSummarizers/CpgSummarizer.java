@@ -24,7 +24,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbQuerier;
  * give various statistics.
  * 
  */
-public abstract class CpgSummarizer {
+public abstract class CpgSummarizer implements Cloneable {
 	
 	protected MethylDbQuerier querier = null;
 //	protected String sampleName = "UNKNOWN_SAMPLE";
@@ -105,9 +105,19 @@ public abstract class CpgSummarizer {
 		
 	}
 	
+	
+	
+
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
+
+
 
 	static public CpgSummarizer sumSummarizers(CpgSummarizer a, CpgSummarizer b)
 	{
+		//System.err.printf("Adding summarizers: %s,%s\n",a,b);
 		CpgSummarizer out = null;
 		try {
 			out = a.getClass().cast(a.clone());
@@ -124,6 +134,7 @@ public abstract class CpgSummarizer {
 			} 
 		catch (CloneNotSupportedException e) 
 		{
+			System.err.printf("FAILED adding summarizers: %s,%s\n",a,b);
 			e.printStackTrace();
 		}
 
