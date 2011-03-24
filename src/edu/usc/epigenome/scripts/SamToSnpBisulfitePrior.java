@@ -30,7 +30,7 @@ import edu.usc.epigenome.genomeLibs.PicardUtils;
 
 public class SamToSnpBisulfitePrior {
 	//final private static String prefix = "methylCGsRich_ASM_AllSnp_";
-	final private static String USAGE = "SamToBaseQ [opts] sampleName snpFileName cgiGffFileName bamFilePath ...";
+	final private static String USAGE = "SamToSnpBisulfitePrior [opts] sampleName snpFileName cgiGffFileName bamFilePath ...";
 
 	final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
 	//final private static int ALLELE_GA_NUMBER = 1; //for each reads, when there are more than 1 GA position is different from reference sequence, we define it belongs to another allele. 
@@ -42,7 +42,7 @@ public class SamToSnpBisulfitePrior {
 	@Option(name="-minMapQ",usage="minimum mapping quality (default 30)")
 	protected int minMapQ = 30;
 	@Option(name="-minReadCov",usage="minimum read coverage (default 5)")
-	protected int minReadCov = 5;
+	protected int minReadCov = 10;
 	@Option(name="-minBaseQual",usage="minimum Base quality (default 30)")
 	protected int minBaseQual = 30;
 	@Option(name="-snpType",usage="snp position type: 1: in cytosine; 2: next base of cytosine; 3: 3rd base of cytosine (default: 1)")
@@ -173,7 +173,7 @@ public class SamToSnpBisulfitePrior {
 				int mapQual = samRecord.getMappingQuality();
 				byte[] baseQual = samRecord.getBaseQualities();
 				boolean unmapped = samRecord.getReadUnmappedFlag();
-				if (unmapped || (mapQual <= minMapQ))
+				if (unmapped || (mapQual < minMapQ))
 				{
 					continue record;
 				}
@@ -187,6 +187,7 @@ public class SamToSnpBisulfitePrior {
 					//int readsEnd = (negStrand) ? 0 - alignmentS : samRecord.getUnclippedEnd();
 					int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; 
 					int i = Math.abs(snpPosition - onRefCoord);
+					char seqi = seq.charAt(i);
 					if (seq.length() != ref.length())
 					{
 						System.err.println("SeqLen(" + seq.length() + ") != RefLen(" + ref.length() + ")");
@@ -194,7 +195,7 @@ public class SamToSnpBisulfitePrior {
 					}
 					int seqLen = Math.min(seq.length(), ref.length());
 					byte baseQS = (negStrand) ? baseQual[seqLen-1-i] : baseQual[i];
-					if( baseQS <= minBaseQual )
+					if( baseQS < minBaseQual )
 					{
 						continue record;
 					}
@@ -205,96 +206,14 @@ public class SamToSnpBisulfitePrior {
 					byte refi = (byte) ref.charAt(i);
 					if(snpType == 1){
 						if( !tmpArray[5].equalsIgnoreCase("C") && !tmpArray[5].equalsIgnoreCase("G") && !tmpArray[6].equalsIgnoreCase("C") && !tmpArray[6].equalsIgnoreCase("G") ){
+							//System.err.println("break record " + chr + "\t" + snpPosition);
 							break record;
 						}
 						cytosineLocation = snpPosition;
-						//if((PicardUtils.isCytosine(i, ref, false) && negStrand) || PicardUtils.revNucleotide(ref.charAt(i)){
-							//effectReadInNegStrand = true;
-						//}
-						//else{
-							
-					//	}
-						/*
-							if( tmpArray[5].equalsIgnoreCase(tmpArray[6]) ){
-								if(ref.charAt(i) == 'C'){
-										if(i < seqLen-2){
-											if(snpOutput.snpRefstr3Char.isEmpty()){
-												snpOutput.snpRefstr3Char = ref.substring(i,i+2);
-												if(ref.charAt(i) != seq.charAt(i) && !PicardUtils.isCytosine(i, seq, true)){
-													snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-												}
-												else{
-													snpOutput.snpAllelestr3Char = snpOutput.snpRefstr3Char;
-												}
-											}
-											else if(ref.charAt(i) != seq.charAt(i) && !PicardUtils.isCytosine(i, seq, true) && snpOutput.snpRefstr3Char.equalsIgnoreCase(snpOutput.snpAllelestr3Char)){
-												snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-											}
-										}
-								}
-								else if(ref.charAt(i) == 'G'){
-									if(i > 1){
-										if(snpOutput.snpRefstr3Char.isEmpty()){
-											snpOutput.snpRefstr3Char = "" + PicardUtils.revNucleotide(ref.charAt(i)) + PicardUtils.revNucleotide(ref.charAt(i-1)) + PicardUtils.revNucleotide(ref.charAt(i-2));
-											snpOutput.snpAllelestr3Char = snpOutput.snpRefstr3Char;
-										}
-										else if(ref.charAt(i) != seq.charAt(i) && snpOutput.snpRefstr3Char.equalsIgnoreCase(snpOutput.snpAllelestr3Char)){
-											snpOutput.snpAllelestr3Char = "" + PicardUtils.revNucleotide(seq.charAt(i)) + PicardUtils.revNucleotide(seq.charAt(i-1)) + PicardUtils.revNucleotide(seq.charAt(i-2));
-											
-										}
-									}
-								}
-							}
-							else{
-								if(ref.charAt(i) == 'C'){
-									if(i < seqLen-2){
-										if(snpOutput.snpRefstr3Char.isEmpty()){
-											snpOutput.snpRefstr3Char = ref.substring(i,i+2);
-											if(ref.charAt(i) != seq.charAt(i) && !PicardUtils.isCytosine(i, seq, true)){
-												snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-											}
-											else{
-												snpOutput.snpAllelestr3Char = snpOutput.snpRefstr3Char;
-											}
-										}
-										else if(ref.charAt(i) != seq.charAt(i) && !PicardUtils.isCytosine(i, seq, true) && snpOutput.snpRefstr3Char.equalsIgnoreCase(snpOutput.snpAllelestr3Char)){
-											snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-										}
-									}
-								}
-								else if(ref.charAt(i) != 'C' && (ref.charAt(i) == tmpArray[5].charAt(0) || ref.charAt(i) == tmpArray[6].charAt(0))){
-									if(snpOutput.snpRefstr3Char.isEmpty()){
-										snpOutput.snpRefstr3Char = ref.substring(i,i+2);
-										if(ref.charAt(i) != seq.charAt(i)){
-											snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-										}
-										else{
-											snpOutput.snpAllelestr3Char = snpOutput.snpRefstr3Char;
-										}
-									}
-									else if(ref.charAt(i) != seq.charAt(i) && snpOutput.snpRefstr3Char.equalsIgnoreCase(snpOutput.snpAllelestr3Char)){
-										snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-									}
-								}
-								else if(ref.charAt(i) != 'C' && (ref.charAt(i) != tmpArray[5].charAt(0) && ref.charAt(i) != tmpArray[6].charAt(0))){
-									if(snpOutput.snpRefstr3Char.isEmpty()){
-										snpOutput.snpRefstr3Char = ref.substring(i,i+2);
-										if(ref.charAt(i) != seq.charAt(i)){
-											snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-										}
-										else{
-											snpOutput.snpAllelestr3Char = snpOutput.snpRefstr3Char;
-										}
-									}
-									else if(ref.charAt(i) != seq.charAt(i) && snpOutput.snpRefstr3Char.equalsIgnoreCase(snpOutput.snpAllelestr3Char)){
-										snpOutput.snpAllelestr3Char = seq.substring(i,i+2);
-									}
-								}
-							}
-							*/
+						
 							if(ref.charAt(i) == 'C'){
 								if(i < seqLen-2){
-									if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+									if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 										if(PicardUtils.revNucleotide(tmpArray[5].charAt(0)) == 'C' || PicardUtils.revNucleotide(tmpArray[6].charAt(0)) == 'C'){
 											snpOutput.snpAlleleAstr3Char = PicardUtils.revNucleotide(tmpArray[5].charAt(0)) + ref.substring(i+1,i+2);
 											snpOutput.snpAlleleBstr3Char = PicardUtils.revNucleotide(tmpArray[6].charAt(0)) + ref.substring(i+1,i+2);
@@ -310,7 +229,7 @@ public class SamToSnpBisulfitePrior {
 							}
 							else if(PicardUtils.revNucleotide(ref.charAt(i)) == 'C'){
 								if(i > 1){
-									if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+									if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 										if(PicardUtils.revNucleotide(tmpArray[5].charAt(0)) == 'C' || PicardUtils.revNucleotide(tmpArray[6].charAt(0)) == 'C'){
 											snpOutput.snpAlleleAstr3Char = "" + PicardUtils.revNucleotide(tmpArray[5].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1)) + PicardUtils.revNucleotide(ref.charAt(i-2));
 											snpOutput.snpAlleleBstr3Char = "" + PicardUtils.revNucleotide(tmpArray[6].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1)) + PicardUtils.revNucleotide(ref.charAt(i-2));
@@ -330,7 +249,7 @@ public class SamToSnpBisulfitePrior {
 								if(ref.charAt(i) == tmpArray[5].charAt(0) || ref.charAt(i) == tmpArray[6].charAt(0)){
 									if(PicardUtils.revNucleotide(tmpArray[5].charAt(0)) == 'C' || PicardUtils.revNucleotide(tmpArray[6].charAt(0)) == 'C'){
 										if(i > 1){
-											if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+											if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 												snpOutput.snpAlleleAstr3Char = "" + PicardUtils.revNucleotide(tmpArray[5].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1)) + PicardUtils.revNucleotide(ref.charAt(i-2));
 												snpOutput.snpAlleleBstr3Char = "" + PicardUtils.revNucleotide(tmpArray[6].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1)) + PicardUtils.revNucleotide(ref.charAt(i-2));
 											}
@@ -338,7 +257,7 @@ public class SamToSnpBisulfitePrior {
 									}
 									else{
 										if(i < seqLen-2){
-											if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+											if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 												snpOutput.snpAlleleAstr3Char = tmpArray[5] + ref.substring(i+1,i+2);
 												snpOutput.snpAlleleBstr3Char = tmpArray[6] + ref.substring(i+1,i+2);
 											}
@@ -349,7 +268,7 @@ public class SamToSnpBisulfitePrior {
 								else{
 									if(tmpArray[5].charAt(0) == 'C' || tmpArray[6].charAt(0) == 'C'){
 										if(i > 1){
-											if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+											if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 												snpOutput.snpAlleleAstr3Char = tmpArray[5] + PicardUtils.revNucleotide(ref.charAt(i-1)) + PicardUtils.revNucleotide(ref.charAt(i-2));
 												snpOutput.snpAlleleBstr3Char = tmpArray[6] + PicardUtils.revNucleotide(ref.charAt(i-1)) + PicardUtils.revNucleotide(ref.charAt(i-2));
 											}
@@ -357,7 +276,7 @@ public class SamToSnpBisulfitePrior {
 									}
 									else{
 										if(i < seqLen-2){
-											if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+											if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 												snpOutput.snpAlleleAstr3Char = PicardUtils.revNucleotide(tmpArray[5].charAt(0)) + ref.substring(i+1,i+2);
 												snpOutput.snpAlleleBstr3Char = PicardUtils.revNucleotide(tmpArray[6].charAt(0)) + ref.substring(i+1,i+2);
 											}
@@ -370,8 +289,16 @@ public class SamToSnpBisulfitePrior {
 						if(PicardUtils.isCytosine(i, seq, false)){
 							snpOutput.numC++;
 						}
-						else if(PicardUtils.isThymine(i, seq)){
+						else if(seqi == 'T'){
 							snpOutput.numT++;
+						}
+						if(snpOutput.snpPos == 742584){
+							System.err.println(ref);
+							System.err.println(seq);
+							System.err.println(onRefCoord);
+							System.err.println(ref.charAt(i));
+							System.err.println(i + "\t" + snpOutput.snpChr + "\t" + snpOutput.snpPos + "\t" + snpOutput.snpAlleleAstr3Char + "\t" + snpOutput.snpAlleleBstr3Char + "\t" + snpOutput.numC + "\t" + snpOutput.numT + "\t" + snpOutput.numTotal);
+							System.err.printf("%s\t%s\n",PicardUtils.isCytosine(i, seq, false),seqi == 'T');
 						}
 						 
 						
@@ -382,7 +309,7 @@ public class SamToSnpBisulfitePrior {
 								if(PicardUtils.isCytosine(i-1, ref, false) && PicardUtils.revNucleotide(ref.charAt(i+1)) == 'C'){
 									cytosineLocation = snpPosition-1;
 									cytosineLocationBack = snpPosition+1;
-									if(snpOutputBack.snpAlleleA.isEmpty()){
+									if(snpOutputBack.snpAlleleA == null){
 										snpOutputBack.snpChr = chr;
 										snpOutputBack.snpPos = snpPosition;
 										if(!cgi.selectOverlapping(chr, snpLocation,true).isEmpty()){
@@ -395,7 +322,7 @@ public class SamToSnpBisulfitePrior {
 										snpOutputBack.snpAlleleBstr = tmpArray[6];
 									}
 									if(!negStrand){
-										if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+										if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 											if( ref.charAt(i) == tmpArray[5].charAt(0) || ref.charAt(i) == tmpArray[6].charAt(0) ){
 												snpOutput.snpAlleleAstr3Char = "" + ref.charAt(i-1) + tmpArray[5].charAt(0) + ref.charAt(i+1);
 												snpOutput.snpAlleleBstr3Char =  "" + ref.charAt(i-1) + tmpArray[6].charAt(0) + ref.charAt(i+1);
@@ -405,7 +332,7 @@ public class SamToSnpBisulfitePrior {
 												snpOutput.snpAlleleBstr3Char =  "" + ref.charAt(i-1) + PicardUtils.revNucleotide(tmpArray[6].charAt(0)) + ref.charAt(i+1);
 											}		
 										}
-										if(snpOutputBack.snpAlleleAstr3Char.isEmpty() || snpOutputBack.snpAlleleBstr3Char.isEmpty()){
+										if(snpOutputBack.snpAlleleAstr3Char == null || snpOutputBack.snpAlleleBstr3Char == null){
 											if( ref.charAt(i) == tmpArray[5].charAt(0) || ref.charAt(i) == tmpArray[6].charAt(0) ){
 												snpOutputBack.snpAlleleAstr3Char = "" + PicardUtils.revNucleotide(ref.charAt(i+1)) + PicardUtils.revNucleotide(tmpArray[5].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1));
 												snpOutputBack.snpAlleleBstr3Char =  "" + PicardUtils.revNucleotide(ref.charAt(i+1)) + PicardUtils.revNucleotide(tmpArray[6].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1));
@@ -417,14 +344,16 @@ public class SamToSnpBisulfitePrior {
 										}
 										if(PicardUtils.isCytosine(i-1, seq, false)){
 											snpOutput.numC++;
+											snpOutput.numTotal++;
 										}
-										else if(PicardUtils.isThymine(i-1, seq)){
+										else if(seqi == 'T'){
 											snpOutput.numT++;
+											snpOutput.numTotal++;
 										}
 												
 									}
 									else{
-										if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+										if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 											if( ref.charAt(i) == tmpArray[5].charAt(0) || ref.charAt(i) == tmpArray[6].charAt(0) ){
 												snpOutput.snpAlleleAstr3Char = "" + PicardUtils.revNucleotide(ref.charAt(i+1)) + PicardUtils.revNucleotide(tmpArray[5].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1));
 												snpOutput.snpAlleleBstr3Char =  "" + PicardUtils.revNucleotide(ref.charAt(i+1)) + PicardUtils.revNucleotide(tmpArray[6].charAt(0)) + PicardUtils.revNucleotide(ref.charAt(i-1));
@@ -434,7 +363,7 @@ public class SamToSnpBisulfitePrior {
 												snpOutput.snpAlleleBstr3Char =  "" + PicardUtils.revNucleotide(ref.charAt(i+1)) + tmpArray[6].charAt(0) + PicardUtils.revNucleotide(ref.charAt(i-1));
 											}		
 										}
-										if(snpOutputBack.snpAlleleAstr3Char.isEmpty() || snpOutputBack.snpAlleleBstr3Char.isEmpty()){
+										if(snpOutputBack.snpAlleleAstr3Char == null || snpOutputBack.snpAlleleBstr3Char == null){
 											if( ref.charAt(i) == tmpArray[5].charAt(0) || ref.charAt(i) == tmpArray[6].charAt(0) ){
 												snpOutputBack.snpAlleleAstr3Char = "" + ref.charAt(i-1) + tmpArray[5].charAt(0) + ref.charAt(i+1);
 												snpOutputBack.snpAlleleBstr3Char =  "" + ref.charAt(i-1) + tmpArray[6].charAt(0) + ref.charAt(i+1);
@@ -446,16 +375,18 @@ public class SamToSnpBisulfitePrior {
 										}
 										if(PicardUtils.isCytosine(i-1, seq, false)){
 											snpOutputBack.numC++;
+											snpOutputBack.numTotal++;
 										}
-										else if(PicardUtils.isThymine(i-1, seq)){
+										else if(seqi == 'T'){
 											snpOutputBack.numT++;
+											snpOutputBack.numTotal++;
 										}
 									}
 									continue record;
 								}
 								else{
 									
-									if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+									if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 										if(PicardUtils.isCytosine(i-1, ref, false) ||  PicardUtils.revNucleotide(ref.charAt(i+1)) == 'C'){
 											if(PicardUtils.isCytosine(i-1, ref, false)){
 												if( ref.charAt(i) == tmpArray[5].charAt(0) || ref.charAt(i) == tmpArray[6].charAt(0) ){
@@ -499,16 +430,18 @@ public class SamToSnpBisulfitePrior {
 						if(i >= 1){
 							if(PicardUtils.isCytosine(i-1, seq, false)){
 								snpOutput.numC++;
+								snpOutput.numTotal++;
 							}
-							else if(PicardUtils.isThymine(i-1, seq)){
+							else if(seqi == 'T'){
 								snpOutput.numT++;
+								snpOutput.numTotal++;
 							}
 						}
 						
 					}
 					else if(snpType == 3){
 						if(i >= 2 && i < seqLen-3){
-								if(snpOutput.snpAlleleAstr3Char.isEmpty() || snpOutput.snpAlleleBstr3Char.isEmpty()){
+								if(snpOutput.snpAlleleAstr3Char == null || snpOutput.snpAlleleBstr3Char == null){
 									if(PicardUtils.isCytosine(i-2, ref, false) ||  PicardUtils.revNucleotide(ref.charAt(i+2)) == 'C'){
 										if(PicardUtils.isCytosine(i-2, ref, false)){
 											if( ref.charAt(i+1) == tmpArray[5].charAt(0) || ref.charAt(i+1) == tmpArray[6].charAt(0) ){
@@ -550,9 +483,11 @@ public class SamToSnpBisulfitePrior {
 						if(i >= 2){
 							if(PicardUtils.isCytosine(i-2, seq, false)){
 								snpOutput.numC++;
+								snpOutput.numTotal++;
 							}
-							else if(PicardUtils.isThymine(i-2, seq)){
+							else if(seqi == 'T'){
 								snpOutput.numT++;
+								snpOutput.numTotal++;
 							}
 						}
 					
@@ -572,20 +507,35 @@ public class SamToSnpBisulfitePrior {
 					System.err.println("-----------------------------------------");
 //					chrIt.close();
 //					System.exit(1);
+				}// one sam record over
+				
+			}//one line of snp over
+			chrIt.close();
+			
+			//System.err.println("seen " + chr + "\t" + snpPosition);
+			if(snpType == 2){
+				if(cytosineLocation != null){
+					snpSet.put(cytosineLocation, snpOutput);
+					System.err.println(chr + "\t" + cytosineLocation + "\t" + snpPosition);
 				}
 				
-			}// one sam record over
-			chrIt.close();
-			if(snpType == 2){
-				snpSet.put(cytosineLocation, snpOutput);
-				if(!snpOutputBack.snpAlleleAstr3Char.isEmpty() && cytosineLocationBack != null){
+				if(snpOutputBack.snpAlleleAstr3Char != null && cytosineLocationBack != null){
 					snpSet.put(cytosineLocationBack, snpOutputBack);
+					System.err.println(chr + "\t" + cytosineLocationBack + "\t" + snpPosition);
 				}
 			}
 			else{
-				snpSet.put(cytosineLocation, snpOutput);
+				if(cytosineLocation != null){
+					snpSet.put(cytosineLocation, snpOutput);
+					System.err.println(chr + "\t" + cytosineLocation + "\t" + snpPosition);
+				}
+				
 			}
-		}//one line of snp over
+		}//all snps over
+		inputSam.close();
+		snpSetWriter(snpSet,snpWriter);
+		snpWriter.close();
+		System.err.println("Over!");
 	}
 	
 //	private static void cgiLocation(String cgiFileNameGff, TreeMap<String,Location> cgiLocation) throws IOException{
@@ -598,7 +548,7 @@ public class SamToSnpBisulfitePrior {
 		Iterator<Integer> snpSetIt = snpSet.keySet().iterator();
 		while(snpSetIt.hasNext()){
 			SnpData snp = snpSet.get(snpSetIt.next());
-			snpWriter.println(snp.snpName + "\t" + snp.snpChr + "\t" + snp.snpPos + "\t" + snp.snpAlleleA + "\t" + snp.snpAlleleB + "\t" + snp.snpAlleleAstr + "\t" + snp.snpAlleleBstr + "\t" + snp.snpAlleleAstr3Char + "\t" + snp.snpAlleleBstr3Char + "\t" + snp.numC + "\t" + snp.numT + "\t" + snp.numTotal);
+			snpWriter.println(snp.snpName + "\t" + snp.snpChr + "\t" + snp.snpPos + "\t" + snp.snpAlleleA + "\t" + snp.snpAlleleB + "\t" + snp.snpAlleleAstr + "\t" + snp.snpAlleleBstr + "\t" + snp.snpAlleleAstr3Char + "\t" + snp.snpAlleleBstr3Char + "\t" + snp.numC + "\t" + snp.numT + "\t" + snp.numTotal + "\t" + snp.cgiStat);
 			
 		}
 	}
