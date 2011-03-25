@@ -13,6 +13,7 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 
 import java.util.Collection;
 
+import edu.usc.epigenome.genomeLibs.MatUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgRead;
 
@@ -27,6 +28,8 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected static final int ANY_READ = 3;
 	
 	protected int readType = ANY_READ;
+	
+	protected boolean useOnlyCG = true;
 	
 	protected int[] nMM;
 	protected int[] nMU;
@@ -61,6 +64,27 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	}
 	
 
+
+	/**
+	 * This makes it reducible for map-reduce
+	 * 
+	 * @param cpgWalkerAllpairsAutocorrByread
+	 * @param cpgWalkerAllpairsAutocorrByread2
+	 * @return
+	 */
+	public static CpgWalkerAllpairsAutocorrByread merge(
+			CpgWalkerAllpairsAutocorrByread a,
+			CpgWalkerAllpairsAutocorrByread b) {
+		
+		System.err.printf("Merging Autcorr(%d) + Autocorr(%d)...", a.totalCount(), b.totalCount());
+		
+		CpgWalkerAllpairsAutocorrByread out = a;
+		
+		System.err.printf("Result has Autocorr(%d)\n", out.totalCount());
+		return out;
+	}
+
+	
 	
 	protected void init()
 	{
@@ -72,6 +96,21 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		nM = new int[windSize-1]; 
 		nU = new int[windSize-1]; 
 	}
+
+	
+	
+	
+	public boolean useOnlyCG() {
+		return useOnlyCG;
+	}
+
+
+
+	public void useOnlyCG(boolean useOnlyCG) {
+		this.useOnlyCG = useOnlyCG;
+	}
+
+
 
 	@Override
 	protected void recordPair(Cpg a, Cpg b)
@@ -91,7 +130,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		{
 			boolean aCg = aCgRead.validCg( (this.walkParams.methylParams==null) || this.walkParams.methylParams.getUseNonconversionFilter());
 			//if (!aCg) System.err.println("Got an uncounted cytosine (A): " + a.toString() + "\n\t" + aCgRead.toString()); // COMMENT OUT
-			if (aCg)
+			if (!useOnlyCG || aCg)
 			{
 				int aReadId = aCgRead.readId;
 				boolean aMeth = aCgRead.meth(true);
@@ -100,7 +139,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 				{
 					boolean bCg = bCgRead.validCg( (this.walkParams.methylParams==null) || this.walkParams.methylParams.getUseNonconversionFilter());
 					//if (!bCg) System.err.println("Got uncounted cytosine (B): " + b.toString() + "\n\t" +  bCgRead.toString());  // COMMENT OUT
-					if (bCg)
+					if (!useOnlyCG || bCg)
 					{
 						int bReadId = bCgRead.readId;
 						boolean identicalRead = (aReadId == bReadId);
@@ -192,6 +231,13 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		}
 		
 		return sb.toString();
+	}
+
+	
+	public int totalCount()
+	{
+		int[][] mat = new int[][]{nM, nU, nMM, nMU, nUU};
+		return MatUtils.sumAll(mat);
 	}
 
 
