@@ -153,7 +153,7 @@ public class CpgWalker implements TabularOutput {
 	 */
 	public void setCurChr(String curChr) {
 		this.curChr = curChr;
-		reset();
+		resetWindow();
 		this.alertNewChrom();
 	}
 
@@ -174,12 +174,15 @@ public class CpgWalker implements TabularOutput {
 	{
 	}
 	
-	public void reset()
+	public void resetWindow()
 	{
 		window = new LinkedList<Cpg[]>();
-		this.resetSummarizers();
-		//System.err.printf("CpgWalker reset(%s)\n",this.getCurChr());
 	}
+	
+	public void reset()
+	{
+	}
+	
 	
 	public void resetSummarizers()
 	{

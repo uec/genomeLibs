@@ -84,7 +84,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 			CpgWalkerAllpairsAutocorrByread a,
 			CpgWalkerAllpairsAutocorrByread b) {
 		
-		//		System.err.printf("Merging Autcorr(%d) + Autocorr(%d)...", a.totalCount(), b.totalCount());
+				System.err.printf("Merging Autcorr(%d) + Autocorr(%d)...", a.totalCount(), b.totalCount());
 
 		if (a.useSummarizers || b.useSummarizers)
 		{
@@ -131,6 +131,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected void init()
 	{
 		// Initalize counters
+		
 		int windSize = this.walkParams.maxScanningWindSize;
 		nMM = new int[windSize-1]; 
 		nMU = new int[windSize-1]; 
