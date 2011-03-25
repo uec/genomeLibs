@@ -33,6 +33,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	
 	protected int[] nMM;
 	protected int[] nMU;
+	protected int[] nUM;
 	protected int[] nUU; 
 	protected int[] nM;
 	protected int[] nU;
@@ -116,6 +117,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		{
 			out.nMM[i] = a.nMM[i] + b.nMM[i];
 			out.nMU[i] = a.nMU[i] + b.nMU[i];
+			out.nUM[i] = a.nUM[i] + b.nUM[i];
 			out.nUU[i] = a.nUU[i] + b.nUU[i];
 			out.nM[i] = a.nM[i] + b.nM[i];
 			out.nU[i] = a.nU[i] + b.nU[i];
@@ -135,6 +137,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		int windSize = this.walkParams.maxScanningWindSize;
 		nMM = new int[windSize-1]; 
 		nMU = new int[windSize-1]; 
+		nUM = new int[windSize-1]; 
 		nUU = new int[windSize-1]; 
 		nM = new int[windSize-1]; 
 		nU = new int[windSize-1]; 
@@ -192,22 +195,43 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 						{
 							boolean bMeth = bCgRead.meth(true);
 
+//							// OLD symmetric way
+//							if (aMeth) { nM[dist]++; } else { nU[dist]++; }
+//							if (bMeth) { nM[dist]++; } else { nU[dist]++; }
+//
+//							if (aMeth && bMeth)
+//							{
+//								nMM[dist]+=2;
+//							}
+//							else if (!aMeth && !bMeth)
+//							{
+//								nUU[dist]+=2;
+//							}
+//							else
+//							{
+//								nMU[dist]++;
+//							}
+							
+							
+					
 							if (aMeth) { nM[dist]++; } else { nU[dist]++; }
-							if (bMeth) { nM[dist]++; } else { nU[dist]++; }
 
 							if (aMeth && bMeth)
 							{
-								nMM[dist]+=2;
+								nMM[dist]++;
 							}
-							else if (!aMeth && !bMeth)
-							{
-								nUU[dist]+=2;
-							}
-							else
+							else if (aMeth && !bMeth)
 							{
 								nMU[dist]++;
 							}
-							
+							else if (!aMeth && bMeth)
+							{
+								nUM[dist]++;
+							}
+							else
+							{
+								nUU[dist]++;
+							}							
 
 						}
 					}
@@ -234,7 +258,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		StringBuffer sb = new StringBuffer((int)1E5);
 		
 		//sb.append(String.format("readType = %d,\tsamestrand=%s\n", this.readType, (this.samestrandOnly)?"true":"false"  ));
-		sb.append(String.format("%s,%s,%s,%s,%s,%s","Distance","nM","nU","nMM","nMU","nUU"));
+		sb.append(String.format("%s,%s,%s,%s,%s,%s,%s","Distance","nM","nU","nMM","nMU","nUM","nUU"));
 		
 		//System.err.println("Header="+sb.length());
 		return sb.toString();
@@ -271,7 +295,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		
 		for (int i = 0; i < nMM.length; i++)
 		{
-			sb.append(String.format("%s%d,%d,%d,%d,%d,%d\n",firstColSec,i+1,nM[i],nU[i],nMM[i],nMU[i],nUU[i]));
+			sb.append(String.format("%s%d,%d,%d,%d,%d,%d,%d\n",firstColSec,i+1,nM[i],nU[i],nMM[i],nMU[i],nUM[i],nUU[i]));
 		}
 		
 		return sb.toString();
@@ -287,7 +311,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	
 	public int totalCount()
 	{
-		int[][] mat = new int[][]{nM, nU, nMM, nMU, nUU};
+		int[][] mat = new int[][]{nM, nU, nMM, nMU, nUM, nUU};
 		return MatUtils.sumAll(mat);
 	}
 
