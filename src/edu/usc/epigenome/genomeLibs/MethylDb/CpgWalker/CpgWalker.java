@@ -123,6 +123,14 @@ public class CpgWalker implements TabularOutput {
 
 
 
+	public boolean useSummarizers() {
+		return this.useSummarizers;
+	}
+
+	public void useSummarizers(boolean useSummarizers) {
+		this.useSummarizers = useSummarizers;
+	}
+
 	public void clearWindowListeners()
 	{
 		listeners = new ArrayList<ActionListener>(10);
@@ -261,7 +269,7 @@ public class CpgWalker implements TabularOutput {
 			}
 		}
 		
-		//System.err.println("\tChecking " + this.windStr());
+//		System.err.printf("\tChecking %s (id=%d)\n",this.windStr(),this.hashCode());
 		
 		// And process the window
 		if (window.size()>=walkParams.minScanningWindCpgs)

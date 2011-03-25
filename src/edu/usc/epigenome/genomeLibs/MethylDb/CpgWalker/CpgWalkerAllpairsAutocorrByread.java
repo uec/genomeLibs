@@ -38,6 +38,14 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected int[] nU;
 	
 	
+	public CpgWalkerAllpairsAutocorrByread(CpgWalkerParams inWalkParams, boolean inSamestrandOnly, boolean inOppstrandOnly,int inReadType) {
+		super(inWalkParams, inSamestrandOnly, inOppstrandOnly);
+		
+		this.readType = inReadType;
+
+		init();
+	}
+	
 	public CpgWalkerAllpairsAutocorrByread(CpgWalkerParams inWalkParams, boolean inSamestrandOnly, boolean inOppstrandOnly, boolean inSameRead, boolean inDifferentRead) {
 		super(inWalkParams, inSamestrandOnly, inOppstrandOnly);
 		
@@ -76,9 +84,43 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 			CpgWalkerAllpairsAutocorrByread a,
 			CpgWalkerAllpairsAutocorrByread b) {
 		
-		System.err.printf("Merging Autcorr(%d) + Autocorr(%d)...", a.totalCount(), b.totalCount());
+		//		System.err.printf("Merging Autcorr(%d) + Autocorr(%d)...", a.totalCount(), b.totalCount());
+
+		if (a.useSummarizers || b.useSummarizers)
+		{
+			System.err.printf("CpgWalkerAllpairsAutocorr::merge() does not work with useSummarizers set. Quitting.\n");
+			System.exit(1);
+		}
 		
-		CpgWalkerAllpairsAutocorrByread out = a;
+		// ***** DEBUGGING **** TURN OFF ****
+		if (a.readType != b.readType)
+		{
+			System.err.printf("a.readType(%d) != b.readType(%d)\n",a.readType,b.readType);
+			System.exit(1);
+		}
+		if (a.samestrandOnly != b.samestrandOnly)
+		{
+			System.err.printf("samestrandOnly(%s) != samestrandOnly(%s)\n",a.samestrandOnly,b.samestrandOnly);
+			System.exit(1);
+		}
+		if (a.oppstrandOnly != b.oppstrandOnly)
+		{
+			System.err.printf("oppstrandOnly(%s) != oppstrandOnly(%s)\n",a.oppstrandOnly,b.oppstrandOnly);
+			System.exit(1);
+		}
+		// END ***** DEBUGGING **** TURN OFF ****
+		
+		CpgWalkerAllpairsAutocorrByread out = new CpgWalkerAllpairsAutocorrByread(a.walkParams, a.samestrandOnly, a.oppstrandOnly, a.readType);
+		int windSize = a.walkParams.maxScanningWindSize;
+		for (int i = 0; i < (windSize-1); i++)
+		{
+			out.nMM[i] = a.nMM[i] + b.nMM[i];
+			out.nMU[i] = a.nMU[i] + b.nMU[i];
+			out.nUU[i] = a.nUU[i] + b.nUU[i];
+			out.nM[i] = a.nM[i] + b.nM[i];
+			out.nU[i] = a.nU[i] + b.nU[i];
+		}
+
 		
 		System.err.printf("Result has Autocorr(%d)\n", out.totalCount());
 		return out;
@@ -218,19 +260,27 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		return sb.toString();
 	}
 	
-	@Override
-	public String toCsvStr()
+	public String toCsvStr(String firstCol)
 	throws Exception
 	{
 		StringBuffer sb = new StringBuffer((int)1E6);
 		//ListUtils.setDelim(",");
 
+		String firstColSec = (firstCol==null) ? "" : (firstCol + ",");
+		
 		for (int i = 0; i < nMM.length; i++)
 		{
-			sb.append(String.format("%d,%d,%d,%d,%d,%d\n",i+1,nM[i],nU[i],nMM[i],nMU[i],nUU[i]));
+			sb.append(String.format("%s%d,%d,%d,%d,%d,%d\n",firstColSec,i+1,nM[i],nU[i],nMM[i],nMU[i],nUU[i]));
 		}
 		
 		return sb.toString();
+	}
+	
+	@Override
+	public String toCsvStr()
+	throws Exception
+	{
+		return toCsvStr(null);
 	}
 
 	
