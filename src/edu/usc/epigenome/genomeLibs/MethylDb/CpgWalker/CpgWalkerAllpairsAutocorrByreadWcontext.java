@@ -31,6 +31,12 @@ public class CpgWalkerAllpairsAutocorrByreadWcontext extends
 			//System.err.printf("%s,%s context match (%s,%s)\n",a.chromPos, b.chromPos, ac, bc);
 			super.recordPair(a, b);
 		}
+		else if (ac.equals(this.toContext) && bc.equals(this.fromContext))
+		{
+			super.recordPair(b, a);
+		}
+
+		
 //		else
 //		{
 //			System.err.printf("%s,%s context MISMATCH (%s,%s) should be (%s,%s)\n",
