@@ -162,7 +162,9 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected void recordPair(Cpg a, Cpg b)
 	{
 		// Get the distance
-		int dist = b.chromPos - a.chromPos - 1;
+		
+		// Now that it's asymmetric, we can the pair in either orientation.
+		int dist = Math.abs(b.chromPos - a.chromPos) - 1;
 		
 //		Map<Integer,CpgRead> aCgReads = a.getReads();
 //		Map<Integer,CpgRead> bCgReads = b.getReads();
