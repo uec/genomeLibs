@@ -64,6 +64,7 @@ import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteSNPGenotyp
 
 public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
+	public boolean bisulfiteSpace = false;
 	
 	public BisulfiteGenotyperEngine(GenomeAnalysisEngine toolkit,
 			UnifiedArgumentCollection UAC) {
@@ -87,7 +88,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         // note that, because we cap the base quality by the mapping quality, minMQ cannot be less than minBQ
         this.UAC = UAC.clone();
         this.UAC.MIN_MAPPING_QUALTY_SCORE = Math.max(UAC.MIN_MAPPING_QUALTY_SCORE, UAC.MIN_BASE_QUALTY_SCORE);
-
+        this.bisulfiteSpace = UAC.bisulfiteSpace;
         this.logger = logger;
         this.verboseWriter = verboseWriter;
         this.annotationEngine = engine;
@@ -278,7 +279,8 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
             // if the mapping quality is too low or the mate is bad, we can just zero out the whole read and continue
             if ( record.getMappingQuality() < UAC.MIN_MAPPING_QUALTY_SCORE ||
                  (!UAC.USE_BADLY_MATED_READS && BadMateFilter.hasBadMate(record)) ) {
-                return bitset;
+            	//System.out.println("bad mates");
+            	return bitset;
             }
 
             byte[] quals = record.getBaseQualities();
@@ -295,7 +297,14 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
                 refContext = new ReferenceContext(refContext.getGenomeLocParser(),refContext.getLocus(), window, bases);
             }            
 
-            BitSet mismatches = BisulfiteAlignmentUtils.mismatchesInRefWindow(record, refContext, UAC.MAX_MISMATCHES, MISMATCH_WINDOW_SIZE, true);
+            BitSet mismatches;
+            //System.out.println(UAC.bisulfiteSpace);
+            if(UAC.bisulfiteSpace){
+            	mismatches = BisulfiteAlignmentUtils.mismatchesInRefWindow(record, refContext, UAC.MAX_MISMATCHES, MISMATCH_WINDOW_SIZE, UAC.bisulfiteSpace);
+            }
+            else{
+            	mismatches = AlignmentUtils.mismatchesInRefWindow(record, refContext, UAC.MAX_MISMATCHES, MISMATCH_WINDOW_SIZE);
+            }
             if ( mismatches != null )
                 bitset.and(mismatches);
 
@@ -313,7 +322,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
             heterozygosity = UAC.INDEL_HETEROZYGOSITY;
         else
             heterozygosity = UAC.heterozygosity;
-        if(N==2){
+        if(N==2 && bisulfiteSpace){
         	for (int i = 0; i <= N; i++) {
                 log10AlleleFrequencyPriors[i] = 0;
             }

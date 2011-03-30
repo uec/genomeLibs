@@ -126,6 +126,23 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         for ( Map.Entry<String, StratifiedAlignmentContext> sample : contexts.entrySet() ) {
             ReadBackedPileup pileup = sample.getValue().getContext(contextType).getBasePileup();
 
+            for ( PileupElement p : pileup ) {
+            	SAMRecord samRecord = p.getRead();
+            	
+            	boolean negStrand = samRecord.getReadNegativeStrandFlag();
+				int alignmentS = samRecord.getAlignmentStart();
+				int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+
+				if((pileup.getLocation().getStart()) == testLoc){
+					System.out.println("before filter:\t" + onRefCoord + "\t" + p.getOffset() + "\t" + negStrand + "\t" + pileup.getLocation().getStart() + "\t" + (char)p.getBase());
+					//System.out.println("deletion: " + p.isDeletion());
+					//System.out.println("GATKSAMRecord: " + (p.getRead() instanceof GATKSAMRecord));
+					System.out.println("isGoodBase: " + ((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset()));
+		                     
+				}
+            }
+            
+            
             // do not use this prior, this prior is flat prior intiated in genotypeEngine, so we actually do not transfer this priors...
             BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, UAC.PCR_error, UAC.bsRate, UAC.CpgMethy);
             if((pileup.getLocation().getStart()) == testLoc)
@@ -229,7 +246,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	}
                 bestAllele = altAllele;
             }
-            else if (qualCounts[index] > secondMaxCount && qualCounts[index] < maxCount){
+            else if (qualCounts[index] > secondMaxCount && qualCounts[index] <= maxCount){
             	secondMaxCount = qualCounts[index];
             	alternateAllele = altAllele;
             }
@@ -237,7 +254,13 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         }
 		
         if(location == testLoc){
-
+        	for ( DiploidGenotype g : DiploidGenotype.values() ){
+        		System.err.println(g.base1 + "-" + g.base2 + ": " + posterior[g.ordinal()]);
+        	}
+        	for ( byte altAllele : BaseUtils.BASES ) {
+        		int index = BaseUtils.simpleBaseToBaseIndex(altAllele);
+        		System.err.println(altAllele + ": " + qualCounts[index]);
+        	}
         	System.err.println("bestAllele: " + bestAllele + "\t" + maxCount);
         	if(alternateAllele != null){
         		System.err.println("AlternateAllele: " + "\t" + alternateAllele + "\t" + secondMaxCount);

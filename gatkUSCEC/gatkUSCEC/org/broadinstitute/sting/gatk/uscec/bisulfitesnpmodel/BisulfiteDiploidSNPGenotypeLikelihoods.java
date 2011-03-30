@@ -89,8 +89,11 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods extends
         // TODO--   given the current state of next-gen sequencing, but may need to be fixed in the future.
         // TODO--   However, when that happens, we'll need to be a lot smarter about the caching we do here.
         byte observedBase = 0, qualityScore = 0;
-        if ( !usableBase(p, ignoreBadBases) )
-            	return 0;
+        if ( !usableBase(p, ignoreBadBases) ){
+        	//System.out.println("bad base: " + p.getBase());
+        	return 0;
+        }
+            	
         byte qual = p.getQual();
         if ( qual > SAMUtils.MAX_PHRED_SCORE )
             throw new UserException.MalformedBAM(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));

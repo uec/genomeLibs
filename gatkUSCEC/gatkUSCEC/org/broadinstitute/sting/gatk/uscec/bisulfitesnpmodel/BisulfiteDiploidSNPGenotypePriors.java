@@ -20,7 +20,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     public static final double HUMAN_HETEROZYGOSITY = 1e-3;
     public static final double CEU_HETEROZYGOSITY = 1e-3;
     public static final double YRI_HETEROZYGOSITY = 1.0 / 850;
-    public static final double DBSNP_HETEROZYGOSITY = 0.2;
+    public static final double DBSNP_HETEROZYGOSITY = 0.1;
 
     
     /**

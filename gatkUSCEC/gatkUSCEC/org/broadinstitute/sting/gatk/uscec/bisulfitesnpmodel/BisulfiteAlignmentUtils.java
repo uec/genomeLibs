@@ -64,21 +64,26 @@ public class BisulfiteAlignmentUtils extends AlignmentUtils {
                        byte refChr = refBases[refIndex];
                        byte readChr = readBases[readIndex];
                        if ( readChr != refChr ){
-                    	   if(!negStrand){
-                    		   if((char)refChr == 'C' && (char)readChr == 'T'){
-                        		   
+                    	   if(bisulfiteSpace){
+                    		   if(!negStrand){
+                        		   if((char)refChr == 'C' && (char)readChr == 'T'){
+                            		   
+                            	   }
+                            	   else{
+                            		   mismatches.set(readIndex);
+                            	   }
                         	   }
                         	   else{
-                        		   mismatches.set(readIndex);
+                        		   if((char)refChr == 'G' && (char)readChr == 'A'){
+                            		   
+                            	   }
+                            	   else{
+                            		   mismatches.set(readIndex);
+                            	   }
                         	   }
                     	   }
                     	   else{
-                    		   if((char)refChr == 'G' && (char)readChr == 'A'){
-                        		   
-                        	   }
-                        	   else{
-                        		   mismatches.set(readIndex);
-                        	   }
+                    		   mismatches.set(readIndex);
                     	   }
                     	   
                        }
@@ -116,7 +121,10 @@ public class BisulfiteAlignmentUtils extends AlignmentUtils {
        }
        if ( mismatchCount <= maxMismatches )
            result.set(currentPos);
-
+       else{
+    	   //System.out.println("1\t" + currentPos);
+       }
+       //System.out.println("3\t" + mismatchCount);
        // now, traverse over the read positions
        while ( currentPos < readLength ) {
            // add a new rightmost position
@@ -134,8 +142,12 @@ public class BisulfiteAlignmentUtils extends AlignmentUtils {
 
            if ( mismatchCount <= maxMismatches )
                result.set(currentPos);
+           else{
+        	   //System.out.println("2\t" + currentPos);
+           }
        }
 
+       //System.out.println("4\t" + mismatchCount);
        return result;
    }
 }
