@@ -33,7 +33,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected final boolean useAlleleFromVCF;
 	protected long testLoc;
 	protected static double BISULFITE_CONVERSION_RATE;
-	protected static double CPG_METHYLATION_RATE = 0.75;
+	protected static double CPG_METHYLATION_RATE = 0;
+	protected static double CPH_METHYLATION_RATE = 0;
+	
 	
 	public BisulfiteSNPGenotypeLikelihoodsCalculationModel(
 			UnifiedArgumentCollection UAC, Logger logger) {
@@ -42,6 +44,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 		this.testLoc = UAC.testLocus;
 		BISULFITE_CONVERSION_RATE = UAC.bsRate;
 		CPG_METHYLATION_RATE = UAC.CpgMethy;
+		CPH_METHYLATION_RATE = UAC.CphMethy;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -132,6 +135,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	boolean negStrand = samRecord.getReadNegativeStrandFlag();
 				int alignmentS = samRecord.getAlignmentStart();
 				int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+				
+				
+									
 
 				if((pileup.getLocation().getStart()) == testLoc){
 					System.out.println("before filter:\t" + onRefCoord + "\t" + p.getOffset() + "\t" + negStrand + "\t" + pileup.getLocation().getStart() + "\t" + (char)p.getBase());
@@ -143,8 +149,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             }
             
             
+            
             // do not use this prior, this prior is flat prior intiated in genotypeEngine, so we actually do not transfer this priors...
-            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, UAC.PCR_error, UAC.bsRate, UAC.CpgMethy);
+            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, UAC.PCR_error, UAC.bsRate, UAC.CpgMethy, UAC.CphMethy, UAC.novelDbsnpHet, UAC.validateDbsnpHet);
             if((pileup.getLocation().getStart()) == testLoc)
             	GL.VERBOSE=true;
             int nGoodBases = GL.add(pileup, true, true, refNextBase);
