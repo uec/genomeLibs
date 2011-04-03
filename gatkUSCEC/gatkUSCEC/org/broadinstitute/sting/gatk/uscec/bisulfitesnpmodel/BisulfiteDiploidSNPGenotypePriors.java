@@ -2,10 +2,12 @@ package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 
 import java.util.Arrays;
 
+import org.broad.tribble.Feature;
 import org.broad.tribble.dbsnp.DbSNPFeature;
 import org.broad.tribble.util.variantcontext.VariantContext;
 import org.broadinstitute.sting.gatk.contexts.ReferenceContext;
 import org.broadinstitute.sting.gatk.refdata.RefMetaDataTracker;
+import org.broadinstitute.sting.gatk.refdata.utils.GATKFeature;
 import org.broadinstitute.sting.gatk.refdata.utils.helpers.DbSNPHelper;
 import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypePriors;
 import org.broadinstitute.sting.utils.BaseUtils;
@@ -103,9 +105,12 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
         //System.err.println(refWindow.length);
         byte refBase = refWindow[0];
         byte refNextBase = refWindow[1];
-
+        
+        
         DbSNPFeature d = DbSNPHelper.getFirstRealSNP(tracker.getReferenceMetaData(DbSNPHelper.STANDARD_DBSNP_TRACK_NAME));
-        if(d != null){
+        String rsID = DbSNPHelper.rsIDOfFirstRealSNP(tracker.getReferenceMetaData(DbSNPHelper.STANDARD_DBSNP_TRACK_NAME));
+        if(rsID != null){
+        	//System.err.println("is dbsnp");
         	if(d.getValidationStatus().equalsIgnoreCase("unknown"))
         		priors = getReferencePolarizedPriorsBasedOnMethyStatus(refBase, DBSNP_NOVAL_HETEROZYGOSITY, probOfTriStateGenotype, refNextBase);
         	else
