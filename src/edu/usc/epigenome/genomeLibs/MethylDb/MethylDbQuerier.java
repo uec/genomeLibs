@@ -40,8 +40,8 @@ public class MethylDbQuerier {
 	// Filtering
 	protected int minCTreads = 0;
 	protected boolean useNonconversionFilter = true;
-	protected double maxOppstrandAfrac = 0.1; // Double.MAX_VALUE;
-	protected double maxNextNonGfrac = 0.1; // Double.MAX_VALUE;
+	protected double maxOppstrandAfrac = 0.101; // Double.MAX_VALUE;
+	protected double maxNextNonGfrac = 0.101; // Double.MAX_VALUE;
 	
 	// Schema
 	protected String schema = "methylCGsRich";
