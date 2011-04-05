@@ -65,6 +65,7 @@ import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteSNPGenotyp
 public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
 	public boolean bisulfiteSpace = false;
+	public static byte[] CONTEXTSEQ = null;
 	
 	public BisulfiteGenotyperEngine(GenomeAnalysisEngine toolkit,
 			UnifiedArgumentCollection UAC) {
@@ -108,6 +109,10 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         }
     }
 	
+	public static void setContextSeq(byte[] contextSeq){
+		CONTEXTSEQ = contextSeq;
+	}
+	
 	//can not override unifiedGenotyperEngine, as it is static method
 	protected static GenotypePriors createGenotypePriors(UnifiedArgumentCollection UAC) {
         GenotypePriors priors;
@@ -141,11 +146,15 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         // initialize the data for this thread if that hasn't been done yet
         if ( glcm.get() == null ) {
             glcm.set(BisulfiteGenotyperEngine.getGenotypeLikelihoodsCalculationObject(logger, UAC));
+            
         }
 
         Map<String, BiallelicGenotypeLikelihoods> GLs = new HashMap<String, BiallelicGenotypeLikelihoods>();
-
-        Allele refAllele = glcm.get().getLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
+        BisulfiteSNPGenotypeLikelihoodsCalculationModel bglcm = (BisulfiteSNPGenotypeLikelihoodsCalculationModel) glcm.get();
+        bglcm.initialize(CONTEXTSEQ);
+        Allele refAllele = bglcm.getLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
+        
+        
         
         
         if (refAllele != null){
