@@ -176,8 +176,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             if ( nGoodBases == 0 )
                 continue;
 
-            double[] likelihoods = GL.getLikelihoods();
-            double[] posterior = GL.getPosteriors();
+            double[] likelihoods = normalization(GL.getLikelihoods(),GL.getLikelihoods());
+            double[] posterior = normalization(GL.getPosteriors(),GL.getLikelihoods());
             double[] prio = GL.getPriors();
             
             initializeBestAndAlternateAlleleFromPosterior(posterior, pileup.getLocation().getStart());
@@ -236,6 +236,18 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         }
 
         return refAllele;
+	}
+	
+	public double[] normalization(double[] logPosterior, double[] logLikilyhood){
+		double sum = 0;
+		for(int i = 0; i < logLikilyhood.length; i++){
+			sum += Math.pow(10,logLikilyhood[i]);
+		}
+		sum = Math.log10(sum);
+		for(int j = 0; j < logLikilyhood.length; j++){
+			logPosterior[j] = logPosterior[j] - sum;
+		}
+		return logPosterior;
 	}
 	
 	protected void initializeBestAndAlternateAlleleFromPosterior(double[] posterior, int location){

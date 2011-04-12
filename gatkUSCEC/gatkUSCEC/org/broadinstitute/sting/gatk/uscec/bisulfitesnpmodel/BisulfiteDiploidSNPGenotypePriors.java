@@ -102,7 +102,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     	DBSNP_VALIDATE_HETEROZYGOSITY = validateDbsnpHet;
         //System.err.println(refWindow.length);
     	byte refPreBase = contextSeq[0];
-        byte refBase = contextSeq[1];
+        byte refBase = ref.getBase();
         byte refNextBase = contextSeq[2];
         
         

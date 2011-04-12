@@ -113,6 +113,40 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 		CONTEXTSEQ = contextSeq;
 	}
 	
+	@Override
+	/**
+     * Compute full calls at a given locus.
+     *
+     * @param tracker    the meta data tracker
+     * @param refContext the reference base
+     * @param rawContext contextual information around the locus
+     * @return the VariantCallContext object
+     */
+    public VariantCallContext calculateLikelihoodsAndGenotypes(RefMetaDataTracker tracker, ReferenceContext refContext, AlignmentContext rawContext) {
+        Map<String, StratifiedAlignmentContext> stratifiedContexts = getFilteredAndStratifiedContexts(UAC, refContext, rawContext);
+        VariantContext vc = calculateLikelihoods(tracker, refContext, stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType.COMPLETE, null);
+        if ( vc == null ){
+        	
+        	//System.out.println("position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
+        	
+        	return null;
+        }
+            
+
+        VariantCallContext vcc = calculateGenotypes(tracker, refContext, rawContext, stratifiedContexts, vc);
+        //System.out.println(vcc.vc.getGenotypesSortedByName());
+        vcc.vc = GLsToPLs(vcc.vc);
+        if ( vcc == null ){
+        	
+        	System.out.println("vcc null--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
+        	
+        }
+        if(!vcc.confidentlyCalled)
+        	System.out.println("vcc no confident--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
+        
+        return vcc;
+    }
+	
 	//can not override unifiedGenotyperEngine, as it is static method
 	protected static GenotypePriors createGenotypePriors(UnifiedArgumentCollection UAC) {
         GenotypePriors priors;
