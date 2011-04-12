@@ -2,7 +2,7 @@ use Getopt::Long;
 use File::Basename;
 
 #set program locations
-$java = "/home/uec-00/shared/production/software/java/1.6.0_21/bin/java -Xmx10g";
+$java = "/home/uec-00/shared/production/software/java/default/bin/java -Xmx13g";
 $picard = "/home/uec-00/shared/production/software/picard/default";
 $samtools = "/home/uec-00/shared/production/software/samtools/samtools";
 
@@ -30,11 +30,22 @@ GetOptions(     'fastq=s' => \$inputFastq,
 $readgroupid = $flowcell . "." . $barcode . $lane;
 
 ############################################################################
-#convert fastq to bam
-print STDERR "\nconvert reads to bam...\n";
-$fastqbam = basename($inputFastq) . ".bam";
-runcmd("$java -jar $picard/FastqToSam.jar MAX_RECORDS_IN_RAM=3000000 FASTQ='$inputFastq' QUALITY_FORMAT=Illumina OUTPUT='$fastqbam' READ_GROUP_NAME='$readgroupid' SAMPLE_NAME='$samplename' LIBRARY_NAME='$libraryname' PLATFORM_UNIT='$readgroupid' PLATFORM='illumina' SEQUENCING_CENTER='USC Epigenome Center' RUN_DATE='$rundate' SORT_ORDER='queryname'");
-
+#convert fastq to bam (we need to handle paired end seperately (two files))
+if($inputFastq =~ /\,/)
+{
+	my @fastqEnds = split(',', $inputFastq);
+	$inputFastq = $fastqEnds[0];
+	my $inputFastqE2 = $fastqEnds[1];
+	print STDERR "\nconvert PE reads to bam...\n";
+	$fastqbam = basename($inputFastq) . ".bam";
+	runcmd("$java -jar $picard/FastqToSam.jar MAX_RECORDS_IN_RAM=3000000 FASTQ='$inputFastq' FASTQ2='$inputFastqE2' QUALITY_FORMAT=Illumina OUTPUT='$fastqbam' READ_GROUP_NAME='$readgroupid' SAMPLE_NAME='$samplename' LIBRARY_NAME='$libraryname' PLATFORM_UNIT='$readgroupid' PLATFORM='illumina' SEQUENCING_CENTER='USC Epigenome Center' RUN_DATE='$rundate' SORT_ORDER='queryname'");
+}
+else
+{	
+	print STDERR "\nconvert SR reads to bam...\n";
+	$fastqbam = basename($inputFastq) . ".bam";
+	runcmd("$java -jar $picard/FastqToSam.jar MAX_RECORDS_IN_RAM=3000000 FASTQ='$inputFastq' QUALITY_FORMAT=Illumina OUTPUT='$fastqbam' READ_GROUP_NAME='$readgroupid' SAMPLE_NAME='$samplename' LIBRARY_NAME='$libraryname' PLATFORM_UNIT='$readgroupid' PLATFORM='illumina' SEQUENCING_CENTER='USC Epigenome Center' RUN_DATE='$rundate' SORT_ORDER='queryname'");
+}
 ############################################################################
 #prepare aligned reads:
 print STDERR "\npreprocess the aligned reads...\n";
