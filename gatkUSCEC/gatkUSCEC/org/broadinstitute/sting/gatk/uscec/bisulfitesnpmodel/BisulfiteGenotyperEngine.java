@@ -223,34 +223,31 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         // calculate p(f>0)
         double[] normalizedPosteriors = MathUtils.normalizeFromLog10(log10AlleleFrequencyPosteriors.get());
         double sum = normalizedPosteriors[bestAFguess];
-        for (int i = 0; i <= N; i++){
-        	System.out.println("AFposterior: " + log10AlleleFrequencyPosteriors.get()[i]);
-        	System.out.println("normalizeAFposterior: " + normalizedPosteriors[i]);
-        }
-        System.out.println("normalizeBestAFposterior: " + sum);
+        //for (int i = 0; i <= N; i++){
+        //	System.out.println("AFposterior: " + log10AlleleFrequencyPosteriors.get()[i]);
+        //	System.out.println("normalizeAFposterior: " + normalizedPosteriors[i]);
+        //}
+        //System.out.println("normalizeBestAFposterior: " + sum);
         //for (int i = 1; i <= N; i++)       	
         	//sum += normalizedPosteriors[i];
             
         double PofF = Math.min(sum, 1.0); // deal with precision errors
 
         double phredScaledConfidence;
-        if ( bestAFguess != 0 || UAC.GenotypingMode == GenotypeLikelihoodsCalculationModel.GENOTYPING_MODE.GENOTYPE_GIVEN_ALLELES ) {
-            phredScaledConfidence = QualityUtils.phredScaleErrorRate(normalizedPosteriors[0]);
-            if ( Double.isInfinite(phredScaledConfidence) )
-                phredScaledConfidence = -10.0 * log10AlleleFrequencyPosteriors.get()[0];
-        } else {
+       
             phredScaledConfidence = QualityUtils.phredScaleErrorRate(1.0 - PofF);
-           // if ( Double.isInfinite(phredScaledConfidence) ) {
-             //   sum = 0.0;
+            if ( Double.isInfinite(phredScaledConfidence) ) {
+            	phredScaledConfidence = Double.MAX_VALUE;
+            	//   sum = 0.0;
                 //for (int i = 1; i <= N; i++) {
                  //   if ( log10AlleleFrequencyPosteriors.get()[i] == AlleleFrequencyCalculationModel.VALUE_NOT_CALCULATED )
                   //      break;
                    // sum += log10AlleleFrequencyPosteriors.get()[i];
                 //}
                // phredScaledConfidence = (MathUtils.compareDoubles(sum, 0.0) == 0 ? 0 : -10.0 * sum);
-           // }
-        }
-        System.out.println("phredScaledConfidence: " + phredScaledConfidence);
+            }
+            
+       // System.out.println("phredScaledConfidence: " + phredScaledConfidence);
         // return a null call if we don't pass the confidence cutoff or the most likely allele frequency is zero
         if ( UAC.OutputMode != OUTPUT_MODE.EMIT_ALL_SITES && !passesEmitThreshold(phredScaledConfidence, bestAFguess) ) {
             // technically, at this point our confidence in a reference call isn't accurately estimated
