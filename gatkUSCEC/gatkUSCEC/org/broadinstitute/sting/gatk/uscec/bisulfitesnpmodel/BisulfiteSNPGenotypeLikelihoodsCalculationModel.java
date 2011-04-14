@@ -39,6 +39,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected static double CPH_METHYLATION_RATE = 0;
 	protected boolean isCGI = false;
 	public byte[] CONTEXTSEQ = null;
+
 	
 	
 	public BisulfiteSNPGenotypeLikelihoodsCalculationModel(
@@ -176,9 +177,12 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             if ( nGoodBases == 0 )
                 continue;
 
-            double[] likelihoods = normalization(GL.getLikelihoods(),GL.getLikelihoods());
-            double[] posterior = normalization(GL.getPosteriors(),GL.getLikelihoods());
+            double[] likelihoods_befor = GL.getLikelihoods();
+            double[] posterior_befor = GL.getPosteriors();
             double[] prio = GL.getPriors();
+            double[] likelihoods = normalization(likelihoods_befor.clone(),likelihoods_befor.clone());
+            double[] posterior = normalization(posterior_befor.clone(),likelihoods_befor.clone());
+            
             
             initializeBestAndAlternateAlleleFromPosterior(posterior, pileup.getLocation().getStart());
             
@@ -222,14 +226,17 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	System.out.println("AAGenotype " + likelihoods[AAGenotype.ordinal()] + "\t" + prio[AAGenotype.ordinal()] + "\t" + posterior[AAGenotype.ordinal()]);
             	System.out.println("ABGenotype " + likelihoods[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior[ABGenotype.ordinal()]);
             	System.out.println("BBGenotype " + likelihoods[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior[BBGenotype.ordinal()]);
+            	System.out.println("AAGenotype before normalize " + likelihoods_befor[AAGenotype.ordinal()] + "\t" + prio[AAGenotype.ordinal()] + "\t" + posterior_befor[AAGenotype.ordinal()]);
+            	System.out.println("ABGenotype before normaliz " + likelihoods_befor[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior_befor[ABGenotype.ordinal()]);
+            	System.out.println("BBGenotype before normaliz " + likelihoods_befor[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior_befor[BBGenotype.ordinal()]);
             }
             
             	GLs.put(sample.getKey(), new BiallelicGenotypeLikelihoods(sample.getKey(),
             			AlleleA,
             			AlleleB,
-                        likelihoods[AAGenotype.ordinal()],
-                        likelihoods[ABGenotype.ordinal()],
-                        likelihoods[BBGenotype.ordinal()],
+            			posterior[AAGenotype.ordinal()],
+            			posterior[ABGenotype.ordinal()],
+            			posterior[BBGenotype.ordinal()],
                         getFilteredDepth(pileup)));
 
             
@@ -240,15 +247,18 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	
 	public double[] normalization(double[] logPosterior, double[] logLikilyhood){
 		double sum = 0;
+		double[] returnLikilyhood = logPosterior.clone();
 		for(int i = 0; i < logLikilyhood.length; i++){
 			sum += Math.pow(10,logLikilyhood[i]);
 		}
 		sum = Math.log10(sum);
 		for(int j = 0; j < logLikilyhood.length; j++){
-			logPosterior[j] = logPosterior[j] - sum;
+			returnLikilyhood[j] = returnLikilyhood[j] - sum;
 		}
-		return logPosterior;
+		return returnLikilyhood;
 	}
+	
+
 	
 	protected void initializeBestAndAlternateAlleleFromPosterior(double[] posterior, int location){
 		double maxCount = Double.NEGATIVE_INFINITY;
