@@ -66,6 +66,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
 	public boolean bisulfiteSpace = false;
 	public static byte[] CONTEXTSEQ = null;
+	protected double MAX_PHRED = 1000000;
 	//public static double phredLiklihoodConfidance;
 	
 	public BisulfiteGenotyperEngine(GenomeAnalysisEngine toolkit,
@@ -128,7 +129,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         VariantContext vc = calculateLikelihoods(tracker, refContext, stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType.COMPLETE, null);
         if ( vc == null ){
         	
-        	System.out.println("vc null--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
+        //	System.out.println("vc null--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
         	
         	return null;
         }
@@ -137,13 +138,13 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         VariantCallContext vcc = calculateGenotypes(tracker, refContext, rawContext, stratifiedContexts, vc);
         //System.out.println(vcc.vc.getGenotypesSortedByName());
         vcc.vc = GLsToPLs(vcc.vc);
-        if ( vcc == null ){
+       // if ( vcc == null ){
         	
-        	System.out.println("vcc null--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
+       // 	System.out.println("vcc null--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
         	
-        }
-        if(!vcc.confidentlyCalled)
-        	System.out.println("vcc no confident--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
+       // }
+       // if(!vcc.confidentlyCalled)
+        //	System.out.println("vcc no confident--position: " + refContext.getLocus().getStart() + " refBase: " + refContext.getBase());
         
         return vcc;
     }
@@ -219,7 +220,13 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
         // find the most likely frequency
         int bestAFguess = MathUtils.maxElementIndex(log10AlleleFrequencyPosteriors.get());
-
+       // int secondAFguess = MathUtils.minElementIndex(log10AlleleFrequencyPosteriors.get());
+       // for (int i = 0; i <= N; i++){
+       // 	if(i != bestAFguess){	
+       // 		if(log10AlleleFrequencyPosteriors.get()[i] >= log10AlleleFrequencyPosteriors.get()[secondAFguess]){
+       // 			secondAFguess = i;
+       // 		}
+       // }
         // calculate p(f>0)
         double[] normalizedPosteriors = MathUtils.normalizeFromLog10(log10AlleleFrequencyPosteriors.get());
         double sum = normalizedPosteriors[bestAFguess];
@@ -237,7 +244,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
        
             phredScaledConfidence = QualityUtils.phredScaleErrorRate(1.0 - PofF);
             if ( Double.isInfinite(phredScaledConfidence) ) {
-            	phredScaledConfidence = Double.MAX_VALUE;
+            	phredScaledConfidence = MAX_PHRED;
             	//   sum = 0.0;
                 //for (int i = 1; i <= N; i++) {
                  //   if ( log10AlleleFrequencyPosteriors.get()[i] == AlleleFrequencyCalculationModel.VALUE_NOT_CALCULATED )
@@ -278,7 +285,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         if ( rawContext.hasPileupBeenDownsampled() )
             attributes.put(VCFConstants.DOWNSAMPLED_KEY, true);
 
-
+/*
         if ( !UAC.NO_SLOD && bestAFguess != 0 ) {
             final boolean DEBUG_SLOD = false;
 
@@ -317,7 +324,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
             attributes.put("SB", Double.valueOf(strandScore));
         }
-
+*/
         GenomeLoc loc = refContext.getLocus();
 
         int endLoc = calculateEndPos(vc.getAlleles(), vc.getReference(), loc);
@@ -352,8 +359,12 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         return call;
 	}
 	
+	@Override
+	protected boolean passesEmitThreshold(double conf, int bestAFguess) {
+        return (UAC.OutputMode == OUTPUT_MODE.EMIT_ALL_CONFIDENT_SITES || bestAFguess != 0) && conf >= UAC.STANDARD_CONFIDENCE_FOR_CALLING;
+    }
 	
-
+	
 	protected static GenotypeLikelihoodsCalculationModel getGenotypeLikelihoodsCalculationObject(Logger logger, UnifiedArgumentCollection UAC) {
 		GenotypeLikelihoodsCalculationModel glcm;
         switch ( UAC.GLmodel ) {
