@@ -220,16 +220,24 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
         // find the most likely frequency
         int bestAFguess = MathUtils.maxElementIndex(log10AlleleFrequencyPosteriors.get());
-       // int secondAFguess = MathUtils.minElementIndex(log10AlleleFrequencyPosteriors.get());
-       // for (int i = 0; i <= N; i++){
-       // 	if(i != bestAFguess){	
-       // 		if(log10AlleleFrequencyPosteriors.get()[i] >= log10AlleleFrequencyPosteriors.get()[secondAFguess]){
-       // 			secondAFguess = i;
-       // 		}
-       // }
+        int secondAFguess = MathUtils.minElementIndex(log10AlleleFrequencyPosteriors.get());
+        for (int i = 0; i <= N; i++){
+        	if(i != bestAFguess){	
+        		if(log10AlleleFrequencyPosteriors.get()[i] >= log10AlleleFrequencyPosteriors.get()[secondAFguess]){
+        			secondAFguess = i;
+        		}
+        	}
+        }
         // calculate p(f>0)
         double[] normalizedPosteriors = MathUtils.normalizeFromLog10(log10AlleleFrequencyPosteriors.get());
-        double sum = normalizedPosteriors[bestAFguess];
+        double logRatio;
+        if(Double.isInfinite( Math.log10(normalizedPosteriors[secondAFguess]))){
+        	logRatio = MAX_PHRED;
+        }
+        else{
+        	logRatio = 10*(Math.log10(normalizedPosteriors[bestAFguess]) - Math.log10(normalizedPosteriors[secondAFguess]));
+        }
+       
         //for (int i = 0; i <= N; i++){
         //	System.out.println("AFposterior: " + log10AlleleFrequencyPosteriors.get()[i]);
         //	System.out.println("normalizeAFposterior: " + normalizedPosteriors[i]);
@@ -238,13 +246,13 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         //for (int i = 1; i <= N; i++)       	
         	//sum += normalizedPosteriors[i];
             
-        double PofF = Math.min(sum, 1.0); // deal with precision errors
+        //double PofF = Math.min(sum, 1.0); // deal with precision errors
 
-        double phredScaledConfidence;
+       // double phredScaledConfidence;
        
-            phredScaledConfidence = QualityUtils.phredScaleErrorRate(1.0 - PofF);
-            if ( Double.isInfinite(phredScaledConfidence) ) {
-            	phredScaledConfidence = MAX_PHRED;
+           // phredScaledConfidence = QualityUtils.phredScaleErrorRate(1.0 - PofF);
+          //  if ( Double.isInfinite(phredScaledConfidence) ) {
+          //  	phredScaledConfidence = MAX_PHRED;
             	//   sum = 0.0;
                 //for (int i = 1; i <= N; i++) {
                  //   if ( log10AlleleFrequencyPosteriors.get()[i] == AlleleFrequencyCalculationModel.VALUE_NOT_CALCULATED )
@@ -252,18 +260,18 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
                    // sum += log10AlleleFrequencyPosteriors.get()[i];
                 //}
                // phredScaledConfidence = (MathUtils.compareDoubles(sum, 0.0) == 0 ? 0 : -10.0 * sum);
-            }
+        //    }
             
        // System.out.println("phredScaledConfidence: " + phredScaledConfidence);
         // return a null call if we don't pass the confidence cutoff or the most likely allele frequency is zero
-        if ( UAC.OutputMode != OUTPUT_MODE.EMIT_ALL_SITES && !passesEmitThreshold(phredScaledConfidence, bestAFguess) ) {
+        if ( UAC.OutputMode != OUTPUT_MODE.EMIT_ALL_SITES && !passesEmitThreshold(logRatio, bestAFguess) ) {
             // technically, at this point our confidence in a reference call isn't accurately estimated
             //  because it didn't take into account samples with no data, so let's get a better estimate
-        	sum = 0.0;
-        	for (int i = 1; i <= N; i++)       	
-            	sum += normalizedPosteriors[i];
+        	double sum = 0.0;
+        	for (int j = 1; j <= N; j++)       	
+            	sum += normalizedPosteriors[j];
                 
-            PofF = Math.min(sum, 1.0);
+           double PofF = Math.min(sum, 1.0);
             return estimateReferenceConfidence(stratifiedContexts, genotypePriors.getHeterozygosity(), true, 1.0 - PofF);
         }
 
@@ -272,7 +280,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
         // print out stats if we have a writer
         if ( verboseWriter != null )
-            printVerboseData(refContext.getLocus().toString(), vc, PofF, phredScaledConfidence, normalizedPosteriors);
+            printVerboseData(refContext.getLocus().toString(), vc, logRatio, logRatio, normalizedPosteriors);
 
         // *** note that calculating strand bias involves overwriting data structures, so we do that last
         HashMap<String, Object> attributes = new HashMap<String, Object>();
@@ -336,7 +344,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
             myAlleles.add(vc.getReference());
         }
         VariantContext vcCall = new VariantContext("UG_call", loc.getContig(), loc.getStart(), endLoc,
-                myAlleles, genotypes, phredScaledConfidence/10.0, passesCallThreshold(phredScaledConfidence) ? null : filter, attributes);
+                myAlleles, genotypes, logRatio/10.0, passesCallThreshold(logRatio) ? null : filter, attributes);
 
         if ( annotationEngine != null ) {
             // first off, we want to use the *unfiltered* context for the annotations
@@ -354,7 +362,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         //	 System.out.println(vcCall.getChr() + "\t" + vcCall.getStart() + "\t" + vcCall.getEnd());
         //}
        
-        VariantCallContext call = new VariantCallContext(vcCall, passesCallThreshold(phredScaledConfidence));
+        VariantCallContext call = new VariantCallContext(vcCall, passesCallThreshold(logRatio));
         call.setRefBase(refContext.getBase());
         return call;
 	}
