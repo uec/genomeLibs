@@ -414,7 +414,7 @@ public class CpgWalker implements TabularOutput {
 							// This means we are the opposite strand of the previous one.
 							if (windSize == 1)
 							{
-								dist = cpg[0].chromPos;
+								dist = (int)lastCpg.getCpgWeight(); // cpg[0].chromPos; // This doesn't work because it can be the beginning of the chrom . 
 							}
 							else
 							{
@@ -425,7 +425,7 @@ public class CpgWalker implements TabularOutput {
 					}
 				}
 				
-				System.err.printf("Setting weight for cpg (cur=%d, last=%d) = %d\n",cpg[0].chromPos,lastPos,dist);
+				//System.err.printf("Setting weight for cpg (cur=%d, last=%d) = %d\n",cpg[0].chromPos,lastPos,dist);
 				for (int i = 0; i < cpg.length; i++)
 				{
 					cpg[i].setCpgWeight((double)dist);
