@@ -393,6 +393,48 @@ public class CpgWalker implements TabularOutput {
 			System.exit(1);
 		}
 		
+		// Automatically set weights if possible
+		if (Double.isNaN(cpg[0].getCpgWeight()))
+		{
+			int lastPos = windEnd();
+			if (lastPos>=1)
+			{
+				int dist = cpg[0].chromPos - lastPos;
+				int windSize = this.window.size();
+				
+				
+				if (dist == 1)
+				{
+					StrandedFeature.Strand thisStrand = cpg[0].getStrand();
+					if ( (thisStrand == StrandedFeature.NEGATIVE) &&  (windSize >= 1) ) 
+					{
+						Cpg lastCpg = window.get(windSize-1)[0];
+						if (lastCpg.getStrand() == StrandedFeature.POSITIVE)
+						{
+							// This means we are the opposite strand of the previous one.
+							if (windSize == 1)
+							{
+								dist = cpg[0].chromPos;
+							}
+							else
+							{
+								Cpg secondLast = window.get(windSize-2)[0];
+								dist = lastCpg.chromPos - secondLast.chromPos;
+							}
+						}
+					}
+				}
+				
+				System.err.printf("Setting weight for cpg (cur=%d, last=%d) = %d\n",cpg[0].chromPos,lastPos,dist);
+				for (int i = 0; i < cpg.length; i++)
+				{
+					cpg[i].setCpgWeight((double)dist);
+				}
+			}
+		}
+		
+		
+		
 		if (this.walkParams.useVariableWindow)
 		{
 			this.streamCpgVariableWind(cpg);
