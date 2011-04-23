@@ -22,6 +22,7 @@ import org.kohsuke.args4j.Option;
 
 import edu.usc.epigenome.genomeLibs.ListUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
+import edu.usc.epigenome.genomeLibs.MiscUtils;
 import edu.usc.epigenome.genomeLibs.PicardUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CytosineStats;
@@ -204,6 +205,20 @@ public class SamToConversionByCoverageMatrix {
 
 						boolean negStrand = samRecord.getReadNegativeStrandFlag();
 						int alignmentS = samRecord.getAlignmentStart();
+						
+						
+						// If we're in paired-end mode, and we're on the second end, we need to basically
+						// reverse complement everything to get back to the cytosine strand.
+						// The big problem with this is that 5' bisulfite conversion filter won't work right.
+						boolean secondOfPair = samRecord.getReadPairedFlag() && getSecondOfPair(samRecord); // samRecord.getSecondOfPairFlag()
+						if (secondOfPair)
+						{
+							negStrand = !negStrand;
+							seq = MiscUtils.revCompNucStr(seq);
+							ref = MiscUtils.revCompNucStr(ref);
+						}
+						
+						
 						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; // This will be incremented as we go along in the read
 
 						if ((this.outputCphs) && (alignmentS < lastBaseSeen))
@@ -218,7 +233,13 @@ public class SamToConversionByCoverageMatrix {
 						int numConverted = 0;
 						int convStart = Integer.MAX_VALUE;
 						int seqLen = Math.min(seq.length(), ref.length());
-						for (int i = 0; i < seqLen; i++)
+						// If we're the second of the pair, we do this backwards so the conversion filter will work properly.
+						int iStart = (secondOfPair) ? (seqLen-1) : 0;
+						int iEnd = (secondOfPair) ? 0 : (seqLen - 1);
+						int iInc = (secondOfPair) ? -1 : 1;
+						
+//						for (int i = 0; i < seqLen; i++)
+						for (int i = iStart; i != iEnd; i += iInc)
 						{
 							totalUniqueMappedBasesRead++;
 							refCoordsCovered[onRefCoord]++;
@@ -245,9 +266,10 @@ public class SamToConversionByCoverageMatrix {
 								}
 
 
+								boolean inNonconversionZone = (convStart==Integer.MAX_VALUE) || (secondOfPair&&(i>convStart)) || (!secondOfPair && (i<convStart));
 								if (iscpg || this.outputCphs)
 								{
-									if (i<convStart)
+									if (inNonconversionZone)
 									{
 										// In the non-conversion filter zone
 										if (iscpg) cpgsFilteredOutCounter++;
@@ -264,16 +286,18 @@ public class SamToConversionByCoverageMatrix {
 									// See if we can fix the context for this CpG
 									if (cpg.getNextBaseRef() == '0') cpg.setNextBaseRef(nextBaseRef);
 									
-									this.incrementCpg(cpg, seqi, i<convStart, nextBaseSeq);
+									this.incrementCpg(cpg, seqi, inNonconversionZone, nextBaseSeq);
 								}
 								
 								// Count CpHs as a byproduct
 								if (!iscpg)
 								{
+									//if (secondOfPair && inNonconversionZone) System.err.printf("secondOfPair & inNonconversion: %s:%d\n",chr,onRefCoord);
+									
 									numCphTotalNoFilt++;
 									if (conv) numCphConvertedNoFilt++;
 									
-									if (i>=convStart)
+									if (!inNonconversionZone)
 									{
 										numCphTotalWithFilt++;
 										if (conv) numCphConvertedWithFilt++;
@@ -298,14 +322,17 @@ public class SamToConversionByCoverageMatrix {
 							}
 
 
-							// Increment genomic coord position
+							// Increment genomic coord position. Careful, we go backwards if we're
+							// on the second of a pair.
 							if (refi == '-')
 							{
 								// It's a deletion in reference, don't advance
 							}
 							else
 							{
-								int inc = (negStrand) ? -1 : 1;
+								boolean backwardsRef = negStrand;
+								if (secondOfPair) backwardsRef = !backwardsRef;
+								int inc = (backwardsRef) ? -1 : 1;
 								onRefCoord += inc;
 							}
 
@@ -600,5 +627,25 @@ public class SamToConversionByCoverageMatrix {
 	}
 	
 
-	
+	protected static boolean getSecondOfPair(SAMRecord read) {
+		boolean secondOfPair = false;
+		String readName = read.getReadName();
+	    final String END1_SUFFIX = String.format("%c1", '/');
+	    final String END2_SUFFIX = String.format("%c2", '/');
+		if (readName.endsWith(END1_SUFFIX))
+		{
+			secondOfPair = false;
+		}
+		else if (readName.endsWith(END2_SUFFIX))
+		{
+			secondOfPair = true;   			
+		}
+		else
+		{
+			System.err.println("Got a read that doesn't end with /1 or /2: " + readName + ".  Can't tell which end it is.");
+			System.exit(1);
+		}	
+		
+		return secondOfPair;
+	}
 }
