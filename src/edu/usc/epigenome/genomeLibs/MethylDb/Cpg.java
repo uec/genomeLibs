@@ -430,9 +430,9 @@ public class Cpg implements Comparable, Cloneable {
 		return cpgWeight;
 	}
 
-//	public void setCpgWeight(double cpgWeight) {
-//		this.cpgWeight = cpgWeight;
-//	}
+	public void setCpgWeight(double cpgWeight) {
+		this.cpgWeight = cpgWeight;
+	}
 
 	public char getNextBaseRef() {
 		return nextBaseRefUpperCase;
