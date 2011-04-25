@@ -15,8 +15,14 @@ foreach my $f (@files)
 
     # Open output file
     my $outfn = $path.$name;
-    $outfn .= "_transformed" if ($suf =~ /bed/i);
-    $outfn .= ".bed";
+    if ($suf =~ /bed/i)
+    {
+	$outfn .= ".sorted${suf}";
+    }
+    else
+    {
+	$outfn .= ".bed";
+    }
     print "Writing to $outfn\n";
     die "Can't write to $outfn\n" unless (open(OUT,">$outfn"));
 
@@ -48,7 +54,7 @@ foreach my $f (@files)
 	print OUT $line;
 	
 	print STDERR "Finished writing $on_key\n" if (($on_key % 100000)==0);
-	$on_line++;
+	$on_key++;
     }
 
     close(OUT);
