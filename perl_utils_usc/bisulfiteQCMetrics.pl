@@ -66,11 +66,23 @@ foreach my $dir (@ARGV)
 	        if ($DOALIGNEDCOUNTS)
 	        {
 	            #my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}*map.q30.txt",$dir."/ReadCounts_*_${laneNum}_maq.csv");
-	            my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
-	            push(@flds, $fullReads); push(@headers,"AlignedReads");
-	            push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
-	            push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
-	            push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
+	            if(scalar glob($dir."/ResultCount_*_${laneNum}.bam") > 0)
+	            {
+	            	my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	            	push(@flds, $fullReads); push(@headers,"AlignedReads");
+	            	push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
+	            	push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
+	            	push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
+	            }
+	            if(scalar glob($dir."/s_${laneNum}_*tophat_hits.bam") > 0)
+	            {
+	            	my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/s_${laneNum}_*tophat_hits.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	            	push(@flds, $fullReads); push(@headers,"AlignedReads");
+	            	push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
+	            	push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
+	            	push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
+	            }	            
+	            
 	        }
 	
 	        if ($DODEPTHWINDOWS)
