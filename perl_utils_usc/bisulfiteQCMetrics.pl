@@ -112,6 +112,7 @@ foreach my $dir (@ARGV)
 	        if($DOCONTAMALIGNTEST)
 	        {
 	                my @testAligns = glob("$dir/aligntest_s_$laneNum*");
+	                return if (scalar @testAligns < 1);
 	                my $chunkSize = `wc -l $dir/s_$laneNum\_*sequence.1.nocontam.fastq`;
 	                $chunkSize =~ /^(\d+)\s/;
 	                $chunkSize = $1;
