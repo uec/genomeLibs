@@ -516,8 +516,19 @@ public class SamToConversionByCoverageMatrix {
 					{
 						if (cytosine.totalReadsCorT(true) < this.maxCoverageOutput)
 						{
-							cpgCounts[cytosine.totalReadsCorT(true)][cytosine.totalReadsC(true)]++;
-							goodCount++;
+							try
+							{
+								cpgCounts[cytosine.totalReadsCorT(true)][cytosine.totalReadsC(true)]++;
+								goodCount++;
+							}
+							catch (Exception e)
+							{
+								// For some reason sometimes I get here.
+								System.err.println("SamToConversionByCoverage non-fatal error:");
+								System.err.printf("Trying to increment cpgCounts[%d][%d] when maxCoverageOutput is %d\n", 
+										cytosine.totalReadsCorT(true),cytosine.totalReadsC(true),this.maxCoverageOutput);
+								System.err.println(e.toString());
+							}
 						}
 					}
 				}
