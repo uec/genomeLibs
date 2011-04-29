@@ -23,6 +23,7 @@ import org.broadinstitute.sting.gatk.DownsampleType;
 import org.broadinstitute.sting.gatk.contexts.AlignmentContext;
 import org.broadinstitute.sting.gatk.contexts.ReferenceContext;
 import org.broadinstitute.sting.gatk.datasources.rmd.ReferenceOrderedDataSource;
+import org.broadinstitute.sting.gatk.datasources.reads.SAMDataSource;
 import org.broadinstitute.sting.gatk.refdata.RefMetaDataTracker;
 import org.broadinstitute.sting.gatk.refdata.utils.helpers.DbSNPHelper;
 import org.broadinstitute.sting.gatk.walkers.BAQMode;
@@ -45,7 +46,8 @@ import org.broadinstitute.sting.utils.vcf.VCFUtils;
 
 
 
-
+//TO DO
+//mearue CpG or GpC not by ref seq, but by read status, like 90% of G in the next position of C for CpG
 /**
  * A variant caller which unifies the approaches of several disparate callers.  Works for single-sample and
  * multi-sample data.  The user can choose from several different incorporated calculation models.
@@ -55,7 +57,7 @@ import org.broadinstitute.sting.utils.vcf.VCFUtils;
 @BAQMode(QualityMode = BAQ.QualityMode.OVERWRITE_QUALS, ApplicationTime = BAQ.ApplicationTime.ON_INPUT)
 @Reference(window=@Window(start=-200,stop=200))
 @By(DataSource.REFERENCE)
-@Downsample(by=DownsampleType.BY_SAMPLE, toCoverage=250)
+@Downsample(by=DownsampleType.NONE)
 public class BisulfiteGenotyper extends UnifiedGenotyper {
 
     private BisulfiteGenotyperEngine BG_engine = null;
@@ -72,7 +74,7 @@ public class BisulfiteGenotyper extends UnifiedGenotyper {
             samples.add(UAC.ASSUME_SINGLE_SAMPLE);
         else
             samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
-        
+ //       getToolkit().getReadsDataSource().;
         // initialize the verbose writer
         if ( verboseWriter != null )
             verboseWriter.println("AFINFO\tLOC\tREF\tALT\tMAF\tF\tAFprior\tAFposterior\tNormalizedPosterior");
@@ -99,7 +101,7 @@ public class BisulfiteGenotyper extends UnifiedGenotyper {
     	String thisContig = refContext.getLocus().getContig();
         byte[] contextSeq = 
    			this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-1, centerCoord+1).getBases();
-        BG_engine.setContextSeq(contextSeq);
+        BisulfiteGenotyperEngine.setContextSeq(contextSeq);
     	return BG_engine.calculateLikelihoodsAndGenotypes(tracker, refContext, rawContext);
     }
 	

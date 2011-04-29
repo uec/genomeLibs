@@ -61,11 +61,13 @@ import org.broadinstitute.sting.utils.sam.GATKSAMRecordFilter;
 
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteAlignmentUtils;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteSNPGenotypeLikelihoodsCalculationModel;
+import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteVCFConstants;
 
 public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
 
 	public boolean bisulfiteSpace = false;
 	public static byte[] CONTEXTSEQ = null;
+	public static Integer[] CYTOSINE_STATUS = null;
 	protected double MAX_PHRED = 1000000;
 	//public static double phredLiklihoodConfidance;
 	
@@ -190,7 +192,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         bglcm.initialize(CONTEXTSEQ);
         Allele refAllele = bglcm.getLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
         
-        
+        CYTOSINE_STATUS = bglcm.getCytosineStatus();
         
         if (refAllele != null){
         	//System.out.println("there is refAllele now");
@@ -292,7 +294,7 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
         // if the site was downsampled, record that fact
         if ( rawContext.hasPileupBeenDownsampled() )
             attributes.put(VCFConstants.DOWNSAMPLED_KEY, true);
-
+        
 /*
         if ( !UAC.NO_SLOD && bestAFguess != 0 ) {
             final boolean DEBUG_SLOD = false;
@@ -343,6 +345,43 @@ public class BisulfiteGenotyperEngine extends UnifiedGenotyperEngine {
             myAlleles = new HashSet<Allele>(1);
             myAlleles.add(vc.getReference());
         }
+        if(UAC.ASSUME_SINGLE_SAMPLE != null){
+        	 if(passesCallThreshold(logRatio)){
+             	 for(Genotype genotypeTemp : genotypes.values()){
+             		 if(genotypeTemp.isHomRef()){
+             			 if(genotypeTemp.getAllele(0).getBases()[0]==BaseUtils.C){
+             				attributes.put(BisulfiteVCFConstants.NUMBER_OF_C_KEY, CYTOSINE_STATUS[1]);
+                            attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[3]);
+                            attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, false);
+                            attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, "C");
+             			 }
+             			 else if(genotypeTemp.getAllele(0).getBases()[0]==BaseUtils.G){
+             				attributes.put(BisulfiteVCFConstants.NUMBER_OF_C_KEY, CYTOSINE_STATUS[0]);
+                            attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[2]);
+                            attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, true);
+                            attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, "C");
+             			 }
+             		 }
+             		 else if(genotypeTemp.isHomVar()){
+             			if(genotypeTemp.getAllele(1).getBases()[0]==BaseUtils.C){
+             				attributes.put(BisulfiteVCFConstants.NUMBER_OF_C_KEY, CYTOSINE_STATUS[1]);
+                            attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[3]);
+                            attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, false);
+                            attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, "C");
+             			 }
+             			 else if(genotypeTemp.getAllele(1).getBases()[0]==BaseUtils.G){
+             				attributes.put(BisulfiteVCFConstants.NUMBER_OF_C_KEY, CYTOSINE_STATUS[0]);
+                            attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[2]);
+                            attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, true);
+                            attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, "C");
+             			 }
+             		 }
+             	 }
+        		 
+             }
+        }
+       
+        
         VariantContext vcCall = new VariantContext("UG_call", loc.getContig(), loc.getStart(), endLoc,
                 myAlleles, genotypes, logRatio/10.0, passesCallThreshold(logRatio) ? null : filter, attributes);
 

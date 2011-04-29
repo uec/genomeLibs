@@ -39,6 +39,12 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected static double CPH_METHYLATION_RATE = 0;
 	protected boolean isCGI = false;
 	public byte[] CONTEXTSEQ = null;
+	protected static Integer numCNegStrand = 0;
+	protected static Integer numTNegStrand = 0;
+	protected static Integer numCPosStrand = 0;
+	protected static Integer numTPosStrand = 0;
+	//protected static Boolean cytosineStrand = false;
+	//protected static String cytosineWindowContext = "C";
 
 	
 	
@@ -144,7 +150,11 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         	isCGI = true;
         	CPG_METHYLATION_RATE = UAC.CpgMethyCGI;
         }
-      
+        numCNegStrand = 0;
+        numTNegStrand = 0;
+        numCPosStrand = 0;
+        numTPosStrand = 0;
+        
 
         for ( Map.Entry<String, StratifiedAlignmentContext> sample : contexts.entrySet() ) {
             ReadBackedPileup pileup = sample.getValue().getContext(contextType).getBasePileup();
@@ -156,6 +166,31 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 				int alignmentS = samRecord.getAlignmentStart();
 				int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
 				
+				if(((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset())){
+					if(negStrand){
+						if(p.getBase()==BaseUtils.G){
+							numCNegStrand++;
+						}
+						else if(p.getBase()==BaseUtils.A){
+							numTNegStrand++;
+						}
+						else{
+							
+						}
+						
+					}
+					else{
+						if(p.getBase()==BaseUtils.C){
+							numCPosStrand++;
+						}
+						else if(p.getBase()==BaseUtils.T){
+							numTPosStrand++;
+						}
+						else{
+							
+						}
+					}
+				}
 				
 									
 				if((pileup.getLocation().getStart()) == testLoc){
@@ -217,6 +252,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             DiploidGenotype AAGenotype = DiploidGenotype.createHomGenotype(bestAllele);
             DiploidGenotype ABGenotype = DiploidGenotype.createDiploidGenotype(bestAllele, alternateAllele);
             DiploidGenotype BBGenotype = DiploidGenotype.createHomGenotype(alternateAllele);
+            
+            
             if((pileup.getLocation().getStart()) == testLoc){
             	System.out.println("sample: " + sample.getKey());
             	System.out.println("sample location: " + pileup.getPileupString((char)refBase));
@@ -229,8 +266,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	System.out.println("AAGenotype before normalize " + likelihoods_befor[AAGenotype.ordinal()] + "\t" + prio[AAGenotype.ordinal()] + "\t" + posterior_befor[AAGenotype.ordinal()]);
             	System.out.println("ABGenotype before normaliz " + likelihoods_befor[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior_befor[ABGenotype.ordinal()]);
             	System.out.println("BBGenotype before normaliz " + likelihoods_befor[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior_befor[BBGenotype.ordinal()]);
+            	System.out.println("Cytosine status: C-neg: " + numCNegStrand + "\tC-pos: " + numCPosStrand + "\tT-neg: " + numTNegStrand + "\tT-pos: " + numTPosStrand);
             }
-            
+
             	GLs.put(sample.getKey(), new BiallelicGenotypeLikelihoods(sample.getKey(),
             			AlleleA,
             			AlleleB,
@@ -464,5 +502,15 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         }
 
     }
+	
+	
+	protected Integer[] getCytosineStatus(){
+		Integer[] value = new Integer[4];
+		value[0] = numCNegStrand;
+		value[1] = numCPosStrand;
+		value[2] = numTNegStrand;
+		value[3] = numTPosStrand;
+		return value;
+	}
 	
 }
