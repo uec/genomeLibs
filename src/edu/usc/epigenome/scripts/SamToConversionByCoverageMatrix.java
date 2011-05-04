@@ -180,6 +180,20 @@ public class SamToConversionByCoverageMatrix {
 					{
 						continue record;
 					}
+					
+					// Filter on uniqueness
+					if (samRecord.getNotPrimaryAlignmentFlag())
+					{
+						continue record;
+					}
+					
+					// If it's paired-end, filter on good mate unless otherwise specified
+					if (samRecord.getReadPairedFlag()  && !samRecord.getProperPairFlag())
+					{
+						continue record;
+					}
+
+					
 
 
 					String seq = PicardUtils.getReadString(samRecord, true);
