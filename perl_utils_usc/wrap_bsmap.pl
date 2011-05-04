@@ -6,21 +6,28 @@ my $BSMAP = "/home/uec-00/shared/production/software/bsmap/default/bsmap";
 my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
 my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
+my $MAQ = "/home/uec-00/shared/production/software/maq-0.7.1/maq";
 
 my $output = $ARGV[0] || die "no output specified";
 my $genome = $ARGV[1] || die "no genome specified";
 my $read1 = $ARGV[2] || die "no read1 specified";
 my $read2 = $ARGV[3]; 
-
 my $samOutput = "$output" . ".sam";
 
+#hack, not producing correct phreds in bam
+my $read1sanger = $read1 . ".fastq";
+my $read2sanger = $read2 . ".fastq";
 
-my $cmd = "$BSMAP -a $read1 ";
-$cmd .= "-b $read2 " if $read2;
+runcmd("$MAQ ill2sanger $read1 $read1sanger");
+runcmd("$MAQ ill2sanger $read2 $read2sanger") if $read2;
+
+my $cmd = "$BSMAP -a $read1sanger ";
+$cmd .= "-b $read2sanger " if $read2;
 $cmd .= "-d $genome -o $samOutput ";
-$cmd .= "-z \@ -p 8 -s 16 -v 10 -q 2";
+$cmd .= "-p 8 -s 16 -v 10 -q 2";
 
-#runcmd($cmd);
+
+runcmd($cmd);
 
 #samtobamsort
 runcmd("$JAVA -Xmx14g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT=$samOutput OUTPUT=$output SORT_ORDER=coordinate");
