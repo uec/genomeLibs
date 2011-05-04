@@ -104,10 +104,16 @@ foreach my $dir (@ARGV)
 	
 	        if ($DOCONVERSION)
 	        {
-	            my ($convCpG) = conversionFrac($dir."/*${laneNum}.pileup_cg_dinucleotide.csv");
-	            push(@flds, $convCpG); push(@headers,"ConversionCpG");
-	            my ($convCpH) = conversionFrac($dir."/*${laneNum}.pileup_ch_dinucleotide.csv");
-	            push(@flds, $convCpH); push(@headers,"ConversionCpH");
+	            if(glob($dir."/*${laneNum}.pileup_cg_dinucleotide.csv"))
+	            {
+	            	my ($convCpG) = conversionFrac($dir."/*${laneNum}.pileup_cg_dinucleotide.csv");
+	            	push(@flds, $convCpG); push(@headers,"ConversionCpG");
+	            }
+	            if(glob($dir."/*${laneNum}.pileup_cg_dinucleotide.csv"))
+	            {
+	            	my ($convCpH) = conversionFrac($dir."/*${laneNum}.pileup_ch_dinucleotide.csv");
+	            	push(@flds, $convCpH); push(@headers,"ConversionCpH");
+	            }
 	        }
 	
 
@@ -116,9 +122,20 @@ foreach my $dir (@ARGV)
                         if(glob("$dir/aligntest_s_$laneNum*"))
                         {
                                 my @testAligns = glob("$dir/aligntest_s_$laneNum*");
-                                my $chunkSize = `wc -l $dir/s_$laneNum\_*sequence.1.nocontam.txt`;
-                                $chunkSize =~ /^(\d+)\s/;
-                                $chunkSize = $1;
+                                my $chunkSize = 4;
+                                if(-e "$dir/s_$laneNum\_1_*sequence.1.txt")
+                                {
+                                	$chunkSize = `wc -l $dir/s_$laneNum\_1_*sequence.1.txt`;
+                                	$chunkSize =~ /^(\d+)\s/;
+                                	$chunkSize = $1;	
+                                }
+                                elsif(-e "$dir/s_$laneNum\_*sequence.1.txt")
+                                {
+                                	$chunkSize = `wc -l $dir/s_$laneNum\_*sequence.1.txt`;
+                                	$chunkSize =~ /^(\d+)\s/;
+                                	$chunkSize = $1;	
+                                }
+                                
                                 $chunkSize = $chunkSize / 4;
                                 foreach my $testAlign (@testAligns)
                                 {

@@ -35,10 +35,10 @@ runcmd("$JAVA -Xmx14g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPU
 #system("mv $output.sorted.bam $output");
 
 #mark duplicates
-my $alldups = $output . ".dups.bam";
-my $alldupsmetrics = $output . ".dups.bam.metrics";
-runcmd("$JAVA -Xmx14g -jar $PICARD/MarkDuplicates.jar VALIDATION_STRINGENCY=SILENT MAX_RECORDS_IN_RAM=3000000 INPUT='$output' OUTPUT='$alldups' METRICS_FILE='$alldupsmetrics'");
-system("mv $alldups $output");
+#my $alldups = $output . ".dups.bam";
+#my $alldupsmetrics = $output . ".dups.bam.metrics";
+#runcmd("$JAVA -Xmx14g -jar $PICARD/MarkDuplicates.jar VALIDATION_STRINGENCY=SILENT MAX_RECORDS_IN_RAM=3000000 INPUT='$output' OUTPUT='$alldups' METRICS_FILE='$alldupsmetrics'");
+#system("mv $alldups $output");
 
 sub runcmd
 {
