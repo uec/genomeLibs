@@ -30,6 +30,8 @@ import org.broadinstitute.sting.utils.sam.GATKSAMRecord;
 public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 		NonRefDependSNPGenotypeLikelihoodsCalculationModel {
 
+	private BisulfiteArgumentCollection BAC;
+	
 	protected Byte bestAllele = null;
 	protected Byte alternateAllele = null;
 	protected final boolean useAlleleFromVCF;
@@ -43,6 +45,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected static Integer numTNegStrand = 0;
 	protected static Integer numCPosStrand = 0;
 	protected static Integer numTPosStrand = 0;
+	protected static String CYTOSINE_TYPE_LIST = null;
+	protected String DETERMINED_CYTOSINE_TYPE = "C";
 	//protected static Boolean cytosineStrand = false;
 	//protected static String cytosineWindowContext = "C";
 
@@ -52,16 +56,19 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 			UnifiedArgumentCollection UAC, Logger logger) {
 		super(UAC, logger);
 		useAlleleFromVCF = UAC.GenotypingMode == GENOTYPING_MODE.GENOTYPE_GIVEN_ALLELES;
-		this.testLoc = UAC.testLocus;
-		BISULFITE_CONVERSION_RATE = UAC.bsRate;
-		CPG_METHYLATION_RATE = UAC.CpgMethyNonCGI;
-		CPH_METHYLATION_RATE = UAC.CphMethy;
+		
 		// TODO Auto-generated constructor stub
 	}
 	
 	@Override
-	public void initialize(byte[] contextSeq){
+	public void initialize(byte[] contextSeq, BisulfiteArgumentCollection BAC){
 		CONTEXTSEQ = BaseUtilsMore.toUpperCase(contextSeq);
+		this.BAC = BAC;
+		this.testLoc = BAC.testLocus;
+		BISULFITE_CONVERSION_RATE = BAC.bsRate;
+		CPG_METHYLATION_RATE = BAC.CpgMethyNonCGI;
+		CPH_METHYLATION_RATE = BAC.CphMethy;
+		CYTOSINE_TYPE_LIST = BAC.cytosineType;
 	}
 	
 	
@@ -112,43 +119,11 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         	
 
         }
-        
-      /*
-       // System.err.println(refBase+"\t" + bestAllele+"\t" + alternateAllele + "\t" + refWindow[0] + "\t" + refWindow[1]);
-     // if there are no non-ref bases...
-        if ( (alternateAllele == null && bestAllele == refBase) || (bestAllele == null) ) {
-            // if we only want variants, then we don't need to calculate genotype likelihoods
-            if ( UAC.OutputMode == UnifiedGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY )
-                return refAllele;
-
-            // otherwise, choose any alternate allele (it doesn't really matter)
-            bestAllele = (byte)(refBase != BaseUtils.A ? BaseUtils.A : BaseUtils.C);
-            alternateAllele = (byte)(refBase != BaseUtils.A ? BaseUtils.G : BaseUtils.T);
-        }
-        
-        Allele AlleleA, AlleleB;
-        
-        if(alternateAllele == null || alternateAllele == refBase || alternateAllele == bestAllele){
-        	AlleleA = Allele.create(refBase, true);
-        	AlleleB = Allele.create(bestAllele, false);
-        	//if(alternateAllele == null)
-        		alternateAllele = bestAllele;
-        	bestAllele = refBase;
-        }
-        else if(bestAllele == refBase){
-        	AlleleA = Allele.create(bestAllele, true);
-        	AlleleB = Allele.create(alternateAllele, false);
-        }
-        else{
-        	AlleleA = Allele.create(bestAllele, false);
-        	AlleleB = Allele.create(alternateAllele, false);
-        }
-*/
-       //System.err.println(refBase+"\t"+bestAllele+"\t"+alternateAllele);
+      
         Feature cgi = CGIHelper.getCGIFeature(tracker.getReferenceMetaData(CGIHelper.STANDARD_CGI_TRACK_NAME));
         if(cgi != null){
         	isCGI = true;
-        	CPG_METHYLATION_RATE = UAC.CpgMethyCGI;
+        	CPG_METHYLATION_RATE = BAC.CpgMethyCGI;
         }
         numCNegStrand = 0;
         numTNegStrand = 0;
@@ -205,9 +180,11 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             
             
             // do not use this prior, this prior is flat prior intiated in genotypeEngine, so we actually do not transfer this priors...
-            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, UAC.PCR_error, UAC.bsRate, CPG_METHYLATION_RATE, UAC.CphMethy, UAC.novelDbsnpHet, UAC.validateDbsnpHet, CONTEXTSEQ);
+            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC.PCR_error, BAC.bsRate, CPG_METHYLATION_RATE, BAC.CphMethy, BAC.novelDbsnpHet, BAC.validateDbsnpHet, CONTEXTSEQ);
             if((pileup.getLocation().getStart()) == testLoc)
             	GL.VERBOSE=true;
+            DETERMINED_CYTOSINE_TYPE = GL.determinCytosineStatus(pileup, CYTOSINE_TYPE_LIST);
+            
             int nGoodBases = GL.add(pileup, true, true, refNextBase, refPreBase);
             if ( nGoodBases == 0 )
                 continue;
@@ -223,7 +200,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             
             if ( (alternateAllele == null && bestAllele == refBase) || (bestAllele == null) ) {
                 // if we only want variants, then we don't need to calculate genotype likelihoods
-                if ( UAC.OutputMode == UnifiedGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY )
+                if ( BAC.OutputMode == UnifiedGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY )
                     return refAllele;
 
                 // otherwise, choose any alternate allele (it doesn't really matter)
@@ -513,4 +490,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 		return value;
 	}
 	
+	protected String getCytosineTypeStatus(){
+		
+		return DETERMINED_CYTOSINE_TYPE;
+	}
 }

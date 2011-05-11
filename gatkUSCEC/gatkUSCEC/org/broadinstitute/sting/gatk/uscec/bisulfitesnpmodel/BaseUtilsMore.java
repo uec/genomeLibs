@@ -16,4 +16,7 @@ public class BaseUtilsMore {
 	{
 		return (byte)Character.toUpperCase((char)b);
 	}
+	
+	
+	
 }
