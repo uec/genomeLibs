@@ -46,6 +46,8 @@ public class MethylDbToWindowMeth {
 	
 	@Option(name="-maxFeatSize",usage="maximum size of features to include (default Inf)")
     protected int maxFeatSize = Integer.MAX_VALUE;
+	@Option(name="-minMethOutsideWindows",usage="If set, we only include CpGs above this minimum in external windows (default 0.0)")
+    protected double minMethOutsideWindows = 0.0;
 	@Option(name="-useSpatialCpgWeighting",usage="If set, weights a CpG by the spatial distance it covers, otherwise weight all CpGs equally (default false)")
     protected boolean useSpatialCpgWeighting = false;
 	@Option(name="-fivePrime",usage="If set, uses only the window 5' of the object of interest (throws out unoriented ones). Can not be used with -threePrime.")
@@ -191,7 +193,7 @@ public class MethylDbToWindowMeth {
 //					String.format("%s.flank%d.featType%d.sortVals.csv", outputPrefix, this.flankSize, onFeatType)));
 //			
 
-			for (String chrStr : MethylDbUtils.CHROMS) //Arrays.asList("chrX")) // Arrays.asList("chr11")) //
+			for (String chrStr : MethylDbUtils.AUTOSOMES) // MethylDbUtils.CHROMS) // Arrays.asList("chrX")) // 
 			{
 				processChrom(chrStr, feats, tablePrefixes, writer);
 			}
@@ -273,7 +275,7 @@ public class MethylDbToWindowMeth {
 							}
 							else
 							{
-								System.err.printf("Unoriented, skipping: %d,%d,%d,%d", chr,featS,featE,featStrand.getValue());
+								System.err.printf("Unoriented, skipping: %d,%d,%d,%d\n", chr,featS,featE,featStrand.getValue());
 							}
 
 						}
@@ -332,7 +334,12 @@ public class MethylDbToWindowMeth {
 
 						for (int i=0; i<nS; i++)
 						{
-							summarizers[i].streamCpg(cpgs[i]);
+							boolean include = true;
+							if (windSize>0)
+							{
+								if (cpgs[i].fracMeth(false) < this.minMethOutsideWindows) include = false;
+							}
+							if (include) summarizers[i].streamCpg(cpgs[i]);
 //							System.err.println(String.format("\tON CPG [%s] %s", tablePrefixes.get(i), cpgs[i].toString()));
 						}
 						
