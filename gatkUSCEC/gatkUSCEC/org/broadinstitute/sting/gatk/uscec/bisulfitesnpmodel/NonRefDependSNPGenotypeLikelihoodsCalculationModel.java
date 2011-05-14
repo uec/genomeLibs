@@ -39,7 +39,7 @@ public class NonRefDependSNPGenotypeLikelihoodsCalculationModel extends
 		return null;
 	}
 	
-	public void initialize(byte[] contextSeq, BisulfiteArgumentCollection BAC){
+	public void initialize(CytosineTypeStatus cts, BisulfiteArgumentCollection BAC, byte[] CONTEXTREF){
 
 	}
 

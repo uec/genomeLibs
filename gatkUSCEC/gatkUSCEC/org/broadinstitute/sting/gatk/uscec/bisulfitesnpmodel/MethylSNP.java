@@ -57,7 +57,7 @@ public class MethylSNP extends CommandLineExecutable {
    // private BisulfiteArgumentCollection bisulfiteArgCollection = new BisulfiteArgumentCollection();
 	
 	private static boolean secondIteration = false;
-	private static CytosineTypeStatus cts = new CytosineTypeStatus();
+	private static CytosineTypeStatus cts = null;
 	
 	
 	@Override

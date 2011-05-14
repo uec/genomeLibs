@@ -47,6 +47,7 @@ import org.broadinstitute.sting.utils.baq.BAQ;
 import org.broadinstitute.sting.utils.vcf.VCFUtils;
 
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BaseUtilsMore.*;
+import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel;
 
 
 //TO DO
@@ -86,7 +87,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     // the annotation engine
     private VariantAnnotatorEngine annotationEngine;
     
-    CytosineTypeStatus summary = new CytosineTypeStatus();
+    CytosineTypeStatus summary = new CytosineTypeStatus(BAC);
 
     // enable deletions in the pileup
     public boolean includeReadsWithDeletionAtLoci() { return true; }
@@ -178,6 +179,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
         annotationEngine = new VariantAnnotatorEngine(getToolkit(), Arrays.asList(annotationClassesToUse), annotationsToUse);
         
+        
+        
         BG_engine = new BisulfiteGenotyperEngine(getToolkit(), BAC, logger, annotationEngine, samples);
 
         // initialize the header
@@ -229,9 +232,11 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	GenomeLoc thisLoc = refContext.getLocus();
     	int centerCoord = thisLoc.getStart();
     	String thisContig = refContext.getLocus().getContig();
-        byte[] contextSeq = 
-   			this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-1, centerCoord+1).getBases();
-        BisulfiteGenotyperEngine.setContextSeq(contextSeq);
+        byte[] contextRef = 
+   			this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-100, centerCoord+100).getBases();
+        contextRef = BaseUtilsMore.toUpperCase(contextRef);
+        CytosineTypeStatus cts = new CytosineTypeStatus(BAC);
+        BG_engine.setCytosineTypeStatus(cts, contextRef);
     	return BG_engine.calculateLikelihoodsAndGenotypes(tracker, refContext, rawContext);
     }
 
@@ -286,6 +291,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         sum.sumMethyGcgBasesCalledConfidently += value.cts.gcgMethyLevel;
         sum.sumMethyHcgBasesCalledConfidently += value.cts.hcgMethyLevel;
         
+        
         // can't make a confident variant call here
         if ( value.vc == null )
             return sum;
@@ -312,9 +318,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         logger.info(String.format("%% Methylation level of CpG loci       %3.3f", sum.percentMethyLevelOfCpg()));
         logger.info(String.format("%% Methylation level of CHH loci       %3.3f", sum.percentMethyLevelOfChh()));
         logger.info(String.format("%% Methylation level of CHG loci       %3.3f", sum.percentMethyLevelOfChg()));
-        logger.info(String.format("%% Methylation level of GCH loci       %3.3f", sum.percentMethyLevelOfGch()));
-        logger.info(String.format("%% Methylation level of GCG loci       %3.3f", sum.percentMethyLevelOfGcg()));
-        logger.info(String.format("%% Methylation level of HCG loci       %3.3f", sum.percentMethyLevelOfHcg()));
+        if(BAC.sequencingMode == MethylSNPModel.GM){
+        	logger.info(String.format("%% Methylation level of GCH loci       %3.3f", sum.percentMethyLevelOfGch()));
+            logger.info(String.format("%% Methylation level of GCG loci       %3.3f", sum.percentMethyLevelOfGcg()));
+            logger.info(String.format("%% Methylation level of HCG loci       %3.3f", sum.percentMethyLevelOfHcg()));
+        }
+        summary.cpgMethyLevel = sum.percentMethyLevelOfCpg();
+        summary.chhMethyLevel = sum.percentMethyLevelOfChh();
+        summary.chgMethyLevel = sum.percentMethyLevelOfChg();
+        summary.gchMethyLevel = sum.percentMethyLevelOfGch();
+        summary.gcgMethyLevel = sum.percentMethyLevelOfGcg();
+        summary.hcgMethyLevel = sum.percentMethyLevelOfHcg();
 
     }
     
