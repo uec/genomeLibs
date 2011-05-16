@@ -4,6 +4,7 @@ package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -81,6 +82,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     protected String[] annotationClassesToUse = { "Standard" };
 
     
+    private static boolean autoEstimateC = false;
+    private static boolean secondIteration = false;
+    
     // the calculation arguments
     private BisulfiteGenotyperEngine BG_engine = null;
 
@@ -100,7 +104,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
      */
     
     
-    public static class BGStatistics {
+    public class BGStatistics {
         /** The total number of passes examined -- i.e., the number of map calls */
         long nBasesVisited = 0;
 
@@ -152,6 +156,19 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         
         /** The sum of methylation value of Hcg bases called confidently (according to user threshold), either ref or other */
         double sumMethyHcgBasesCalledConfidently = 0;
+  /*      
+        HashMap<String, Double[]> otherCytosineListMap = new HashMap<String, Double[]>(); 
+        
+        if(!BAC.autoEstimateOtherCytosine.isEmpty()){
+			String[] tmpArray = BAC.autoEstimateOtherCytosine.split(";");
+			for(String tmp : tmpArray){
+					Double[] value = new Double[2];
+					value[0] = 0.0; //value[0]: number of cytosien; value[1]: sum of methylation level
+					value[1] = 0.0;
+					otherCytosineListMap.put(tmp, value);
+			}
+		}
+      */  
 
         double percentCallableOfAll()    { return (100.0 * nBasesCallable) / (nBasesVisited-nExtendedEvents); }
         double percentCalledOfAll()      { return (100.0 * nBasesCalledConfidently) / (nBasesVisited-nExtendedEvents); }
@@ -177,21 +194,52 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         else
             samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
 
-        annotationEngine = new VariantAnnotatorEngine(getToolkit(), Arrays.asList(annotationClassesToUse), annotationsToUse);
-        
-        
-        
+        //System.err.println("writer-initial: " + writer.toString());
+        if(autoEstimateC){
+        	if(secondIteration){
+        		//annotationEngine = new VariantAnnotatorEngine(getToolkit(), Arrays.asList(annotationClassesToUse), annotationsToUse);
+        	}
+        	else{
+        		annotationEngine = new VariantAnnotatorEngine(getToolkit(), Arrays.asList(annotationClassesToUse), annotationsToUse);
+        	}
+        }
+        else{
+        	annotationEngine = new VariantAnnotatorEngine(getToolkit(), Arrays.asList(annotationClassesToUse), annotationsToUse);
+        }
+  
         BG_engine = new BisulfiteGenotyperEngine(getToolkit(), BAC, logger, annotationEngine, samples);
-
+       
         // initialize the header
-        writer.writeHeader(new VCFHeader(getHeaderInfo(), samples)) ;
+        if(autoEstimateC){
+        	if(secondIteration){
+        		writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        		for(String key : summary.cytosineListMap.keySet()){
+    				Double[] values = summary.cytosineListMap.get(key);
+    				for(Double value : values){
+    					System.err.println("summary.key: " + key + "\tsummary.value: " + value);
+    				}
+    			}
+    			
+    			System.err.println(summary.chhMethyLevel);
+    			System.err.println(summary.chgMethyLevel);
+    			System.err.println(summary.cpgMethyLevel);
+        	}
+        	else{
+        		//writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        	}
+        }
+        else{
+        	writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        }
+        	
+        
     }
 
     private Set<VCFHeaderLine> getHeaderInfo() {
         Set<VCFHeaderLine> headerInfo = new HashSet<VCFHeaderLine>();
 
         // all annotation fields from VariantAnnotatorEngine
-        headerInfo.addAll(annotationEngine.getVCFAnnotationDescriptions());
+       // headerInfo.addAll(annotationEngine.getVCFAnnotationDescriptions());
 
         // annotation (INFO) fields from UnifiedGenotyper
         
@@ -235,8 +283,16 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         byte[] contextRef = 
    			this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-100, centerCoord+100).getBases();
         contextRef = BaseUtilsMore.toUpperCase(contextRef);
-        CytosineTypeStatus cts = new CytosineTypeStatus(BAC);
-        BG_engine.setCytosineTypeStatus(cts, contextRef);
+        
+        if(secondIteration){
+        	BG_engine.setCytosineTypeStatus(summary, contextRef);
+        }
+        else{
+        	CytosineTypeStatus cts = new CytosineTypeStatus(BAC);
+        	BG_engine.setCytosineTypeStatus(cts, contextRef);
+        }
+        
+        
     	return BG_engine.calculateLikelihoodsAndGenotypes(tracker, refContext, rawContext);
     }
 
@@ -277,6 +333,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
         // the base was confidently callable
         sum.nBasesCalledConfidently += value.confidentlyCalled ? 1 : 0;
+        //System.err.println(sum.nChhBasesCalledConfidently);
+       // System.err.println(sum.sumMethyChhBasesCalledConfidently);
         sum.nCpgBasesCalledConfidently += value.cts.isCpg ? 1 : 0;
         sum.nChgBasesCalledConfidently += value.cts.isChg ? 1 : 0;
         sum.nChhBasesCalledConfidently += value.cts.isChh ? 1 : 0;
@@ -299,7 +357,15 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         try {
             // we are actually making a call
             sum.nCallsMade++;
-            writer.add(value.vc, value.refBase);
+            if(autoEstimateC){
+            	if(secondIteration){
+            		writer.add(value.vc, value.refBase);
+            	}
+            }
+            else{
+            	writer.add(value.vc, value.refBase);
+            }
+            
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(e.getMessage() + "; this is often caused by using the --assume_single_sample_reads argument with the wrong sample name");
         }
@@ -329,6 +395,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         summary.gchMethyLevel = sum.percentMethyLevelOfGch();
         summary.gcgMethyLevel = sum.percentMethyLevelOfGcg();
         summary.hcgMethyLevel = sum.percentMethyLevelOfHcg();
+        if(secondIteration){
+        	writer.close();
+        }
 
     }
     
@@ -341,11 +410,81 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	BAC.forceGch = BAC.autoEstimateGch ? sumCytosine.gchMethyLevel : BAC.forceGch;
     	BAC.forceGcg = BAC.autoEstimateGcg ? sumCytosine.gcgMethyLevel : BAC.forceGcg;
     	BAC.forceHcg = BAC.autoEstimateHcg ? sumCytosine.hcgMethyLevel : BAC.forceHcg;
+    	
+    	for(String cytosineType : summary.cytosineListMap.keySet()){
+			String[] tmpKey = cytosineType.split("-");
+			Double[] value = summary.cytosineListMap.get(cytosineType);
+			//System.err.println("ctype: " + tmpKey[0]);
+			
+			
+				
+				//System.err.println("ctype: " + tmpKey[0]);
+				if(tmpKey[0].equalsIgnoreCase("CG")){
+					value[2] = BAC.autoEstimateCpg ? sumCytosine.cpgMethyLevel : BAC.forceCpg;
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("CHH")){
+					value[2] = BAC.autoEstimateChh ? sumCytosine.chhMethyLevel : BAC.forceChh;
+				}
+				else if(tmpKey[0].equalsIgnoreCase("CHG")){
+					value[2] = BAC.autoEstimateChg ? sumCytosine.chgMethyLevel : BAC.forceChg;
+				}
+				else if(tmpKey[0].equalsIgnoreCase("GCH")){
+					value[2] = BAC.autoEstimateGch ? sumCytosine.gchMethyLevel : BAC.forceGch;
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("GCG")){
+					value[2] = BAC.autoEstimateGcg ? sumCytosine.gcgMethyLevel : BAC.forceGcg;
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("HCG")){
+					value[2] = BAC.autoEstimateHcg ? sumCytosine.hcgMethyLevel : BAC.forceHcg;
+					
+				}
+				else{
+					if(!BAC.autoEstimateOtherCytosine.isEmpty()){
+						String[] tmpArray = BAC.autoEstimateOtherCytosine.split(";");
+						for(String tmp : tmpArray){
+							if(tmp.equalsIgnoreCase(cytosineType)){
+								value[2] = sumCytosine.cytosineListMap.get(tmp)[2];
+							}
+						}
+					}
+				}
+				if(value[2].isNaN())
+					value[2] = 0.0;
+				summary.cytosineListMap.put(cytosineType, value);	
+			
+    	}
+    	
+    	
+    }
+    
+    public void setAutoParameters(boolean autoEstimateC, boolean secondIteration){
+    	this.autoEstimateC = autoEstimateC;
+    	this.secondIteration = secondIteration;
     }
     
     public CytosineTypeStatus getCytosineMethyStatus() {
     	
-		return summary;
+		return summary.clone();
+    }
+    
+    public VCFWriter getWriter(){
+    	return writer;
     }
    
+    public void setWriter(VCFWriter writer){
+    	this.writer = writer;
+    	//System.err.println("writer-setup: " + this.writer.toString());
+    }
+    
+    public VariantAnnotatorEngine getAnnoEng(){
+    	return annotationEngine;
+    }
+   
+    public void setAnnoEng(VariantAnnotatorEngine AnnoEng){
+    	this.annotationEngine = AnnoEng;
+    	//System.err.println("writer-setup: " + this.writer.toString());
+    }
 }

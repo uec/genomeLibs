@@ -27,8 +27,9 @@ public class BisulfiteVariantCallContext{
     }
 
     // blank variant context => we're a ref site
-    public BisulfiteVariantCallContext(boolean confidentlyCalledP) {
+    public BisulfiteVariantCallContext(boolean confidentlyCalledP, CytosineTypeStatus cts) {
         this.confidentlyCalled = confidentlyCalledP;
+        this.cts = cts;
     }
 
     public void setRefBase(byte ref) {

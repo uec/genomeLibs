@@ -27,19 +27,20 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     public boolean autoEstimateHcg = true;
 	
 	@Argument(fullName = "auto_estimate_other_cytosine_methylation", shortName = "aeoc", doc = "the first run would be to run auto_estimate_other_cytosine_methylation status, you need to provide cytosine type by such format: -aoec GCAA:1;GGGCA:3", required = false)
-    public String autoEstimateOtherCytosine = "GCAA-2;GGGCA-4";
+    //public String autoEstimateOtherCytosine = "GCAA-2;GGGCA-4";
+	public String autoEstimateOtherCytosine = "";
 	
 	@Argument(fullName = "force_cpg_methylation", shortName = "fcpg", doc = "force the cpg methylation status", required = false)
     public double forceCpg = 0.50;
 	
 	@Argument(fullName = "force_chg_methylation", shortName = "fchg", doc = "force the chg methylation status", required = false)
-    public double forceChg = 0.01;
+    public double forceChg = 0.50;
 	
 	@Argument(fullName = "force_chh_methylation", shortName = "fchh", doc = "force the chh methylation status", required = false)
-    public double forceChh = 0.01;
+    public double forceChh = 0.50;
 	
 	@Argument(fullName = "force_gch_methylation", shortName = "fgch", doc = "force the gch methylation status", required = false)
-    public double forceGch = 0.01;
+    public double forceGch = 0.50;
 	
 	@Argument(fullName = "force_gcg_methylation", shortName = "fgcg", doc = "force the gcg methylation status", required = false)
     public double forceGcg = 0.50;
@@ -48,19 +49,21 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     public double forceHcg = 0.50;
 	
 	@Argument(fullName = "force_other_cytosine_methylation", shortName = "foc", doc = "force the other_cytosine_methylation status, you need to provide cytosine type by such format: -aoec GCAA:1:0.75;GGGCA:3:0.33", required = false)
-    public String forceOtherCytosine = "GCAA-2:0.75;GGGCA-4:0.33";
+    //public String forceOtherCytosine = "GCAA-2:0.75;GGGCA-4:0.33";
+	public String forceOtherCytosine = "";
 
 	@Argument(fullName = "likelihood_threshold_for_cytosine_type", shortName = "cTypeThreshold", doc = "likelihood threshold to be this cytosine type", required = false)
-    public double cTypeThreshold = 0.70;
+    public double cTypeThreshold = 0.90;
 	
-	@Argument(fullName = "Cytosine_Type", shortName = "ct", doc = "Cytosine type, CG, CHH, CHG or GCH....for test only (format should be -ct CG-0:0.75;CHH-0:0.01... add the cytosine type, cytosine position in your string and their genome wide methylation value you estimate )", required = false)
-    public String cytosineType = "CGA-0:0.7314;GCA-1:0.01";
+	//@Argument(fullName = "Cytosine_Type", shortName = "ct", doc = "Cytosine type, CG, CHH, CHG or GCH....for test only (format should be -ct CG-0:0.75;CHH-0:0.01... add the cytosine type, cytosine position in your string and their genome wide methylation value you estimate )", required = false)
+    //public String cytosineType = "CGA-0:0.7314;GCA-1:0.01";
+	//public String cytosineType = null;
 	
 	@Argument(fullName = "test_location", shortName = "loc", doc = ".for test only", required = false)
     public long testLocus = -1;
 	
 	@Argument(fullName = "bisulfite_conversion_rate", shortName = "bsRate", doc = "bisulfite_conversion_rate .for test only", required = false)
-    public double bsRate = 0.0025;
+    public double bsRate = 0.9975;
 	
 	//@Argument(fullName = "CpG_Methylation_rate_in_CGI", shortName = "CpgMethyCGI", doc = "CpG_Methylation_rate_in_CGI .for test only", required = false)
     //public double CpgMethyCGI = 0;
@@ -113,7 +116,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.forceGcg = forceGcg;
         bac.forceHcg = forceHcg;
         
-        bac.cytosineType = cytosineType;
+       // bac.cytosineType = cytosineType;
         bac.testLocus = testLocus;
         bac.bsRate = bsRate;
         //bac.CpgMethyCGI = CpgMethyCGI;
