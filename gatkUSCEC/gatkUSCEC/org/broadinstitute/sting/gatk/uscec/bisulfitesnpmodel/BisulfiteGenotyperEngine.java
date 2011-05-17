@@ -109,7 +109,7 @@ public class BisulfiteGenotyperEngine{
     private static final int MISMATCH_WINDOW_SIZE = 20;
 	
 
-	public static byte[] CONTEXTREF = null;
+	public byte[] CONTEXTREF = null;
 	public Integer[] CYTOSINE_STATUS = null;
 	
 	protected double MAX_PHRED = 1000000;
@@ -341,7 +341,12 @@ public class BisulfiteGenotyperEngine{
                  		 }
             			 attributes.put(genotypeTemp.getType().toString(), true);
                  	 }
-            		// System.err.println("cts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel);
+            		 if(CYTOSINE_STATUS[0] + CYTOSINE_STATUS[1] > 0 && loc.getStart() == BAC.testLocus){
+            			// System.err.println("CYTOSINE_STATUS[0]: " + CYTOSINE_STATUS[0] + "\tCYTOSINE_STATUS[1]: " + CYTOSINE_STATUS[1] + "\tCYTOSINE_STATUS[2]: " + CYTOSINE_STATUS[2] + "\tCYTOSINE_STATUS[3]: " + CYTOSINE_STATUS[3]);
+                		// System.err.println("cytosineMethyLevel: " + cytosineMethyLevel + "\tcts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel + "\t" + logRatio);
+                		 
+            		 }
+            		 
                  }
             }
            
@@ -569,10 +574,12 @@ public class BisulfiteGenotyperEngine{
 			String[] tmpKey = cytosineType.split("-");
 			Double[] value = cts.cytosineListMap.get(cytosineType);
 			//System.err.println("ctype: " + tmpKey[0]);
-			cTypeStatus = cTypeStatus + "," + tmpKey[0];
+			//cTypeStatus = cTypeStatus + "," + tmpKey[0];
 			if(value[cPos] >= Math.log10(BAC.cTypeThreshold)){
 				cTypeStatus = cTypeStatus + "," + tmpKey[0];
-				//System.err.println("ctype: " + tmpKey[0]);
+				 if(Double.isNaN(cytosineMethyLevel))
+						 cytosineMethyLevel = 0.0;
+				//System.err.println("cTypeStatus: " + cTypeStatus + "\tLikelihood: " + value[cPos]);
 				if(tmpKey[0].equalsIgnoreCase("CG")){
 					
 					cts.isCpg = true;
@@ -619,7 +626,8 @@ public class BisulfiteGenotyperEngine{
 				
 				
 			}
-			//System.err.println("methy: " + value[2] + "\tliklihood_pos: " + value[0]  + "\tliklihood_neg: " + value[1]);
+			//if(cytosineMethyLevel > 0)
+				//System.err.println("methy: " + value[2] + "\tliklihood_pos: " + value[0]  + "\tliklihood_neg: " + value[1]);
  		}
 		
 		return cTypeStatus;
@@ -719,7 +727,7 @@ public class BisulfiteGenotyperEngine{
        // 	 System.err.println(a.getBaseString());
         //}
        
-        return new VariantContext("UG_call",
+        return new VariantContext("BG_call",
                 loc.getContig(),
                 loc.getStart(),
                 endLoc,

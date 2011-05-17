@@ -134,7 +134,7 @@ public class MethylSNP extends CommandLineExecutable {
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "bs-0.14";
+        String version = "bs-0.15";
 		List<String> header = new ArrayList<String>();
         header.add(String.format("The MethylSNP (BSSNP) v%s, Compiled %s",version, getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (in sorceforge tree, the version number is 5288)",getVersionNumber()));
@@ -248,13 +248,13 @@ public class MethylSNP extends CommandLineExecutable {
         			for(String key : cts.cytosineListMap.keySet()){
         				Double[] values = cts.cytosineListMap.get(key);
         				for(Double value : values){
-        					System.err.println("cts.key: " + key + "\tcts.value: " + value);
+        					//System.err.println("cts.key: " + key + "\tcts.value: " + value);
         				}
         			}
         			
-        			System.err.println(cts.chhMethyLevel);
-        			System.err.println(cts.chgMethyLevel);
-        			System.err.println(cts.cpgMethyLevel);
+        			//System.err.println(cts.chhMethyLevel);
+        			//System.err.println(cts.chgMethyLevel);
+        			//System.err.println(cts.cpgMethyLevel);
         		}
                 //System.err.println(result.toString());
                 //generateGATKRunReport(walker);

@@ -99,12 +99,12 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			Integer cytosinePos = Integer.parseInt(tmpKey[1]) - 1;
 			int i = 0;
 			for(; i < tmpKey[0].length(); i++){
-				if(i == cytosinePos)
-					continue;
+				//if(i == cytosinePos)
+				//	continue;
 				int elementOffset = i - cytosinePos + 100;
 				if(elementOffset < 0 || elementOffset > contextRef.length-1)
 					continue;
-				if(contextRef[elementOffset] != tmpKey[0].getBytes()[cytosinePos]){
+				if(!BaseUtilsMore.iupacCodeEqual(tmpKey[0].getBytes()[i], contextRef[elementOffset], false)){
 					break;
 				}
 			}
@@ -112,7 +112,21 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 				refMethyStatus = cts.cytosineListMap.get(cytosineType)[2];
 				break;
 			}
-				
+			i = 0;
+			for(; i < tmpKey[0].length(); i++){
+			//	if(i == cytosinePos)
+			//		continue;
+				int elementOffset = 100 - (i - cytosinePos);
+				if(elementOffset < 0 || elementOffset > contextRef.length-1)
+					continue;
+				if(!BaseUtilsMore.iupacCodeEqual(BaseUtilsMore.iupacCodeComplement(tmpKey[0].getBytes()[i]), contextRef[elementOffset], false)){
+					break;
+				}
+			}
+			if(i >= tmpKey[0].length()){
+				refMethyStatus = cts.cytosineListMap.get(cytosineType)[2];
+				break;
+			}	
 		}
 		
 		this.priors.setPriors(tracker, ref, HUMAN_HETEROZYGOSITY, PROB_OF_REFERENCE_ERROR, BISULFITE_CONVERSION_RATE, refMethyStatus, novelDbsnpHet, validateDbsnpHet, cts);
@@ -154,7 +168,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			            continue;
 			        adjacentCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) ? log10(1.0 - error) : log10(error/3.0);
 			        if(VERBOSE){
-			        	System.err.println("posStrand-1: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false));
+			        //	System.err.println("forwardStrand-1: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i);
 			        }
 				}
 				
@@ -162,7 +176,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 				for(int i = 0; i < tmpKey[0].length(); i++){
 					//if(i == cytosinePos)
 					//	continue;
-					int elementOffset = i - cytosinePos + cytosineOffset;
+					int elementOffset = cytosineOffset - (i - cytosinePos);
 					if(elementOffset < 0 || elementOffset > samRecord.getReadLength()-1)
 						continue;
 					//System.err.println("2: " + elementOffset + "\t" + cytosinePos + "\t" + cytosineOffset + "\t" + samRecord.getAlignmentStart() );
@@ -176,14 +190,15 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        qual = (byte)Math.min((int)tmpP.getQual(), tmpP.getMappingQual());
 			        byte observedBase = tmpP.getBase();
 			        byte qualityScore = qual;
-			        byte queryByte = (byte)tmpKey[0].charAt(tmpKey[0].length() - 1 - i);
+			       // byte queryByte = (byte)tmpKey[0].charAt(tmpKey[0].length() - 1 - i);
+			        byte queryByte = (byte)tmpKey[0].charAt(i);
 			        queryByte = BaseUtilsMore.iupacCodeComplement(queryByte);
 			        double error = pow(10, -qualityScore/10.0);
 			        if ( observedBase == 0 )
 			            continue;
-			        adjacentCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) ? log10(1.0 - error) : log10(error/3.0);
+			        adjacentCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) ? log10(1.0 - error) : log10(error/3.0);
 			        if(VERBOSE){
-			        	System.err.println("negStrand-1: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true));
+			        	System.err.println("reverseStrand-1: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i + "\tadjacentCytosineSeqLikelihoodReverseStrand[i]" + adjacentCytosineSeqLikelihoodReverseStrand[i]);
 			        }
 				}           
 	        }
@@ -211,12 +226,13 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        byte observedBase = tmpP.getBase();
 			        byte qualityScore = qual;
 			        byte queryByte = (byte)tmpKey[0].charAt(i);
+			        //queryByte = BaseUtilsMore.iupacCodeComplement(queryByte);
 			        double error = pow(10, -qualityScore/10.0);
 			        if ( observedBase == 0 )
 			            continue;
-			        adjacentCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) ? log10(1.0 - error) : log10(error/3.0);
+			        adjacentCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) ? log10(1.0 - error) : log10(error/3.0);
 			        if(VERBOSE){
-			        	System.err.println("posStrand-2: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false));
+			        //	System.err.println("forwardStrand-2: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i);
 			        }
 				}
 				
@@ -224,7 +240,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 				for(int i = 0; i < tmpKey[0].length(); i++){
 				//	if(i == cytosinePos)
 				//		continue;
-					int elementOffset = i - cytosinePos + cytosineOffset;
+					int elementOffset = cytosineOffset - (i - cytosinePos);
 					if(elementOffset < 0 || elementOffset > samRecord.getReadLength()-1)
 						continue;
 					//System.err.println("4: " + elementOffset + "\t" + cytosinePos + "\t" + cytosineOffset + "\t" + samRecord.getAlignmentStart() );
@@ -239,14 +255,14 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        qual = (byte)Math.min((int)tmpP.getQual(), tmpP.getMappingQual());
 			        byte observedBase = tmpP.getBase();
 			        byte qualityScore = qual;
-			        byte queryByte = (byte)tmpKey[0].charAt(tmpKey[0].length() - 1 - i);
+			        byte queryByte = (byte)tmpKey[0].charAt(i);
 			        queryByte = BaseUtilsMore.iupacCodeComplement(queryByte);
 			        double error = pow(10, -qualityScore/10.0);
 			        if ( observedBase == 0 )
 			            continue;
 			        adjacentCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) ? log10(1.0 - error) : log10(error/3.0);
 			        if(VERBOSE){
-			        	System.err.println("negStrand-2: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true));
+			        	System.err.println("reverseStrand-2: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i + "\tadjacentCytosineSeqLikelihoodReverseStrand[i]" + adjacentCytosineSeqLikelihoodReverseStrand[i]);
 			        }
 				}
 				
@@ -259,23 +275,27 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	        for(int i = 0; i < adjacentCytosineSeqLikelihoodReverseStrand.length; i++)
 	        	sumReverse += adjacentCytosineSeqLikelihoodReverseStrand[i];
 	      //  if(sum >= log10(0.90) || sumReverse >= log10(0.90)){
-	       
+	        Double[] value = cts.cytosineListMap.get(cytosineType);
+	        if(sum > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS)
+	        	value[0] = sum;
+	        if(sumReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG)
+	        	value[1] = sumReverse;
+	        cts.cytosineListMap.put(cytosineType, value);
 	        	if(sum >= log10(threshold) && sum > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS){
 	        		//DETERMINED_CYTOSINE_TYPE_NEGSTRAND = false;
-	        		Double[] value = cts.cytosineListMap.get(cytosineType);
-	    	        value[0] = sum;
+	        		
 	    	        DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS = sum;
-	    	        cts.cytosineListMap.put(cytosineType, value);
+	    	       // 
 	    	        DETERMINED_CYTOSINE_TYPE_POS = tmpKey[0];
 	    	        DETERMINED_CYTOSINE_TYPE_C_METHY_POS = value[2];
 	    	      //  System.err.println("pos");
 	        	}
 	        	else if(sumReverse >= log10(threshold) && sumReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG){
 	        		//DETERMINED_CYTOSINE_TYPE_NEGSTRAND = true;
-	        		Double[] value = cts.cytosineListMap.get(cytosineType);
-	    	        value[1] = sumReverse;
+	        		//Double[] value = cts.cytosineListMap.get(cytosineType);
+	    	        
 	    	        DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG = sumReverse;
-	    	        cts.cytosineListMap.put(cytosineType, value);
+	    	        //cts.cytosineListMap.put(cytosineType, value);
 	    	        DETERMINED_CYTOSINE_TYPE_NEG = tmpKey[0];
 	    	        DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = value[2];
 	    	      //  System.err.println("neg");
@@ -290,8 +310,8 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	        
 		
 		if(VERBOSE){
-			 System.out.println("DETERMINED_CYTOSINE_TYPE_POS: " + DETERMINED_CYTOSINE_TYPE_POS + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_POS: " + DETERMINED_CYTOSINE_TYPE_C_METHY_POS);
-			 System.out.println("DETERMINED_CYTOSINE_TYPE_NEG: " + DETERMINED_CYTOSINE_TYPE_NEG + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_NEG: " + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG);
+			// System.out.println("DETERMINED_CYTOSINE_TYPE_POS: " + DETERMINED_CYTOSINE_TYPE_POS + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_POS: " + DETERMINED_CYTOSINE_TYPE_C_METHY_POS);
+			 //System.out.println("DETERMINED_CYTOSINE_TYPE_NEG: " + DETERMINED_CYTOSINE_TYPE_NEG + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_NEG: " + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG);
 		}
 		
 		
