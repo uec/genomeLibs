@@ -19,10 +19,10 @@ foreach my $f (@files)
     {
 		chomp $line;	
 	
-		if (($line =~ /^(chr)?\d+$/) ||
-			($line =~ /^(chr)?M$/) ||
-			($line =~ /^(chr)?X$/) || 
-			($line =~ /^(chr)?Y$/))
+		if (($line =~ /chr\d+/) ||
+			($line =~ /chrM/) ||
+			($line =~ /chrX/) || 
+			($line =~ /chrY/))
 		{
 		    print OUT $line."\n";
 		} 
