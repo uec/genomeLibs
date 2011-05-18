@@ -19,12 +19,13 @@ foreach my $f (@files)
     {
 		chomp $line;	
 	
-		if (($line =~ /chr\d+/) ||
-			($line =~ /chrM/) ||
-			($line =~ /chrX/) || 
-			($line =~ /chrY/))
+		if (($line =~ /chr\d+(.)/) ||
+			($line =~ /chrM(.)/) ||
+			($line =~ /chrX(.)/) || 
+			($line =~ /chrY(.)/))
 		{
-		    print OUT $line."\n";
+			my $nextChar = $1;
+		    print OUT $line."\n" unless ($nextChar eq "_");
 		} 
     }
     
