@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 use Getopt::Long;
 
-my $USAGE = "cat input.sam | samToBed.pl --minBamMapQual 20 > out.tagAlign";
+my $USAGE = "cat input.sam | samToTagalign.pl --minBamMapQual 20 > out.tagAlign";
 my $minBamMapQual = 0;
 GetOptions ('minBamMapQual=i' => \$minBamMapQual) || die "$USAGE\n";
 
