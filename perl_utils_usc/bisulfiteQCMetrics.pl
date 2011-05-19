@@ -21,7 +21,7 @@ foreach my $dir (@ARGV)
 	
     foreach my $laneNum (1..8)
     {
-		my @dirlist = glob("$dir/s_$laneNum*");
+	my @dirlist = glob("$dir/s_$laneNum*");
         if($dirlist[0])
         {
         
@@ -48,7 +48,7 @@ foreach my $dir (@ARGV)
 	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
 	            my $contamAdaptersN = seqCountFastqFiles($dir."${prefix}.contam.adapters.*");
 	            push(@flds,$contamAdaptersN); push(@headers,"contamAdaptersSeqs");
-	             my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.tx*");
+	            my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.*");
 	            push(@flds,$contamAdapterTrimN); push(@headers,"contamAdapterTrimSeqs");            
 	        }
 	
@@ -66,24 +66,39 @@ foreach my $dir (@ARGV)
 	        if ($DOALIGNEDCOUNTS)
 	        {
 	            #my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}*map.q30.txt",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	            #my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	            #push(@flds, $fullReads); push(@headers,"AlignedReads");
+	            #push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
+	            #push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
+	            #push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
+
 	            if(glob($dir."/ResultCount_*_${laneNum}.bam"))
 	            {
+			print STDERR "checking aln...\n";
 	            	my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
 	            	push(@flds, $fullReads); push(@headers,"AlignedReads");
 	            	push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
 	            	push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
 	            	push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
 	            }
-	            if(glob($dir."/s_${laneNum}_*tophat_hits.bam"))
+	            elsif(glob($dir."/s_${laneNum}_*tophat_hits.bam"))
 	            {
-	            	print STDERR "counting tophat aln...\n";
+			print STDERR "checking tophat aln...\n";
 	            	my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/s_${laneNum}_*tophat_hits.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
 	            	push(@flds, $fullReads); push(@headers,"AlignedReads");
 	            	push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
 	            	push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
 	            	push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
 	            }	            
-	            
+	            elsif(glob($dir."/ResultCount_*_${laneNum}_*.bam"))
+	            {
+			print STDERR "checking aln...\n";
+	            	my ($fullReads, $sampleReads, $dups) = alignedCounts($dir."/ResultCount_*_${laneNum}_*.bam",$dir."/ReadCounts_*_${laneNum}_maq.csv");
+	            	push(@flds, $fullReads); push(@headers,"AlignedReads");
+	            	push(@flds, $sampleReads); push(@headers,"SampledAlignedReads");
+	            	push(@flds, $dups); push(@headers,"AlignedDuplicateReads");
+	            	push(@flds, ($sampleReads>0) ? ($dups/$sampleReads) : 0); push(@headers,"AlignedDuplicateFraction");
+	            }	            
 	        }
 	
 	        if ($DODEPTHWINDOWS)
@@ -101,9 +116,9 @@ foreach my $dir (@ARGV)
 	#           push(@flds,@$windsRev); push(@headers,1..$numWinds);
 	            push(@flds,@$windsTotal); push(@headers,@$chroms);
 	        }
-	
-	        if ($DOCONVERSION)
-	        {
+
+		if ($DOCONVERSION)
+	        { 
 	            if(glob($dir."/*${laneNum}.pileup_cg_dinucleotide.csv"))
 	            {
 	            	my ($convCpG) = conversionFrac($dir."/*${laneNum}.pileup_cg_dinucleotide.csv");
@@ -114,10 +129,9 @@ foreach my $dir (@ARGV)
 	            	my ($convCpH) = conversionFrac($dir."/*${laneNum}.pileup_ch_dinucleotide.csv");
 	            	push(@flds, $convCpH); push(@headers,"ConversionCpH");
 	            }
-	        }
+	        }	
 	
-
-             if($DOCONTAMALIGNTEST)
+            if($DOCONTAMALIGNTEST)
              {
                         if(glob("$dir/aligntest_s_$laneNum*"))
                         {
@@ -216,6 +230,7 @@ sub alignedCounts
     foreach my $f (@files)
     {
         my $samtoolsOutput = `$samtools view -q 30 $f | wc -l` ; chomp $samtoolsOutput;
+	print STDERR "counting $f ...\n";
         $alignedReads += $samtoolsOutput;
 #               die "Can't read file $f\n" unless open(F,$f);
 #               while (my $line=<F>)

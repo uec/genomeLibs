@@ -12,11 +12,16 @@ for my $file (@ARGV)
         $cmd .= "INPUT='$file' ";
 }
 runcmd("$JAVA -Xmx14g -jar $PICARD/MergeSamFiles.jar $cmd");
-
+my $bai = $output;
+$bai =~ s/bam$/bai/;
+runcmd("mv $bai $output.bai");
 
 $outputdups = $output;
 $outputdups =~ s/bam$/mdups\.bam/;
-runcmd("$JAVA -Xms14g -Xmx14g -jar $PICARD/MarkDuplicates.jar VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups");
+runcmd("$JAVA -Xms14g -Xmx14g -jar $PICARD/MarkDuplicates.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups");
+my $dupbai = $outputdups;
+$dupbai =~ s/bam$/bai/;
+runcmd("mv $dupbai $outputdups\.bai");
 
 
 sub runcmd
