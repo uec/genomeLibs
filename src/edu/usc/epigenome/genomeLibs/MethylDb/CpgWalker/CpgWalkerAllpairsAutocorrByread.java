@@ -166,8 +166,6 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	{
 		// Get the distance
 		
-		// Now that it's asymmetric, we can the pair in either orientation.
-		int dist = this.getPairDist(a, b);
 		
 //		Map<Integer,CpgRead> aCgReads = a.getReads();
 //		Map<Integer,CpgRead> bCgReads = b.getReads();
@@ -175,7 +173,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		Collection<CpgRead> aCgReads = a.getReads().values();
 		Collection<CpgRead> bCgReads = b.getReads().values();
 
-		//System.err.println("Comparing CpG (A): " + a.toString() + "\tdist=" + dist);
+		//System.err.println("Comparing CpG (A): " + a.toString());
 
 		for (CpgRead aCgRead : aCgReads)
 		{
@@ -216,7 +214,11 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 //							{
 //								nMU[dist]++;
 //							}
-							
+
+							// Now that it's asymmetric, we can the pair in either orientation.
+							int dist = this.getPairDist(a, b);
+
+//							System.err.printf("\tRecording %d,%d dist=%d\tameth=%s\tbmeth=%s\n", a.chromPos,b.chromPos,dist,aMeth,bMeth);
 							
 					
 							if (aMeth) { nM[dist]++; } else { nU[dist]++; }
