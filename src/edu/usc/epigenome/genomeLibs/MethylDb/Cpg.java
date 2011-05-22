@@ -271,11 +271,20 @@ public class Cpg implements Comparable, Cloneable {
 		}
 	}
 	
-	public String context()
+	public String context(int numPrev, int numPost)
 	{
-		return this.getPrevBaseRef() + "C" + this.getNextBaseRef();
+		String out = "";
+		if (numPrev > 0) out += this.getPrevBaseRef();
+		out += "C";
+		if (numPost > 0) out += this.getNextBaseRef();
+		return out;
 	}
 	
+	public String context()
+	{
+		return this.context(1,1);
+	}
+
 	public boolean isCph(boolean onlyUseRef)
 	{
 		return isCph(onlyUseRef, 0.5);

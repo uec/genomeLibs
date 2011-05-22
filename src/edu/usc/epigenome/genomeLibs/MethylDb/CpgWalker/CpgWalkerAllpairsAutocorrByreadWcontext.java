@@ -7,6 +7,8 @@ public class CpgWalkerAllpairsAutocorrByreadWcontext extends
 
 	protected String fromContext = null;
 	protected String toContext = null;
+	private int numPre = 0;
+	private int numPost = 0;
 	
 	public CpgWalkerAllpairsAutocorrByreadWcontext(
 			CpgWalkerParams inWalkParams, boolean inSamestrandOnly,
@@ -17,14 +19,25 @@ public class CpgWalkerAllpairsAutocorrByreadWcontext extends
 		
 		fromContext = inFromContext;
 		toContext = inToContext;
+		
+		if (fromContext.length() == 2)
+		{
+			numPre = 0;
+			numPost = 1;
+		}
+		else if (fromContext.length() == 3)
+		{
+			numPre = 1;
+			numPost = 1;
+		}
 	}
 
 	@Override
 	protected void recordPair(Cpg a, Cpg b) {
 		
 		
-		String ac = a.context();
-		String bc = b.context();
+		String ac = a.context(numPre, numPost);
+		String bc = b.context(numPre, numPost);
 		
 		if (ac.equals(this.fromContext) && bc.equals(this.toContext))
 		{
