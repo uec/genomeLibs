@@ -154,6 +154,7 @@ public class CpgWalker implements TabularOutput {
 	public void setCurChr(String curChr) {
 		this.curChr = curChr;
 		resetWindow();
+		resetSummarizers();
 		this.alertNewChrom();
 	}
 
