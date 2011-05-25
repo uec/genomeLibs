@@ -17,6 +17,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import edu.usc.epigenome.genomeLibs.MiscUtils;
 import edu.usc.epigenome.genomeLibs.PicardUtils;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
@@ -25,7 +26,7 @@ import edu.usc.epigenome.genomeLibs.MethylDb.MethylDbUtils;
 public class SamToMethyldbOffline {
 
 	final private static String prefix = "methylCGsRich_";
-	final private static String USAGE = "SamToMethyldbOffling [opts] sampleName file1.bam file2.bam ...";
+	final private static String USAGE = "SamToMethyldbOffline [opts] sampleName file1.bam file2.bam ...";
 
 	final private static int PURGE_INTERVAL = 20000; // We purge our stored Cpgs once we get this many bases past them.
 	
@@ -42,10 +43,6 @@ public class SamToMethyldbOffline {
 	protected List<String> chrs = new ArrayList<String>(25);
 	@Option(name="-minConv",usage="minimum number of converted cytosines required")
 	protected int minConv = 1;
-//	@Option(name="-numCycles",usage="Number of cycles to track")
-//	protected int numCycles = 100;
-//	@Option(name="-outputReads",usage=" Outputs one line per read (default false)")
-//	protected boolean outputReads = false;
 	@Option(name="-useCpgsToFilter",usage=" Use CpGs and CpHs to filter if true, otherwise just CpHs (default false)")
 	protected boolean useCpgsToFilter = false;
 	@Option(name="-outputCphs",usage=" Output CpH cytosines (can't use more than 1 input file)")
@@ -54,11 +51,25 @@ public class SamToMethyldbOffline {
 	protected int minMapQ = 0;
 	@Option(name="-minCphCoverage",usage="the minimum number of total reads to include a Cph (default 10)")
 	protected int minCphCoverage = 10;
+	@Option(name="-removeDups",usage="Removes reads starting and ending on the same position (false)")
+	protected boolean removeDups = false;
+	@Option(name="-allowBadMates",usage="Allows incorrectly mated paired ends (false)")
+	protected boolean allowBadMates = false;
 	@Option(name="-minCphFrac",usage="minimum methylation fraction to include a Cph")
 	protected double minCphFrac = 0.2;
+	@Option(name="-maxCoverageOutput",usage="maximum coverage for output array (default 100)")
+	protected int maxCoverageOutput = 100;
+//	@Option(name="-minOppStrandCoverage",usage="minimum coverage of opposite strand to confirm cytosine (default 5)")
+//	protected int minOppStrandCoverage = 5;
+//	@Option(name="-minNextBaseCoverage",usage="minimum coverage of next base to distinguish CpG/CpH (default 5)")
+//	protected int minNextBaseCoverage = 5;
 	@Option(name="-debug",usage=" Debugging statements (default false)")
 	protected boolean debug = false;
-
+	@Option(name="-maxOppStrandAfrac",usage="As on the opposite strand are evidence for mutation or SNP. " +
+	"This sets a maximum number of observed As on the opposite strand (default 0.1)")
+	protected double maxOppStrandAfrac = 0.101;
+	@Option(name="-maxNextNonGfrac",usage="If the base following the C has more than this ratio of non-G bases, we don't count it. (default 0.1)")
+	protected double maxNextNonGfrac = 0.101;
 	
 	// receives other command line parameters than options
 	@Argument
@@ -101,15 +112,18 @@ public class SamToMethyldbOffline {
 		String sampleName = stringArgs.remove(0);
 
 		int recCounter = 0;
-		int usedCounter = 0;
-		int filteredOutCounter = 0;
+		int cpgsUsedCounter = 0;
+		int cpgsFilteredOutCounter = 0;
 
 		// Cph counters
 		int numCphConvertedWithFilt = 0;
 		int numCphTotalWithFilt = 0;
 		int numCphConvertedNoFilt = 0;
 		int numCphTotalNoFilt = 0;
-
+		
+		long totalUniqueMappedBasesRead = 0;
+		short[] refCoordsCovered = new short[300000000]; // This really assumes a single chromosome
+		
 		// Iterate through chroms
 		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
 		for (final String chr : chrs)
@@ -125,7 +139,11 @@ public class SamToMethyldbOffline {
 				final SAMFileReader inputSam = new SAMFileReader(inputSamOrBamFile);
 				inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
 				
-				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, 0, 0, false);
+				int querys = 7000000;
+				int querye = 29000000;
+				querys = 0;
+				querye = 0;
+				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, querys, querye, false);
 				
 				// We can only purge if we are the only input file and we are sorted.
 				boolean canPurge = ((inputSam.hasIndex()) && (stringArgs.size() == 1));
@@ -149,13 +167,59 @@ public class SamToMethyldbOffline {
 					}
 					
 					SAMRecord samRecord = chrIt.next();
-
+					//System.err.printf("New rec pos = %d\n",samRecord.getAlignmentStart());
+					
 					// Filter low qual
 					int mapQual = samRecord.getMappingQuality();
 					boolean unmapped = samRecord.getReadUnmappedFlag();
 					if (unmapped || (mapQual < minMapQ))
 					{
+						// System.err.printf("Read unmapped or minQ<%d\n",minMapQ);
 						continue record;
+					}
+					
+					// Filter on uniqueness
+					if (samRecord.getNotPrimaryAlignmentFlag())
+					{
+//						System.err.printf("Not primary alignment\n");
+						continue record;
+					}
+					
+					// Inverted dups, count only one end
+					if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+					{
+						if (samRecord.getSecondOfPairFlag()) continue record;
+						//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+					}
+
+					// If it's paired-end, filter on good mate unless otherwise specified
+					if (samRecord.getReadPairedFlag()  && !allowBadMates && !samRecord.getProperPairFlag())
+					{
+//						System.err.printf("Not proper pair\n");
+						continue record;
+					}
+
+					
+					
+					int alignmentS = samRecord.getAlignmentStart();
+					if (this.removeDups)
+					{
+						if (samRecord.getDuplicateReadFlag())
+						{
+							//System.err.printf("Remove dups1\n");
+							continue record;
+						}
+						
+						// Compatibility with MAQ
+						if (!samRecord.getReadPairedFlag())
+						{
+							if (lastBaseSeen == alignmentS) 
+							{
+								//System.err.printf("Remove dups2\n");
+								continue record;
+							}
+						}
+						
 					}
 
 
@@ -164,7 +228,7 @@ public class SamToMethyldbOffline {
 					recCounter++;
 					if ((recCounter % 1E5)==0)
 					{
-						System.err.printf("On new record #%d, purged tree size:%d\n",recCounter,cytosines.size());
+						System.err.printf("On new record #%d, lastBase=%d, purged tree size:%d\n",recCounter,lastBaseSeen, cytosines.size());
 						if (canPurge) System.gc();
 					}
 
@@ -181,9 +245,22 @@ public class SamToMethyldbOffline {
 						//System.err.println(seq + "\n" + ref);
 
 						boolean negStrand = samRecord.getReadNegativeStrandFlag();
-						int alignmentS = samRecord.getAlignmentStart();
-						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; 
-
+						
+						
+						// If we're in paired-end mode, and we're on the second end, we need to basically
+						// reverse complement everything to get back to the cytosine strand.
+						// The big problem with this is that 5' bisulfite conversion filter won't work right.
+						boolean secondOfPair = samRecord.getReadPairedFlag() && getSecondOfPair(samRecord); // samRecord.getSecondOfPairFlag()
+						if (secondOfPair)
+						{
+							negStrand = !negStrand;
+							seq = MiscUtils.revCompNucStr(seq);
+							ref = MiscUtils.revCompNucStr(ref);
+						}
+						
+						
+						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+						
 						if ((this.outputCphs) && (alignmentS < lastBaseSeen))
 						{
 							System.err.printf("BAM must be ordered in order to handle -outputCphs: %d<%d\n",alignmentS, lastBaseSeen);
@@ -196,24 +273,28 @@ public class SamToMethyldbOffline {
 						int numConverted = 0;
 						int convStart = Integer.MAX_VALUE;
 						int seqLen = Math.min(seq.length(), ref.length());
-						for (int i = 0; i < seqLen; i++)
+						// If we're the second of the pair, we do this backwards so the conversion filter will work properly.
+						int iStart = (secondOfPair) ? (seqLen-1) : 0;
+						int iEnd = (secondOfPair) ? 0 : (seqLen - 1);
+						int iInc = (secondOfPair) ? -1 : 1;
+						
+//						for (int i = 0; i < seqLen; i++)
+						for (int i = iStart; i != iEnd; i += iInc)
 						{
+							totalUniqueMappedBasesRead++;
+							refCoordsCovered[onRefCoord]++;
+							
 							char refi = ref.charAt(i);
 							char seqi = seq.charAt(i);
 							char nextBaseRef = PicardUtils.nextBaseRef(i, ref);
 							char nextBaseSeq = PicardUtils.nextBaseSeq(i, seq);
 
-							//if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref)) // The last one is too tricky to deal with since we don't know context
+							// We only look at cytosines in the reference
 							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref,false) && PicardUtils.isCytosine(i, seq,true)) // The last one is too tricky to deal with since we don't know context
 							{
 								boolean iscpg = PicardUtils.isCpg(i,ref);
 								boolean conv = PicardUtils.isConverted(i,ref,seq);
 								
-//								if (iscpg && (nextBaseRef != 'G'))
-//								{
-//									System.err.printf("Cpg status and next base don't match:\nref=%s\nseq=%s\nref_%d=%c, seq_%d=%c\n",
-//											ref, seq, i, refi, i, seqi);
-//								}
 								
 
 								if (conv && (this.useCpgsToFilter || !iscpg)) numConverted++;
@@ -225,34 +306,38 @@ public class SamToMethyldbOffline {
 								}
 
 
+								boolean inNonconversionZone = (convStart==Integer.MAX_VALUE) || (secondOfPair&&(i>convStart)) || (!secondOfPair && (i<convStart));
 								if (iscpg || this.outputCphs)
 								{
-									if (i<convStart)
+									if (inNonconversionZone)
 									{
 										// In the non-conversion filter zone
-										filteredOutCounter++;
+										if (iscpg) cpgsFilteredOutCounter++;
 										//System.err.printf("Rec %d\tpos=%d\n",recCounter,i);
 									}
 									else
 									{
 										// Past the non-conversion filter, use it
-										usedCounter++;
+										if (iscpg) cpgsUsedCounter++;
 									}
 
+									// onRefCoord is incremented below
 									Cpg cpg = findOrCreateCpg(cytosines, onRefCoord, negStrand, nextBaseRef);
 									// See if we can fix the context for this CpG
 									if (cpg.getNextBaseRef() == '0') cpg.setNextBaseRef(nextBaseRef);
 									
-									this.incrementCpg(cpg, seqi, i<convStart, nextBaseSeq);
+									this.incrementCpg(cpg, seqi, inNonconversionZone, nextBaseSeq);
 								}
 								
 								// Count CpHs as a byproduct
 								if (!iscpg)
 								{
+									//if (secondOfPair && inNonconversionZone) System.err.printf("secondOfPair & inNonconversion: %s:%d\n",chr,onRefCoord);
+									
 									numCphTotalNoFilt++;
 									if (conv) numCphConvertedNoFilt++;
 									
-									if (i>=convStart)
+									if (!inNonconversionZone)
 									{
 										numCphTotalWithFilt++;
 										if (conv) numCphConvertedWithFilt++;
@@ -263,6 +348,8 @@ public class SamToMethyldbOffline {
 
 							} // IsCytosine
 
+//							// Since we are doing CpHs, we need opp strand info for all guanines
+//							if (PicardUtils.isGuanine(i, ref))
 							boolean oppositeCpg = PicardUtils.isOppositeCpg(i,ref);
 							if (oppositeCpg)
 							{
@@ -275,14 +362,17 @@ public class SamToMethyldbOffline {
 							}
 
 
-							// Increment genomic coord position
+							// Increment genomic coord position. Careful, we go backwards if we're
+							// on the second of a pair.
 							if (refi == '-')
 							{
 								// It's a deletion in reference, don't advance
 							}
 							else
 							{
-								int inc = (negStrand) ? -1 : 1;
+								boolean backwardsRef = negStrand;
+								if (secondOfPair) backwardsRef = !backwardsRef;
+								int inc = (backwardsRef) ? -1 : 1;
 								onRefCoord += inc;
 							}
 
@@ -311,14 +401,16 @@ public class SamToMethyldbOffline {
 			outWriter.close();
 
 		}
-		double frac = (double)filteredOutCounter/((double)usedCounter+(double)filteredOutCounter);
+		double frac = (double)cpgsFilteredOutCounter/((double)cpgsUsedCounter+(double)cpgsFilteredOutCounter);
 		System.err.printf("Lost %f%% due to non-converion filter\n%d CpGs filtered for non-conversion, %d CpGs used (MinConv=%d,UseCpgs=%s)\n",
-				frac*100.0, filteredOutCounter, usedCounter, this.minConv, String.valueOf(this.useCpgsToFilter));
+				frac*100.0, cpgsFilteredOutCounter, cpgsUsedCounter, this.minConv, String.valueOf(this.useCpgsToFilter));
 		System.err.printf("Found %d reads total\n", recCounter);
 		System.err.printf("Cph conversion rate: before filter=%f, after filter=%f\n",
 				100.0 * ((double)numCphConvertedNoFilt/(double)numCphTotalNoFilt),
 				100.0 * ((double)numCphConvertedWithFilt/(double)numCphTotalWithFilt));
 	}
+
+
 
 
 	protected static Cpg findOrCreateCpg(Map<Integer,Cpg> cpgs, int onRefCoord, boolean negStrand, char nextBaseRef)
@@ -419,5 +511,26 @@ public class SamToMethyldbOffline {
 	}
 	
 
-	
+	protected static boolean getSecondOfPair(SAMRecord read) {
+		return read.getSecondOfPairFlag();
+//		boolean secondOfPair = false;
+//		String readName = read.getReadName();
+//	    final String END1_SUFFIX = String.format("%c1", '/');
+//	    final String END2_SUFFIX = String.format("%c2", '/');
+//		if (readName.endsWith(END1_SUFFIX))
+//		{
+//			secondOfPair = false;
+//		}
+//		else if (readName.endsWith(END2_SUFFIX))
+//		{
+//			secondOfPair = true;   			
+//		}
+//		else
+//		{
+//			System.err.println("Got a read that doesn't end with /1 or /2: " + readName + ".  Can't tell which end it is.");
+//			System.exit(1);
+//		}	
+//		
+//		return secondOfPair;
+	}
 }

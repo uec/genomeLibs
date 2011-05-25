@@ -233,8 +233,8 @@ public class SamToConversionByCoverageMatrix {
 						}
 						
 						
-						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS; // This will be incremented as we go along in the read
-
+						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+						
 						if ((this.outputCphs) && (alignmentS < lastBaseSeen))
 						{
 							System.err.printf("BAM must be ordered in order to handle -outputCphs: %d<%d\n",alignmentS, lastBaseSeen);
@@ -472,87 +472,7 @@ public class SamToConversionByCoverageMatrix {
 	}
 
 
-	private void incrementCytosineCounters(SortedMap<Integer, Cpg> cytosines,
-			int[][] cpgCounts, int[][] cphCounts, CytosineStats cytStats) 
-	{
-		incrementCytosineCounter(cytosines, cpgCounts, false);
-		if (this.outputCphs) incrementCytosineCounter(cytosines, cphCounts, true);
-		
-		Iterator<Cpg> cytosineIt = cytosines.values().iterator();
-		CPG: while (cytosineIt.hasNext())
-		{
-			Cpg cytosine = cytosineIt.next();
-			cytStats.streamCytosine(cytosine);
-		}
-	}
 
-	/**
-	 * @param cytosines
-	 * @param cpgCounts
-	 * @param countCphs If true, we count only CpHs, if false we count only CpGs
-	 */
-	private void incrementCytosineCounter(SortedMap<Integer, Cpg> cytosines,
-			int[][] cpgCounts, boolean countCphs) {
-
-//		System.err.printf("Incrementing counter (cph=%s), total pre = %d\n",countCphs,MatUtils.sumAll(cpgCounts));
-		Iterator<Cpg> cytosineIt = cytosines.values().iterator();
-		int cytosineCount = 0;
-		int goodCount = 0;
-		int cpgCount = 0;
-		int cphCount = 0;
-		CPG: while (cytosineIt.hasNext())
-		{
-			Cpg cytosine = cytosineIt.next();
-			cytosineCount++;
-
-			//System.err.printf("\tCytosine %s\n",cytosine.toStringExpanded());
-			
-			
-			// Only count it if it looks like a true cytosine.  Use a minimum of 5 reads for both cytosine
-			// and CpG determination
-			if ((cytosine.totalReadsCorT(true) >=1) && (cytosine.fracReadsCorT()>(1-this.maxOppStrandAfrac)) && 
-					(cytosine.totalReadsOpposite>=this.minOppStrandCoverage) && (cytosine.fracOppositeA() <= this.maxOppStrandAfrac))
-			{
-				//System.err.printf("\t\tCytosine opp cvg>=5 %s\n",cytosine.toStringExpanded());
-
-				if (cytosine.nextBaseTotalReads >= this.minNextBaseCoverage)
-				{
-					//System.err.printf("\t\tCytosine next base cvg>=5 %s\n",cytosine.toStringExpanded());
-
-					boolean trueCpg = (cytosine.fracNextBaseG() >= (1.0-this.maxNextNonGfrac));
-					boolean trueCph = (cytosine.fracNextBaseG() < this.maxNextNonGfrac);
-					
-					if (trueCpg) cpgCount++;
-					if (trueCph) cphCount++;
-
-					// If it's the right kind, count it
-					if ((trueCpg && !countCphs) || (trueCph && countCphs))
-					{
-						if (cytosine.totalReadsCorT(true) < this.maxCoverageOutput)
-						{
-							try
-							{
-								cpgCounts[cytosine.totalReadsCorT(true)][cytosine.totalReadsC(true)]++;
-								goodCount++;
-							}
-							catch (Exception e)
-							{
-								// For some reason sometimes I get here.
-								System.err.println("SamToConversionByCoverage non-fatal error:");
-								System.err.printf("Trying to increment cpgCounts[%d][%d] when maxCoverageOutput is %d\n", 
-										cytosine.totalReadsCorT(true),cytosine.totalReadsC(true),this.maxCoverageOutput);
-								System.err.println(e.toString());
-							}
-						}
-					}
-				}
-			}
-		}
-//		System.err.printf("\tIncremented counter (cph=%s), good cytosines=%d/%d, cpg=%d, cph=%d, total post = %d\n\n",
-//				countCphs,goodCount,cytosineCount,cpgCount, cphCount, MatUtils.sumAll(cpgCounts));
-
-		
-	}
 
 	protected static Cpg findOrCreateCpg(Map<Integer,Cpg> cpgs, int onRefCoord, boolean negStrand, char nextBaseRef)
 	{
@@ -673,5 +593,87 @@ public class SamToConversionByCoverageMatrix {
 //		}	
 //		
 //		return secondOfPair;
+	}
+	
+	private void incrementCytosineCounters(SortedMap<Integer, Cpg> cytosines,
+			int[][] cpgCounts, int[][] cphCounts, CytosineStats cytStats) 
+	{
+		incrementCytosineCounter(cytosines, cpgCounts, false);
+		if (this.outputCphs) incrementCytosineCounter(cytosines, cphCounts, true);
+		
+		Iterator<Cpg> cytosineIt = cytosines.values().iterator();
+		CPG: while (cytosineIt.hasNext())
+		{
+			Cpg cytosine = cytosineIt.next();
+			cytStats.streamCytosine(cytosine);
+		}
+	}
+
+	/**
+	 * @param cytosines
+	 * @param cpgCounts
+	 * @param countCphs If true, we count only CpHs, if false we count only CpGs
+	 */
+	private void incrementCytosineCounter(SortedMap<Integer, Cpg> cytosines,
+			int[][] cpgCounts, boolean countCphs) {
+
+//		System.err.printf("Incrementing counter (cph=%s), total pre = %d\n",countCphs,MatUtils.sumAll(cpgCounts));
+		Iterator<Cpg> cytosineIt = cytosines.values().iterator();
+		int cytosineCount = 0;
+		int goodCount = 0;
+		int cpgCount = 0;
+		int cphCount = 0;
+		CPG: while (cytosineIt.hasNext())
+		{
+			Cpg cytosine = cytosineIt.next();
+			cytosineCount++;
+
+			//System.err.printf("\tCytosine %s\n",cytosine.toStringExpanded());
+			
+			
+			// Only count it if it looks like a true cytosine.  Use a minimum of 5 reads for both cytosine
+			// and CpG determination
+			if ((cytosine.totalReadsCorT(true) >=1) && (cytosine.fracReadsCorT()>(1-this.maxOppStrandAfrac)) && 
+					(cytosine.totalReadsOpposite>=this.minOppStrandCoverage) && (cytosine.fracOppositeA() <= this.maxOppStrandAfrac))
+			{
+				//System.err.printf("\t\tCytosine opp cvg>=5 %s\n",cytosine.toStringExpanded());
+
+				if (cytosine.nextBaseTotalReads >= this.minNextBaseCoverage)
+				{
+					//System.err.printf("\t\tCytosine next base cvg>=5 %s\n",cytosine.toStringExpanded());
+
+					boolean trueCpg = (cytosine.fracNextBaseG() >= (1.0-this.maxNextNonGfrac));
+					boolean trueCph = (cytosine.fracNextBaseG() < this.maxNextNonGfrac);
+					
+					if (trueCpg) cpgCount++;
+					if (trueCph) cphCount++;
+
+					// If it's the right kind, count it
+					if ((trueCpg && !countCphs) || (trueCph && countCphs))
+					{
+						if (cytosine.totalReadsCorT(true) < this.maxCoverageOutput)
+						{
+							try
+							{
+								cpgCounts[cytosine.totalReadsCorT(true)][cytosine.totalReadsC(true)]++;
+								goodCount++;
+							}
+							catch (Exception e)
+							{
+								// For some reason sometimes I get here.
+								System.err.println("SamToConversionByCoverage non-fatal error:");
+								System.err.printf("Trying to increment cpgCounts[%d][%d] when maxCoverageOutput is %d\n", 
+										cytosine.totalReadsCorT(true),cytosine.totalReadsC(true),this.maxCoverageOutput);
+								System.err.println(e.toString());
+							}
+						}
+					}
+				}
+			}
+		}
+//		System.err.printf("\tIncremented counter (cph=%s), good cytosines=%d/%d, cpg=%d, cph=%d, total post = %d\n\n",
+//				countCphs,goodCount,cytosineCount,cpgCount, cphCount, MatUtils.sumAll(cpgCounts));
+
+		
 	}
 }
