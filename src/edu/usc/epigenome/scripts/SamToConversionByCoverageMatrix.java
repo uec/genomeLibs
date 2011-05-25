@@ -232,8 +232,9 @@ public class SamToConversionByCoverageMatrix {
 							ref = MiscUtils.revCompNucStr(ref);
 						}
 						
-						
-						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+						boolean startingNeg = negStrand;
+						if (secondOfPair) startingNeg = !startingNeg; 
+						int	onRefCoord = (startingNeg) ? samRecord.getUnclippedEnd() : alignmentS;
 						
 						if ((this.outputCphs) && (alignmentS < lastBaseSeen))
 						{
@@ -266,7 +267,7 @@ public class SamToConversionByCoverageMatrix {
 							// We only look at cytosines in the reference
 							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref,false) && PicardUtils.isCytosine(i, seq,true)) // The last one is too tricky to deal with since we don't know context
 							{
-								boolean iscpg = PicardUtils.isCpg(i,ref,seq);
+								boolean iscpg = PicardUtils.isCpg(i,ref, seq);
 								boolean conv = PicardUtils.isConverted(i,ref,seq);
 								
 								

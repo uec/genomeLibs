@@ -139,8 +139,8 @@ public class SamToMethyldbOffline {
 				final SAMFileReader inputSam = new SAMFileReader(inputSamOrBamFile);
 				inputSam.setValidationStringency(SAMFileReader.ValidationStringency.SILENT);
 				
-				int querys = 7000000;
-				int querye = 29000000;
+				int querys = 10243;
+				int querye = 10244;
 				querys = 0;
 				querye = 0;
 				CloseableIterator<SAMRecord> chrIt = inputSam.query(chr, querys, querye, false);
@@ -258,8 +258,12 @@ public class SamToMethyldbOffline {
 							ref = MiscUtils.revCompNucStr(ref);
 						}
 						
-						
-						int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+						boolean startingNeg = negStrand;
+						if (secondOfPair) startingNeg = !startingNeg; 
+						int	onRefCoord = (startingNeg) ? samRecord.getUnclippedEnd() : alignmentS;
+
+						//System.err.printf("Seq (%d-%d,%s,%s) startRefCoord=%d: %s\n %s\n",samRecord.getAlignmentStart(), samRecord.getAlignmentEnd(), (negStrand?"-":"+"), (secondOfPair?"-":"+"), onRefCoord, seq,ref);
+
 						
 						if ((this.outputCphs) && (alignmentS < lastBaseSeen))
 						{
@@ -292,9 +296,10 @@ public class SamToMethyldbOffline {
 							// We only look at cytosines in the reference
 							if ((i < (seqLen-1)) && PicardUtils.isCytosine(i,ref,false) && PicardUtils.isCytosine(i, seq,true)) // The last one is too tricky to deal with since we don't know context
 							{
-								boolean iscpg = PicardUtils.isCpg(i,ref);
+								boolean iscpg = PicardUtils.isCpg(i,ref); // Rely only on reference cytosines
 								boolean conv = PicardUtils.isConverted(i,ref,seq);
 								
+								//if (iscpg) System.err.printf("CpG at %d (%s%s,%s%s)\n", onRefCoord, refi, nextBaseRef, seqi, nextBaseSeq);
 								
 
 								if (conv && (this.useCpgsToFilter || !iscpg)) numConverted++;
@@ -371,7 +376,7 @@ public class SamToMethyldbOffline {
 							else
 							{
 								boolean backwardsRef = negStrand;
-								if (secondOfPair) backwardsRef = !backwardsRef;
+								if (secondOfPair) backwardsRef = !backwardsRef; // We do not do this! We walk in the same direction as the original bisulfite strand! // 
 								int inc = (backwardsRef) ? -1 : 1;
 								onRefCoord += inc;
 							}
@@ -510,7 +515,8 @@ public class SamToMethyldbOffline {
 		cpg.totalReadsOpposite += totalReadsOpposite;
 	}
 	
-
+	
+	
 	protected static boolean getSecondOfPair(SAMRecord read) {
 		return read.getSecondOfPairFlag();
 //		boolean secondOfPair = false;
