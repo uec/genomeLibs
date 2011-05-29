@@ -26,7 +26,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "auto_estimate_hcg_methylation", shortName = "aehcg", doc = "the first run would be to run auto_estimate_hcg methylation status", required = false)
     public boolean autoEstimateHcg = true;
 	
-	@Argument(fullName = "auto_estimate_other_cytosine_methylation", shortName = "aeoc", doc = "the first run would be to run auto_estimate_other_cytosine_methylation status, you need to provide cytosine type by such format: -aoec GCAA:1;GGGCA:3", required = false)
+	@Argument(fullName = "auto_estimate_other_cytosine_methylation", shortName = "aeoc", doc = "the first run would be to run auto_estimate_other_cytosine_methylation status, you need to provide cytosine type by such format(GCAA is ctosine type, 2 means cytosine is in 2nd base): -aoec GCAA:2;GGGCA:4", required = false)
     //public String autoEstimateOtherCytosine = "GCAA-2;GGGCA-4";
 	public String autoEstimateOtherCytosine = "";
 	
@@ -48,12 +48,13 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "force_hcg_methylation", shortName = "fhcg", doc = "force the hcg methylation status", required = false)
     public double forceHcg = 0.50;
 	
-	@Argument(fullName = "force_other_cytosine_methylation", shortName = "foc", doc = "force the other_cytosine_methylation status, you need to provide cytosine type by such format: -aoec GCAA:1:0.75;GGGCA:3:0.33", required = false)
+	@Argument(fullName = "force_other_cytosine_methylation", shortName = "foc", doc = "force the other_cytosine_methylation status, you need to provide cytosine type by such format(GCAA is ctosine type, 2 means cytosine is in 2nd base, 0.75 means methylation level): -aoec GCAA:2:0.75;GGGCA:3:0.33", required = false)
     //public String forceOtherCytosine = "GCAA-2:0.75;GGGCA-4:0.33";
 	public String forceOtherCytosine = "";
-
-	@Argument(fullName = "likelihood_threshold_for_cytosine_type", shortName = "cTypeThreshold", doc = "likelihood threshold to be this cytosine type", required = false)
-    public double cTypeThreshold = 0.90;
+	
+//need to improve..
+	@Argument(fullName = "log_likelihood_ratio_for_cytosine_type", shortName = "cTypeThreshold", doc = "phred scale likelihood ratio of threshold to be this cytosine type but not other cytosine, default is 20, means 100 times more than the other type of cytosine", required = false)
+    public double cTypeThreshold = 10;
 	
 	//@Argument(fullName = "Cytosine_Type", shortName = "ct", doc = "Cytosine type, CG, CHH, CHG or GCH....for test only (format should be -ct CG-0:0.75;CHH-0:0.01... add the cytosine type, cytosine position in your string and their genome wide methylation value you estimate )", required = false)
     //public String cytosineType = "CGA-0:0.7314;GCA-1:0.01";
