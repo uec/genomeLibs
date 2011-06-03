@@ -56,6 +56,8 @@ public class SamToConversionByCoverageMatrix {
 	protected boolean outputCphs = false;
 	@Option(name="-minMapQ",usage="minimum mapping quality (default 0)")
 	protected int minMapQ = 0;
+	@Option(name="-allowBadMates",usage="Allows incorrectly mated paired ends (false)")
+	protected boolean allowBadMates = false;
 	@Option(name="-maxCoverageOutput",usage="maximum coverage for output array (default 100)")
 	protected int maxCoverageOutput = 100;
 	@Option(name="-minOppStrandCoverage",usage="minimum coverage of opposite strand to confirm cytosine (default 5)")
@@ -187,8 +189,15 @@ public class SamToConversionByCoverageMatrix {
 						continue record;
 					}
 					
+					// Inverted dups, count only one end
+					if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+					{
+						if (samRecord.getSecondOfPairFlag()) continue record;
+						//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+					}
+					
 					// If it's paired-end, filter on good mate unless otherwise specified
-					if (samRecord.getReadPairedFlag()  && !samRecord.getProperPairFlag())
+					if (samRecord.getReadPairedFlag()  && !allowBadMates && !samRecord.getProperPairFlag())
 					{
 						continue record;
 					}
