@@ -203,7 +203,7 @@ public class MethylDbToNucleosomeComparisonContinuous {
 		double[] methTotals = new double[METHCOUNTER_LEN];
 		
 		int chromNum=1;
-		for (String chr :  MethylDbUtils.CHROMS_MINUS_TWELVE) //MethylDbUtils.SMALL_CHROMS) //  Arrays.asList("chr22")) //,"chr18","chr19","chr20")) //
+		for (String chr :  Arrays.asList("chr22")) //MethylDbUtils.CHROMS_MINUS_TWELVE) //MethylDbUtils.SMALL_CHROMS) //  Arrays.asList("chr22")) //,"chr18","chr19","chr20")) //
 		{
 			System.err.printf("On chrom %d (%s)\n",chromNum++,chr);
 			String s = String.format("variableStep\tchrom=%s\n", chr);

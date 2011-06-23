@@ -40,6 +40,8 @@ public class GtfToFeatDbOffline {
     protected String tablePrefix = FeatDbQuerier.DEFAULT_TABLE_PREFIX;
 	@Option(name="-cpgMethTableFormat",usage="If used, this creates tables of the MethylCGRich format , one for each feature type and chrom (default false)")
     protected boolean cpgMethTableFormat = false;
+	@Option(name="-methTableUseMidpoint",usage="Makes a single entry at the midpoint of each element (default is to put one for start point and one for end)")
+    protected boolean methTableUseMidpoint = false;
 
  	// receives other command line parameters than options
 	@Argument
@@ -70,6 +72,9 @@ public class GtfToFeatDbOffline {
 
 			if(arguments.size() < 1 ) {
 				System.err.println(C_USAGE);
+				// print the list of available options
+				parser.printUsage(System.err);
+				System.err.println();
 				System.exit(1);
 			}
 		}
@@ -150,7 +155,12 @@ public class GtfToFeatDbOffline {
 		boolean featRev = (feat.getStrand()==StrandedFeature.NEGATIVE);
 
 		
-		if (featLen <= 10)
+		if (this.methTableUseMidpoint)
+		{
+			int midpoint = Math.round(((float)featLeft+(float)featRight)/2.0f);
+			outputFeatMethTableEnd(chr, featType, midpoint, featLen, "Midpoint", feat.getStrand());
+		}
+		else if (featLen <= 10)
 		{
 			// A single point basically
 			outputFeatMethTableEnd(chr, featType, (featRev) ? featRight : featLeft, featLen, "Starts", feat.getStrand());

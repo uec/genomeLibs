@@ -219,26 +219,29 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 							int dist = this.getPairDist(a, b);
 
 //							System.err.printf("\tRecording %d,%d dist=%d\tameth=%s\tbmeth=%s\n", a.chromPos,b.chromPos,dist,aMeth,bMeth);
-							
-					
-							if (aMeth) { nM[dist]++; } else { nU[dist]++; }
 
-							if (aMeth && bMeth)
+							if (dist<nM.length)
 							{
-								nMM[dist]++;
+
+								if (aMeth) { nM[dist]++; } else { nU[dist]++; }
+
+								if (aMeth && bMeth)
+								{
+									nMM[dist]++;
+								}
+								else if (aMeth && !bMeth)
+								{
+									nMU[dist]++;
+								}
+								else if (!aMeth && bMeth)
+								{
+									nUM[dist]++;
+								}
+								else
+								{
+									nUU[dist]++;
+								}							
 							}
-							else if (aMeth && !bMeth)
-							{
-								nMU[dist]++;
-							}
-							else if (!aMeth && bMeth)
-							{
-								nUM[dist]++;
-							}
-							else
-							{
-								nUU[dist]++;
-							}							
 
 						}
 					}

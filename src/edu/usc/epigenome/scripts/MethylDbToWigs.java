@@ -80,6 +80,7 @@ public class MethylDbToWigs {
 			parser.parseArgument(args);
 
 			chrs = MethylDbUtils.CHROMS;
+			
 			if(this.outPrefix==null)
 			{
 				System.err.println(C_USAGE);

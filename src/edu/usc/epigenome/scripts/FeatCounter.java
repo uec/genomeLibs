@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -52,6 +53,8 @@ public class FeatCounter {
 	protected int flank = 0;
 	@Option(name="-includeSummaryCounts",multiValued=false,usage="If set, the last line are total counts for each column")
 	protected boolean includeSummaryCounts = false;
+	@Option(name="-includeNames",multiValued=false,usage="If set, the first column is the element name")
+	protected boolean includeNames = false;
 	@Option(name="-tssMaxFlank",multiValued=false,usage="This is the maximum flank we will use to get TSS expression")
 	protected int tssMaxFlank = 500000;
 	@Option(name="-expressionTerm",usage="One or more expression from the infiniumExpr_chr table")
@@ -113,7 +116,7 @@ public class FeatCounter {
 			return;
 		}		
 		
-		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS;
+		if (chrs.size()==0) chrs = MethylDbUtils.CHROMS; // Arrays.asList("chr22"); 
 		
 		int tssFlank = Math.max(this.tssMaxFlank, this.flank);
 		
@@ -129,7 +132,10 @@ public class FeatCounter {
 		ListUtils.setDelim(",");
 		String expressionSec = (this.expressionTerms.size()==0) ? "" : ("," + ListUtils.excelLine(this.expressionTerms));
 		String tssSec = (this.includeTssAndBorrowExpression) ? ",tss" : "";
-		System.out.printf("%s,%s,%s%s%s,%s,%s\n","chrom","start","end",expressionSec, tssSec, ListUtils.excelLine(features),"No overlap");
+		String nameSec = (this.includeNames) ? "name," : "";
+		
+
+		System.out.printf("%s%s,%s,%s%s%s,%s,%s\n",nameSec,"chrom","start","end",expressionSec, tssSec, ListUtils.excelLine(features),"No overlap");
 		for (String chrStr : chrs)
 		{
 			// Some of my files have these forms.
@@ -236,7 +242,8 @@ public class FeatCounter {
 						// Get the expression.  If we are using TSS, we have to make sure we have one within distance
 						if (((n==0) && !this.includeTssAndBorrowExpression) || ((n==-1) && this.includeTssAndBorrowExpression))
 						{
-							System.out.printf("%d,%d,%d",chrNum,target.getStart(),target.getEnd());
+							nameSec = (this.includeNames) ? String.format("%s,", GFFUtils.getGffRecordName(target)) : "";
+							System.out.printf("%s%d,%d,%d",nameSec,chrNum,target.getStart(),target.getEnd());
 
 							GFFRecord exprTarget = (this.includeTssAndBorrowExpression) ? closestFeat : target;
 							
@@ -251,13 +258,21 @@ public class FeatCounter {
 						
 						// Now print the overlap. 
 						//System.out.printf(",%d",(overlap)?1:0);  // The old way, boolean
+						boolean binary = (this.flank == 0);
 						if (closestFeat == null)
 						{
-							System.out.printf(",NaN");
+							System.out.printf((binary) ? ",0" : ",NaN");
 						}
 						else
 						{
-							System.out.printf(",%d",closestFeatDist);
+							if (binary)
+							{
+								System.out.printf(",%d", (closestFeatDist==0) ? 1 : 0);
+							}
+							else
+							{
+								System.out.printf(",%d",closestFeatDist);
+							}
 						}
 						
 						
@@ -277,4 +292,4 @@ public class FeatCounter {
 	}
 	
 	
-}
+	}

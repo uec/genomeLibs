@@ -369,8 +369,8 @@ public class PicardUtils {
 		
 		char refCnext = refStr.charAt(pos+1);
 		char seqCnext = seqStr.charAt(pos+1);
-				
-		return ( isCytosine(pos,refStr,false) && ((refCnext == 'G') || (seqCnext == 'G')) );
+		boolean out = isCytosine(pos,refStr,false) && ((refCnext == 'G') || (seqCnext == 'G'));
+		return out;
 	}	
 
 	// The G opposit the CpG

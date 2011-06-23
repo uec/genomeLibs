@@ -43,6 +43,8 @@ public class FeatDbInvertedFeats {
 //	protected boolean skipUnoriented = false;
 	@Option(name="-chrom",multiValued=true,usage="One or more chroms, eg. -chrom chr1 -chrom chr5")
 	protected List<String> chrs = new ArrayList<String>(25);
+	@Option(name="-flank",usage="If set, include n bp of flank on either side of the each element (default 0)")
+	protected int flank = 0;
 
 	// receives other command line parameters than options
 	@Argument
@@ -111,7 +113,14 @@ public class FeatDbInvertedFeats {
 			GFFRecord lastRec = null;
 			while (feats.hasNext())
 			{			
-				GFFRecord ref = feats.next();
+				SimpleGFFRecord ref = (SimpleGFFRecord)feats.next();
+				
+				if (this.flank>0)
+				{
+					ref.setStart(ref.getStart()-this.flank);
+					ref.setEnd(ref.getEnd()+this.flank);
+				}
+				
 				System.err.println("Got a new feat: " + GFFUtils.gffBetterString(ref));
 				if ((lastRec != null) && (lastRec.getStart() > ref.getStart())) throw new Exception("records are not ordered");
 				
