@@ -53,22 +53,23 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	protected GenomicRange[] featCoords;
 	protected Map<GenomicRange,Integer> featinds = new TreeMap<GenomicRange,Integer>();
 	protected int nFeatsSeen = 0;
+	protected boolean zeroInit = false;
 	
 	/**
 	 * @param flankSize
-	 * @param zeroInit
+	 * @param inZeroInit
 	 * @param nFeats: If it's more than the actual number, it's ok
 	 * @param downsampleCols: If it's zero, we just use (2*flankSize)+1
 	 */
-	public FeatAlignerEachfeat(int inFlankSize, boolean zeroInit, int nFeats, int inDownscaleCols) {
-		super(inFlankSize, zeroInit);
+	public FeatAlignerEachfeat(int inFlankSize, boolean inZeroInit, int nFeats, int inDownscaleCols) {
+		super(inFlankSize, inZeroInit);
 
 		this.flankSize = inFlankSize;
 		this.downscaleCols = (inDownscaleCols>0) ? inDownscaleCols : ((flankSize*2)+1); 
 		this.downscaleCols = Math.min(this.downscaleCols, ((flankSize*2)+1));
 		int nEls = 2*nFeats*this.downscaleCols;
 		
-		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("About to allocate memory ("+nEls+" doubles) for alignerEachfeat() (" + nFeats + ") features\n");
+		//Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe("About to allocate memory ("+nEls+" doubles) for alignerEachfeat() (" + nFeats + ") features\n");
 		
 		if ((nEls*4) > 1E9)
 		{
@@ -86,7 +87,8 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		this.sortVals = new Double[nFeats];
 		
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine("About to initMat()\n");
-		MatUtils.initMat(arr, (zeroInit)  ? 0.0 : Double.NaN);
+		MatUtils.initMat(arr, (inZeroInit)  ? 0.0 : Double.NaN);
+		zeroInit = inZeroInit;
 	}
 
 	@Override
@@ -330,6 +332,10 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		if (ind == null)
 		{
 			ind = new Integer(nFeatsSeen++);
+			
+			// Check if it's bigger than the size of the array. Lazy expansion
+			this.checkAndGrowArrays(ind);
+			
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).fine(
 					String.format("Adding new feature at pos=%d to ind=%d\n",gr.getStart(),ind));
 			featinds.put(gr, ind);
@@ -339,6 +345,37 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		return ind;
 	}
 
+	protected void checkAndGrowArrays(int ind)
+	{
+		final int GROWSIZE = 100;
+		int n = this.arr.length;
+		int m = this.arr[0].length;  // The feature index
+		int l = this.arr[0][0].length;
+		
+		if (ind >= m)
+		{
+			int newSize = ind + 100;
+			System.err.printf("_________>>>FeatAlignerEachfeat::checkAndGrowArray() expanding array from %d to %d\n",m, newSize);
+			double[][][] newArr = new double[n][newSize][l];
+			MatUtils.initMat(newArr, (zeroInit)  ? 0.0 : Double.NaN);
+			GenomicRange[] newfeatCoords = new GenomicRange[newSize];
+			String[] newfeatNames = new String[newSize];
+
+			System.arraycopy(featCoords, 0, newfeatCoords, 0, m);
+			System.arraycopy(featNames, 0, newfeatNames, 0, m);
+			for (int i = 0; i < n ; i++)
+			{
+				for (int j = 0; j < m; j++)
+				{
+					System.arraycopy(arr[i][j], 0, newArr[i][j], 0, l);
+				}
+			}
+			arr = newArr;
+			featCoords = newfeatCoords;
+			featNames = newfeatNames;
+		}
+	}
+	
 	public void coordCsv(PrintWriter pw)
 	{
 		if (this.isSorted)
@@ -544,6 +581,50 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			}
 		}
 		);
+	}
+
+	public FeatAlignerEachfeat mergeInAlignments(FeatAlignerEachfeat other, boolean makeCopyOfOriginal)
+	{
+		// 
+		if (other.downscaleFact != this.downscaleFact)
+		{
+			// This is lazy and sometimes is unset (-1)
+			if ((other.downscaleFact>0) && (this.downscaleFact>0))
+			{
+				System.err.printf("FeatAlignerEachfeat::mergeInAlignments downscaleFact (%.2f,%.2f) must be equivalent",
+						other.downscaleFact, this.downscaleFact);
+				System.exit(1);
+			}
+		}
+		if (other.downscaleCols != this.downscaleCols)
+		{
+			System.err.printf("FeatAlignerEachfeat::mergeInAlignments downscaleCols (%d,%d) must be equivalent",
+					other.downscaleCols, this.downscaleCols);
+			System.exit(1);
+		}
+		
+		// Go through each feat in other
+		int nOther = other.numFeats();
+		for (int i = 0; i < nOther; i++)
+		{
+			String featName = other.featNames[i];
+			GenomicRange featLoc = other.featCoords[i];
+			
+			// This will return the index, whether it's an old one or a new one.
+			int thisInd = this.getInd(featLoc, featName);
+			
+			// type: arr[0] fwTotalScores, arr[1] revTotalScores, arr[2] fwNumScores, arr[3] revNumScores,
+			for (int x = 0; x<=3; x++)
+			{
+				for (int z = 0; z<arr[0][0].length; z++)
+				{
+					
+					this.arr[x][thisInd][z] = MatUtils.nanSum(this.arr[x][thisInd][z],other.arr[x][i][z]);
+				}
+			}
+		}
+
+		return this;
 	}
 	
 
