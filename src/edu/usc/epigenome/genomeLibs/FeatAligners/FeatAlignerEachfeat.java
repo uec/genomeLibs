@@ -55,6 +55,9 @@ public class FeatAlignerEachfeat extends FeatAligner {
 	protected int nFeatsSeen = 0;
 	protected boolean zeroInit = false;
 	
+	protected int arrayGrowsize = 100; // Advanced.  The number of features to grow the arrays by when we overflow
+
+	
 	/**
 	 * @param flankSize
 	 * @param inZeroInit
@@ -101,6 +104,22 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		return nFeatsSeen;
 	}
 	
+	
+	
+	/**
+	 * @return the arrayGrowsize
+	 */
+	public int getArrayGrowsize() {
+		return arrayGrowsize;
+	}
+
+	/**
+	 * @param arrayGrowsize the arrayGrowsize to set
+	 */
+	public void setArrayGrowsize(int arrayGrowsize) {
+		this.arrayGrowsize = arrayGrowsize;
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.usc.epigenome.genomeLibs.FeatAligners.FeatAligner#addAlignmentPos(double, double, java.lang.String, java.lang.String, int, org.biojava.bio.seq.StrandedFeature.Strand)
 	 */
@@ -347,14 +366,13 @@ public class FeatAlignerEachfeat extends FeatAligner {
 
 	protected void checkAndGrowArrays(int ind)
 	{
-		final int GROWSIZE = 100;
 		int n = this.arr.length;
 		int m = this.arr[0].length;  // The feature index
 		int l = this.arr[0][0].length;
 		
 		if (ind >= m)
 		{
-			int newSize = ind + 100;
+			int newSize = ind + arrayGrowsize;
 			System.err.printf("_________>>>FeatAlignerEachfeat::checkAndGrowArray() expanding array from %d to %d\n",m, newSize);
 			double[][][] newArr = new double[n][newSize][l];
 			MatUtils.initMat(newArr, (zeroInit)  ? 0.0 : Double.NaN);
