@@ -358,11 +358,14 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			System.err.printf("_________>>>FeatAlignerEachfeat::checkAndGrowArray() expanding array from %d to %d\n",m, newSize);
 			double[][][] newArr = new double[n][newSize][l];
 			MatUtils.initMat(newArr, (zeroInit)  ? 0.0 : Double.NaN);
+			
 			GenomicRange[] newfeatCoords = new GenomicRange[newSize];
 			String[] newfeatNames = new String[newSize];
-
+			Double[] newSortVals = new Double[newSize];
 			System.arraycopy(featCoords, 0, newfeatCoords, 0, m);
 			System.arraycopy(featNames, 0, newfeatNames, 0, m);
+			System.arraycopy(sortVals, 0, newSortVals, 0, m);
+			
 			for (int i = 0; i < n ; i++)
 			{
 				for (int j = 0; j < m; j++)
@@ -373,6 +376,7 @@ public class FeatAlignerEachfeat extends FeatAligner {
 			arr = newArr;
 			featCoords = newfeatCoords;
 			featNames = newfeatNames;
+			sortVals = newSortVals;
 		}
 	}
 	
