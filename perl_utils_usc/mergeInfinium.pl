@@ -2,6 +2,9 @@
 
 use strict;
 
+# Constants
+my $WINLINE = chr(0xd);
+
 
 my @fns = (@ARGV);
 
@@ -24,7 +27,14 @@ foreach my $fn (@fns)
     LINE: while (my $line = <F>)
     {
 	chomp $line;
+	$line =~ s/$WINLINE//g;
+
+	# Deal with excel quoted fields
+	$line = escapeExcelSecs($line, $delim);
+
 	@flds = split(/$delim/,$line);
+#	@flds = map {$a=$_; $a=~s/^\"//g; $a=~s/\"$//g; $a} @flds;
+	@flds = map {$a=$_; $a=$EMPTY_STR if ($a=~/^NA$/i); $a} @flds;
 	my $masterLineNum = 0;
 	if ($curLineNum == 1)
 	{
@@ -33,12 +43,16 @@ foreach my $fn (@fns)
 	}
 	else
 	{
-	    die "Found illegal line in $fn (must start with cg000000): $line\n" unless ($line =~ /^(cg\d+)/);
+	    die "Found illegal line in $fn (must start with cg000000): $line\n" unless (($flds[0]=~/^(\d+[^,]*)/) || ($flds[0]=~/^(ch\.[^,]*)/) || ($flds[0]=~/^(rs\d[^,]*)/) || ($flds[0] =~ /^(cg\d+)/));
 	    my $id = $1;
 	    $lineNumsById->{$id} = $curLineNum if ($master);
 	    
 	    $masterLineNum = $lineNumsById->{$id};
-	    die "Can't find ID \"$id\" in master\n" unless ($masterLineNum);
+	    if (!$masterLineNum)
+	    {
+#	    die "Can't find ID \"$id\" in master\n";
+		next LINE;
+	    }
 	    next LINE if ($cgsSeen->{$id});  # Houtan's spreadsheet had some duplicate lines.
 	    $cgsSeen->{$id} = 1;
 	}
@@ -73,5 +87,44 @@ foreach my $lineCols (@${outLines})
 	@{$lineCols}[$i] = $EMPTY_STR;
     }
 
-    print STDOUT join(",",@{$lineCols})."\n";
+    my $out = join(",",@{$lineCols})."\n";
+    $out = unescapeExcelSecs($out,",");
+    print STDOUT $out;
+}
+
+
+
+sub escapeExcelSecs($line)
+{
+    my ($line, $delim) = @_;
+
+    my $rest = $line;
+    my $out = "";
+    my $nhits = 0;
+    while ($rest =~ /^([^\"]*)\"([^\"]*)\"(.*)$/)
+    {
+	my ($a,$b,$c) = ($1,$2,$3);
+	$b =~ s/${delim}/___/g;
+	$out .= $a . $b;
+	$rest = $c;
+	$nhits++;
+    }
+    $out .= $rest;
+#    print STDERR "GENERATED ESCAPED with ${nhits} matches: $out\n";
+
+    return $out;
+}
+
+sub unescapeExcelSecs()
+{
+    my ($line, $delim) = @_;
+
+#    print STDERR "UNESCAPING: $line\n";
+
+    my @f = split($delim, $line);
+    @f = map { my $out=$_; if ($out=~/___/) { $out =~ s/___/${delim}/g; $out = "\"${out}\"";  } $out; } @f;
+
+    my $out = join($delim, @f);
+#    print STDERR "\nUNESCAPED: $out\n";
+    return $out;
 }
