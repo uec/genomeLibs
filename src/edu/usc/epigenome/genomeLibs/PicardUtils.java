@@ -225,35 +225,59 @@ public class PicardUtils {
 		return out;
 	}
 		
-	public static char nextBaseSeq(int pos, String seqStr)
+	public static char nextBaseSeq(SAMRecord samRecord, int pos)
 	{
-		if (pos >= (seqStr.length()-1))
-		{
-			return '0';
-		}
-		else
-		{
-			return seqStr.charAt(pos+1); 
-		}
+		return nextBaseSeq(samRecord, pos, 20);
+	}
+
+	
+	/**
+	 * @param samRecord
+	 * @param pos IMPORTANT: must be relative to the 5' end of the read, not the genome assembly
+	 * @param minBaseQual
+	 * @return
+	 */
+	public static char nextBaseSeq(SAMRecord samRecord, int pos, int minBaseQual)
+	{
+		String seq = PicardUtils.getReadString(samRecord, true);
+		byte[] quals = samRecord.getBaseQualities();
+		return nextBaseSeq(pos, seq, false, quals, minBaseQual);
 	}
 	
+
+
+	public static char nextBaseSeq(int pos, String seqStr, byte[] quals, int minBaseQual)
+	{
+		return nextBaseSeq(pos, seqStr, false, quals, minBaseQual);
+	}
+
+	public static char nextBaseSeq(int pos, String seqStr)
+	{
+		return nextBaseSeq(pos, seqStr, false);
+	}
+
 	public static char nextBaseSeq(int pos, String seqStr, boolean revStrand)
 	{
-		if(revStrand){
-			if (pos == 0) return '0'; // At the last character
-			return MiscUtils.revCompNuc(seqStr.charAt(pos-1));
-		}
-		else{
-			if (pos >= (seqStr.length()-1))
+		return nextBaseSeq(pos, seqStr, revStrand, null, 0);
+	}
+
+	public static char nextBaseSeq(int pos, String seqStr, boolean revStrand, byte[] quals, int minBaseQual)
+	{
+		int prePos = (revStrand) ? (pos-1) : (pos+1);
+		char out = '0';
+		if ((prePos>=0) && (prePos<seqStr.length()))
+		{
+			if ((quals != null) && (quals[prePos]<minBaseQual))
 			{
-				return '0';
+				out = 'N';
 			}
 			else
 			{
-				return seqStr.charAt(pos+1); 
+				out = seqStr.charAt(prePos);
+				if (revStrand) out = MiscUtils.revCompNuc(out);
 			}
 		}
-		
+		return out;		
 	}
 	
 	public static char nextBaseRef(int pos, String refStr)
@@ -285,35 +309,56 @@ public class PicardUtils {
 		return refCnext;
 	}
 	
-	public static char preBaseSeq(int pos, String seqStr)
+	public static char preBaseSeq(SAMRecord samRecord, int pos)
 	{
-		if (pos <= 0)
-		{
-			return '0';
-		}
-		else
-		{
-			return seqStr.charAt(pos-1); 
-		}
+		return preBaseSeq(samRecord, pos, 20);
 	}
 	
+	/**
+	 * @param samRecord
+	 * @param pos IMPORTANT: Must be relative to the 5' end of the read, not the genome assembly
+	 * @param minBaseQual
+	 * @return
+	 */
+	public static char preBaseSeq(SAMRecord samRecord, int pos, int minBaseQual)
+	{
+		String seq = PicardUtils.getReadString(samRecord, true);
+		byte[] quals = samRecord.getBaseQualities();
+		return preBaseSeq(pos, seq, false, quals, minBaseQual);
+	}
+	
+	public static char preBaseSeq(int pos, String seqStr)
+	{
+		return preBaseSeq(pos, seqStr, false);
+	}
+
 	public static char preBaseSeq(int pos, String seqStr, boolean revStrand)
 	{
-		if(revStrand){
-			if (pos == (seqStr.length()-1)) return '0'; // At the last character
-			return MiscUtils.revCompNuc(seqStr.charAt(pos+1));
-		}
-		else{
-			if (pos <=0 )
+		return preBaseSeq(pos, seqStr, revStrand, null, 0);
+	}
+	
+	public static char preBaseSeq(int pos, String seqStr, byte[] quals, int minBaseQual)
+	{
+		return preBaseSeq(pos, seqStr, false, quals, minBaseQual);
+	}
+	
+	public static char preBaseSeq(int pos, String seqStr, boolean revStrand, byte[] quals, int minBaseQual)
+	{
+		int prePos = (revStrand) ? (pos+1) : (pos-1);
+		char out = '0';
+		if ((prePos>=0) && (prePos<seqStr.length()))
+		{
+			if ((quals != null) && quals[prePos]<minBaseQual)
 			{
-				return '0';
+				out = 'N';
 			}
 			else
 			{
-				return seqStr.charAt(pos-1); 
+				out = seqStr.charAt(prePos);
+				if (revStrand) out = MiscUtils.revCompNuc(out);
 			}
 		}
-		
+		return out;		
 	}
 	
 	public static char preBaseRef(int pos, String refStr)
