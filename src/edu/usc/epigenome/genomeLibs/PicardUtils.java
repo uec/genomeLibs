@@ -356,6 +356,7 @@ public class PicardUtils {
 			{
 				out = seqStr.charAt(prePos);
 				if (revStrand) out = MiscUtils.revCompNuc(out);
+//				System.err.printf("\tprebase seq (rev=%s) out = %c\n",revStrand,out);
 			}
 		}
 		return out;		
