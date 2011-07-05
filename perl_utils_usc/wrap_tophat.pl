@@ -6,7 +6,7 @@ $ENV{'PATH'} .= ":/home/uec-00/shared/production/software/tophat/default:/home/u
 $execmd = "tophat " . join(" ", @ARGV);
 print "$execmd\n";
 system($execmd);
-$file = scalar(@ARGV) > 3 ? $ARGV[$#ARGV - 1] : $ARGV[$#ARGV];
+$file = scalar(@ARGV) > 4 ? $ARGV[$#ARGV - 1] : $ARGV[$#ARGV];
 $file = basename($file);
 system("mv tophat_out/accepted_hits.bam " . $file. ".tophat_hits.bam");
 system("mv tophat_out/junctions.bed " . $file. ".tophat_junctions.bed");
