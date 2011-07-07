@@ -6,7 +6,7 @@ use strict;
 my $USAGE = "wrap_bwa_se.pl refFa.fa read1.fq [outfile name]";
 die "$USAGE\n" unless (@ARGV >= 2);
 
-my $bwa = "/auto/uec-00/shared/production/software/bwa-0.5.7/bwa";
+my $bwa = "/auto/uec-00/shared/production/software/bwa/default/bwa";
 
 my $refFa = $ARGV[0];
 my $read1 = $ARGV[1];
@@ -34,7 +34,7 @@ if ( ! -e $refFa )
 die "need read sequence files\n" unless ( -e $read1 );
 
 # when calling, redirect STDERR?
-my $cmd = join(" ", $bwa, "aln", "-t 8", $refFa, $read1, "> $read1SA");
+my $cmd = join(" ", $bwa, "aln", "-I -t 8", $refFa, $read1, "> $read1SA");
 print "$cmd\n";
 # system call
 system($cmd);
