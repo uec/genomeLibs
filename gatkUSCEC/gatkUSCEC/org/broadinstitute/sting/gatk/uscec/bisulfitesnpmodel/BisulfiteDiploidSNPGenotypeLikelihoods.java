@@ -38,6 +38,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
     protected String DETERMINED_CYTOSINE_TYPE_NEG = "";
     protected double DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG = Double.NEGATIVE_INFINITY;
     protected double DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = 0;
+    protected double ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD = log10(0.05);
     
  //   protected static double UNDETERMINED_CYTOSINE_TYPE_C_METHY = 0;
     
@@ -138,8 +139,8 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	
 	public void checkCytosineStatus(ReadBackedPileup pileup, CytosineTypeStatus cts, double threshold){
 
-		HashMap<String, Double> cTypeLikelihood = new HashMap<String, Double>();
-		HashMap<String, Double> cTypeReverseLikelihood = new HashMap<String, Double>();
+	//	HashMap<String, Double> cTypeLikelihood = new HashMap<String, Double>();
+		//HashMap<String, Double> cTypeReverseLikelihood = new HashMap<String, Double>();
 		for(String cytosineType : cts.cytosineListMap.keySet()){
 			String[] tmpKey = cytosineType.split("-");
 			if(tmpKey[0].equalsIgnoreCase("C")){
@@ -168,7 +169,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        }
 					byte qual = tmpP.getQual();
 					if ( qual > SAMUtils.MAX_PHRED_SCORE )
-			            throw new UserException.MalformedBam(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
+			            throw new UserException.MalformedBAM(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
 			        qual = (byte)Math.min((int)tmpP.getQual(), tmpP.getMappingQual());
 			        byte observedBase = tmpP.getBase();
 			        byte qualityScore = qual;
@@ -197,7 +198,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        }
 					byte qual = tmpP.getQual();
 					if ( qual > SAMUtils.MAX_PHRED_SCORE )
-			            throw new UserException.MalformedBam(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
+			            throw new UserException.MalformedBAM(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
 			        qual = (byte)Math.min((int)tmpP.getQual(), tmpP.getMappingQual());
 			        byte observedBase = tmpP.getBase();
 			        byte qualityScore = qual;
@@ -233,7 +234,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        }
 					byte qual = tmpP.getQual();
 					if ( qual > SAMUtils.MAX_PHRED_SCORE )
-			            throw new UserException.MalformedBam(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
+			            throw new UserException.MalformedBAM(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
 			        qual = (byte)Math.min((int)tmpP.getQual(), tmpP.getMappingQual());
 			        byte observedBase = tmpP.getBase();
 			        byte qualityScore = qual;
@@ -264,7 +265,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        }
 					byte qual = tmpP.getQual();
 					if ( qual > SAMUtils.MAX_PHRED_SCORE )
-			            throw new UserException.MalformedBam(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
+			            throw new UserException.MalformedBAM(tmpP.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, tmpP.getRead().getReadName()));
 			        qual = (byte)Math.min((int)tmpP.getQual(), tmpP.getMappingQual());
 			        byte observedBase = tmpP.getBase();
 			        byte qualityScore = qual;
@@ -299,21 +300,22 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	        
 	      //  if(sum >= log10(0.90) || sumReverse >= log10(0.90)){
 	        Double[] value = cts.cytosineListMap.get(cytosineType);
-	        if(sum - sumNot > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS)
-	        	value[0] = sum - sumNot;
-	        if(sumReverse - sumNotReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG)
-	        	value[1] = sumReverse - sumNotReverse;
-	        cts.cytosineListMap.put(cytosineType, value);
-	        	if(sum - sumNot >= threshold/10.0 && sum - sumNot > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS){
+	       // if(sum - sumNot > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS)
+	       // 	value[0] = sum - sumNot;
+	      //  if(sumReverse - sumNotReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG)
+	      //  	value[1] = sumReverse - sumNotReverse;
+	        
+	        	if(sum - sumNot >= threshold/10.0 && sum > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS && sum > ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD){
 	        		//DETERMINED_CYTOSINE_TYPE_NEGSTRAND = false;
 	        		
 	    	        DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS = sum;
 	    	       // 
 	    	        DETERMINED_CYTOSINE_TYPE_POS = tmpKey[0];
 	    	        DETERMINED_CYTOSINE_TYPE_C_METHY_POS = value[2];
+	    	        value[0] = sum - sumNot;
 	    	      //  System.err.println("pos");
 	        	}
-	        	else if(sumReverse - sumNotReverse >= threshold/10.0 && sumReverse - sumNotReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG){
+	        	if(sumReverse - sumNotReverse >= threshold/10.0 && sumReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG && sumReverse > ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD){
 	        		//DETERMINED_CYTOSINE_TYPE_NEGSTRAND = true;
 	        		//Double[] value = cts.cytosineListMap.get(cytosineType);
 	        		
@@ -321,12 +323,14 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	    	        //cts.cytosineListMap.put(cytosineType, value);
 	    	        DETERMINED_CYTOSINE_TYPE_NEG = tmpKey[0];
 	    	        DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = value[2];
+	    	        value[1] = sumReverse - sumNotReverse;
 	    	      //  System.err.println("neg");
 	        	}
+	        	cts.cytosineListMap.put(cytosineType, value);
 	        	 if(VERBOSE){
 	 	        	System.err.println("cytosineType: " + cytosineType + "\tsum: " + sum + "\tsumNot: " + sumNot + "\tsumReverse" + sumReverse + "\tsumNotReverse" + sumNotReverse + "\tthreshold: " + threshold);
-	 	        	System.err.println("DETERMINED_CYTOSINE_TYPE_POS: " + DETERMINED_CYTOSINE_TYPE_POS + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_POS: " + DETERMINED_CYTOSINE_TYPE_C_METHY_POS);
-	 				 System.err.println("DETERMINED_CYTOSINE_TYPE_NEG: " + DETERMINED_CYTOSINE_TYPE_NEG + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_NEG: " + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG);
+	 	        	System.err.println("DETERMINED_CYTOSINE_TYPE_POS: " + DETERMINED_CYTOSINE_TYPE_POS + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_POS: " + DETERMINED_CYTOSINE_TYPE_C_METHY_POS  + "\tDETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS: " + DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS + "\tvalue[0]:" + value[0]);
+	 				 System.err.println("DETERMINED_CYTOSINE_TYPE_NEG: " + DETERMINED_CYTOSINE_TYPE_NEG + "\tDETERMINED_CYTOSINE_TYPE_C_METHY_NEG: " + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG + "\tDETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG: " + DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG + "\tvalue[1]:" + value[1]);
 	 	        }	
 	        	
 	    }
@@ -383,7 +387,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
             	
         byte qual = p.getQual();
         if ( qual > SAMUtils.MAX_PHRED_SCORE )
-            throw new UserException.MalformedBam(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
+            throw new UserException.MalformedBAM(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
         if ( capBaseQualsAtMappingQual )
             qual = (byte)Math.min((int)p.getQual(), p.getMappingQual());
          

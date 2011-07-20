@@ -133,6 +133,8 @@ public class CytosineTypeStatus {
 		
 		for(String key : this.cytosineListMap.keySet()){
 			Double[] value = this.cytosineListMap.get(key);
+			value[0] = Double.NEGATIVE_INFINITY;
+			value[1] = Double.NEGATIVE_INFINITY;
 			cts.cytosineListMap.put(key, value);
 		}
 		
