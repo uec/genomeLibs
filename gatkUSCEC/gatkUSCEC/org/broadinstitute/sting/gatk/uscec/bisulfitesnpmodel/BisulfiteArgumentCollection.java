@@ -66,6 +66,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "bisulfite_conversion_rate", shortName = "bsRate", doc = "bisulfite_conversion_rate .for test only", required = false)
     public double bsRate = 0.9975;
 	
+	@Argument(fullName = "over_conversion_rate", shortName = "overRate", doc = "cytosine_over_conversion_rate .for test only", required = false)
+    public double overRate = 0;
+	
 	//@Argument(fullName = "CpG_Methylation_rate_in_CGI", shortName = "CpgMethyCGI", doc = "CpG_Methylation_rate_in_CGI .for test only", required = false)
     //public double CpgMethyCGI = 0;
 	
@@ -120,6 +123,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
        // bac.cytosineType = cytosineType;
         bac.testLocus = testLocus;
         bac.bsRate = bsRate;
+        bac.overRate = overRate;
         //bac.CpgMethyCGI = CpgMethyCGI;
        // bac.CpgMethyNonCGI = CpgMethyNonCGI;
        // bac.CphMethy = CphMethy;
