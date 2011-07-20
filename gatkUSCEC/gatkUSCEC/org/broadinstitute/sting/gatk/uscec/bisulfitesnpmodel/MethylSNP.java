@@ -17,6 +17,7 @@ import org.broadinstitute.sting.commandline.Argument;
 import org.broadinstitute.sting.commandline.ArgumentCollection;
 import org.broadinstitute.sting.commandline.ArgumentTypeDescriptor;
 import org.broadinstitute.sting.commandline.CommandLineProgram;
+import org.broadinstitute.sting.commandline.Output;
 import org.broadinstitute.sting.commandline.Tags;
 import org.broadinstitute.sting.gatk.CommandLineExecutable;
 import org.broadinstitute.sting.gatk.GenomeAnalysisEngine;
@@ -47,6 +48,10 @@ public class MethylSNP extends CommandLineExecutable {
 	
 	@Argument(fullName = "auto_estimate_cytosine_mode", shortName = "aecm", doc = "the first run would be to run auto_estimate_cytosine methylation status")
     private static boolean autoEstimateC = false;
+	
+	 // control the output
+    @Output(doc="File to which variants should be written",required=true)
+    protected VCFWriter writer = null;
 
 	//copy from GATK, since they are private class in GATK
 	private final Collection<Object> bisulfiteArgumentSources = new ArrayList<Object>();
@@ -63,7 +68,7 @@ public class MethylSNP extends CommandLineExecutable {
 	
 	public Walker<?,?> walker = null;
 	
-	protected VCFWriter writer = null;
+	//protected VCFWriter writer = null;
 	private VariantAnnotatorEngine annotationEngine = null;
 	
 	@Override
@@ -240,7 +245,10 @@ public class MethylSNP extends CommandLineExecutable {
                     bisulfiteArgumentSources.add(filter);
                 }
                 if(walker instanceof BisulfiteGenotyper){
-        			writer = ((BisulfiteGenotyper) walker).getWriter();
+        			if(autoEstimateC){
+        				((BisulfiteGenotyper) walker).setWriter(writer);
+        			}
+                	
         			//System.err.println("writer1: " + writer.toString());
         			this.annotationEngine = ((BisulfiteGenotyper) walker).getAnnoEng();
         		}

@@ -9,4 +9,5 @@ public class BisulfiteVCFConstants{
 	    public static final String NUMBER_OF_T_KEY = "NumT";
 	    public static final String C_IN_NEG_STRAND_KEY = "NegC";
 	    public static final String CYTOSINE_TYPE = "CType";
+	    public static final String CYTOSINE_METHY_VALUE = "methy";
 }

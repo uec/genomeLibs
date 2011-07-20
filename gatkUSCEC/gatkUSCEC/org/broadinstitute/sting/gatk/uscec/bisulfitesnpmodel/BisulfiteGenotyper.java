@@ -68,9 +68,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
     @ArgumentCollection private BisulfiteArgumentCollection BAC = new BisulfiteArgumentCollection();
 
-    // control the output
-    @Output(doc="File to which variants should be written",required=true)
-    protected VCFWriter writer = null;
+   
 
     @Argument(fullName = "verbose_mode", shortName = "verbose", doc = "File to print all of the annotated and detailed debugging output", required = false)
     protected PrintStream verboseWriter = null;
@@ -84,6 +82,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     
     private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
+    
+    protected VCFWriter writer = null;
     
     // the calculation arguments
     private BisulfiteGenotyperEngine BG_engine = null;
@@ -120,7 +120,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         /** The total number of extended events encountered */
         long nExtendedEvents = 0;
         
-        /** The number of Cpg bases called confidently (according to user threshold), either ref or other */
+        /** The number of Cytosine bases called confidently (according to user threshold), either ref or other */
         long nCytosineBasesCalledConfidently = 0;
         
         /** The number of Cpg bases called confidently (according to user threshold), either ref or other */
@@ -142,7 +142,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         long nHcgBasesCalledConfidently = 0;
         
         
-        /** The sum of methylation value of Cpg bases called confidently (according to user threshold), either ref or other */
+        /** The sum of methylation value of Cytosine bases called confidently (according to user threshold), either ref or other */
         double sumMethyCytosineBasesCalledConfidently = 0;
         
         /** The sum of methylation value of Cpg bases called confidently (according to user threshold), either ref or other */
@@ -396,7 +396,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         logger.info(String.format("%% confidently called bases of all loci       %3.3f", sum.percentCalledOfAll()));
         logger.info(String.format("%% confidently called bases of callable loci  %3.3f", sum.percentCalledOfCallable()));
         logger.info(String.format("Actual calls made                            %d", sum.nCallsMade));
-        logger.info(String.format("%% Methylation level of Cytosine loci       %3.3f", sum.percentMethyLevelOfC()));
+        //logger.info(String.format("%% Methylation level of Cytosine loci       %3.3f", sum.percentMethyLevelOfC()));
         logger.info(String.format("%% Methylation level of CpG loci       %3.3f", sum.percentMethyLevelOfCpg()));
         logger.info(String.format("%% Methylation level of CHH loci       %3.3f", sum.percentMethyLevelOfChh()));
         logger.info(String.format("%% Methylation level of CHG loci       %3.3f", sum.percentMethyLevelOfChg()));
@@ -417,7 +417,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         summary.gcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfGcg()) ? 0 : sum.percentMethyLevelOfGcg();
         summary.hcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfHcg()) ? 0 : sum.percentMethyLevelOfHcg();
         if(secondIteration){
-        	writer.close();
+        	//writer.close();
         }
 
     }
