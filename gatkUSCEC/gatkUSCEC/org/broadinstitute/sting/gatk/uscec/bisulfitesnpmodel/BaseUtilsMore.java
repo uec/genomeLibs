@@ -164,4 +164,14 @@ public class BaseUtilsMore {
         }
     }
 	
+	static public byte[] simpleReverse(byte[] bases) {
+        byte[] rcbases = new byte[bases.length];
+
+        for (int i = 0; i < bases.length; i++) {
+            rcbases[i] = bases[bases.length - 1 - i];
+        }
+
+        return rcbases;
+    }
+	
 }

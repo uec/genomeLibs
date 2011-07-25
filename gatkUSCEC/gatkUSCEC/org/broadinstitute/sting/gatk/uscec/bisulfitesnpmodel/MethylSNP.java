@@ -52,7 +52,7 @@ public class MethylSNP extends CommandLineExecutable {
 	 // control the output
     @Output(doc="File to which variants should be written",required=true)
     protected VCFWriter writer = null;
-
+ 
 	//copy from GATK, since they are private class in GATK
 	private final Collection<Object> bisulfiteArgumentSources = new ArrayList<Object>();
 	

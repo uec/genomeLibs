@@ -47,6 +47,7 @@ public class BisulfiteAlignmentUtils extends AlignmentUtils {
 
        Cigar c = read.getCigar();
        boolean negStrand = read.getReadNegativeStrandFlag();
+       boolean secondPair = read.getSecondOfPairFlag();
        //System.out.println("mismatchesInRefWindow in bs");
        for (int i = 0 ; i < c.numCigarElements() ; i++) {
            CigarElement ce = c.getCigarElement(i);
@@ -67,20 +68,42 @@ public class BisulfiteAlignmentUtils extends AlignmentUtils {
                        if ( readChr != refChr ){
                     	   if(sequencingMode == MethylSNPModel.BM || sequencingMode == MethylSNPModel.GM){
                     		   if(!negStrand){
-                        		   if(((char)refChr == 'C' && (char)readChr == 'T') || ((char)refChr == 'T' && (char)readChr == 'C')){
-                            		   
-                            	   }
-                            	   else{
-                            		   mismatches.set(readIndex);
-                            	   }
+                        		   if(secondPair){
+                        			   if(((char)refChr == 'G' && (char)readChr == 'A') || ((char)refChr == 'A' && (char)readChr == 'G')){
+                                		   
+                                	   }
+                                	   else{
+                                		   mismatches.set(readIndex);
+                                	   }
+                        		   }
+                        		   else{
+                        			   if(((char)refChr == 'C' && (char)readChr == 'T') || ((char)refChr == 'T' && (char)readChr == 'C')){
+                                		   
+                                	   }
+                                	   else{
+                                		   mismatches.set(readIndex);
+                                	   }
+                        		   }
+                    			   
                         	   }
                         	   else{
-                        		   if(((char)refChr == 'G' && (char)readChr == 'A') || ((char)refChr == 'A' && (char)readChr == 'G')){
-                            		   
-                            	   }
-                            	   else{
-                            		   mismatches.set(readIndex);
-                            	   }
+                        		   if(secondPair){
+                        			   if(((char)refChr == 'C' && (char)readChr == 'T') || ((char)refChr == 'T' && (char)readChr == 'C')){
+                                		   
+                                	   }
+                                	   else{
+                                		   mismatches.set(readIndex);
+                                	   }
+                        		   }
+                        		   else{
+                        			   if(((char)refChr == 'G' && (char)readChr == 'A') || ((char)refChr == 'A' && (char)readChr == 'G')){
+                                		   
+                                	   }
+                                	   else{
+                                		   mismatches.set(readIndex);
+                                	   }
+                        		   }
+                        		   
                         	   }
                     	   }
                     	   else{

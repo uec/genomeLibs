@@ -24,10 +24,13 @@ import org.broadinstitute.sting.utils.pileup.PileupElement;
 import org.broadinstitute.sting.utils.pileup.ReadBackedPileup;
 import org.broadinstitute.sting.utils.sam.GATKSAMRecord;
 
+import edu.usc.epigenome.genomeLibs.PicardUtils;
+
 public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	protected BisulfiteDiploidSNPGenotypePriors priors = null;
     // TODO: don't calculate this each time through
 
+	protected BisulfiteArgumentCollection BAC;
     protected double BISULFITE_CONVERSION_RATE;
     protected double OVER_CONVERSION_RATE;
  //   protected static double CPG_METHYLATION_RATE = 0;
@@ -82,12 +85,13 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	}
 	*/
 	public BisulfiteDiploidSNPGenotypeLikelihoods(
-			RefMetaDataTracker tracker, ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, double PCR_error_rate, double bisulfiteConversionRate, double overConversionRate, double novelDbsnpHet, double validateDbsnpHet) {
+			RefMetaDataTracker tracker, ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, BisulfiteArgumentCollection BAC) {
 		this.priors = priors;
-		this.BISULFITE_CONVERSION_RATE = bisulfiteConversionRate;
-		this.OVER_CONVERSION_RATE = overConversionRate;
-		log10_PCR_error_3 = log10(PCR_error_rate) - log10_3;
-        log10_1_minus_PCR_error = log10(1.0 - PCR_error_rate);
+		this.BAC = BAC;
+		this.BISULFITE_CONVERSION_RATE = BAC.bsRate;
+		this.OVER_CONVERSION_RATE = BAC.overRate;
+		log10_PCR_error_3 = log10(BAC.PCR_error) - log10_3;
+        log10_1_minus_PCR_error = log10(1.0 - BAC.PCR_error);
 		setToZeroBs();
 //		this.CPG_METHYLATION_RATE = cpgMethyRate;
 //		this.CPH_METHYLATION_RATE = cphMethyRate;
@@ -148,6 +152,11 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			if(tmpKey[0].equalsIgnoreCase("C")){
 				continue;
 			}
+			if(VERBOSE){
+				System.err.println(tmpKey[0]);
+				System.err.println();
+			}
+			
 			Integer cytosinePos = Integer.parseInt(tmpKey[1]) - 1;
 			double[] adjacentCytosineSeqLikelihood = new double[tmpKey[0].length()];
 			double[] adjacentCytosineSeqLikelihoodReverseStrand = new double[tmpKey[0].length()];
@@ -155,9 +164,54 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			double[] adjacentNotCytosineSeqLikelihoodReverseStrand = new double[tmpKey[0].length()];
 			ReadBackedPileup pileupPositiveStrand = pileup.getPositiveStrandPileup();
 	        for(PileupElement p : pileupPositiveStrand ){
-	        	SAMRecord samRecord = p.getRead();
+	        	SAMRecord samRecord = new SAMRecord(null);
+	        	int cytosineOffset = p.getOffset();
+				try {
+					samRecord = (SAMRecord) p.getRead().clone();
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 	        	
-				int cytosineOffset = p.getOffset();
+	        	boolean Paired = samRecord.getReadPairedFlag();
+	        	boolean firstOfPair = samRecord.getFirstOfPairFlag();
+	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+	        	//int cytosineOffset = p.getOffset();
+	        	if (samRecord.getNotPrimaryAlignmentFlag())
+				{
+					continue;
+				}
+				
+				// Inverted dups, count only one end
+				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+				{
+					if (samRecord.getSecondOfPairFlag()) continue;
+					//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+				}
+	        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+				{
+					continue;
+				}
+	        	
+	        	if(secondOfPair){
+	        		if(VERBOSE){
+	        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+	        			System.err.println("getReadString: " + samRecord.getReadString());
+	        		}
+	        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
+		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
+		        	//cytosineOffset = samRecord.getReadLength() - 1 - cytosineOffset;
+		        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
+		        	samRecord.setSecondOfPairFlag(!secondOfPair);
+	        		if(VERBOSE){
+	        			System.err.println("secondOfPair: " + secondOfPair + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
+		        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + cytosineOffset + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+		        		
+	        		}
+	        			        		
+	        	}
+	        	
+				
 				for(int i = 0; i < tmpKey[0].length(); i++){
 					//if(i == cytosinePos)
 					//	continue;
@@ -179,10 +233,10 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        double error = pow(10, -qualityScore/10.0);
 			        if ( observedBase == 0 )
 			            continue;
-			        adjacentCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) ? log10(1.0 - error) : log10(error/3.0);
-			        adjacentNotCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) ? log10(error/3.0) : log10(1.0 - error);
+			        adjacentCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(1.0 - error) : log10(error/3.0);
+			        adjacentNotCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(error/3.0) : log10(1.0 - error);
 			        if(VERBOSE){
-			        	System.err.println("forwardStrand-1: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i);
+			        	//System.err.println("forwardStrand-1: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i);
 			        }
 				}
 				
@@ -210,8 +264,8 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        double error = pow(10, -qualityScore/10.0);
 			        if ( observedBase == 0 )
 			            continue;
-			        adjacentCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) ? log10(1.0 - error) : log10(error/3.0);
-			        adjacentNotCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) ? log10(error/3.0) : log10(1.0 - error);
+			        adjacentCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(1.0 - error) : log10(error/3.0);
+			        adjacentNotCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(error/3.0) : log10(1.0 - error);
 			        if(VERBOSE){
 			        	//System.err.println("reverseStrand-1: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, false) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i + "\tadjacentCytosineSeqLikelihoodReverseStrand[i]" + adjacentCytosineSeqLikelihoodReverseStrand[i]);
 			        }
@@ -220,9 +274,50 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	        
 	        ReadBackedPileup pileupNegativeStrand = pileup.getNegativeStrandPileup();
 	        for(PileupElement p : pileupNegativeStrand ){
-	        	SAMRecord samRecord = p.getRead();
-	        	
-				int cytosineOffset = p.getOffset();
+	        	SAMRecord samRecord = new SAMRecord(null);
+	        	int cytosineOffset = p.getOffset();
+				try {
+					samRecord = (SAMRecord) p.getRead().clone();
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+	        	//int cytosineOffset = p.getOffset();
+	        	boolean Paired = samRecord.getReadPairedFlag();
+	        	if (samRecord.getNotPrimaryAlignmentFlag())
+				{
+					continue;
+				}
+				
+				// Inverted dups, count only one end
+				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+				{
+					if (samRecord.getSecondOfPairFlag()) continue;
+					//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+				}
+	        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+				{
+					continue;
+				}
+	        	if(secondOfPair){
+	        		if(VERBOSE){
+	        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+	        			System.err.println("getReadString: " + samRecord.getReadString());
+	        		}
+	        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
+		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
+		        	//cytosineOffset = samRecord.getReadLength() - 1 - cytosineOffset;
+		        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
+		        	samRecord.setSecondOfPairFlag(!secondOfPair);
+	        		if(VERBOSE){
+	        			System.err.println("secondOfPair: " + secondOfPair + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
+		        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + cytosineOffset + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+
+	        		}
+	        			        		
+	        	}
+				
 				for(int i = 0; i < tmpKey[0].length(); i++){
 				//	if(i == cytosinePos)
 				//		continue;
@@ -245,10 +340,10 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        double error = pow(10, -qualityScore/10.0);
 			        if ( observedBase == 0 )
 			            continue;
-			        adjacentCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) ? log10(1.0 - error) : log10(error/3.0);
-			        adjacentNotCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) ? log10(error/3.0) : log10(1.0 - error);
+			        adjacentCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(1.0 - error) : log10(error/3.0);
+			        adjacentNotCytosineSeqLikelihood[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(error/3.0) : log10(1.0 - error);
 			        if(VERBOSE){
-			        	System.err.println("forwardStrand-2: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i);
+			        	//System.err.println("forwardStrand-2: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i);
 			        }
 				}
 				
@@ -276,8 +371,8 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			        double error = pow(10, -qualityScore/10.0);
 			        if ( observedBase == 0 )
 			            continue;
-			        adjacentCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) ? log10(1.0 - error) : log10(error/3.0);
-			        adjacentNotCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) ? log10(error/3.0) : log10(1.0 - error);
+			        adjacentCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(1.0 - error) : log10(error/3.0);
+			        adjacentNotCytosineSeqLikelihoodReverseStrand[i] += BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, samRecord.getReadNegativeStrandFlag()) ? log10(error/3.0) : log10(1.0 - error);
 			        if(VERBOSE){
 			        	//System.err.println("reverseStrand-2: queryByte: " + (char)queryByte + "\tobservedBase: " + (char)observedBase + "\t" + BaseUtilsMore.iupacCodeEqual(queryByte, observedBase, true) + "\telementOffset: " + elementOffset + "\tcytosinePos: " + cytosinePos + "\tcytosineOffset: " + cytosineOffset + "\ti: " + i + "\tadjacentCytosineSeqLikelihoodReverseStrand[i]" + adjacentCytosineSeqLikelihoodReverseStrand[i]);
 			        }
@@ -386,14 +481,45 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
         	//System.out.println("bad base: " + p.getBase());
         	return 0;
         }
-            	
+            
+        SAMRecord samRecord = p.getRead();
+		try {
+			samRecord = (SAMRecord) p.getRead().clone();
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	boolean Paired = samRecord.getReadPairedFlag();
+    	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+    	if (samRecord.getNotPrimaryAlignmentFlag())
+		{
+			return 0;
+		}
+		
+		// Inverted dups, count only one end
+		if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+		{
+			if (samRecord.getSecondOfPairFlag()) return 0;
+			//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+		}
+    	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+		{
+    		return 0;
+		}
+    	
+    	
         byte qual = p.getQual();
         if ( qual > SAMUtils.MAX_PHRED_SCORE )
             throw new UserException.MalformedBAM(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
         if ( capBaseQualsAtMappingQual )
             qual = (byte)Math.min((int)p.getQual(), p.getMappingQual());
-         
-        observedBase = p.getBase();
+        if(secondOfPair){
+        	 //observedBase = BaseUtils.simpleComplement(p.getBase()); 
+        	 negStrand = !negStrand;
+    	}
+        observedBase = p.getBase(); 
+        
         qualityScore = qual;
          
         // abort early if we didn't see any good bases

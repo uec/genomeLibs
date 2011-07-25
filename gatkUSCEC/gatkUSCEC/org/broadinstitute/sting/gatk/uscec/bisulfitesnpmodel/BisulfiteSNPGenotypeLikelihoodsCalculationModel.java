@@ -127,15 +127,64 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 
         for ( Map.Entry<String, StratifiedAlignmentContext> sample : contexts.entrySet() ) {
             ReadBackedPileup pileup = sample.getValue().getContext(contextType).getBasePileup();
-
             for ( PileupElement p : pileup ) {
             	SAMRecord samRecord = p.getRead();
+            	int offset = p.getOffset();
             	
-            	boolean negStrand = samRecord.getReadNegativeStrandFlag();
+				try {
+					samRecord = (SAMRecord) p.getRead().clone();
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            	boolean Paired = samRecord.getReadPairedFlag();	
+	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+	        	
+	        	//byte base = p.getBase();
+	        	if (samRecord.getNotPrimaryAlignmentFlag())
+				{
+					continue;
+				}
+				
+				// Inverted dups, count only one end
+				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+				{
+					if (samRecord.getSecondOfPairFlag()) continue;
+					//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+				}
+	        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+				{
+					continue;
+				}
+	        	
+	        	if((pileup.getLocation().getStart()) == testLoc){
+        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset] + "\tbase-1: " + samRecord.getReadBases()[offset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[offset-1] + "\tbase+1: " + samRecord.getReadBases()[offset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[offset+1]);
+        			System.err.println("getReadString: " + samRecord.getReadString() + "\tsecond: " + secondOfPair);
+        		}
+	        	if(secondOfPair){
+	        		
+	        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
+		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
+		        	//offset = samRecord.getReadLength() - 1 - offset;
+		        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
+		        	//samRecord.setSecondOfPairFlag(!secondOfPair);
+		        	//base = samRecord.getReadBases()[offset];
+		        	//p = new PileupElement(samRecord,offset);
+	        		
+	        		
+	        	}
+	        	if((pileup.getLocation().getStart()) == testLoc){
+        			System.err.println("proper paired: " + samRecord.getProperPairFlag() + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
+	        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + offset + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset] + "\tbase-1: " + samRecord.getReadBases()[offset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[offset-1] + "\tbase+1: " + samRecord.getReadBases()[offset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[offset+1]);
+	        		System.err.println("getBase: " + p.getBase() + "\tp.getRead(): " + p.getRead().getReadBases()[offset]);
+        		}
+	        	boolean negStrand = samRecord.getReadNegativeStrandFlag();
 				int alignmentS = samRecord.getAlignmentStart();
 				int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+				//PileupElement tmpP = new PileupElement(samRecord,offset);
 				
-				if(((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset())){
+				
+				if(((GATKSAMRecord)p.getRead()).isGoodBase(offset)){
 					if(negStrand){
 						if(p.getBase()==BaseUtils.G){
 							numCNegStrand++;
@@ -163,10 +212,10 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 				
 									
 				if((pileup.getLocation().getStart()) == testLoc){
-					System.out.println("before filter:\t" + onRefCoord + "\t" + p.getOffset() + "\t" + negStrand + "\t" + pileup.getLocation().getStart() + "\t" + (char)p.getBase());
-					System.out.println("refBase: " + refBase);
+					System.err.println("before filter:\t" + onRefCoord + "\t" + offset + "\t" + negStrand + "\t" + pileup.getLocation().getStart() + "\t" + (char)p.getBase());
+					System.err.println("refBase: " + refBase);
 					//System.out.println("GATKSAMRecord: " + (p.getRead() instanceof GATKSAMRecord));
-					System.out.println("isGoodBase: " + ((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset()));
+					System.err.println("isGoodBase: " + ((GATKSAMRecord)p.getRead()).isGoodBase(offset) + "\tsecondOfPair: " + "\tchanged: " + samRecord.getSecondOfPairFlag());
 		                     
 				}
             }
@@ -174,10 +223,12 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             
             
             // do not use this prior, this prior is flat prior intiated in genotypeEngine, so we actually do not transfer this priors...
-            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC.PCR_error, BAC.bsRate, BAC.overRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet);
+            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC);
             if((pileup.getLocation().getStart()) == testLoc)
             	GL.VERBOSE=true;
-            GL.checkCytosineStatus(pileup, cts, BAC.cTypeThreshold);
+            
+				GL.checkCytosineStatus(pileup, cts, BAC.cTypeThreshold);
+			
             GL.setPriorsBasedOnContextRef(tracker, ref, BAC.PCR_error, BAC.bsRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet, cts, CONTEXTREF);
             
             int nGoodBases = GL.add(pileup, true, true);
@@ -205,40 +256,49 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             
             Allele AlleleA, AlleleB;
             
-            if(alternateAllele == null || alternateAllele == refBase || alternateAllele == bestAllele){
+            //if(alternateAllele == null || alternateAllele == refBase || alternateAllele == bestAllele){
+            if(alternateAllele == null || BaseUtils.basesAreEqual(alternateAllele,refBase) || alternateAllele == bestAllele){
             	AlleleA = Allele.create(refBase, true);
             	AlleleB = Allele.create(bestAllele, false);
             	//if(alternateAllele == null)
             		alternateAllele = bestAllele;
             	bestAllele = refBase;
+            	
             }
-            else if(bestAllele == refBase){
+            else if(BaseUtils.basesAreEqual(bestAllele,refBase)){
             	AlleleA = Allele.create(bestAllele, true);
             	AlleleB = Allele.create(alternateAllele, false);
             }
             else{
             	AlleleA = Allele.create(bestAllele, false);
             	AlleleB = Allele.create(alternateAllele, false);
+            	if(AlleleA.equals(refAllele, true)){
+            		AlleleA = Allele.create(bestAllele, true);
+            	}
+            	
+            	if(AlleleB.equals(refAllele, true)){
+            		AlleleB = Allele.create(alternateAllele, true);
+            	}
+            	
             }
-
             DiploidGenotype AAGenotype = DiploidGenotype.createHomGenotype(bestAllele);
             DiploidGenotype ABGenotype = DiploidGenotype.createDiploidGenotype(bestAllele, alternateAllele);
             DiploidGenotype BBGenotype = DiploidGenotype.createHomGenotype(alternateAllele);
             
             
             if((pileup.getLocation().getStart()) == testLoc){
-            	System.out.println("sample: " + sample.getKey());
-            	System.out.println("sample location: " + pileup.getPileupString((char)refBase));
-            	System.out.println("sample: " + sample.getValue().getLocation().getStart());
-            	System.out.println("refBase: " + refBase + " bestAllele: " + bestAllele + " alternateAllele: " + alternateAllele);
+            	System.err.println("sample: " + sample.getKey());
+            	System.err.println("sample location: " + pileup.getPileupString((char)refBase));
+            	System.err.println("sample: " + sample.getValue().getLocation().getStart());
+            	System.err.println("refBase: " + refBase + " bestAllele: " + bestAllele + " alternateAllele: " + alternateAllele);
             //	System.out.println("nGoodBases " + nGoodBases + " isCGI: " + isCGI);
-            	System.out.println("AAGenotype " + likelihoods[AAGenotype.ordinal()] + "\t" + prio[AAGenotype.ordinal()] + "\t" + posterior[AAGenotype.ordinal()]);
-            	System.out.println("ABGenotype " + likelihoods[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior[ABGenotype.ordinal()]);
-            	System.out.println("BBGenotype " + likelihoods[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior[BBGenotype.ordinal()]);
-            	System.out.println("AAGenotype before normalize " + likelihoods_befor[AAGenotype.ordinal()] + "\t" + prio[AAGenotype.ordinal()] + "\t" + posterior_befor[AAGenotype.ordinal()]);
-            	System.out.println("ABGenotype before normaliz " + likelihoods_befor[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior_befor[ABGenotype.ordinal()]);
-            	System.out.println("BBGenotype before normaliz " + likelihoods_befor[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior_befor[BBGenotype.ordinal()]);
-            	System.out.println("Cytosine status: C-neg: " + numCNegStrand + "\tC-pos: " + numCPosStrand + "\tT-neg: " + numTNegStrand + "\tT-pos: " + numTPosStrand);
+            	System.err.println("AAGenotype " + likelihoods[AAGenotype.ordinal()] + "\t" + prio[AAGenotype.ordinal()] + "\t" + posterior[AAGenotype.ordinal()]);
+            	System.err.println("ABGenotype " + likelihoods[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior[ABGenotype.ordinal()]);
+            	System.err.println("BBGenotype " + likelihoods[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior[BBGenotype.ordinal()]);
+            	System.err.println("AAGenotype before normalize " + likelihoods_befor[AAGenotype.ordinal()] + "\t" + prio[AAGenotype.ordinal()] + "\t" + posterior_befor[AAGenotype.ordinal()]);
+            	System.err.println("ABGenotype before normaliz " + likelihoods_befor[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior_befor[ABGenotype.ordinal()]);
+            	System.err.println("BBGenotype before normaliz " + likelihoods_befor[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior_befor[BBGenotype.ordinal()]);
+            	System.err.println("Cytosine status: C-neg: " + numCNegStrand + "\tC-pos: " + numCPosStrand + "\tT-neg: " + numTNegStrand + "\tT-pos: " + numTPosStrand);
             }
 
             	GLs.put(sample.getKey(), new BiallelicGenotypeLikelihoods(sample.getKey(),

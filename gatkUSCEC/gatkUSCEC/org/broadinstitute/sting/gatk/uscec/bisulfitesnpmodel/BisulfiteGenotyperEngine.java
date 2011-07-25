@@ -110,7 +110,7 @@ public class BisulfiteGenotyperEngine{
 	
 
 	public byte[] CONTEXTREF = null;
-	public Integer[] CYTOSINE_STATUS = null;
+	public Integer[] CYTOSINE_STATUS = new Integer[4];
 	
 	protected double MAX_PHRED = 1000000;
 	//public static double phredLiklihoodConfidance;
@@ -327,7 +327,7 @@ public class BisulfiteGenotyperEngine{
                  		 }
                  		 else if(genotypeTemp.isHomVar()){
                  			if(genotypeTemp.getAllele(1).getBases()[0]==BaseUtils.C){
-                 				
+                 				//System.err.println(loc.getStart());
                                 cytosineMethyLevel = (double)CYTOSINE_STATUS[1]/(double)(CYTOSINE_STATUS[1] + CYTOSINE_STATUS[3]);
                                 attributes.put(BisulfiteVCFConstants.NUMBER_OF_C_KEY, CYTOSINE_STATUS[1]);
                                 attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[3]);
@@ -349,11 +349,11 @@ public class BisulfiteGenotyperEngine{
                  		 }
             			 attributes.put(genotypeTemp.getType().toString(), true);
                  	 }
-            		 if(CYTOSINE_STATUS[0] + CYTOSINE_STATUS[1] > 0 && loc.getStart() == BAC.testLocus){
+            		 //if(CYTOSINE_STATUS[0] + CYTOSINE_STATUS[1] > 0 && loc.getStart() == BAC.testLocus){
             			// System.err.println("CYTOSINE_STATUS[0]: " + CYTOSINE_STATUS[0] + "\tCYTOSINE_STATUS[1]: " + CYTOSINE_STATUS[1] + "\tCYTOSINE_STATUS[2]: " + CYTOSINE_STATUS[2] + "\tCYTOSINE_STATUS[3]: " + CYTOSINE_STATUS[3]);
                 		// System.err.println("cytosineMethyLevel: " + cytosineMethyLevel + "\tcts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel + "\t" + logRatio);
                 		 
-            		 }
+            		 //}
             		 
                  }
             }
@@ -478,6 +478,13 @@ public class BisulfiteGenotyperEngine{
         @Override
         public BitSet getGoodBases(final GATKSAMRecord record) {
             // all bits are set to false by default
+        	/*SAMRecord record = new SAMRecord(null);
+			try {
+				record = (SAMRecord) samRecord.clone();
+			} catch (CloneNotSupportedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}*/
             BitSet bitset = new BitSet(record.getReadLength());
 
             // if the mapping quality is too low or the mate is bad, we can just zero out the whole read and continue
@@ -486,7 +493,18 @@ public class BisulfiteGenotyperEngine{
             	//System.out.println("bad mates");
             	return bitset;
             }
+            	/*
+        	boolean secondOfPair = record.getSecondOfPairFlag();
+        	
+        	if(secondOfPair){
+        		
+        		record.setReadBases(BaseUtils.simpleReverseComplement(record.getReadBases()));
+        		record.setReadNegativeStrandFlag(!record.getReadNegativeStrandFlag());
 
+	        	record.setBaseQualities(BaseUtilsMore.simpleReverse(record.getBaseQualities()));
+        		
+        	}
+*/
             byte[] quals = record.getBaseQualities();
             for (int i = 0; i < quals.length; i++) {
                 if ( quals[i] >= BAC.MIN_BASE_QUALTY_SCORE )
@@ -717,15 +735,20 @@ public class BisulfiteGenotyperEngine{
         noCall.add(Allele.NO_CALL);
 
         Set<Allele> alleles = new HashSet<Allele>();
-        alleles.add(refAllele);
+        
         boolean addedAltAllele = false;
 
         HashMap<String, Genotype> genotypes = new HashMap<String, Genotype>();
         for ( BiallelicGenotypeLikelihoods GL : GLs.values() ) {
             if ( !addedAltAllele ) {
-                addedAltAllele = true;
+                addedAltAllele = true;              
                 alleles.add(GL.getAlleleA());
                 alleles.add(GL.getAlleleB());
+                if(GL.getAlleleA().isNonReference() && GL.getAlleleB().isNonReference()){
+                	// && !GL.getAlleleA().basesMatch(refAllele) && !GL.getAlleleB().basesMatch(refAllele)
+                	alleles.add(refAllele);
+                }
+                
             }
 
             HashMap<String, Object> attributes = new HashMap<String, Object>();

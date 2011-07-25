@@ -8,6 +8,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "sequencing_mode", shortName = "sm", doc = "Bisulfite mode: BM, GNOMe-seq mode: GM, Normal sequencing mode: NM", required = false)
     public NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel sequencingMode = NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel.BM;
 	
+	@Argument(fullName = "paired_end_mode", shortName = "pem", doc = "work in paired end mode", required = false)
+    public boolean pairedEndMode = false;
+	
 	@Argument(fullName = "auto_estimate_cpg_methylation", shortName = "aecpg", doc = "the first run would be to run auto_estimate_cpg methylation status", required = false)
     public boolean autoEstimateCpg = true;
 	
@@ -84,6 +87,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "novelDbsnpHet", shortName = "ndh", doc = "novelDbsnpHet .for test only", required = false)
     public double novelDbsnpHet = 0.02;
 	
+	@Argument(fullName = "allow_bad_mates", shortName = "abm", doc = "if paired end mode, allow bad mates or not", required = false)
+    public boolean allowBadMates = false;
+	
 	
 	public BisulfiteArgumentCollection clone() {
 		BisulfiteArgumentCollection bac = new BisulfiteArgumentCollection();
@@ -107,6 +113,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.INSERTION_END_PROBABILITY = INSERTION_END_PROBABILITY;
         bac.ALPHA_DELETION_PROBABILITY = ALPHA_DELETION_PROBABILITY;
         bac.sequencingMode = sequencingMode;
+        bac.pairedEndMode = pairedEndMode;
         bac.autoEstimateChg = autoEstimateChg;
         bac.autoEstimateChh = autoEstimateChh;
         bac.autoEstimateCpg = autoEstimateCpg;
@@ -129,6 +136,8 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
        // bac.CphMethy = CphMethy;
         bac.validateDbsnpHet = validateDbsnpHet;
         bac.novelDbsnpHet = novelDbsnpHet;
+        
+        bac.allowBadMates = allowBadMates;
         
         return bac;
     }
