@@ -11,7 +11,7 @@ Parse data from *.fastq.tophat_hits.bam.cufflinks_transcripts.gtf produced by Za
 to temp array of array. After temp AoA is created, sort by chromosome and then sort by chr start position. Input file is not truly sorted
 although it appears to be sorted alphabetically.
  
-note: +1 added to all stop coordinates to comply with BED format
+note: For GTF to BED conversion, subtract 1 from all starts
 
 
 =INPUT
@@ -28,7 +28,7 @@ example:
 
 
 layout:
-chr	start	stop	total_abundance	strand	n isoforms|p|isoform(relative abundance|5' offset|exon #1 length|intron #1 length|exon #2 length| intron #2...)
+chr	start	stop	total_abundance	strand	conf_lo	conf_hi	n isoforms|p|isoform(relative abundance|5' offset|exon #1 length|intron #1 length|exon #2 length| intron #2...)
 
 
 =cut
@@ -93,8 +93,8 @@ while(<FASTQ>) {
 		$seq=~ s/X/$x/;	
 		$seq=~ s/Y/$num_chr/;	
 	}
-	$start = $line[3];
-	$end = $line[4]+1;	# BED
+	$start = $line[3]-1; #BED
+	$end = $line[4];
 	$total_abundance = substr($line[13],1,length($line[13])-3);
 	$strand = $line[6];
 	$conf_lo = substr($line[17],1,length($line[17])-3);
