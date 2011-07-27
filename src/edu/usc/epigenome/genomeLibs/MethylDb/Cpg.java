@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import org.apache.commons.math.distribution.BinomialDistribution;
 import org.apache.commons.math.distribution.DistributionFactory;
 import org.biojava.bio.seq.StrandedFeature;
+import org.broadinstitute.sting.utils.BaseUtils;
 
 import edu.usc.epigenome.genomeLibs.MatUtils;
 
@@ -30,12 +31,16 @@ public class Cpg implements Comparable, Cloneable {
 	public short totalReadsOpposite = 0;
 	public short aReadsOpposite = 0;
 	
-	public short nextBaseTotalReads = 0;
-	public short nextBaseGreads = 0;
+	protected CytosineContextCounter contextCounter = new CytosineContextCounter();
 	
-	// This is actually for non-cpgs
-	protected char prevBaseRefUpperCase = '0';
-	protected char nextBaseRefUpperCase = '0';
+//	private short nextBaseTotalReads = 0;
+//	private short nextBaseGreads = 0;
+//	
+//	private short prevBaseTotalReads = 0;
+//	private short prevBaseGreads = 0;
+//	
+	protected String nextBasesRefUpperCase = "0";
+	protected String prevBasesRefUpperCase = "0";
 	
 	// This is for weighted averages
 	protected double cpgWeight = Double.NaN;
@@ -69,42 +74,76 @@ public class Cpg implements Comparable, Cloneable {
 		this.negStrand = negStrand;
 	}
 	
-//	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
-//			short cReadsNonconversionFilt, short tReads, short agReads,
-//			short totalReadsOpposite, short aReadsOpposite, int cpgWeight) {
-//		super();
-//		this.chromPos = chromPos;
-//		this.negStrand = negStrand;
-//		this.totalReads = totalReads;
-//		this.cReads = cReads;
-//		this.cReadsNonconversionFilt = cReadsNonconversionFilt;
-//		this.tReads = tReads;
-//		this.agReads = agReads;
-//		this.totalReadsOpposite = totalReadsOpposite;
-//		this.aReadsOpposite = aReadsOpposite;
-//		
-//		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
-//		if (cpgWeight < 0)
-//		{
-//			System.err.printf("Got negative cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
-//			cpgWeight = 100;
-//		}
-//		else if (cpgWeight > 5000)
-//		{
-//			System.err.printf("Got extra-large cpgWeight: pos=%d, weight=%d\n",chromPos,cpgWeight);
-//			cpgWeight = 100;
-//		}
-//		
-//		// It's actually divided by two since we're looking at both strands.
-//		this.cpgWeight = (double)cpgWeight/2.0;
-//	}
 	
 	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
 			short cReadsNonconversionFilt, short tReads, short agReads,
 			short totalReadsOpposite, short aReadsOpposite, int cpgWeight,
-			short nextBaseGreads, short nextBaseTotalReads, char nextBaseRefUpperCase)
+			CytosineContextCounter inCounter, char inPrevBaseRef, char inNextBaseRef)
 	 {
 		super();
+		this.init(chromPos, negStrand, totalReads, cReads, cReadsNonconversionFilt, tReads,
+				agReads, totalReadsOpposite, aReadsOpposite, cpgWeight, inCounter,
+				Character.toString(inNextBaseRef), Character.toString(inPrevBaseRef));
+	 }
+	
+	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
+			short cReadsNonconversionFilt, short tReads, short agReads,
+			short totalReadsOpposite, short aReadsOpposite, int cpgWeight,
+			short inNextBaseGreads, short inNextBaseTotalReads, char inNextBaseRef)
+	 {
+		super();
+		this.initBackwardsCompatible(chromPos, negStrand, totalReads, cReads, cReadsNonconversionFilt, tReads,
+				agReads, totalReadsOpposite, aReadsOpposite, cpgWeight, inNextBaseGreads,
+				inNextBaseTotalReads, (short)0, (short)0, Character.toString(inNextBaseRef), "0");
+	 }
+	
+	public Cpg(int chromPos, boolean negStrand, short totalReads, short cReads,
+			short cReadsNonconversionFilt, short tReads, short agReads,
+			short totalReadsOpposite, short aReadsOpposite, int cpgWeight,
+			short inNextBaseGreads, short inNextBaseTotalReads, short inPrevBaseGreads,
+			short inPrevBaseTotalReads,String inPrevBasesRef,String inNextBasesRef)
+	 {
+		super();
+		this.initBackwardsCompatible(chromPos, negStrand, totalReads, cReads, cReadsNonconversionFilt, tReads,
+				agReads, totalReadsOpposite, aReadsOpposite, cpgWeight, inNextBaseGreads,
+				inNextBaseTotalReads, inPrevBaseGreads, inPrevBaseTotalReads, inNextBasesRef, inPrevBasesRef);
+	}
+	
+
+	
+	protected void init(int chromPos, boolean negStrand, short totalReads, short cReads,
+			short cReadsNonconversionFilt, short tReads, short agReads,
+			short totalReadsOpposite, short aReadsOpposite, int cpgWeight,
+			CytosineContextCounter inCounter, String inNextBasesRef, String inPrevBasesRef)
+	{
+		this.initCommon(chromPos, negStrand, totalReads, cReads, cReadsNonconversionFilt, tReads, agReads, totalReadsOpposite, aReadsOpposite, cpgWeight);
+		
+		this.setContextCounter(inCounter);
+		this.nextBasesRefUpperCase = inNextBasesRef.toUpperCase();
+		this.prevBasesRefUpperCase = inPrevBasesRef.toUpperCase();
+	}
+
+	protected void initBackwardsCompatible(int chromPos, boolean negStrand, short totalReads, short cReads,
+			short cReadsNonconversionFilt, short tReads, short agReads,
+			short totalReadsOpposite, short aReadsOpposite, int cpgWeight,
+			short inNextBaseGreads, short inNextBaseTotalReads, short inPrevBaseGreads, 
+			short inPrevBaseTotalReads, String inNextBasesRef, String inPrevBasesRef)
+	{
+		this.initCommon(chromPos, negStrand, totalReads, cReads, cReadsNonconversionFilt, tReads, agReads, totalReadsOpposite, aReadsOpposite, cpgWeight);
+		
+		this.contextCounter.setNextCountsCompatibilty(inNextBaseTotalReads, inNextBaseGreads);
+		this.nextBasesRefUpperCase = inNextBasesRef.toUpperCase();
+		
+		this.contextCounter.setPrevCountsCompatibilty(inPrevBaseTotalReads, inPrevBaseGreads);
+		this.prevBasesRefUpperCase = inPrevBasesRef.toUpperCase();
+
+
+	}
+
+	private void initCommon(int chromPos, boolean negStrand, short totalReads, short cReads,
+			short cReadsNonconversionFilt, short tReads, short agReads,
+			short totalReadsOpposite, short aReadsOpposite, int cpgWeight)
+	{
 		this.chromPos = chromPos;
 		this.negStrand = negStrand;
 		this.totalReads = totalReads;
@@ -113,11 +152,7 @@ public class Cpg implements Comparable, Cloneable {
 		this.tReads = tReads;
 		this.agReads = agReads;
 		this.totalReadsOpposite = totalReadsOpposite;
-		this.aReadsOpposite = aReadsOpposite;
-		
-		this.nextBaseGreads = nextBaseGreads;
-		this.nextBaseTotalReads = nextBaseTotalReads;
-		this.nextBaseRefUpperCase = nextBaseRefUpperCase;
+		this.aReadsOpposite = aReadsOpposite;		
 		
 		// CpG weight has some issues.  For instance at large gaps you get huge values.  Remove these
 		if (cpgWeight < 0)
@@ -132,9 +167,26 @@ public class Cpg implements Comparable, Cloneable {
 		}
 		
 		// It's actually divided by two since we're looking at both strands.
-		this.cpgWeight = (double)cpgWeight/2.0;
+		this.cpgWeight = (double)cpgWeight/2.0;	
 	}
 	
+	
+	
+	
+	/**
+	 * @return the contextCounter
+	 */
+	public CytosineContextCounter getContextCounter() {
+		return contextCounter;
+	}
+
+	/**
+	 * @param contextCounter the contextCounter to set
+	 */
+	public void setContextCounter(CytosineContextCounter contextCounter) {
+		this.contextCounter = contextCounter;
+	}
+
 	/*** Read information ***/
 	public void addRead(CpgRead read)
 	{
@@ -145,8 +197,11 @@ public class Cpg implements Comparable, Cloneable {
 		this.cReads += read.cRead;
 		this.totalReads += (read.agRead + read.tRead + read.cRead);
 		this.cReadsNonconversionFilt += read.cReadNonconversionFilt;
-		this.nextBaseGreads += read.nextBaseGread;
-		if (read.validNextBase()) this.nextBaseTotalReads++;
+
+		this.contextCounter.addContext(read.getContext());
+		
+		// Debugging
+//		System.err.printf("Adding read with context \"%s\". New contextCounter:\n%s\n",read.getContext(),this.contextCounter.toString());
 	}
 	
 	public Map<Integer,CpgRead> getReads()
@@ -206,7 +261,12 @@ public class Cpg implements Comparable, Cloneable {
 	
 	public double fracNextBaseG()
 	{
-		return (double)this.nextBaseGreads / ((double)this.nextBaseTotalReads);
+		return (double)this.contextCounter.getGCount(1) / (double)this.contextCounter.getTotalCount(1);
+	}
+
+	public double fracPrevBaseG()
+	{
+		return (double)this.contextCounter.getGCount(-1) / (double)this.contextCounter.getTotalCount(-1);
 	}
 
 	public double fracOppositeA()
@@ -271,18 +331,53 @@ public class Cpg implements Comparable, Cloneable {
 		}
 	}
 	
+	// The default version now demands the reads to be matching. Be careful this doesn't screw anything up.
 	public String context(int numPrev, int numPost)
 	{
+		return this.context(numPrev, numPost,0.899);
+	}
+	
+	public String context(int numPrev, int numPost, double minFracReadsMatching)
+	{
+		// Prev
 		String out = "";
-		if (numPrev > 0) out += this.getPrevBaseRef();
+		double fracPrevTarget=Double.NaN, fracNextTarget=Double.NaN;
+		if (numPrev > 0)
+		{
+			fracPrevTarget = this.fracPrevBaseG();
+			if (Double.isNaN(fracPrevTarget)) fracPrevTarget = 1.0;
+			else if (!BaseUtils.basesAreEqual((byte)this.getPrevBaseRef(),BaseUtils.G)) fracPrevTarget = 1 - fracPrevTarget;
+			char base = (fracPrevTarget>=minFracReadsMatching) ? this.getPrevBaseRef() : 'N';
+			out += base;
+		}
+
 		out += "C";
-		if (numPost > 0) out += this.getNextBaseRef();
+
+		// Next
+		if (numPost > 0)
+		{
+			 fracNextTarget = this.fracNextBaseG();
+			if (Double.isNaN(fracNextTarget)) fracNextTarget = 1.0;
+			else if (!BaseUtils.basesAreEqual((byte)this.getNextBaseRef(),BaseUtils.G)) fracNextTarget = 1 - fracNextTarget;
+			char base = (fracNextTarget>=minFracReadsMatching) ? this.getNextBaseRef() : 'N';
+			out += base;
+		}
+
+//		System.err.printf("%s", this.toReadFormatString());
+//		System.err.printf("\tCONTEXT(%d): Context %s (frac matching prevRef %c = %.2f, frac matching nextRef %c = %.2f)\n",
+//				this.chromPos, out, this.getPrevBaseRef(), fracPrevTarget, this.getNextBaseRef(), fracNextTarget);
+		
 		return out;
 	}
 	
 	public String context()
 	{
 		return this.context(1,1);
+	}
+
+	public String context(double minFracReadsMatching)
+	{
+		return this.context(1,1,minFracReadsMatching);
 	}
 
 	public boolean isCph(boolean onlyUseRef)
@@ -298,7 +393,7 @@ public class Cpg implements Comparable, Cloneable {
 
 		if (!onlyUseRef)
 		{
-			if (this.nextBaseTotalReads > 0)
+			if (this.contextCounter.getTotalCount(1) > 0)
 			{
 				iscph = (this.fracNextBaseG() < maxNextBaseGfrac);
 			}
@@ -359,7 +454,7 @@ public class Cpg implements Comparable, Cloneable {
 	public String toStringExpanded() 
 	{
 
-		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%c\t%.2f\t%.2f\t%.2f", 
+		return String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%.2f\t%.2f\t%.2f", 
 				chromPos,
 				(negStrand) ? '-' : '+',
 				totalReads,
@@ -369,10 +464,10 @@ public class Cpg implements Comparable, Cloneable {
 				agReads,
 				totalReadsOpposite,
 				aReadsOpposite,
-				nextBaseGreads,
-				nextBaseTotalReads,
-				nextBaseRefUpperCase,
-				prevBaseRefUpperCase,
+				this.contextCounter.getGCount(1),
+				this.contextCounter.getTotalCount(1),
+				nextBasesRefUpperCase,
+				prevBasesRefUpperCase,
 				100*this.fracMeth(true),
 				100*this.fracNextBaseG(),
 				this.cpgWeight
@@ -388,7 +483,7 @@ public class Cpg implements Comparable, Cloneable {
 			CpgRead read = readIt.next();
 			
 
-			sb.append(String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%c\t%.2f\n", 
+			sb.append(String.format("%d\t%c\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%c\t%s\t%c\t%.2f\n", 
 					chromPos,
 					((negStrand) ? '-' : '+'),
 					read.readId,
@@ -401,8 +496,11 @@ public class Cpg implements Comparable, Cloneable {
 					totalReadsOpposite,
 					aReadsOpposite,
 					
-					read.nextBaseGread,
-					read.nextBaseUpperCase,
+					read.getContext().prevBaseGread(),
+					read.getContext().contextPrevBase(),
+
+					read.getContext().nextBaseGread(),
+					read.getContext().contextNextBase(),
 					
 					this.cpgWeight
 			));
@@ -443,26 +541,48 @@ public class Cpg implements Comparable, Cloneable {
 		this.cpgWeight = cpgWeight;
 	}
 
-	public char getNextBaseRef() {
-		return nextBaseRefUpperCase;
+	public String getNextBasesRef() {
+		return nextBasesRefUpperCase;
 	}
 
-	public void setNextBaseRef(char nextBaseRef) {
-		this.nextBaseRefUpperCase = Character.toUpperCase(nextBaseRef);
+	public void setNextBasesRef(String inNextBasesRef) {
+		this.nextBasesRefUpperCase = inNextBasesRef.toUpperCase();
+	}
+
+	/**
+	 * @return the prevBaseRefUpperCase
+	 */
+	public String getPrevBasesRef() {
+		return prevBasesRefUpperCase;
+	}
+
+	/**
+	 * @param prevBasesRefUpperCase the prevBaseRefUpperCase to set
+	 */
+	public void setPrevBasesRef(String inPrevBasesRef) {
+		this.prevBasesRefUpperCase = inPrevBasesRef.toUpperCase();
+	}
+
+	public char getNextBaseRef() {
+		return nextBasesRefUpperCase.charAt(0);
+	}
+
+	public void setNextBaseRef(char inNextBaseRef) {
+		this.setNextBasesRef(Character.toString(inNextBaseRef));
 	}
 
 	/**
 	 * @return the prevBaseRefUpperCase
 	 */
 	public char getPrevBaseRef() {
-		return prevBaseRefUpperCase;
+		return prevBasesRefUpperCase.charAt(0);
 	}
 
 	/**
-	 * @param prevBaseRefUpperCase the prevBaseRefUpperCase to set
+	 * @param prevBasesRefUpperCase the prevBaseRefUpperCase to set
 	 */
-	public void setPrevBaseRef(char prevBaseRefUpperCase) {
-		this.prevBaseRefUpperCase = prevBaseRefUpperCase;
+	public void setPrevBaseRef(char inPrevBaseRef) {
+		this.setPrevBasesRef(Character.toString(inPrevBaseRef));
 	}
 	
 	public StrandedFeature.Strand getStrand()
@@ -507,8 +627,8 @@ public class Cpg implements Comparable, Cloneable {
 			// and then sample the single variant based on the observed fraction
 			out.totalReadsOpposite = (short)MatUtils.randomBinomialGeneratedCount(this.totalReadsOpposite, downsamplingFactor);
 			out.aReadsOpposite = (short)MatUtils.randomBinomialGeneratedCount(out.totalReadsOpposite, this.fracOppositeA());
-			out.nextBaseTotalReads = (short)MatUtils.randomBinomialGeneratedCount(this.nextBaseTotalReads, downsamplingFactor);
-			out.nextBaseGreads = (short)MatUtils.randomBinomialGeneratedCount(out.nextBaseTotalReads, this.fracNextBaseG());
+			out.contextCounter.setNextCountsCompatibilty(MatUtils.randomBinomialGeneratedCount(this.contextCounter.getTotalCount(1), downsamplingFactor),
+					MatUtils.randomBinomialGeneratedCount(this.contextCounter.getTotalCount(1), this.fracNextBaseG()));
 		}
 		catch (Exception e)
 		{

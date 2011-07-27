@@ -3,6 +3,8 @@
  */
 package edu.usc.epigenome.genomeLibs.MethylDb;
 
+import org.broadinstitute.sting.utils.BaseUtils;
+
 /**
  * @author benb
  *
@@ -17,10 +19,17 @@ public class CpgRead {
 	public short cReadNonconversionFilt = 0;
 	public short tRead = 0;
 	public short agRead = 0;
-	
-	public short nextBaseGread = 0;
-	protected char nextBaseUpperCase = '0';
 
+	protected CytosineContext context = new CytosineContext();
+	
+	// Deprecated
+//	public short nextBaseGread = 0;
+//	protected char nextBaseUpperCase = '0';
+//
+//	public short prevBaseGread = 0;
+//	protected char prevBaseUpperCase = '0';
+	
+	
 	
 	/**
 	 * @param readId
@@ -31,7 +40,21 @@ public class CpgRead {
 		
 	}
 
-	/**
+	public CpgRead(int readId, short cRead, short cReadNonconversionFilt,
+			short tRead, short agRead, CytosineContext inContext)
+	{
+		super();
+		this.readId = readId;
+		this.cRead = cRead;
+		this.cReadNonconversionFilt = cReadNonconversionFilt;
+		this.tRead = tRead;
+		this.agRead = agRead;
+		
+		this.context = inContext;
+	}
+		
+		
+		/**
 	 * @param readId
 	 * @param cRead
 	 * @param cReadNonconversionFilt
@@ -39,23 +62,51 @@ public class CpgRead {
 	 * @param agRead
 	 */
 	public CpgRead(int readId, short cRead, short cReadNonconversionFilt,
-			short tRead, short agRead, short nextBaseGread, char nextBaseUpperCase) {
+			short tRead, short agRead, char nextBaseUpperCase) {
 		super();
 		this.readId = readId;
 		this.cRead = cRead;
 		this.cReadNonconversionFilt = cReadNonconversionFilt;
 		this.tRead = tRead;
 		this.agRead = agRead;
-		this.nextBaseGread = nextBaseGread;
-		this.nextBaseUpperCase = nextBaseUpperCase;
+		
+		this.context = new CytosineContext(0,1);
+		this.context.setContextBaseAtRelativeIndex(1, nextBaseUpperCase);
+	}
+
+	public CpgRead(int readId, short cRead, short cReadNonconversionFilt,
+			short tRead, short agRead, char nextBaseUpperCase, char prevBaseUpperCase) {
+		super();
+		this.readId = readId;
+		this.cRead = cRead;
+		this.cReadNonconversionFilt = cReadNonconversionFilt;
+		this.tRead = tRead;
+		this.agRead = agRead;
+
+		this.context = new CytosineContext(1,1);
+		this.context.setContextBaseAtRelativeIndex(-1, prevBaseUpperCase);
+		this.context.setContextBaseAtRelativeIndex(1, nextBaseUpperCase);
 	}
 
 
+	
+	/**
+	 * @return the context
+	 */
+	public CytosineContext getContext() {
+		return context;
+	}
+
+	public boolean nextBaseGread()
+	{
+		return context.nextBaseGread();
+	}
+	
 	public boolean validCg(boolean useNonconvFilt)
 	{
 		return 
 			(agRead == 0) &&
-			(nextBaseGread != 0) &&
+			(nextBaseGread()) &&
 			(!useNonconvFilt || (cReadNonconversionFilt==0));
 	}
 	
@@ -69,21 +120,39 @@ public class CpgRead {
 
 	public boolean validNextBase()
 	{
-		return ((this.nextBaseUpperCase != 'N') &&
-				(this.nextBaseUpperCase != '0'));
+		boolean out = false;
+		if ((this.context != null) && (this.context.numNextBases()>=1))
+		{
+			byte base = this.context.contextBaseAtRelativeIndex(1);
+			out = (base != BaseUtils.N);
+		}
+		return out;
 	}
 	
+	public boolean validPrevBase()
+	{
+		boolean out = false;
+		if ((this.context != null) && (this.context.numPrevBases()>=1))
+		{
+			byte base = this.context.contextBaseAtRelativeIndex(-1);
+			out = (base != BaseUtils.N);
+		}
+		return out;
+	}
+
 	@Override
 	public String toString() {
 
-		return String.format("%020d\t%d\t%d\t%d\t%d\t%d\t%c", 
+		return String.format("%020d\t%d\t%d\t%d\t%d\t%d\t%c\t%d\t%c", 
 						readId,
 						cRead,
 						cReadNonconversionFilt,
 						tRead,
 						agRead,
-						nextBaseGread,
-						nextBaseUpperCase
+						this.context.prevBaseGread(),
+						this.context.contextNextBase(),
+						this.context.nextBaseGread(),
+						this.context.contextNextBase()
 		);
 	}
 }
