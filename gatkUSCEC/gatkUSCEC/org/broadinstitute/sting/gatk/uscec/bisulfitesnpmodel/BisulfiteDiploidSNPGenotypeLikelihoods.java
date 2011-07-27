@@ -24,7 +24,6 @@ import org.broadinstitute.sting.utils.pileup.PileupElement;
 import org.broadinstitute.sting.utils.pileup.ReadBackedPileup;
 import org.broadinstitute.sting.utils.sam.GATKSAMRecord;
 
-import edu.usc.epigenome.genomeLibs.PicardUtils;
 
 public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	protected BisulfiteDiploidSNPGenotypePriors priors = null;

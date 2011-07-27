@@ -51,7 +51,7 @@ public class MethylSNP extends CommandLineExecutable {
 	
 	 // control the output
     @Output(doc="File to which variants should be written",required=true)
-    protected VCFWriter writer = null;
+    protected TcgaVCFWriter writer = null;
  
 	//copy from GATK, since they are private class in GATK
 	private final Collection<Object> bisulfiteArgumentSources = new ArrayList<Object>();
@@ -135,14 +135,14 @@ public class MethylSNP extends CommandLineExecutable {
 			((BisulfiteGenotyper) walker).setWriter(writer);
 			((BisulfiteGenotyper) walker).setAnnoEng(annotationEngine);
 			//System.err.println("writer2: " + writer.toString());
-			
+			writer.setRefSource(argCollection.referenceFile.toString());
 		}
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "bs-0.15";
+        String version = "Bis-SNP-0.20";
 		List<String> header = new ArrayList<String>();
-        header.add(String.format("The MethylSNP (BSSNP) v%s, Compiled %s",version, getBuildTime()));
+        header.add(String.format("The Bis-SNP v%s, Compiled %s",version, getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (in sorceforge tree, the version number is 5288)",getVersionNumber()));
         header.add("Copyright (c) 2011 USC Epigenome Center");
         header.add("Please view our documentation at http://wiki.epigenome.usc.edu/twiki/bin/view");

@@ -158,7 +158,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 				}
 	        	
 	        	if((pileup.getLocation().getStart()) == testLoc){
-        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset] + "\tbase-1: " + samRecord.getReadBases()[offset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[offset-1] + "\tbase+1: " + samRecord.getReadBases()[offset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[offset+1]);
+        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset]);
         			System.err.println("getReadString: " + samRecord.getReadString() + "\tsecond: " + secondOfPair);
         		}
 	        	if(secondOfPair){
@@ -175,7 +175,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	        	}
 	        	if((pileup.getLocation().getStart()) == testLoc){
         			System.err.println("proper paired: " + samRecord.getProperPairFlag() + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
-	        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + offset + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset] + "\tbase-1: " + samRecord.getReadBases()[offset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[offset-1] + "\tbase+1: " + samRecord.getReadBases()[offset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[offset+1]);
+	        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + offset + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset]);
 	        		System.err.println("getBase: " + p.getBase() + "\tp.getRead(): " + p.getRead().getReadBases()[offset]);
         		}
 	        	boolean negStrand = samRecord.getReadNegativeStrandFlag();
@@ -299,6 +299,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	System.err.println("ABGenotype before normaliz " + likelihoods_befor[ABGenotype.ordinal()] + "\t" + prio[ABGenotype.ordinal()] + "\t" + posterior_befor[ABGenotype.ordinal()]);
             	System.err.println("BBGenotype before normaliz " + likelihoods_befor[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior_befor[BBGenotype.ordinal()]);
             	System.err.println("Cytosine status: C-neg: " + numCNegStrand + "\tC-pos: " + numCPosStrand + "\tT-neg: " + numTNegStrand + "\tT-pos: " + numTPosStrand);
+            	//System.err.println("refAllele: " + refAllele.toString() + "\tAlleleA:" + AlleleA.toString() + "\tAlleleB:" + AlleleB);
             }
 
             	GLs.put(sample.getKey(), new BiallelicGenotypeLikelihoods(sample.getKey(),

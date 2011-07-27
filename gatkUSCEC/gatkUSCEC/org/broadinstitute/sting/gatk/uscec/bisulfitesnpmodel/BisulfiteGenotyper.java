@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.broad.tribble.util.variantcontext.Genotype;
+import org.broad.tribble.util.variantcontext.VariantContext;
 import org.broad.tribble.vcf.VCFConstants;
 import org.broad.tribble.vcf.VCFFilterHeaderLine;
 import org.broad.tribble.vcf.VCFHeader;
@@ -83,7 +85,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
     
-    protected VCFWriter writer = null;
+    protected TcgaVCFWriter writer = null;
+    
+    
     
     // the calculation arguments
     private BisulfiteGenotyperEngine BG_engine = null;
@@ -196,8 +200,16 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         // get all of the unique sample names
         // if we're supposed to assume a single sample, do so
         Set<String> samples = new TreeSet<String>();
-        if ( BAC.ASSUME_SINGLE_SAMPLE != null )
-            samples.add(BAC.ASSUME_SINGLE_SAMPLE);
+        if ( BAC.ASSUME_SINGLE_SAMPLE != null ){
+        	samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
+        	if(samples != null){
+        		System.out.println("sample name provided was masked by bam file header");
+        	}
+        	else{
+        		samples.add(BAC.ASSUME_SINGLE_SAMPLE);
+        	}
+        }
+            
         else
             samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
 
@@ -215,7 +227,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
   
         BG_engine = new BisulfiteGenotyperEngine(getToolkit(), BAC, logger, annotationEngine, samples);
-       
+        
         // initialize the header
         if(autoEstimateC){
         	if(secondIteration){
@@ -247,8 +259,19 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
         // all annotation fields from VariantAnnotatorEngine
        // headerInfo.addAll(annotationEngine.getVCFAnnotationDescriptions());
-
+     // all annotation fields from VariantAnnotatorEngine
+        //headerInfo.addAll(annotationEngine.getVCFAnnotationDescriptions());
+        
         // annotation (INFO) fields from UnifiedGenotyper
+        if ( !BAC.NO_SLOD )
+            headerInfo.add(new VCFInfoHeaderLine(VCFConstants.STRAND_BIAS_KEY, 1, VCFHeaderLineType.Float, "Strand Bias"));
+        // annotation (INFO) fields from UnifiedGenotyper
+        headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.CYTOSINE_TYPE, -1, VCFHeaderLineType.String, "Cytosine Type"));
+        headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.GENOTYPE_TYPE, 1, VCFHeaderLineType.String, "Genotype Type"));
+        headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, 0, VCFHeaderLineType.Flag, "Cytosine in negative strand"));
+        headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.NUMBER_OF_C_KEY, 1, VCFHeaderLineType.Integer, "number of C in this Cytosine position"));
+        headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.NUMBER_OF_T_KEY, 1, VCFHeaderLineType.Integer, "number of T in this Cytosine position"));
+        headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.CYTOSINE_METHY_VALUE, 1, VCFHeaderLineType.Float, "Methylation value in this Cytosine position"));
         
         List<ReferenceOrderedDataSource> dataSources = getToolkit().getRodDataSources();
         for ( ReferenceOrderedDataSource source : dataSources ) {
@@ -262,8 +285,13 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
 
         // FORMAT and INFO fields
-        headerInfo.addAll(VCFUtils.getSupportedHeaderStrings(VCFConstants.PHRED_GENOTYPE_LIKELIHOODS_KEY));
+        headerInfo.addAll(VCFUtils.getSupportedHeaderStrings(VCFConstants.GENOTYPE_LIKELIHOODS_KEY));
+   
 
+        // FILTER fields
+        if ( BAC.STANDARD_CONFIDENCE_FOR_EMITTING < BAC.STANDARD_CONFIDENCE_FOR_CALLING )
+            headerInfo.add(new VCFFilterHeaderLine(UnifiedGenotyperEngine.LOW_QUAL_FILTER_NAME, "Low quality"));
+     
         return headerInfo;
     }
 
@@ -295,7 +323,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if(secondIteration){
         	cts = summary.clone();
         }
- 	
+
         	BG_engine.setCytosineTypeStatus(cts, contextRef);
       
         
@@ -366,7 +394,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
         
         // can't make a confident variant call here
-        if ( value.vc == null )
+        if ( value.vc == null)
             return sum;
 
         try {
@@ -500,10 +528,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	return writer;
     }
    
-    public void setWriter(VCFWriter writer){
+    public void setWriter(TcgaVCFWriter writer){
     	this.writer = writer;
     	//System.err.println("writer-setup: " + this.writer.toString());
     }
+    
+    
     
     public VariantAnnotatorEngine getAnnoEng(){
     	return annotationEngine;
