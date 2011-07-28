@@ -572,7 +572,7 @@ public class BisulfiteGenotyperEngine{
             BitSet mismatches;
             //System.out.println(BAC.bisulfiteSpace);
             if(BAC.sequencingMode == MethylSNPModel.BM || BAC.sequencingMode == MethylSNPModel.GM){
-            	mismatches = BisulfiteAlignmentUtils.mismatchesInRefWindow(record, refContext, BAC.MAX_MISMATCHES, MISMATCH_WINDOW_SIZE, BAC.sequencingMode);
+            	mismatches = BisulfiteAlignmentUtils.mismatchesInRefWindow(record, refContext, BAC.MAX_MISMATCHES, MISMATCH_WINDOW_SIZE, BAC.sequencingMode, BAC.pairedEndMode);
             }
             else{
             	mismatches = AlignmentUtils.mismatchesInRefWindow(record, refContext, BAC.MAX_MISMATCHES, MISMATCH_WINDOW_SIZE);

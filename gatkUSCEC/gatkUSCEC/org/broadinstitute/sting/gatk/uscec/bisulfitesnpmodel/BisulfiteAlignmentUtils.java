@@ -25,7 +25,7 @@ public class BisulfiteAlignmentUtils extends AlignmentUtils {
     * @param bisulfiteSpace    in the bisulfite conversion space
     * @return a bitset representing which bases are good
     */
-   public static BitSet mismatchesInRefWindow(SAMRecord read, ReferenceContext ref, int maxMismatches, int windowSize, MethylSNPModel sequencingMode) {
+   public static BitSet mismatchesInRefWindow(SAMRecord read, ReferenceContext ref, int maxMismatches, int windowSize, MethylSNPModel sequencingMode, boolean pairedend) {
        // first determine the positions with mismatches
        int readLength = read.getReadLength();
        BitSet mismatches = new BitSet(readLength);
@@ -47,7 +47,11 @@ public class BisulfiteAlignmentUtils extends AlignmentUtils {
 
        Cigar c = read.getCigar();
        boolean negStrand = read.getReadNegativeStrandFlag();
-       boolean secondPair = read.getSecondOfPairFlag();
+       boolean secondPair = false;
+       if(pairedend){
+    	   secondPair = read.getSecondOfPairFlag();
+       }
+
        //System.out.println("mismatchesInRefWindow in bs");
        for (int i = 0 ; i < c.numCigarElements() ; i++) {
            CigarElement ce = c.getCigarElement(i);

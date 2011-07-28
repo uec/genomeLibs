@@ -202,8 +202,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         Set<String> samples = new TreeSet<String>();
         if ( BAC.ASSUME_SINGLE_SAMPLE != null ){
         	samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
-        	if(samples != null){
+        	if(!samples.isEmpty()){
         		System.out.println("sample name provided was masked by bam file header");
+        		//for(String sample : samples){
+        		//	System.out.println("sample name: " + sample);
+        		//}
+        		
         	}
         	else{
         		samples.add(BAC.ASSUME_SINGLE_SAMPLE);

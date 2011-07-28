@@ -130,54 +130,56 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             for ( PileupElement p : pileup ) {
             	SAMRecord samRecord = p.getRead();
             	int offset = p.getOffset();
-            	
-				try {
-					samRecord = (SAMRecord) p.getRead().clone();
-				} catch (CloneNotSupportedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-            	boolean Paired = samRecord.getReadPairedFlag();	
-	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
-	        	
-	        	//byte base = p.getBase();
-	        	if (samRecord.getNotPrimaryAlignmentFlag())
-				{
-					continue;
-				}
+            	if(BAC.pairedEndMode){
+            		try {
+    					samRecord = (SAMRecord) p.getRead().clone();
+    				} catch (CloneNotSupportedException e) {
+    					// TODO Auto-generated catch block
+    					e.printStackTrace();
+    				}
+                	boolean Paired = samRecord.getReadPairedFlag();	
+    	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+    	        	
+    	        	//byte base = p.getBase();
+    	        	if (samRecord.getNotPrimaryAlignmentFlag())
+    				{
+    					continue;
+    				}
+    				
+    				// Inverted dups, count only one end
+    				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+    				{
+    					if (samRecord.getSecondOfPairFlag()) continue;
+    					//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+    				}
+    	        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+    				{
+    					continue;
+    				}
+    	        	
+    	        	if((pileup.getLocation().getStart()) == testLoc){
+            			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset]);
+            			System.err.println("getReadString: " + samRecord.getReadString() + "\tsecond: " + secondOfPair);
+            		}
+    	        	if(secondOfPair){
+    	        		
+    	        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
+    		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
+    		        	//offset = samRecord.getReadLength() - 1 - offset;
+    		        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
+    		        	//samRecord.setSecondOfPairFlag(!secondOfPair);
+    		        	//base = samRecord.getReadBases()[offset];
+    		        	//p = new PileupElement(samRecord,offset);
+    	        		
+    	        		
+    	        	}
+    	        	if((pileup.getLocation().getStart()) == testLoc){
+            			System.err.println("proper paired: " + samRecord.getProperPairFlag() + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
+    	        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + offset + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset]);
+    	        		System.err.println("getBase: " + p.getBase() + "\tp.getRead(): " + p.getRead().getReadBases()[offset]);
+            		}
+            	}
 				
-				// Inverted dups, count only one end
-				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
-				{
-					if (samRecord.getSecondOfPairFlag()) continue;
-					//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
-				}
-	        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
-				{
-					continue;
-				}
-	        	
-	        	if((pileup.getLocation().getStart()) == testLoc){
-        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset]);
-        			System.err.println("getReadString: " + samRecord.getReadString() + "\tsecond: " + secondOfPair);
-        		}
-	        	if(secondOfPair){
-	        		
-	        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
-		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
-		        	//offset = samRecord.getReadLength() - 1 - offset;
-		        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
-		        	//samRecord.setSecondOfPairFlag(!secondOfPair);
-		        	//base = samRecord.getReadBases()[offset];
-		        	//p = new PileupElement(samRecord,offset);
-	        		
-	        		
-	        	}
-	        	if((pileup.getLocation().getStart()) == testLoc){
-        			System.err.println("proper paired: " + samRecord.getProperPairFlag() + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
-	        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + offset + "\tbase: " + samRecord.getReadBases()[offset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[offset]);
-	        		System.err.println("getBase: " + p.getBase() + "\tp.getRead(): " + p.getRead().getReadBases()[offset]);
-        		}
 	        	boolean negStrand = samRecord.getReadNegativeStrandFlag();
 				int alignmentS = samRecord.getAlignmentStart();
 				int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
@@ -215,7 +217,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 					System.err.println("before filter:\t" + onRefCoord + "\t" + offset + "\t" + negStrand + "\t" + pileup.getLocation().getStart() + "\t" + (char)p.getBase());
 					System.err.println("refBase: " + refBase);
 					//System.out.println("GATKSAMRecord: " + (p.getRead() instanceof GATKSAMRecord));
-					System.err.println("isGoodBase: " + ((GATKSAMRecord)p.getRead()).isGoodBase(offset) + "\tsecondOfPair: " + "\tchanged: " + samRecord.getSecondOfPairFlag());
+					if(BAC.pairedEndMode)
+						System.err.println("isGoodBase: " + ((GATKSAMRecord)p.getRead()).isGoodBase(offset) + "\tsecondOfPair: " + "\tchanged: " + samRecord.getSecondOfPairFlag());
 		                     
 				}
             }

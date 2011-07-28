@@ -165,50 +165,56 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	        for(PileupElement p : pileupPositiveStrand ){
 	        	SAMRecord samRecord = new SAMRecord(null);
 	        	int cytosineOffset = p.getOffset();
-				try {
-					samRecord = (SAMRecord) p.getRead().clone();
-				} catch (CloneNotSupportedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-	        	
-	        	boolean Paired = samRecord.getReadPairedFlag();
-	        	boolean firstOfPair = samRecord.getFirstOfPairFlag();
-	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
-	        	//int cytosineOffset = p.getOffset();
-	        	if (samRecord.getNotPrimaryAlignmentFlag())
-				{
-					continue;
-				}
-				
-				// Inverted dups, count only one end
-				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
-				{
-					if (samRecord.getSecondOfPairFlag()) continue;
-					//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
-				}
-	        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
-				{
-					continue;
-				}
-	        	
-	        	if(secondOfPair){
-	        		if(VERBOSE){
-	        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
-	        			System.err.println("getReadString: " + samRecord.getReadString());
-	        		}
-	        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
-		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
-		        	//cytosineOffset = samRecord.getReadLength() - 1 - cytosineOffset;
-		        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
-		        	samRecord.setSecondOfPairFlag(!secondOfPair);
-	        		if(VERBOSE){
-	        			System.err.println("secondOfPair: " + secondOfPair + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
-		        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + cytosineOffset + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
-		        		
-	        		}
-	        			        		
+	        	if(BAC.pairedEndMode){
+	        		try {
+						samRecord = (SAMRecord) p.getRead().clone();
+					} catch (CloneNotSupportedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		        	
+		        	boolean Paired = samRecord.getReadPairedFlag();
+		        	//boolean firstOfPair = samRecord.getFirstOfPairFlag();
+		        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+		        	//int cytosineOffset = p.getOffset();
+		        	if (samRecord.getNotPrimaryAlignmentFlag())
+					{
+						continue;
+					}
+					
+					// Inverted dups, count only one end
+					if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+					{
+						if (samRecord.getSecondOfPairFlag()) continue;
+						//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+					}
+		        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+					{
+						continue;
+					}
+		        	
+		        	if(secondOfPair){
+		        		if(VERBOSE){
+		        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+		        			System.err.println("getReadString: " + samRecord.getReadString());
+		        		}
+		        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
+			        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
+			        	//cytosineOffset = samRecord.getReadLength() - 1 - cytosineOffset;
+			        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
+			        	samRecord.setSecondOfPairFlag(!secondOfPair);
+		        		if(VERBOSE){
+		        			System.err.println("secondOfPair: " + secondOfPair + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
+			        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + cytosineOffset + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+			        		
+		        		}
+		        			        		
+		        	}
 	        	}
+	        	else{
+	        		samRecord = p.getRead();
+	        	}
+				
 	        	
 				
 				for(int i = 0; i < tmpKey[0].length(); i++){
@@ -275,46 +281,51 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	        for(PileupElement p : pileupNegativeStrand ){
 	        	SAMRecord samRecord = new SAMRecord(null);
 	        	int cytosineOffset = p.getOffset();
-				try {
-					samRecord = (SAMRecord) p.getRead().clone();
-				} catch (CloneNotSupportedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
-	        	//int cytosineOffset = p.getOffset();
-	        	boolean Paired = samRecord.getReadPairedFlag();
-	        	if (samRecord.getNotPrimaryAlignmentFlag())
-				{
-					continue;
-				}
-				
-				// Inverted dups, count only one end
-				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
-				{
-					if (samRecord.getSecondOfPairFlag()) continue;
-					//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
-				}
-	        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
-				{
-					continue;
-				}
-	        	if(secondOfPair){
-	        		if(VERBOSE){
-	        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
-	        			System.err.println("getReadString: " + samRecord.getReadString());
-	        		}
-	        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
-		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
-		        	//cytosineOffset = samRecord.getReadLength() - 1 - cytosineOffset;
-		        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
-		        	samRecord.setSecondOfPairFlag(!secondOfPair);
-	        		if(VERBOSE){
-	        			System.err.println("secondOfPair: " + secondOfPair + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
-		        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + cytosineOffset + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+	        	if(BAC.pairedEndMode){
+	        		try {
+						samRecord = (SAMRecord) p.getRead().clone();
+					} catch (CloneNotSupportedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+		        	//int cytosineOffset = p.getOffset();
+		        	boolean Paired = samRecord.getReadPairedFlag();
+		        	if (samRecord.getNotPrimaryAlignmentFlag())
+					{
+						continue;
+					}
+					
+					// Inverted dups, count only one end
+					if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+					{
+						if (samRecord.getSecondOfPairFlag()) continue;
+						//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+					}
+		        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+					{
+						continue;
+					}
+		        	if(secondOfPair){
+		        		if(VERBOSE){
+		        			System.err.println("NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag() + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
+		        			System.err.println("getReadString: " + samRecord.getReadString());
+		        		}
+		        		//samRecord.setReadBases(BaseUtils.simpleReverseComplement(samRecord.getReadBases()));
+			        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());
+			        	//cytosineOffset = samRecord.getReadLength() - 1 - cytosineOffset;
+			        	//samRecord.setBaseQualities(BaseUtilsMore.simpleReverse(samRecord.getBaseQualities()));
+			        	samRecord.setSecondOfPairFlag(!secondOfPair);
+		        		if(VERBOSE){
+		        			System.err.println("secondOfPair: " + secondOfPair + "\t" + "getMateAlignmentStart: " + samRecord.getMateAlignmentStart() + "\t" + "MateNegativeStrandFlag: " + samRecord.getMateNegativeStrandFlag());
+			        		System.err.println("getReadString: " + samRecord.getReadString() + "\t" + "getAlignmentStart: " + samRecord.getAlignmentStart() + "\t" + "getUnclippedEnd: " + samRecord.getUnclippedEnd() + "\t" +"NegativeStrandFlag: " + samRecord.getReadNegativeStrandFlag() + "\tcytosineOffset: " + cytosineOffset + "\tbase: " + samRecord.getReadBases()[cytosineOffset] + "\t" + "baseQ: " + samRecord.getBaseQualities()[cytosineOffset] + "\tbase-1: " + samRecord.getReadBases()[cytosineOffset-1] + "\t" + "baseQ-1: " + samRecord.getBaseQualities()[cytosineOffset-1] + "\tbase+1: " + samRecord.getReadBases()[cytosineOffset+1] + "\t" + "baseQ+1: " + samRecord.getBaseQualities()[cytosineOffset+1]);
 
-	        		}
-	        			        		
+		        		}
+		        			        		
+		        	}
+	        	}
+	        	else{
+	        		samRecord = p.getRead();
 	        	}
 				
 				for(int i = 0; i < tmpKey[0].length(); i++){
@@ -482,30 +493,37 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
         }
             
         SAMRecord samRecord = p.getRead();
-		try {
-			samRecord = (SAMRecord) p.getRead().clone();
-		} catch (CloneNotSupportedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
-    	boolean Paired = samRecord.getReadPairedFlag();
-    	boolean secondOfPair = samRecord.getSecondOfPairFlag();
-    	if (samRecord.getNotPrimaryAlignmentFlag())
-		{
-			return 0;
-		}
+        if(BAC.pairedEndMode){
+        	try {
+    			samRecord = (SAMRecord) p.getRead().clone();
+    		} catch (CloneNotSupportedException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+        	
+        	boolean Paired = samRecord.getReadPairedFlag();
+        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+        	if (samRecord.getNotPrimaryAlignmentFlag())
+    		{
+    			return 0;
+    		}
+    		
+    		// Inverted dups, count only one end
+    		if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+    		{
+    			if (samRecord.getSecondOfPairFlag()) return 0;
+    			//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+    		}
+        	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
+    		{
+        		return 0;
+    		}
+        	if(secondOfPair){
+           	 //observedBase = BaseUtils.simpleComplement(p.getBase()); 
+           	 negStrand = !negStrand;
+        	}
+        }
 		
-		// Inverted dups, count only one end
-		if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
-		{
-			if (samRecord.getSecondOfPairFlag()) return 0;
-			//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
-		}
-    	if (Paired  && !BAC.allowBadMates && !samRecord.getProperPairFlag())
-		{
-    		return 0;
-		}
     	
     	
         byte qual = p.getQual();
@@ -513,10 +531,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
             throw new UserException.MalformedBAM(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
         if ( capBaseQualsAtMappingQual )
             qual = (byte)Math.min((int)p.getQual(), p.getMappingQual());
-        if(secondOfPair){
-        	 //observedBase = BaseUtils.simpleComplement(p.getBase()); 
-        	 negStrand = !negStrand;
-    	}
+        
         observedBase = p.getBase(); 
         
         qualityScore = qual;
