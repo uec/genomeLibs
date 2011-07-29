@@ -13,6 +13,7 @@ import org.apache.commons.math.distribution.DistributionFactory;
 import org.biojava.bio.seq.StrandedFeature;
 import org.broadinstitute.sting.utils.BaseUtils;
 
+import edu.usc.epigenome.genomeLibs.GatkBaseUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
 
 public class Cpg implements Comparable, Cloneable {
@@ -259,6 +260,7 @@ public class Cpg implements Comparable, Cloneable {
 		return out;
 	}
 	
+
 	public double fracNextBaseG()
 	{
 		return (double)this.contextCounter.getGCount(1) / (double)this.contextCounter.getTotalCount(1);
@@ -334,40 +336,98 @@ public class Cpg implements Comparable, Cloneable {
 	// The default version now demands the reads to be matching. Be careful this doesn't screw anything up.
 	public String context(int numPrev, int numPost)
 	{
-		return this.context(numPrev, numPost,0.899);
+		return this.context(numPrev, numPost,0.899,true);
 	}
 	
-	public String context(int numPrev, int numPost, double minFracReadsMatching)
+
+	
+	//*************************/
+	//**** CRITICAL LOGIC *****/
+	//*************************/
+	public String context(int numPrev, int numPost, double minFracReadsMatching, boolean bisulfiteMatching)
 	{
-		// Prev
-		String out = "";
-		double fracPrevTarget=Double.NaN, fracNextTarget=Double.NaN;
-		if (numPrev > 0)
+		int numPrevAvail = this.contextCounter.numPrevBases();
+		if (numPrev > numPrevAvail)
 		{
-			fracPrevTarget = this.fracPrevBaseG();
-			if (Double.isNaN(fracPrevTarget)) fracPrevTarget = 1.0;
-			else if (!BaseUtils.basesAreEqual((byte)this.getPrevBaseRef(),BaseUtils.G)) fracPrevTarget = 1 - fracPrevTarget;
-			char base = (fracPrevTarget>=minFracReadsMatching) ? this.getPrevBaseRef() : 'N';
-			out += base;
+//			System.err.printf("Cpg::context() Requesting %d prevBases when only %d exist\n", numPrev, numPrevAvail);
+			numPrev = numPrevAvail;
 		}
-
-		out += "C";
-
-		// Next
-		if (numPost > 0)
-		{
-			 fracNextTarget = this.fracNextBaseG();
-			if (Double.isNaN(fracNextTarget)) fracNextTarget = 1.0;
-			else if (!BaseUtils.basesAreEqual((byte)this.getNextBaseRef(),BaseUtils.G)) fracNextTarget = 1 - fracNextTarget;
-			char base = (fracNextTarget>=minFracReadsMatching) ? this.getNextBaseRef() : 'N';
-			out += base;
-		}
-
-//		System.err.printf("%s", this.toReadFormatString());
-//		System.err.printf("\tCONTEXT(%d): Context %s (frac matching prevRef %c = %.2f, frac matching nextRef %c = %.2f)\n",
-//				this.chromPos, out, this.getPrevBaseRef(), fracPrevTarget, this.getNextBaseRef(), fracNextTarget);
 		
-		return out;
+		int numPostAvail = this.contextCounter.numNextBases();
+		if (numPost > numPostAvail)
+		{
+//			System.err.printf("Cpg::context() Requesting %d nextBases when only %d exist\n", numPost, numPostAvail);
+			numPost = numPostAvail;
+		}
+		
+		StringBuffer sb = new StringBuffer(numPrev+1+numPost);
+		for (int i = -numPrev; i <= numPost; i++)
+		{
+			if (i == 0)
+			{
+				sb.append("C");
+			}
+			else
+			{
+				boolean done = false;
+				char comparisonBase = 'N';
+				if ((i==1) || (i==-1))
+				{
+					comparisonBase = Character.toUpperCase((i==1) ? this.getNextBaseRef() : this.getPrevBaseRef());
+					done = (comparisonBase != 'N');
+				}
+
+				if (!done)
+				{
+					comparisonBase = GatkBaseUtils.CharFromBaseByte(this.contextCounter.majorityBase(i));
+					done = true;
+				}
+
+				byte comparisonByte = GatkBaseUtils.BaseByteFromChar(comparisonBase);
+				double fracTargetRef = this.contextCounter.getMatchingFrac(i, comparisonByte, bisulfiteMatching);
+//				System.err.printf("\tcomparisonBase=%c\tcomparisonByte=%d\tfracMatching=%.2f (coord=%d, relPos=%s)\n", 
+//						comparisonBase, comparisonByte, fracTargetRef, this.chromPos, i);
+				if (Double.isNaN(fracTargetRef) || (fracTargetRef>=minFracReadsMatching))
+				{
+					sb.append(comparisonBase);
+				}
+				else
+				{
+					sb.append("N");
+				}
+			}
+		}
+		
+
+//		// Prev
+//		String out = "";
+//		double fracPrevTarget=Double.NaN, fracNextTarget=Double.NaN;
+//		if (numPrev > 0)
+//		{
+//			fracPrevTarget = this.fracPrevBaseG();
+//			if (Double.isNaN(fracPrevTarget)) fracPrevTarget = 1.0;
+//			else if (!BaseUtils.basesAreEqual((byte)this.getPrevBaseRef(),BaseUtils.G)) fracPrevTarget = 1 - fracPrevTarget;
+//			char base = (fracPrevTarget>=minFracReadsMatching) ? this.getPrevBaseRef() : 'N';
+//			out += base;
+//		}
+//
+//		out += "C";
+//
+//		// Next
+//		if (numPost > 0)
+//		{
+//			 fracNextTarget = this.fracNextBaseG();
+//			if (Double.isNaN(fracNextTarget)) fracNextTarget = 1.0;
+//			else if (!BaseUtils.basesAreEqual((byte)this.getNextBaseRef(),BaseUtils.G)) fracNextTarget = 1 - fracNextTarget;
+//			char base = (fracNextTarget>=minFracReadsMatching) ? this.getNextBaseRef() : 'N';
+//			out += base;
+//		}
+//
+////		System.err.printf("%s", this.toReadFormatString());
+////		System.err.printf("\tCONTEXT(%d): Context %s (frac matching prevRef %c = %.2f, frac matching nextRef %c = %.2f)\n",
+////				this.chromPos, out, this.getPrevBaseRef(), fracPrevTarget, this.getNextBaseRef(), fracNextTarget);
+		
+		return sb.toString();
 	}
 	
 	public String context()
@@ -377,7 +437,7 @@ public class Cpg implements Comparable, Cloneable {
 
 	public String context(double minFracReadsMatching)
 	{
-		return this.context(1,1,minFracReadsMatching);
+		return this.context(1,1,minFracReadsMatching,true);
 	}
 
 	public boolean isCph(boolean onlyUseRef)

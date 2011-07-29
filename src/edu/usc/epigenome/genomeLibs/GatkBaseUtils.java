@@ -39,4 +39,32 @@ public class GatkBaseUtils {
 		
 		return out;
 	}
+	
+    /**
+     * Copied from org.broadinstitute.sting.utils.BaseUtils::mostFrequentBaseFraction
+     * Finds the most frequent base in the sequence
+     *
+     * @param sequence  the read sequence
+     * @return  the percentage of the read that's made up of the most frequent base
+     */
+    static public byte mostFrequentBase(byte[] sequence) {
+        int[] baseCounts = new int[4];
+
+        for ( byte base : sequence ) {
+            int baseIndex = BaseUtils.simpleBaseToBaseIndex(base);
+
+            if (baseIndex >= 0) {
+                baseCounts[baseIndex]++;
+            }
+        }
+
+        int mostFrequentBaseIndex = 0;
+        for (int baseIndex = 1; baseIndex < 4; baseIndex++) {
+            if (baseCounts[baseIndex] > baseCounts[mostFrequentBaseIndex]) {
+                mostFrequentBaseIndex = baseIndex;
+            }
+        }
+
+        return BaseUtils.baseIndexToSimpleBase(mostFrequentBaseIndex);
+    }
 }
