@@ -198,7 +198,6 @@ public class CpgIterator implements Iterator<Cpg> {
 									(short)curRS.getInt("cpg.cReadNonconversionFilt"),
 									(short)curRS.getInt("cpg.tRead"),
 									(short)curRS.getInt("cpg.agRead"),
-									(short)curRS.getInt("cpg.nextBaseGread"),
 									curRS.getString("cpg.nextBaseUpperCase").charAt(0)
 							);
 							out.addRead(read);

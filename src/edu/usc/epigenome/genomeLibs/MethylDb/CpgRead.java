@@ -74,6 +74,7 @@ public class CpgRead {
 		this.context.setContextBaseAtRelativeIndex(1, nextBaseUpperCase);
 	}
 
+	
 	public CpgRead(int readId, short cRead, short cReadNonconversionFilt,
 			short tRead, short agRead, char nextBaseUpperCase, char prevBaseUpperCase) {
 		super();
