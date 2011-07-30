@@ -43,10 +43,13 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected static Integer numCPosStrand = 0;
 	protected static Integer numTPosStrand = 0;
 	//protected static String CYTOSINE_TYPE_LIST = null;
-	protected String DETERMINED_CYTOSINE_TYPE = "C";
+	//protected String DETERMINED_CYTOSINE_TYPE = "C";
 	private CytosineTypeStatus cts = null;
 	//protected static Boolean cytosineStrand = false;
 	//protected static String cytosineWindowContext = "C";
+	private static boolean autoEstimateC = false;
+    private static boolean secondIteration = false;
+	
 
 	
 	
@@ -59,11 +62,13 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	}
 	
 	@Override
-	public void initialize(CytosineTypeStatus cts, BisulfiteArgumentCollection BAC, byte[] contextRef){
+	public void initialize(CytosineTypeStatus cts, BisulfiteArgumentCollection BAC, byte[] contextRef, boolean autoEstimateC, boolean secondIteration){
 		this.cts = cts;
 		this.BAC = BAC;
 		this.CONTEXTREF = contextRef;
 		this.testLoc = BAC.testLocus;
+		this.autoEstimateC = autoEstimateC;
+		this.secondIteration = secondIteration;
 	//	CYTOSINE_TYPE_LIST = BAC.cytosineType;
 	}
 	
@@ -229,9 +234,18 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC);
             if((pileup.getLocation().getStart()) == testLoc)
             	GL.VERBOSE=true;
-            
-				GL.checkCytosineStatus(pileup, cts, BAC.cTypeThreshold);
-			
+            if((pileup.getLocation().getStart()) == testLoc){
+     			// System.err.println("CYTOSINE_STATUS[0]: " + CYTOSINE_STATUS[0] + "\tCYTOSINE_STATUS[1]: " + CYTOSINE_STATUS[1] + "\tCYTOSINE_STATUS[2]: " + CYTOSINE_STATUS[2] + "\tCYTOSINE_STATUS[3]: " + CYTOSINE_STATUS[3]);
+     			 for(String cytosineType : cts.cytosineListMap.keySet()){
+     					String[] tmpKey = cytosineType.split("-");
+     					Double[] value = cts.cytosineListMap.get(cytosineType);
+     					System.err.println("tmpKey[0]" + tmpKey[0] + "\tvalue[0]" + value[0] + "\tvalue[1]" + value[1]);
+     			 }
+     			 //System.err.println("cytosineMethyLevel: " + cytosineMethyLevel + "\tcts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel + "\t" + logRatio);
+         		 
+     		 }
+            GL.checkCytosineStatus(pileup, cts, BAC.cTypeThreshold, autoEstimateC, secondIteration);
+           
             GL.setPriorsBasedOnContextRef(tracker, ref, BAC.PCR_error, BAC.bsRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet, cts, CONTEXTREF);
             
             int nGoodBases = GL.add(pileup, true, true);
@@ -447,4 +461,6 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	//	
 	//	return DETERMINED_CYTOSINE_TYPE;
 	//}
+	
+
 }

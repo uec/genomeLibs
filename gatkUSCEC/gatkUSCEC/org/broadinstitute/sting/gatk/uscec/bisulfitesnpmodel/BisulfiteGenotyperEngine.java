@@ -74,17 +74,11 @@ public class BisulfiteGenotyperEngine{
 	
 	// the annotation engine
     private VariantAnnotatorEngine annotationEngine;
-	
-    
-    
+
     // the model used for calculating genotypes
     private ThreadLocal<GenotypeLikelihoodsCalculationModel> glcm = new ThreadLocal<GenotypeLikelihoodsCalculationModel>();
 
     private Allele refAllele = null;
-    
-
-    // because the allele frequency priors are constant for a given i, we cache the results to avoid having to recompute everything
-    //private double[] log10AlleleFrequencyPriors;
 
     // the allele frequency likelihoods (allocated once as an optimization)
     private ThreadLocal<double[]> log10AlleleFrequencyPosteriors = new ThreadLocal<double[]>();
@@ -101,12 +95,13 @@ public class BisulfiteGenotyperEngine{
     // fasta reference reader to supplement the edges of the reference sequence for long reads
     private IndexedFastaSequenceFile referenceReader;
 
-
-
     // the standard filter to use for calls below the confidence threshold but above the emit threshold
     private static final Set<String> filter = new HashSet<String>(1);
 
     private static final int MISMATCH_WINDOW_SIZE = 20;
+    
+    private static boolean autoEstimateC = false;
+    private static boolean secondIteration = false;
 	
 
 	public byte[] CONTEXTREF = null;
@@ -204,7 +199,7 @@ public class BisulfiteGenotyperEngine{
 
         
         BisulfiteSNPGenotypeLikelihoodsCalculationModel bglcm = (BisulfiteSNPGenotypeLikelihoodsCalculationModel) glcm.get();
-        bglcm.initialize(cts, BAC, CONTEXTREF);
+        bglcm.initialize(cts, BAC, CONTEXTREF, autoEstimateC, secondIteration);
         refAllele = bglcm.getLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
         
         CYTOSINE_STATUS = bglcm.getCytosineStatus();
@@ -360,7 +355,7 @@ public class BisulfiteGenotyperEngine{
                                 attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[3]);
                                 attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, false);
                                 attributes.put(BisulfiteVCFConstants.CYTOSINE_METHY_VALUE, cytosineMethyLevel);
-                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(false, cytosineMethyLevel));
+                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(false, cytosineMethyLevel,logRatio));
                                
                                 
                  			 }
@@ -371,7 +366,7 @@ public class BisulfiteGenotyperEngine{
                                 attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[2]);
                                 attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, true);
                                 attributes.put(BisulfiteVCFConstants.CYTOSINE_METHY_VALUE, cytosineMethyLevel);
-                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(true, cytosineMethyLevel));
+                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(true, cytosineMethyLevel,logRatio));
                                 
                  			 }
                  		 }
@@ -383,7 +378,7 @@ public class BisulfiteGenotyperEngine{
                                 attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[3]);
                                 attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, false);
                                 attributes.put(BisulfiteVCFConstants.CYTOSINE_METHY_VALUE, cytosineMethyLevel);
-                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(false, cytosineMethyLevel));
+                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(false, cytosineMethyLevel,logRatio));
                                 
                  			 }
                  			 else if(genotypeTemp.getAllele(1).getBases()[0]==BaseUtils.G){
@@ -393,18 +388,24 @@ public class BisulfiteGenotyperEngine{
                                 attributes.put(BisulfiteVCFConstants.NUMBER_OF_T_KEY, CYTOSINE_STATUS[2]);
                                 attributes.put(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, true);
                                 attributes.put(BisulfiteVCFConstants.CYTOSINE_METHY_VALUE, cytosineMethyLevel);
-                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(true, cytosineMethyLevel));
+                                attributes.put(BisulfiteVCFConstants.CYTOSINE_TYPE, getCytosineTypeStatus(true, cytosineMethyLevel,logRatio));
                                 
                  			 }
                  		 }
             			 attributes.put(genotypeTemp.getType().toString(), true);
                  	 }
-            		 //if(CYTOSINE_STATUS[0] + CYTOSINE_STATUS[1] > 0 && loc.getStart() == BAC.testLocus){
+            		 /*
+            		 if(loc.getStart() == BAC.testLocus){
             			// System.err.println("CYTOSINE_STATUS[0]: " + CYTOSINE_STATUS[0] + "\tCYTOSINE_STATUS[1]: " + CYTOSINE_STATUS[1] + "\tCYTOSINE_STATUS[2]: " + CYTOSINE_STATUS[2] + "\tCYTOSINE_STATUS[3]: " + CYTOSINE_STATUS[3]);
-                		// System.err.println("cytosineMethyLevel: " + cytosineMethyLevel + "\tcts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel + "\t" + logRatio);
+            			 for(String cytosineType : cts.cytosineListMap.keySet()){
+            					String[] tmpKey = cytosineType.split("-");
+            					Double[] value = cts.cytosineListMap.get(cytosineType);
+            					System.err.println("tmpKey[0]" + tmpKey[0] + "\tvalue[0]" + value[0] + "\tvalue[1]" + value[1]);
+            			 }
+            			 //System.err.println("cytosineMethyLevel: " + cytosineMethyLevel + "\tcts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel + "\t" + logRatio);
                 		 
-            		 //}
-            		 
+            		 }
+            		 */
                  }
             }
            
@@ -641,7 +642,7 @@ public class BisulfiteGenotyperEngine{
         return endLoc;
     }
 	
-	private String getCytosineTypeStatus(boolean negStrand, double cytosineMethyLevel){
+	private String getCytosineTypeStatus(boolean negStrand, double cytosineMethyLevel, double logRatio){
 		int cPos;
 		String cTypeStatus = "C";
 		if(negStrand){
@@ -650,26 +651,51 @@ public class BisulfiteGenotyperEngine{
 		else{
 			cPos = 0;
 		}
+		
+		
+
 		for(String cytosineType : cts.cytosineListMap.keySet()){
 			String[] tmpKey = cytosineType.split("-");
 			Double[] value = cts.cytosineListMap.get(cytosineType);
-			//System.err.println("ctype: " + tmpKey[0]);
-			//cTypeStatus = cTypeStatus + "," + tmpKey[0];
+			
 			if(tmpKey[0].equalsIgnoreCase("C")){
-				cts.isC = true;
-				cts.cytosineMethyLevel = cytosineMethyLevel;
+				
+				if(autoEstimateC && !secondIteration){
+					if(logRatio/10 >= BAC.cTypeThreshold){
+						//cTypeStatus = "C";
+						cts.isC = true;
+						cts.cytosineMethyLevel = cytosineMethyLevel;
+					}
+					else{
+						cTypeStatus = "";
+						return cTypeStatus;
+					}
+					
+				}
+				else{
+					//cTypeStatus = "C";
+					cts.isC = true;
+					cts.cytosineMethyLevel = cytosineMethyLevel;
+				}
+				
+			//	cts.isC = true;
+				//cts.cytosineMethyLevel = cytosineMethyLevel;
 			}
 			
-			if(value[cPos] >= BAC.cTypeThreshold){
+			if(((!autoEstimateC || secondIteration) && value[cPos] >= BAC.cTypeThreshold/10)||(autoEstimateC && !secondIteration && (value[cPos] >= BAC.cTypeThreshold))){ //in first iteration, it will require higher confidance for calling C, 100 times more than the other type of C; then second iteration, it just 10 times more likelihood than any other type of C
+				
 				if(!tmpKey[0].equalsIgnoreCase("C")){
 					cTypeStatus = cTypeStatus + "," + tmpKey[0];
 				}
 				
+				
 				 if(Double.isNaN(cytosineMethyLevel))
 						 cytosineMethyLevel = 0.0;
 				//System.err.println("cTypeStatus: " + cTypeStatus + "\tLikelihood: " + value[cPos]);
+				
+						
+				
 				if(tmpKey[0].equalsIgnoreCase("CG")){
-					
 					cts.isCpg = true;
 					cts.cpgMethyLevel = cytosineMethyLevel;
 				}
@@ -828,6 +854,11 @@ public class BisulfiteGenotyperEngine{
                 VariantContext.NO_NEG_LOG_10PERROR,
                 null,
                 null);
+    }
+    
+    public void setAutoParameters(boolean autoEstimateC, boolean secondIteration){
+    	this.autoEstimateC = autoEstimateC;
+    	this.secondIteration = secondIteration;
     }
     
 }

@@ -56,7 +56,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	public String forceOtherCytosine = "";
 	
 //need to improve..
-	@Argument(fullName = "log_likelihood_ratio_for_cytosine_type", shortName = "cTypeThreshold", doc = "phred scale likelihood ratio of threshold to be this cytosine type but not other cytosine, default is 20, means 100 times more than the other type of cytosine", required = false)
+	@Argument(fullName = "log_likelihood_ratio_for_cytosine_type", shortName = "cTypeThreshold", doc = "phred scale likelihood ratio of threshold to be this cytosine type but not other cytosine, default is 10, means 10 times more likihood than the other type of cytosine", required = false)
     public double cTypeThreshold = 10;
 	
 	//@Argument(fullName = "Cytosine_Type", shortName = "ct", doc = "Cytosine type, CG, CHH, CHG or GCH....for test only (format should be -ct CG-0:0.75;CHH-0:0.01... add the cytosine type, cytosine position in your string and their genome wide methylation value you estimate )", required = false)

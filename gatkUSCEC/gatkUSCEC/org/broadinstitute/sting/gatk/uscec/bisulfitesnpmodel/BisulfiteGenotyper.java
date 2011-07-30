@@ -53,14 +53,11 @@ import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BaseUtilsMore.*;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel;
 
 
-//TO DO
-//mearue CpG or GpC not by ref seq, but by read status, like 90% of G in the next position of C for CpG
 /**
  * A variant caller which unifies the approaches of several disparate callers.  Works for single-sample and
  * multi-sample data.  The user can choose from several different incorporated calculation models.
  */
-// todo -- change when UG is generalized to do BAQ as necessary
-//@BAQMode(QualityMode = BAQ.QualityMode.DONT_MODIFY, ApplicationTime = BAQ.ApplicationTime.HANDLED_IN_WALKER)
+
 @BAQMode(QualityMode = BAQ.QualityMode.OVERWRITE_QUALS, ApplicationTime = BAQ.ApplicationTime.ON_INPUT)
 @Reference(window=@Window(start=-200,stop=200))
 @By(DataSource.REFERENCE)
@@ -69,8 +66,6 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
 
     @ArgumentCollection private BisulfiteArgumentCollection BAC = new BisulfiteArgumentCollection();
-
-   
 
     @Argument(fullName = "verbose_mode", shortName = "verbose", doc = "File to print all of the annotated and detailed debugging output", required = false)
     protected PrintStream verboseWriter = null;
@@ -86,10 +81,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean secondIteration = false;
     
     protected TcgaVCFWriter writer = null;
-    
-    
-    
-    // the calculation arguments
+
     private BisulfiteGenotyperEngine BG_engine = null;
 
     // the annotation engine
@@ -166,19 +158,6 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         
         /** The sum of methylation value of Hcg bases called confidently (according to user threshold), either ref or other */
         double sumMethyHcgBasesCalledConfidently = 0;
-  /*      
-        HashMap<String, Double[]> otherCytosineListMap = new HashMap<String, Double[]>(); 
-        
-        if(!BAC.autoEstimateOtherCytosine.isEmpty()){
-			String[] tmpArray = BAC.autoEstimateOtherCytosine.split(";");
-			for(String tmp : tmpArray){
-					Double[] value = new Double[2];
-					value[0] = 0.0; //value[0]: number of cytosien; value[1]: sum of methylation level
-					value[1] = 0.0;
-					otherCytosineListMap.put(tmp, value);
-			}
-		}
-      */  
 
         double percentCallableOfAll()    { return (100.0 * nBasesCallable) / (nBasesVisited-nExtendedEvents); }
         double percentCalledOfAll()      { return (100.0 * nBasesCalledConfidently) / (nBasesVisited-nExtendedEvents); }
@@ -197,17 +176,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
      *
      **/
     public void initialize() {
-        // get all of the unique sample names
-        // if we're supposed to assume a single sample, do so
+       
         Set<String> samples = new TreeSet<String>();
         if ( BAC.ASSUME_SINGLE_SAMPLE != null ){
         	samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
         	if(!samples.isEmpty()){
         		System.out.println("sample name provided was masked by bam file header");
-        		//for(String sample : samples){
-        		//	System.out.println("sample name: " + sample);
-        		//}
-        		
         	}
         	else{
         		samples.add(BAC.ASSUME_SINGLE_SAMPLE);
@@ -217,10 +191,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         else
             samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
 
-        //System.err.println("writer-initial: " + writer.toString());
         if(autoEstimateC){
         	if(secondIteration){
-        		//annotationEngine = new VariantAnnotatorEngine(getToolkit(), Arrays.asList(annotationClassesToUse), annotationsToUse);
+        		
         	}
         	else{
         		annotationEngine = new VariantAnnotatorEngine(getToolkit(), Arrays.asList(annotationClassesToUse), annotationsToUse);
@@ -236,19 +209,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if(autoEstimateC){
         	if(secondIteration){
         		writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
-        		for(String key : summary.cytosineListMap.keySet()){
-    				Double[] values = summary.cytosineListMap.get(key);
-    				for(Double value : values){
-    				//	System.err.println("summary.key: " + key + "\tsummary.value: " + value);
-    				}
-    			}
-    			
-    			//System.err.println(summary.chhMethyLevel);
-    			//System.err.println(summary.chgMethyLevel);
-    			//System.err.println(summary.cpgMethyLevel);
         	}
         	else{
-        		//writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        		
         	}
         }
         else{
@@ -261,15 +224,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private Set<VCFHeaderLine> getHeaderInfo() {
         Set<VCFHeaderLine> headerInfo = new HashSet<VCFHeaderLine>();
 
-        // all annotation fields from VariantAnnotatorEngine
-       // headerInfo.addAll(annotationEngine.getVCFAnnotationDescriptions());
-     // all annotation fields from VariantAnnotatorEngine
-        //headerInfo.addAll(annotationEngine.getVCFAnnotationDescriptions());
-        
-        // annotation (INFO) fields from UnifiedGenotyper
         if ( !BAC.NO_SLOD )
             headerInfo.add(new VCFInfoHeaderLine(VCFConstants.STRAND_BIAS_KEY, 1, VCFHeaderLineType.Float, "Strand Bias"));
-        // annotation (INFO) fields from UnifiedGenotyper
+        
         headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.CYTOSINE_TYPE, -1, VCFHeaderLineType.String, "Cytosine Type"));
         headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.GENOTYPE_TYPE, 1, VCFHeaderLineType.String, "Genotype Type"));
         headerInfo.add(new VCFInfoHeaderLine(BisulfiteVCFConstants.C_IN_NEG_STRAND_KEY, 0, VCFHeaderLineType.Flag, "Cytosine in negative strand"));
@@ -299,14 +256,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         return headerInfo;
     }
 
-    /**
-     * Compute at a given locus.
-     *
-     * @param tracker the meta data tracker
-     * @param refContext the reference base
-     * @param rawContext contextual information around the locus
-     * @return the VariantCallContext object
-     */
+
     /**
      * Compute at a given locus.
      *
@@ -319,19 +269,19 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	GenomeLoc thisLoc = refContext.getLocus();
     	int centerCoord = thisLoc.getStart();
     	String thisContig = refContext.getLocus().getContig();
-        byte[] contextRef = 
-   			this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-100, centerCoord+100).getBases();
-        contextRef = BaseUtilsMore.toUpperCase(contextRef);
+        byte[] contextRef = new byte[201];
+        if(centerCoord-100 >= 0)
+        	contextRef = this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-100, centerCoord+100).getBases();
         
+        contextRef = BaseUtilsMore.toUpperCase(contextRef);
+            
         CytosineTypeStatus cts = new CytosineTypeStatus(BAC);
         if(secondIteration){
-        	cts = summary.clone();
+            cts = summary.clone();
         }
+        BG_engine.setAutoParameters(autoEstimateC, secondIteration);
+        BG_engine.setCytosineTypeStatus(cts, contextRef);
 
-        	BG_engine.setCytosineTypeStatus(cts, contextRef);
-      
-        
-        
     	return BG_engine.calculateLikelihoodsAndGenotypes(tracker, refContext, rawContext);
     }
 
@@ -390,13 +340,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         sum.sumMethyGchBasesCalledConfidently += value.cts.isGch ? value.cts.gchMethyLevel : 0;
         sum.sumMethyGcgBasesCalledConfidently += value.cts.isGcg ? value.cts.gcgMethyLevel : 0;
         sum.sumMethyHcgBasesCalledConfidently += value.cts.isHcg ? value.cts.hcgMethyLevel : 0;
-        if(sum.sumMethyChhBasesCalledConfidently > 0){
-        //	System.err.println(sum.nChhBasesCalledConfidently);
-        //    System.err.println(sum.sumMethyChhBasesCalledConfidently);
-        //    System.err.println(value.cts.isChh);
-        //    System.err.println(value.cts.isCpg);
-        }
-        
+
         // can't make a confident variant call here
         if ( value.vc == null)
             return sum;
@@ -448,9 +392,6 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         summary.gchMethyLevel = Double.isNaN(sum.percentMethyLevelOfGch()) ? 0 : sum.percentMethyLevelOfGch();
         summary.gcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfGcg()) ? 0 : sum.percentMethyLevelOfGcg();
         summary.hcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfHcg()) ? 0 : sum.percentMethyLevelOfHcg();
-        if(secondIteration){
-        	//writer.close();
-        }
 
     }
     
@@ -468,11 +409,6 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	for(String cytosineType : summary.cytosineListMap.keySet()){
 			String[] tmpKey = cytosineType.split("-");
 			Double[] value = summary.cytosineListMap.get(cytosineType);
-			//System.err.println("ctype: " + tmpKey[0]);
-			
-			
-				
-				//System.err.println("ctype: " + tmpKey[0]);
 				if(tmpKey[0].equalsIgnoreCase("C")){
 					value[2] = sumCytosine.cytosineMethyLevel;
 				
@@ -534,17 +470,14 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
    
     public void setWriter(TcgaVCFWriter writer){
     	this.writer = writer;
-    	//System.err.println("writer-setup: " + this.writer.toString());
+
     }
-    
-    
-    
+ 
     public VariantAnnotatorEngine getAnnoEng(){
     	return annotationEngine;
     }
    
     public void setAnnoEng(VariantAnnotatorEngine AnnoEng){
     	this.annotationEngine = AnnoEng;
-    	//System.err.println("writer-setup: " + this.writer.toString());
     }
 }
