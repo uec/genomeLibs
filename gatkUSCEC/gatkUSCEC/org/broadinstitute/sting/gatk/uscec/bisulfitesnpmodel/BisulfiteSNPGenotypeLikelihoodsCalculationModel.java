@@ -37,7 +37,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected final boolean useAlleleFromVCF;
 	protected long testLoc;
 	//protected boolean isCGI = false;
-	public byte[] CONTEXTREF = null;
+	//public byte[] CONTEXTREF = null;
 	protected static Integer numCNegStrand = 0;
 	protected static Integer numTNegStrand = 0;
 	protected static Integer numCPosStrand = 0;
@@ -62,10 +62,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	}
 	
 	@Override
-	public void initialize(CytosineTypeStatus cts, BisulfiteArgumentCollection BAC, byte[] contextRef, boolean autoEstimateC, boolean secondIteration){
+	public void initialize(CytosineTypeStatus cts, BisulfiteArgumentCollection BAC, boolean autoEstimateC, boolean secondIteration){
 		this.cts = cts;
 		this.BAC = BAC;
-		this.CONTEXTREF = contextRef;
 		this.testLoc = BAC.testLocus;
 		this.autoEstimateC = autoEstimateC;
 		this.secondIteration = secondIteration;
@@ -245,8 +244,16 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
          		 
      		 }
             GL.checkCytosineStatus(pileup, cts, BAC.cTypeThreshold, autoEstimateC, secondIteration);
-           
-            GL.setPriorsBasedOnContextRef(tracker, ref, BAC.PCR_error, BAC.bsRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet, cts, CONTEXTREF);
+            byte[] contextRef = new byte[201];
+            int count = 0;
+            for(byte base : ref.getBases()){
+        		if(count >= 101 && count <= 301){
+        			contextRef[count-101] = base;
+        		}
+        		count++;
+        	}
+            
+            GL.setPriorsBasedOnContextRef(tracker, ref, BAC.PCR_error, BAC.bsRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet, cts, contextRef);
             
             int nGoodBases = GL.add(pileup, true, true);
             if ( nGoodBases == 0 )
@@ -317,6 +324,14 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	System.err.println("BBGenotype before normaliz " + likelihoods_befor[BBGenotype.ordinal()] + "\t" + prio[BBGenotype.ordinal()] + "\t" + posterior_befor[BBGenotype.ordinal()]);
             	System.err.println("Cytosine status: C-neg: " + numCNegStrand + "\tC-pos: " + numCPosStrand + "\tT-neg: " + numTNegStrand + "\tT-pos: " + numTPosStrand);
             	//System.err.println("refAllele: " + refAllele.toString() + "\tAlleleA:" + AlleleA.toString() + "\tAlleleB:" + AlleleB);
+            	//int count0 = 0;
+            	//for(byte base : ref.getBases()){
+            	//	System.err.println("base in the window: " + base);
+               // 		if(count0 >= 101 && count0 <= 301){
+               // 			System.err.println("\tcontextRef: " + contextRef[count0-101] + "\tcount0: " + count0);
+               // 		}
+               // 		count0++;
+            	//}
             }
 
             	GLs.put(sample.getKey(), new BiallelicGenotypeLikelihoods(sample.getKey(),

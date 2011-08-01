@@ -104,7 +104,7 @@ public class BisulfiteGenotyperEngine{
     private static boolean secondIteration = false;
 	
 
-	public byte[] CONTEXTREF = null;
+	//public byte[] CONTEXTREF = null;
 	public Integer[] CYTOSINE_STATUS = new Integer[4];
 	
 	protected double MAX_PHRED = 1000000;
@@ -142,9 +142,9 @@ public class BisulfiteGenotyperEngine{
         }
     }
 	
-	public void setCytosineTypeStatus(CytosineTypeStatus cts, byte[] contextRef){
+	public void setCytosineTypeStatus(CytosineTypeStatus cts){
 		this.cts = cts;
-		this.CONTEXTREF = contextRef;
+		//this.CONTEXTREF = contextRef;
 	}
 	
 	//@Override
@@ -199,7 +199,7 @@ public class BisulfiteGenotyperEngine{
 
         
         BisulfiteSNPGenotypeLikelihoodsCalculationModel bglcm = (BisulfiteSNPGenotypeLikelihoodsCalculationModel) glcm.get();
-        bglcm.initialize(cts, BAC, CONTEXTREF, autoEstimateC, secondIteration);
+        bglcm.initialize(cts, BAC, autoEstimateC, secondIteration);
         refAllele = bglcm.getLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
         
         CYTOSINE_STATUS = bglcm.getCytosineStatus();

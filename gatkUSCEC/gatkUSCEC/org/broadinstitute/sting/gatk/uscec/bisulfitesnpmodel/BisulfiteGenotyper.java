@@ -266,21 +266,21 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
      * @return the VariantCallContext object
      */
     public BisulfiteVariantCallContext map(RefMetaDataTracker tracker, ReferenceContext refContext, AlignmentContext rawContext) {
-    	GenomeLoc thisLoc = refContext.getLocus();
-    	int centerCoord = thisLoc.getStart();
-    	String thisContig = refContext.getLocus().getContig();
-        byte[] contextRef = new byte[201];
-        if(centerCoord-100 >= 0)
-        	contextRef = this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-100, centerCoord+100).getBases();
+    	//GenomeLoc thisLoc = refContext.getLocus();
+    	//int centerCoord = thisLoc.getStart();
+    	//String thisContig = refContext.getLocus().getContig();
+       // byte[] contextRef = new byte[201];
+       // if(centerCoord-100 >= 0)
+        //	contextRef = this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-100, centerCoord+100).getBases();
         
-        contextRef = BaseUtilsMore.toUpperCase(contextRef);
+       // contextRef = BaseUtilsMore.toUpperCase(contextRef);
             
         CytosineTypeStatus cts = new CytosineTypeStatus(BAC);
         if(secondIteration){
             cts = summary.clone();
         }
         BG_engine.setAutoParameters(autoEstimateC, secondIteration);
-        BG_engine.setCytosineTypeStatus(cts, contextRef);
+        BG_engine.setCytosineTypeStatus(cts);
 
     	return BG_engine.calculateLikelihoodsAndGenotypes(tracker, refContext, rawContext);
     }
