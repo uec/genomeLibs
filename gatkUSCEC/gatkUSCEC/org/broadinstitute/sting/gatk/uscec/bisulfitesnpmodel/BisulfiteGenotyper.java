@@ -80,7 +80,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
     
-    protected TcgaVCFWriter writer = null;
+    protected VCFWriter writer = null;
 
     private BisulfiteGenotyperEngine BG_engine = null;
 
@@ -266,15 +266,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
      * @return the VariantCallContext object
      */
     public BisulfiteVariantCallContext map(RefMetaDataTracker tracker, ReferenceContext refContext, AlignmentContext rawContext) {
-    	//GenomeLoc thisLoc = refContext.getLocus();
-    	//int centerCoord = thisLoc.getStart();
-    	//String thisContig = refContext.getLocus().getContig();
-       // byte[] contextRef = new byte[201];
-       // if(centerCoord-100 >= 0)
-        //	contextRef = this.getToolkit().getReferenceDataSource().getReference().getSubsequenceAt(thisContig, centerCoord-100, centerCoord+100).getBases();
-        
-       // contextRef = BaseUtilsMore.toUpperCase(contextRef);
-            
+  
         CytosineTypeStatus cts = new CytosineTypeStatus(BAC);
         if(secondIteration){
             cts = summary.clone();
@@ -372,7 +364,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         logger.info(String.format("%% confidently called bases of all loci       %3.3f", sum.percentCalledOfAll()));
         logger.info(String.format("%% confidently called bases of callable loci  %3.3f", sum.percentCalledOfCallable()));
         logger.info(String.format("Actual calls made                            %d", sum.nCallsMade));
-        //logger.info(String.format("%% Methylation level of Cytosine loci       %3.3f", sum.percentMethyLevelOfC()));
+        logger.info(String.format("%% Methylation level of Cytosine loci       %3.3f", sum.percentMethyLevelOfC()));
         logger.info(String.format("%% Methylation level of CpG loci       %3.3f", sum.percentMethyLevelOfCpg()));
         logger.info(String.format("%% Methylation level of CHH loci       %3.3f", sum.percentMethyLevelOfChh()));
         logger.info(String.format("%% Methylation level of CHG loci       %3.3f", sum.percentMethyLevelOfChg()));
@@ -468,7 +460,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	return writer;
     }
    
-    public void setWriter(TcgaVCFWriter writer){
+    public void setWriter(VCFWriter writer){
     	this.writer = writer;
 
     }

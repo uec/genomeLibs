@@ -90,6 +90,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "allow_bad_mates", shortName = "abm", doc = "if paired end mode, allow bad mates or not", required = false)
     public boolean allowBadMates = false;
 	
+	@Argument(fullName = "tcga_format_vcf", shortName = "tcga", doc = "output TCGA specific VCF format or not", required = false)
+    public boolean tcga = false;
+	
 	
 	public BisulfiteArgumentCollection clone() {
 		BisulfiteArgumentCollection bac = new BisulfiteArgumentCollection();

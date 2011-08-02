@@ -34,7 +34,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	
 	protected Byte bestAllele = null;
 	protected Byte alternateAllele = null;
-	protected final boolean useAlleleFromVCF;
+	//protected final boolean useAlleleFromVCF;
 	protected long testLoc;
 	//protected boolean isCGI = false;
 	//public byte[] CONTEXTREF = null;
@@ -56,15 +56,16 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	public BisulfiteSNPGenotypeLikelihoodsCalculationModel(
 			UnifiedArgumentCollection UAC, Logger logger) {
 		super(UAC, logger);
-		useAlleleFromVCF = UAC.GenotypingMode == GENOTYPING_MODE.GENOTYPE_GIVEN_ALLELES;
+		//useAlleleFromVCF = UAC.GenotypingMode == GENOTYPING_MODE.GENOTYPE_GIVEN_ALLELES;
 		
 		// TODO Auto-generated constructor stub
 	}
 	
 	@Override
 	public void initialize(CytosineTypeStatus cts, BisulfiteArgumentCollection BAC, boolean autoEstimateC, boolean secondIteration){
-		this.cts = cts;
+		
 		this.BAC = BAC;
+		this.cts = cts;
 		this.testLoc = BAC.testLocus;
 		this.autoEstimateC = autoEstimateC;
 		this.secondIteration = secondIteration;
@@ -93,8 +94,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         Allele refAllele = Allele.create(refBase, true);
         //this.testLoc = UAC.testLocus;
         //System.out.println(this.testLoc);
-
+        //System.err.println("refAllele: " + refAllele.toString() + "\trefBase: " + refBase);
         // find the best allele and alternative allele with the largest sum of quality scores
+        /*
         if ( alternateAlleleToUse != null ) {
             bestAllele = alternateAlleleToUse.getBases()[0];
             alternateAllele = alternateAlleleToUse.getBases()[0];
@@ -117,7 +119,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         	
 
         }
-      
+      */
     //    Feature cgi = CGIHelper.getCGIFeature(tracker.getReferenceMetaData(CGIHelper.STANDARD_CGI_TRACK_NAME));
    //     if(cgi != null){
     //    	isCGI = true;
@@ -134,6 +136,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             for ( PileupElement p : pileup ) {
             	SAMRecord samRecord = p.getRead();
             	int offset = p.getOffset();
+            	if(offset < 0)//is deletion
+            		continue;
             	if(BAC.pairedEndMode){
             		try {
     					samRecord = (SAMRecord) p.getRead().clone();
@@ -189,7 +193,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 				int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
 				//PileupElement tmpP = new PileupElement(samRecord,offset);
 				
-				
+				//System.err.println(offset + "\trefcorrd: " + pileup.getLocation().getStart());
 				if(((GATKSAMRecord)p.getRead()).isGoodBase(offset)){
 					if(negStrand){
 						if(p.getBase()==BaseUtils.G){
@@ -274,8 +278,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
                     return refAllele;
 
                 // otherwise, choose any alternate allele (it doesn't really matter)
-                bestAllele = (byte)(refBase != BaseUtils.A ? BaseUtils.A : BaseUtils.C);
-                alternateAllele = (byte)(refBase != BaseUtils.A ? BaseUtils.G : BaseUtils.T);
+              //  bestAllele = (byte)(refBase != BaseUtils.A ? BaseUtils.A : BaseUtils.C);
+              //  alternateAllele = (byte)(refBase != BaseUtils.A ? BaseUtils.G : BaseUtils.T);
             }
             
             Allele AlleleA, AlleleB;
@@ -287,22 +291,27 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             	//if(alternateAllele == null)
             		alternateAllele = bestAllele;
             	bestAllele = refBase;
+            	//System.err.println("bestAllele: " + bestAllele + "\tfalse\talternateAllele: " + alternateAllele);
             	
             }
             else if(BaseUtils.basesAreEqual(bestAllele,refBase)){
             	AlleleA = Allele.create(bestAllele, true);
             	AlleleB = Allele.create(alternateAllele, false);
+            	//System.err.println("bestAllele: " + bestAllele + "\ttrue\talternateAllele: " + alternateAllele + "\tfalse");
             }
             else{
             	AlleleA = Allele.create(bestAllele, false);
             	AlleleB = Allele.create(alternateAllele, false);
             	if(AlleleA.equals(refAllele, true)){
             		AlleleA = Allele.create(bestAllele, true);
+            	//	System.err.println("bestAllele: " + bestAllele + "\ttrue\talternateAllele: " + alternateAllele + "\tfalse");
             	}
             	
             	if(AlleleB.equals(refAllele, true)){
             		AlleleB = Allele.create(alternateAllele, true);
+            		//System.err.println("bestAllele: " + bestAllele + "\tfalse\talternateAllele: " + alternateAllele + "\ttrue");
             	}
+            	
             	
             }
             DiploidGenotype AAGenotype = DiploidGenotype.createHomGenotype(bestAllele);
@@ -470,6 +479,10 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 		value[2] = numTNegStrand;
 		value[3] = numTPosStrand;
 		return value;
+	}
+	
+	protected CytosineTypeStatus getCytosineTypeStatus(){	
+		return this.cts;
 	}
 	
 //	protected String getCytosineTypeStatus(){

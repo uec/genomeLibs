@@ -51,7 +51,7 @@ public class BisSNP extends CommandLineExecutable {
 	
 	 //control the output
     @Output(doc="File to which variants should be written",required=true)
-    protected TcgaVCFWriter writer = null;
+    protected VCFWriter writer = null;
  
 	//copy from GATK, since they are private class in GATK
 	private final Collection<Object> bisulfiteArgumentSources = new ArrayList<Object>();
@@ -116,14 +116,20 @@ public class BisSNP extends CommandLineExecutable {
 	
 	public void setupInfo(){
 		if(walker instanceof BisulfiteGenotyper){
-			((BisulfiteGenotyper) walker).setWriter(writer);
+			
 			((BisulfiteGenotyper) walker).setAnnoEng(annotationEngine);
-			writer.setRefSource(argCollection.referenceFile.toString());
+			if(argCollection.numberOfThreads == 1){
+				((BisulfiteGenotyper) walker).setWriter(writer);
+				//((TcgaVCFWriter)writer).setRefSource(argCollection.referenceFile.toString());
+			}
+			else{
+				((BisulfiteGenotyper) walker).setWriter(writer);
+			}
 		}
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "Bis-SNP-0.22";
+        String version = "Bis-SNP-0.23";
 		List<String> header = new ArrayList<String>();
         header.add(String.format("The Bis-SNP v%s, Compiled %s",version, getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (in sorceforge tree, the version number is 5288)",getVersionNumber()));

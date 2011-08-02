@@ -38,50 +38,58 @@ public class CytosineTypeStatus {
 	
 	public void makeCytosineMap(BisulfiteArgumentCollection BAC){
 		cytosineListMap = new HashMap<String, Double[]>();
-		Double[] tmpDouble = new Double[3];//tmpDouble[0]: log10 likelihood in positive strand, tmpDouble[1]: log10 likelihood in negative strand, tmpDouble[2]: methylation level
-		tmpDouble[0] = Double.NEGATIVE_INFINITY;
-		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = 0.0;
-		cytosineListMap.put("C-1".toUpperCase(), tmpDouble);
-		
-		tmpDouble[0] = Double.NEGATIVE_INFINITY;
-		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = BAC.forceCpg;
-		cytosineListMap.put("CG-1".toUpperCase(), tmpDouble);
-		tmpDouble = new Double[3];
-		tmpDouble[0] = Double.NEGATIVE_INFINITY;
-		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = BAC.forceChg;
-		cytosineListMap.put("CHG-1".toUpperCase(), tmpDouble);
-		tmpDouble = new Double[3];
+		Double[] tmpDouble = new Double[4];//tmpDouble[0]: log10 likelihood in positive strand; tmpDouble[1]: log10 likelihood in negative strand; tmpDouble[2]: methylation level; tmpDouble[3]: is it this type of cytosine: 1-true or 0-false? 
 		tmpDouble[0] = Double.NEGATIVE_INFINITY;
 		tmpDouble[1] = Double.NEGATIVE_INFINITY;
 		tmpDouble[2] = BAC.forceChh;
+		tmpDouble[3] = 0.0;
+		cytosineListMap.put("C-1".toUpperCase(), tmpDouble);
+		tmpDouble = new Double[4];
+		tmpDouble[0] = Double.NEGATIVE_INFINITY;
+		tmpDouble[1] = Double.NEGATIVE_INFINITY;
+		tmpDouble[2] = BAC.forceCpg;
+		tmpDouble[3] = 0.0;
+		cytosineListMap.put("CG-1".toUpperCase(), tmpDouble);
+		tmpDouble = new Double[4];
+		tmpDouble[0] = Double.NEGATIVE_INFINITY;
+		tmpDouble[1] = Double.NEGATIVE_INFINITY;
+		tmpDouble[2] = BAC.forceChg;
+		tmpDouble[3] = 0.0;
+		cytosineListMap.put("CHG-1".toUpperCase(), tmpDouble);
+		tmpDouble = new Double[4];
+		tmpDouble[0] = Double.NEGATIVE_INFINITY;
+		tmpDouble[1] = Double.NEGATIVE_INFINITY;
+		tmpDouble[2] = BAC.forceChh;
+		tmpDouble[3] = 0.0;
 		cytosineListMap.put("CHH-1".toUpperCase(), tmpDouble);
 		if(BAC.sequencingMode == MethylSNPModel.GM){
-			tmpDouble = new Double[3];
+			tmpDouble = new Double[4];
 			tmpDouble[0] = Double.NEGATIVE_INFINITY;
 			tmpDouble[1] = Double.NEGATIVE_INFINITY;
 			tmpDouble[2] = BAC.forceGch;
+			tmpDouble[3] = 0.0;
 			cytosineListMap.put("GCH-2".toUpperCase(), tmpDouble);
-			tmpDouble = new Double[3];
+			tmpDouble = new Double[4];
 			tmpDouble[0] = Double.NEGATIVE_INFINITY;
 			tmpDouble[1] = Double.NEGATIVE_INFINITY;
 			tmpDouble[2] = BAC.forceGcg;
+			tmpDouble[3] = 0.0;
 			cytosineListMap.put("GCG-2".toUpperCase(), tmpDouble);
-			tmpDouble = new Double[3];
+			tmpDouble = new Double[4];
 			tmpDouble[0] = Double.NEGATIVE_INFINITY;
 			tmpDouble[1] = Double.NEGATIVE_INFINITY;
 			tmpDouble[2] = BAC.forceHcg;
+			tmpDouble[3] = 0.0;
 			cytosineListMap.put("HCG-2".toUpperCase(), tmpDouble);
 		}
 		if(!BAC.autoEstimateOtherCytosine.isEmpty()){
 			String[] tmpArray = BAC.autoEstimateOtherCytosine.split(";");
 			for(String tmp : tmpArray){
-				tmpDouble = new Double[3];
+				tmpDouble = new Double[4];
 				tmpDouble[0] = Double.NEGATIVE_INFINITY;
 				tmpDouble[1] = Double.NEGATIVE_INFINITY;
 				tmpDouble[2] = Double.NaN;
+				tmpDouble[3] = 0.0;
 				cytosineListMap.put(tmp.toUpperCase(), tmpDouble);
 				int tmpLength = tmp.split("-")[0].length();
 				if(tmpLength > maxCytosineLength){
@@ -94,10 +102,11 @@ public class CytosineTypeStatus {
 			String[] tmpArray = BAC.forceOtherCytosine.split(";");
 			for(String tmp : tmpArray){
 				String[] mapElement = tmp.split(":");
-				tmpDouble = new Double[3];
+				tmpDouble = new Double[4];
 				tmpDouble[0] = Double.NEGATIVE_INFINITY;
 				tmpDouble[1] = Double.NEGATIVE_INFINITY;
 				tmpDouble[2] = Double.parseDouble(mapElement[1]);
+				tmpDouble[3] = 0.0;
 				cytosineListMap.put(mapElement[0].toUpperCase(), tmpDouble);
 				int tmpLength = mapElement[0].split("-")[0].length();
 				if(tmpLength > maxCytosineLength){
@@ -135,6 +144,7 @@ public class CytosineTypeStatus {
 			Double[] value = this.cytosineListMap.get(key);
 			value[0] = Double.NEGATIVE_INFINITY;
 			value[1] = Double.NEGATIVE_INFINITY;
+			value[3] = 0.0;
 			cts.cytosineListMap.put(key, value);
 		}
 		
