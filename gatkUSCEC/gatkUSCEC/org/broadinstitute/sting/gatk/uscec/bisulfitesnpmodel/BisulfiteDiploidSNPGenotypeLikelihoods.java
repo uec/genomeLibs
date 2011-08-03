@@ -84,13 +84,15 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	}
 	*/
 	public BisulfiteDiploidSNPGenotypeLikelihoods(
-			RefMetaDataTracker tracker, ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, BisulfiteArgumentCollection BAC) {
+			RefMetaDataTracker tracker, ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, BisulfiteArgumentCollection BAC, double[] cytosineMethyStatus) {
 		this.priors = priors;
 		this.BAC = BAC;
 		this.BISULFITE_CONVERSION_RATE = BAC.bsRate;
 		this.OVER_CONVERSION_RATE = BAC.overRate;
 		log10_PCR_error_3 = log10(BAC.PCR_error) - log10_3;
         log10_1_minus_PCR_error = log10(1.0 - BAC.PCR_error);
+        this.DETERMINED_CYTOSINE_TYPE_C_METHY_POS = cytosineMethyStatus[0];
+        this.DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = cytosineMethyStatus[1];
 		setToZeroBs();
 //		this.CPG_METHYLATION_RATE = cpgMethyRate;
 //		this.CPH_METHYLATION_RATE = cphMethyRate;

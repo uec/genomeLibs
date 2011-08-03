@@ -1,5 +1,7 @@
 package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.samtools.SAMRecord;
@@ -21,10 +23,12 @@ import org.broadinstitute.sting.gatk.walkers.genotyper.UnifiedGenotyperEngine;
 import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.GENOTYPING_MODE;
 import org.broadinstitute.sting.utils.BaseUtils;
 import org.broadinstitute.sting.utils.GenomeLoc;
+import org.broadinstitute.sting.utils.GenomeLocParser;
 import org.broadinstitute.sting.utils.exceptions.StingException;
 import org.broadinstitute.sting.utils.genotype.DiploidGenotype;
 import org.broadinstitute.sting.utils.pileup.PileupElement;
 import org.broadinstitute.sting.utils.pileup.ReadBackedPileup;
+import org.broadinstitute.sting.utils.pileup.ReadBackedPileupImpl;
 import org.broadinstitute.sting.utils.sam.GATKSAMRecord;
 
 public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
@@ -233,9 +237,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             }
             
             
-            
+            double[] cytosineMethyStatus = checkCytosineStatus(pileup, cts, BAC.cTypeThreshold, autoEstimateC, secondIteration, tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors);
             // do not use this prior, this prior is flat prior intiated in genotypeEngine, so we actually do not transfer this priors...
-            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC);
+            BisulfiteDiploidSNPGenotypeLikelihoods GL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC, cytosineMethyStatus.clone());
             if((pileup.getLocation().getStart()) == testLoc)
             	GL.VERBOSE=true;
             if((pileup.getLocation().getStart()) == testLoc){
@@ -248,7 +252,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
      			 //System.err.println("cytosineMethyLevel: " + cytosineMethyLevel + "\tcts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel + "\t" + logRatio);
          		 
      		 }
-            GL.checkCytosineStatus(pileup, cts, BAC.cTypeThreshold, autoEstimateC, secondIteration);
+            /*
             byte[] contextRef = new byte[201];
             int count = 0;
             for(byte base : ref.getBases()){
@@ -257,7 +261,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         		}
         		count++;
         	}
-            
+            */
             //GL.setPriorsBasedOnContextRef(tracker, ref, BAC.PCR_error, BAC.bsRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet, cts, contextRef);
             GL.setPriors(tracker, ref, BAC.PCR_error, BAC.novelDbsnpHet, BAC.validateDbsnpHet);
             
@@ -473,6 +477,50 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         }
 	}
 	
+	protected void getBestGenotypeFromPosterior(double[] posterior, int location){
+		double maxCount = Double.NEGATIVE_INFINITY;
+        double secondMaxCount = Double.NEGATIVE_INFINITY;
+        methyStatus.genotype = null;
+        methyStatus.ratio = 0.0;
+        DiploidGenotype bestGenotype = DiploidGenotype.createHomGenotype(BaseUtils.A);
+    //    DiploidGenotype secondGenotype = DiploidGenotype.createHomGenotype(BaseUtils.A);
+
+        
+        for ( DiploidGenotype g : DiploidGenotype.values() ){
+			if(posterior[g.ordinal()] > maxCount){
+				secondMaxCount = maxCount;
+				maxCount = posterior[g.ordinal()];
+				//if(bestGenotype.base1 != secondGenotype.base1){
+      //      		secondGenotype = bestGenotype;
+            	//}
+				bestGenotype = g;
+			}
+			else if (posterior[g.ordinal()] > secondMaxCount && posterior[g.ordinal()] <= maxCount){
+	            	secondMaxCount = posterior[g.ordinal()];
+	     //       	secondGenotype = g;
+	        }
+		}
+        methyStatus.ratio = 10 * (maxCount - secondMaxCount);
+        if(location == BAC.testLocus){
+        	//System.err.println("maxCount: " + maxCount + "\tsecondMaxCount: " + secondMaxCount + "\tratio: " + methyStatus.ratio + "\tgenotype: " + bestGenotype);
+        	//for(double poster : posterior){
+        	//	System.err.println(poster);
+        	//}
+        }
+        if(autoEstimateC && !secondIteration){
+        	if( methyStatus.ratio < this.BAC.cTypeThreshold){
+        		bestGenotype = null;
+        	}
+        }
+        else{
+        	if(methyStatus.ratio < this.BAC.STANDARD_CONFIDENCE_FOR_CALLING){
+        		bestGenotype = null;
+        	}
+        }
+        methyStatus.genotype = bestGenotype;
+        
+        //return methyStatus;
+	}
 
 	protected Integer[] getCytosineStatus(){
 		Integer[] value = new Integer[4];
@@ -491,6 +539,144 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	//	
 	//	return DETERMINED_CYTOSINE_TYPE;
 	//}
-	
 
+	public double[] checkCytosineStatus(ReadBackedPileup pileup, CytosineTypeStatus cts, double threshold, boolean autoEstimateC, boolean secondIteration, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors){
+		double[] cytosineMethyStatus = new double[2]; // 0: methy status in positive strand; 1: methy status in negative strand;
+		GenomeLoc location = pileup.getLocation();
+		String contig = location.getContig();
+		int position = location.getStart();
+		double maxRatio = Double.NEGATIVE_INFINITY;
+		for(String cytosineType : cts.cytosineListMap.keySet()){
+			String[] tmpKey = cytosineType.split("-");
+			Double[] value = cts.cytosineListMap.get(cytosineType);
+			double[] tmpMethy = new double[2];
+			tmpMethy[0] = value[2];
+			tmpMethy[1] = value[2];
+			double adjacentCytosineSeqLikelihood = 0;
+			double adjacentCytosineSeqLikelihoodReverseStrand = 0;
+			int i = 1;
+			int countMatchedOnFwd = 0;
+			int countMatchedOnRvd = 0;
+			for(byte base : tmpKey[0].getBytes()){
+				int cytosinePos = Integer.parseInt(tmpKey[1]);
+				GenomeLoc loc = ref.getGenomeLocParser().createGenomeLoc(contig, position + i - cytosinePos);			
+				List<SAMRecord> reads =  new ArrayList<SAMRecord>();;
+				List<Integer> elementOffsets = new ArrayList<Integer>();
+
+				for ( PileupElement p : pileup ) {
+						int elementOffset = i - cytosinePos + p.getOffset();
+						if(elementOffset < 0 || elementOffset > p.getRead().getReadLength()-1)
+							continue;
+						elementOffsets.add(elementOffset);
+						reads.add(p.getRead());
+				}
+				
+				ReadBackedPileup tmpPileup = new ReadBackedPileupImpl(loc,reads,elementOffsets);
+				BisulfiteDiploidSNPGenotypeLikelihoods tmpGL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC, tmpMethy.clone());
+				
+					
+				tmpGL.setPriors(tracker, ref, BAC.PCR_error, BAC.novelDbsnpHet, BAC.validateDbsnpHet);
+				int nGoodBases = tmpGL.add(tmpPileup, true, true);
+	            if ( nGoodBases == 0 )
+	                continue;
+	            double[] posteriorNormalized = normalization(tmpGL.getPosteriors().clone(),tmpGL.getLikelihoods().clone());
+	            
+	            getBestGenotypeFromPosterior(posteriorNormalized,position);
+	            DiploidGenotype g = methyStatus.genotype;
+	            double ratio = methyStatus.ratio;
+	            if(g == null){
+	            	break;
+	            }
+	            else if(g.isHet()){
+	            	break;
+	            }	
+	            else{
+	            	if(BaseUtilsMore.iupacCodeEqualNotConsiderMethyStatus(base, g.base1)){
+	            		countMatchedOnFwd++;
+	            		adjacentCytosineSeqLikelihood += ratio;
+	            	}
+	            	
+	            }
+	            if(position == BAC.testLocus){
+	            	System.err.println("base: " + (char)base + "\tgenotype: " + (char)g.base1 + "\tcytosinePos: " + cytosinePos + "\tratio: " + ratio + "\tadjacentCytosineSeqLikelihood: " + adjacentCytosineSeqLikelihood);
+	            }
+	            i++;
+			}
+			i = 1;
+			for(byte base : tmpKey[0].getBytes()){
+				int cytosinePos = Integer.parseInt(tmpKey[1]);
+				GenomeLoc loc = ref.getGenomeLocParser().createGenomeLoc(contig, position - (i - cytosinePos));			
+				List<SAMRecord> reads =  new ArrayList<SAMRecord>();;
+				List<Integer> elementOffsets = new ArrayList<Integer>();
+
+				for ( PileupElement p : pileup ) {
+						int elementOffset = p.getOffset() - (i - cytosinePos);
+						if(elementOffset < 0 || elementOffset > p.getRead().getReadLength()-1)
+							continue;
+						elementOffsets.add(elementOffset);
+						reads.add(p.getRead());
+				}
+				
+				ReadBackedPileup tmpPileup = new ReadBackedPileupImpl(loc,reads,elementOffsets);
+				BisulfiteDiploidSNPGenotypeLikelihoods tmpGL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors, BAC, tmpMethy.clone());
+			
+				tmpGL.setPriors(tracker, ref, BAC.PCR_error, BAC.novelDbsnpHet, BAC.validateDbsnpHet);
+				int nGoodBases = tmpGL.add(tmpPileup, true, true);
+	            if ( nGoodBases == 0 )
+	                continue;
+	            double[] posteriorNormalized = normalization(tmpGL.getPosteriors().clone(),tmpGL.getLikelihoods().clone());
+
+	            getBestGenotypeFromPosterior(posteriorNormalized,position);
+	            DiploidGenotype g = methyStatus.genotype;
+	            double ratio = methyStatus.ratio;
+	            if(g == null){
+	            	break;
+	            }
+	            else if(g.isHet()){
+	            	break;
+	            }	
+	            else{
+
+	            	if(BaseUtilsMore.iupacCodeEqualNotConsiderMethyStatus(base, BaseUtilsMore.iupacCodeComplement(g.base1))){
+	            		countMatchedOnRvd++;
+	            		adjacentCytosineSeqLikelihoodReverseStrand += ratio;
+	            	}
+	            }
+	            if(position == BAC.testLocus){
+	            	System.err.println("base: " + (char)base + "\tgenotype: " + (char)BaseUtilsMore.iupacCodeComplement(g.base1) + "\treveser: " + (char)base + "\tcytosinePos: " + cytosinePos + "\tratio: " + ratio + "\tadjacentCytosineSeqLikelihoodReverseStrand: " + adjacentCytosineSeqLikelihoodReverseStrand);
+	            }
+	            i++;
+			}
+			if(countMatchedOnFwd >= tmpKey[0].length()){
+				value[3] = 1.0;
+				value[0] = adjacentCytosineSeqLikelihood;
+				if(adjacentCytosineSeqLikelihood > maxRatio){
+					maxRatio = adjacentCytosineSeqLikelihood;
+					cytosineMethyStatus[0] = value[2];
+					
+				}
+
+			}
+			else if(countMatchedOnRvd >= tmpKey[0].length()){
+				value[3] = 1.0;
+				value[1] = adjacentCytosineSeqLikelihoodReverseStrand;
+				if(adjacentCytosineSeqLikelihoodReverseStrand > maxRatio){
+					maxRatio = adjacentCytosineSeqLikelihoodReverseStrand;
+					cytosineMethyStatus[1] = value[2];
+				}
+					
+			}
+			if(position == BAC.testLocus){
+            	System.err.println("countMatchedOnFwd: " + countMatchedOnFwd + "\tcountMatchedOnRvd: " + countMatchedOnRvd);
+            } 
+			
+
+		}
+		return cytosineMethyStatus;	
+	}
+
+	static class methyStatus{
+		static DiploidGenotype genotype;
+		static double ratio;
+	}
 }

@@ -80,7 +80,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
     
-    protected VCFWriter writer = null;
+    protected TcgaVCFWriter writer = null;
 
     private BisulfiteGenotyperEngine BG_engine = null;
 
@@ -620,11 +620,11 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 		return summary.clone();
     }
     
-    public VCFWriter getWriter(){
+    public TcgaVCFWriter getWriter(){
     	return writer;
     }
    
-    public void setWriter(VCFWriter writer){
+    public void setWriter(TcgaVCFWriter writer){
     	this.writer = writer;
 
     }
