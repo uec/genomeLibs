@@ -29,8 +29,8 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "auto_estimate_hcg_methylation", shortName = "aehcg", doc = "the first run would be to run auto_estimate_hcg methylation status", required = false)
     public boolean autoEstimateHcg = true;
 	
-	@Argument(fullName = "auto_estimate_other_cytosine_methylation", shortName = "aeoc", doc = "the first run would be to run auto_estimate_other_cytosine_methylation status, you need to provide cytosine type by such format(GCAA is ctosine type, 2 means cytosine is in 2nd base): -aoec GCAA:2;GGGCA:4", required = false)
-    //public String autoEstimateOtherCytosine = "GCAA-2;GGGCA-4";
+	@Argument(fullName = "auto_estimate_other_cytosine_methylation", shortName = "aeoc", doc = "the first run would be to run auto_estimate_other_cytosine_methylation status, you need to provide cytosine type by such format(GCAA is ctosine type, 2 means cytosine is in 2nd base, 0.5 means intial methylation status): -aoec GCAA-2:0.5;GGGCA:-4:0.5", required = false)
+    //public String autoEstimateOtherCytosine = "GCAA-2:0.5;GGGCA-4:0.5";
 	public String autoEstimateOtherCytosine = "";
 	
 	@Argument(fullName = "force_cpg_methylation", shortName = "fcpg", doc = "force the cpg methylation status", required = false)
@@ -57,7 +57,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	
 //need to improve..
 	@Argument(fullName = "log_likelihood_ratio_for_cytosine_type", shortName = "cTypeThreshold", doc = "phred scale likelihood ratio of threshold to be this cytosine type but not other cytosine, default is 10, means 10 times more likihood than the other type of cytosine", required = false)
-    public double cTypeThreshold = 10;
+    public double cTypeThreshold = 100;
 	
 	//@Argument(fullName = "Cytosine_Type", shortName = "ct", doc = "Cytosine type, CG, CHH, CHG or GCH....for test only (format should be -ct CG-0:0.75;CHH-0:0.01... add the cytosine type, cytosine position in your string and their genome wide methylation value you estimate )", required = false)
     //public String cytosineType = "CGA-0:0.7314;GCA-1:0.01";
@@ -129,7 +129,10 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.forceGch = forceGch;
         bac.forceGcg = forceGcg;
         bac.forceHcg = forceHcg;
+        bac.autoEstimateOtherCytosine = autoEstimateOtherCytosine;
+        bac.forceOtherCytosine = forceOtherCytosine;
         
+        bac.cTypeThreshold = cTypeThreshold;
        // bac.cytosineType = cytosineType;
         bac.testLocus = testLocus;
         bac.bsRate = bsRate;
@@ -141,7 +144,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.novelDbsnpHet = novelDbsnpHet;
         
         bac.allowBadMates = allowBadMates;
-        
+        bac.tcga = tcga;
         return bac;
     }
 

@@ -98,6 +98,12 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 		
 	}
 	
+	public void setPriors(RefMetaDataTracker tracker, ReferenceContext ref, double PCR_error_rate, double novelDbsnpHet, double validateDbsnpHet){
+		
+		this.priors.setPriors(tracker, ref, HUMAN_HETEROZYGOSITY, PROB_OF_REFERENCE_ERROR, novelDbsnpHet, validateDbsnpHet);
+        setToZeroBs();
+	}
+	
 	public void setPriorsBasedOnContextRef(RefMetaDataTracker tracker, ReferenceContext ref, double PCR_error_rate, double bisulfiteConversionRate, double novelDbsnpHet, double validateDbsnpHet, CytosineTypeStatus cts, byte[] contextRef){
 		double refMethyStatus = 0;
 		for(String cytosineType : cts.cytosineListMap.keySet()){
@@ -451,28 +457,40 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	        	}
 	        }
 	        else{
-	        	if(sum - sumNot >= ((autoEstimateC && !secondIteration) ? threshold : threshold/10.0) && sum > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS && sum >  ((autoEstimateC && !secondIteration) ? log10(1 - ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD) : log10(ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD))){
+	        	if(sum - sumNot >= ((autoEstimateC && !secondIteration) ? threshold : threshold/10.0) && sum >  ((autoEstimateC && !secondIteration) ? log10(1 - ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD) : log10(ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD))){
 	        		//DETERMINED_CYTOSINE_TYPE_NEGSTRAND = false;
-	        		
-	    	        DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS = sum;
+	        		if(sum - sumNot > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS ){
+	        			DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_POS = sum - sumNot;
+	        			DETERMINED_CYTOSINE_TYPE_POS = cytosineType;
+	        			DETERMINED_CYTOSINE_TYPE_C_METHY_POS = value[2];
+	        		}
+	    	        
 	    	       // 
-	    	        DETERMINED_CYTOSINE_TYPE_POS = cytosineType;
-	    	        DETERMINED_CYTOSINE_TYPE_C_METHY_POS = value[2];
+	    	        
+	    	        
 	    	       // useDefaulMethyLevel = false;
 	    	        value[0] = sum - sumNot;
 	    	        
+	    	      
+	    	        
+	    	        
 	    	      //  System.err.println("pos");
 	        	}
-	        	if(sumReverse - sumNotReverse >= ((autoEstimateC && !secondIteration) ? threshold : threshold/10.0) && sumReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG && sumReverse > ((autoEstimateC && !secondIteration) ? log10(1 - ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD) : log10(ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD))){
+	        	if(sumReverse - sumNotReverse >= ((autoEstimateC && !secondIteration) ? threshold : threshold/10.0) && sumReverse > ((autoEstimateC && !secondIteration) ? log10(1 - ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD) : log10(ABSOLUTE_CYTOSINE_TYPE_C_LIKELIHOOD))){
 	        		//DETERMINED_CYTOSINE_TYPE_NEGSTRAND = true;
 	        		//Double[] value = cts.cytosineListMap.get(cytosineType);
 	        		
-	    	        DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG = sumReverse;
-	    	        //cts.cytosineListMap.put(cytosineType, value);
-	    	        DETERMINED_CYTOSINE_TYPE_NEG = cytosineType;
-	    	        DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = value[2];
+	    	       
+	    	        
+	    	        if(sumReverse - sumNotReverse > DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG ){
+	    	        	 DETERMINED_CYTOSINE_TYPE_C_LIKELIHOOD_NEG = sumReverse - sumNotReverse;
+	 	    	        //cts.cytosineListMap.put(cytosineType, value);
+	 	    	        DETERMINED_CYTOSINE_TYPE_NEG = cytosineType;
+	 	    	        DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = value[2];
+	        		}
 	    	       // useDefaulMethyLevel = false;
 	    	        value[1] = sumReverse - sumNotReverse;
+	    	        
 	    	      //  System.err.println("neg");
 	        	}
 	        } 
@@ -485,6 +503,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	 	        }	
 	        	
 	    }
+		
 	    if(!DETERMINED_CYTOSINE_TYPE_POS.isEmpty()){
 	    	Double[] value = cts.cytosineListMap.get(DETERMINED_CYTOSINE_TYPE_POS);
 	    	value[3] = 1.0;
@@ -495,6 +514,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 	    	value[3] = 1.0;
 	    	cts.cytosineListMap.put(DETERMINED_CYTOSINE_TYPE_NEG, value);
 	    }
+	    
 		//if(useDefaulMethyLevel && (!autoEstimateC || secondIteration)){
 		//	DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = defaultMethy;
 		//	DETERMINED_CYTOSINE_TYPE_C_METHY_POS = defaultMethy;

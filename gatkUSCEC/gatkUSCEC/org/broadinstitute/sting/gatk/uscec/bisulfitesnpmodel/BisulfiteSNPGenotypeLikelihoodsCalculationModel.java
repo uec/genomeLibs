@@ -70,6 +70,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 		this.autoEstimateC = autoEstimateC;
 		this.secondIteration = secondIteration;
 	//	CYTOSINE_TYPE_LIST = BAC.cytosineType;
+
 	}
 	
 	
@@ -242,7 +243,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
      			 for(String cytosineType : cts.cytosineListMap.keySet()){
      					String[] tmpKey = cytosineType.split("-");
      					Double[] value = cts.cytosineListMap.get(cytosineType);
-     					System.err.println("tmpKey[0]" + tmpKey[0] + "\tvalue[0]" + value[0] + "\tvalue[1]" + value[1]);
+     					System.err.println("tmpKey[0]" + tmpKey[0] + "\tvalue[0]" + value[0] + "\tvalue[1]" + value[1] + "\tvalue[2]" + value[2] + "\tvalue[3]" + value[3]);
      			 }
      			 //System.err.println("cytosineMethyLevel: " + cytosineMethyLevel + "\tcts: " + cts.chgMethyLevel + "\t" + cts.chhMethyLevel + "\t" + cts.cpgMethyLevel + "\t" + logRatio);
          		 
@@ -257,7 +258,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         		count++;
         	}
             
-            GL.setPriorsBasedOnContextRef(tracker, ref, BAC.PCR_error, BAC.bsRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet, cts, contextRef);
+            //GL.setPriorsBasedOnContextRef(tracker, ref, BAC.PCR_error, BAC.bsRate, BAC.novelDbsnpHet, BAC.validateDbsnpHet, cts, contextRef);
+            GL.setPriors(tracker, ref, BAC.PCR_error, BAC.novelDbsnpHet, BAC.validateDbsnpHet);
             
             int nGoodBases = GL.add(pileup, true, true);
             if ( nGoodBases == 0 )

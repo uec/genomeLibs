@@ -143,7 +143,7 @@ public class BisulfiteGenotyperEngine{
     }
 	
 	public void setCytosineTypeStatus(CytosineTypeStatus cts){
-		this.ctss.set(cts);
+		this.ctss.set(cts.clone());
 		//this.CONTEXTREF = contextRef;
 	}
 	
@@ -677,7 +677,7 @@ public class BisulfiteGenotyperEngine{
 				
 				 if(Double.isNaN(cytosineMethyLevel))
 						 cytosineMethyLevel = 0.0;
-					
+				 value[2] = cytosineMethyLevel;
 				//System.err.println("cTypeStatus: " + cTypeStatus + "\tLikelihood: " + value[cPos]);
 				
 				if(tmpKey[0].equalsIgnoreCase("C")){
@@ -727,7 +727,7 @@ public class BisulfiteGenotyperEngine{
 					}
 					
 				}
-				
+				ctss.get().cytosineListMap.put(cytosineType,value);
 				
 			}
 			//if(cytosineMethyLevel > 0)

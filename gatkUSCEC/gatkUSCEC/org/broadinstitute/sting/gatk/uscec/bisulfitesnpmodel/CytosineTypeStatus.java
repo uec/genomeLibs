@@ -85,13 +85,14 @@ public class CytosineTypeStatus {
 		if(!BAC.autoEstimateOtherCytosine.isEmpty()){
 			String[] tmpArray = BAC.autoEstimateOtherCytosine.split(";");
 			for(String tmp : tmpArray){
+				String[] mapElement = tmp.split(":");
 				tmpDouble = new Double[4];
 				tmpDouble[0] = Double.NEGATIVE_INFINITY;
 				tmpDouble[1] = Double.NEGATIVE_INFINITY;
-				tmpDouble[2] = Double.NaN;
+				tmpDouble[2] = Double.parseDouble(mapElement[1]);
 				tmpDouble[3] = 0.0;
-				cytosineListMap.put(tmp.toUpperCase(), tmpDouble);
-				int tmpLength = tmp.split("-")[0].length();
+				cytosineListMap.put(mapElement[0].toUpperCase(), tmpDouble);
+				int tmpLength = mapElement[0].split("-")[0].length();
 				if(tmpLength > maxCytosineLength){
 					maxCytosineLength = tmpLength;
 				}
@@ -117,7 +118,7 @@ public class CytosineTypeStatus {
 	}
 	
 	public CytosineTypeStatus clone(){
-		CytosineTypeStatus cts = new CytosineTypeStatus(BAC);
+		CytosineTypeStatus cts = new CytosineTypeStatus(BAC.clone());
 		cts.isC = this.isC;
 		cts.isCpg = this.isCpg;
 		cts.isChg = this.isChg;
@@ -135,17 +136,18 @@ public class CytosineTypeStatus {
 		cts.hcgMethyLevel = this.hcgMethyLevel;
 		
 		
-		cts.BAC = this.BAC;
+		cts.BAC = this.BAC.clone();
 		
 		cts.maxCytosineLength = this.maxCytosineLength;
 		cts.cytosineListMap = new HashMap<String, Double[]>();
 		
 		for(String key : this.cytosineListMap.keySet()){
-			Double[] value = this.cytosineListMap.get(key);
+			Double[] value = this.cytosineListMap.get(key).clone();
 			value[0] = Double.NEGATIVE_INFINITY;
 			value[1] = Double.NEGATIVE_INFINITY;
 			value[3] = 0.0;
 			cts.cytosineListMap.put(key, value);
+			
 		}
 		
 		return cts;
