@@ -508,7 +508,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
         	//}
         }
         if(autoEstimateC && !secondIteration){
-        	if( methyStatus.ratio < this.BAC.cTypeThreshold){
+        	if( methyStatus.ratio < this.BAC.cTypeThreshold + this.BAC.STANDARD_CONFIDENCE_FOR_CALLING ){
         		bestGenotype = null;
         	}
         }
