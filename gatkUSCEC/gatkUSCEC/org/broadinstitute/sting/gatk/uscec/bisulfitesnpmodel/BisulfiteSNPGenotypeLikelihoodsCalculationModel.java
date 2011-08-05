@@ -53,6 +53,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	//protected static String cytosineWindowContext = "C";
 	private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
+    private double FALT_METHY_STATUS = 0.5;
 	
 
 	
@@ -559,7 +560,11 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 			int countMatchedOnRvd = 0;
 			for(byte base : tmpKey[0].getBytes()){
 				int cytosinePos = Integer.parseInt(tmpKey[1]);
-				GenomeLoc loc = ref.getGenomeLocParser().createGenomeLoc(contig, position + i - cytosinePos);			
+				GenomeLoc loc = ref.getGenomeLocParser().createGenomeLoc(contig, position + i - cytosinePos);	
+				if( i != cytosinePos){
+					tmpMethy[0] = FALT_METHY_STATUS;
+					tmpMethy[1] = FALT_METHY_STATUS;
+				}
 				List<SAMRecord> reads =  new ArrayList<SAMRecord>();;
 				List<Integer> elementOffsets = new ArrayList<Integer>();
 

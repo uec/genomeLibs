@@ -689,14 +689,18 @@ public class BisulfiteGenotyperEngine{
 					ctss.get().isCpg = true;
 					ctss.get().cpgMethyLevel = cytosineMethyLevel;
 				}
-				else if(tmpKey[0].equalsIgnoreCase("CHH")){
-					ctss.get().isChh = true;
-					ctss.get().chhMethyLevel = cytosineMethyLevel;
+				else if(tmpKey[0].equalsIgnoreCase("CH")){
+					ctss.get().isCph = true;
+					ctss.get().cphMethyLevel = cytosineMethyLevel;
 				}
-				else if(tmpKey[0].equalsIgnoreCase("CHG")){
-					ctss.get().isChg = true;
-					ctss.get().chgMethyLevel = cytosineMethyLevel;
-				}
+				//else if(tmpKey[0].equalsIgnoreCase("CHH")){
+				//	ctss.get().isChh = true;
+				//	ctss.get().chhMethyLevel = cytosineMethyLevel;
+				//}
+				//else if(tmpKey[0].equalsIgnoreCase("CHG")){
+				//	ctss.get().isChg = true;
+				//	ctss.get().chgMethyLevel = cytosineMethyLevel;
+				//}
 				if(tmpKey[0].equalsIgnoreCase("GCH")){
 					if(BAC.sequencingMode == MethylSNPModel.GM){
 						ctss.get().isGch = true;

@@ -14,6 +14,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "auto_estimate_cpg_methylation", shortName = "aecpg", doc = "the first run would be to run auto_estimate_cpg methylation status", required = false)
     public boolean autoEstimateCpg = true;
 	
+	@Argument(fullName = "auto_estimate_cph_methylation", shortName = "aecph", doc = "the first run would be to run auto_estimate_cph methylation status", required = false)
+    public boolean autoEstimateCph = true;
+	
 	@Argument(fullName = "auto_estimate_chg_methylation", shortName = "aechg", doc = "the first run would be to run auto_estimate_chg methylation status", required = false)
     public boolean autoEstimateChg = true;
 	
@@ -35,6 +38,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	
 	@Argument(fullName = "force_cpg_methylation", shortName = "fcpg", doc = "force the cpg methylation status", required = false)
     public double forceCpg = 0.50;
+	
+	@Argument(fullName = "force_cph_methylation", shortName = "fcph", doc = "force the cph methylation status", required = false)
+    public double forceCph = 0.50;
 	
 	@Argument(fullName = "force_chg_methylation", shortName = "fchg", doc = "force the chg methylation status", required = false)
     public double forceChg = 0.50;
@@ -120,11 +126,13 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.autoEstimateChg = autoEstimateChg;
         bac.autoEstimateChh = autoEstimateChh;
         bac.autoEstimateCpg = autoEstimateCpg;
+        bac.autoEstimateCph = autoEstimateCph;
         bac.autoEstimateGch = autoEstimateGch;
         bac.autoEstimateGcg = autoEstimateGcg;
         bac.autoEstimateHcg = autoEstimateHcg;
         bac.forceChg = forceChg;
         bac.forceCpg = forceCpg;
+        bac.forceCph = forceCph;
         bac.forceChh = forceChh;
         bac.forceGch = forceGch;
         bac.forceGcg = forceGcg;
