@@ -1,5 +1,7 @@
 package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 
+import org.broadinstitute.sting.utils.BaseUtils;
+
 
 public class BaseUtilsMore {
 
@@ -128,7 +130,7 @@ public class BaseUtilsMore {
 		}
 		
 	}
-	
+	/*
 	static public boolean iupacCodeEqualNotConsiderMethyStatus(byte pattern, byte observe){
 		pattern = toUpperCase(pattern);
 		observe = toUpperCase(observe);
@@ -202,6 +204,76 @@ public class BaseUtilsMore {
 				return false;
 		}
 		
+	}
+	*/
+	static public boolean iupacCodeEqualNotConsiderMethyStatus(byte pattern, byte observe){
+		pattern = toUpperCase(pattern);
+		observe = toUpperCase(observe);
+		if(BaseUtils.basesAreEqual(observe, BaseUtils.A)){
+				switch(pattern){
+					case 'A':
+					case 'R':
+					case 'W':
+					case 'M':
+					case 'H':
+					case 'V':
+					case 'D':
+					case 'N':
+						return true;
+									
+					default:
+						return false;
+					}
+		}
+		else if(BaseUtils.basesAreEqual(observe, BaseUtils.C)){
+					switch(pattern){
+					case 'C':
+					case 'Y':
+					case 'S':
+					case 'M':
+					case 'H':
+					case 'V':
+					case 'B':
+					case 'N':
+						return true;	
+					default:
+						return false;
+					}
+		}
+		else if(BaseUtils.basesAreEqual(observe, BaseUtils.G)){
+			switch(pattern){
+			case 'G':
+			case 'R':
+			case 'S':
+			case 'K':
+			case 'D':
+			case 'V':
+			case 'B':
+			case 'N':
+				return true;	
+			default:
+				return false;
+			}	
+		}
+		else if(BaseUtils.basesAreEqual(observe, BaseUtils.T)){
+			switch(pattern){
+			case 'T':
+			case 'W':
+			case 'K':
+			case 'D':
+			case 'Y':
+			case 'H':
+			case 'B':
+			case 'N':
+				return true;
+					
+			default:
+			return false;
+			}
+		}
+		else{
+			return true;
+		}
 	}
 	
 	static public byte iupacCodeComplement(byte base) {

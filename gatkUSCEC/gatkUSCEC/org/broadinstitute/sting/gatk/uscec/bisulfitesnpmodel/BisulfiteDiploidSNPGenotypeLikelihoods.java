@@ -105,7 +105,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 		this.priors.setPriors(tracker, ref, HUMAN_HETEROZYGOSITY, PROB_OF_REFERENCE_ERROR, novelDbsnpHet, validateDbsnpHet);
         setToZeroBs();
 	}
-	
+	/*
 	public void setPriorsBasedOnContextRef(RefMetaDataTracker tracker, ReferenceContext ref, double PCR_error_rate, double bisulfiteConversionRate, double novelDbsnpHet, double validateDbsnpHet, CytosineTypeStatus cts, byte[] contextRef){
 		double refMethyStatus = 0;
 		for(String cytosineType : cts.cytosineListMap.keySet()){
@@ -164,7 +164,8 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 		this.priors.setPriors(tracker, ref, HUMAN_HETEROZYGOSITY, PROB_OF_REFERENCE_ERROR, BISULFITE_CONVERSION_RATE, OVER_CONVERSION_RATE, refMethyStatus, novelDbsnpHet, validateDbsnpHet, cts);
         setToZeroBs();
 	}
-	
+	*/
+	/*
 	public void checkCytosineStatus(ReadBackedPileup pileup, CytosineTypeStatus cts, double threshold, boolean autoEstimateC, boolean secondIteration){
 		//boolean useDefaulMethyLevel = true;
 		//double defaultMethy = 0;
@@ -529,7 +530,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 		
 		//return cts;
 	}
-	
+	*/
 	/*
 	public int add(ReadBackedPileup pileup, boolean ignoreBadBases, boolean capBaseQualsAtMappingQual, byte refNextBase, byte refPreBase) {
         int n = 0;

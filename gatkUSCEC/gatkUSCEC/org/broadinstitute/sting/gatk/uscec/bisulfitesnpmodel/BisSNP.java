@@ -68,7 +68,7 @@ public class BisSNP extends CommandLineExecutable {
 	public Walker<?,?> walker = null;
 	
 	//protected VCFWriter writer = null;
-	private VariantAnnotatorEngine annotationEngine = null;
+	//private VariantAnnotatorEngine annotationEngine = null;
 	
 	@Override
     protected ApplicationDetails getApplicationDetails() {
@@ -117,7 +117,7 @@ public class BisSNP extends CommandLineExecutable {
 	public void setupInfo(){
 		if(walker instanceof BisulfiteGenotyper){
 			
-			((BisulfiteGenotyper) walker).setAnnoEng(annotationEngine);
+		//	((BisulfiteGenotyper) walker).setAnnoEng(annotationEngine);
 			if(argCollection.numberOfThreads == 1){
 				((BisulfiteGenotyper) walker).setWriter(writer);
 				//((TcgaVCFWriter)writer).setRefSource(argCollection.referenceFile.toString());
@@ -213,7 +213,7 @@ public class BisSNP extends CommandLineExecutable {
         			//if(autoEstimateC){
         				((BisulfiteGenotyper) walker).setWriter(writer);
         			//}
-        			this.annotationEngine = ((BisulfiteGenotyper) walker).getAnnoEng();
+        		//	this.annotationEngine = ((BisulfiteGenotyper) walker).getAnnoEng();
         		}
                 
                 engine.execute();

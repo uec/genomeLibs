@@ -43,7 +43,7 @@ public class CytosineTypeStatus {
 		Double[] tmpDouble = new Double[4];//tmpDouble[0]: log10 likelihood in positive strand; tmpDouble[1]: log10 likelihood in negative strand; tmpDouble[2]: methylation level; tmpDouble[3]: is it this type of cytosine: 1-true or 0-false? 
 		tmpDouble[0] = Double.NEGATIVE_INFINITY;
 		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = BAC.forceChh;
+		tmpDouble[2] = BAC.forceCph;
 		tmpDouble[3] = 0.0;
 		cytosineListMap.put("C-1".toUpperCase(), tmpDouble);
 		tmpDouble = new Double[4];
