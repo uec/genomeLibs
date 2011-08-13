@@ -93,7 +93,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
         log10_1_minus_PCR_error = log10(1.0 - BAC.PCR_error);
         this.DETERMINED_CYTOSINE_TYPE_C_METHY_POS = cytosineMethyStatus[0];
         this.DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = cytosineMethyStatus[1];
-		setToZeroBs();
+	//	setToZeroBs();
 //		this.CPG_METHYLATION_RATE = cpgMethyRate;
 //		this.CPH_METHYLATION_RATE = cphMethyRate;
 //		DETERMINED_CYTOSINE_TYPE_C_METHY = CPH_METHYLATION_RATE;
@@ -105,6 +105,15 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 		this.priors.setPriors(tracker, ref, HUMAN_HETEROZYGOSITY, PROB_OF_REFERENCE_ERROR, novelDbsnpHet, validateDbsnpHet);
         setToZeroBs();
 	}
+	
+	
+	public void clearLikelihoods(double[] cytosineMethyStatus){
+		
+		this.DETERMINED_CYTOSINE_TYPE_C_METHY_POS = cytosineMethyStatus[0];
+        this.DETERMINED_CYTOSINE_TYPE_C_METHY_NEG = cytosineMethyStatus[1];
+        setToZeroBs();
+	}
+	
 	/*
 	public void setPriorsBasedOnContextRef(RefMetaDataTracker tracker, ReferenceContext ref, double PCR_error_rate, double bisulfiteConversionRate, double novelDbsnpHet, double validateDbsnpHet, CytosineTypeStatus cts, byte[] contextRef){
 		double refMethyStatus = 0;
@@ -838,50 +847,63 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 			for ( DiploidGenotype g : DiploidGenotype.values() ) {
 				double likelihood = 0.0;
 				if(!negStrand){
-						switch(observedBase){
-							case BaseUtils.C:
-						//		if(!DETERMINED_CYTOSINE_TYPE_NEGSTRAND){
-									likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) * ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * (1.0-OVER_CONVERSION_RATE)) : pOfBase1 * (error/3.0);
-									likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) *  ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * (1.0-OVER_CONVERSION_RATE) ) : pOfBase2 * (error/3.0);
-							//	}
-						//		else{
-							//		likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) * ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY ) : pOfBase1 * (error/3.0) * ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY );
-								//	likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) *  ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY ) : pOfBase2 * (error/3.0) * ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY );
-								//}
-									
-									if ( VERBOSE ) {
-									//	System.out.println("flag1: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
-									}
-								
-								break;
-							case BaseUtils.T:
-							
-									likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) : (g.base1 == BaseUtils.C ? pOfBase1 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * OVER_CONVERSION_RATE) : pOfBase1 * (error/3.0));
-									likelihood += observedBase == g.base2 ? pOfBase1 * (1.0-error) : (g.base2 == BaseUtils.C ? pOfBase2 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * OVER_CONVERSION_RATE) : pOfBase2 * (error/3.0));
-
-								if ( VERBOSE ) {
-									//	System.out.println("flag3: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
-									}
-								
-								break;
-							default: 
-								likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) : pOfBase1 * (error/3.0);
-								likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) : pOfBase2 * (error/3.0);
-								if ( VERBOSE ) {
-									//System.out.println("flag5: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
-								}
-									
+						//switch(observedBase){
+							//case BaseUtils.C:
+					if(BaseUtils.basesAreEqual(observedBase, BaseUtils.C)){
+//						if(!DETERMINED_CYTOSINE_TYPE_NEGSTRAND){
+						likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) * ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * (1.0-OVER_CONVERSION_RATE)) : pOfBase1 * (error/3.0);
+						likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) *  ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * (1.0-OVER_CONVERSION_RATE) ) : pOfBase2 * (error/3.0);
+				//	}
+			//		else{
+				//		likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) * ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY ) : pOfBase1 * (error/3.0) * ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY );
+					//	likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) *  ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY ) : pOfBase2 * (error/3.0) * ( (1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY );
+					//}
+						
+						if ( VERBOSE ) {
+						//	System.out.println("flag1: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
 						}
+					}
+						
+								
+							//	break;
+					else if(BaseUtils.basesAreEqual(observedBase, BaseUtils.T)){
+						likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) : (g.base1 == BaseUtils.C ? pOfBase1 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * OVER_CONVERSION_RATE) : pOfBase1 * (error/3.0));
+						likelihood += observedBase == g.base2 ? pOfBase1 * (1.0-error) : (g.base2 == BaseUtils.C ? pOfBase2 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_POS) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_POS * OVER_CONVERSION_RATE) : pOfBase2 * (error/3.0));
+
+						if ( VERBOSE ) {
+						//	System.out.println("flag3: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
+						}
+					}
+						//	case BaseUtils.T:
+					else{
+						likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) : pOfBase1 * (error/3.0);
+						likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) : pOfBase2 * (error/3.0);
+						if ( VERBOSE ) {
+							//System.out.println("flag5: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
+						}
+					}
+									
+								
+						//		break;
+							//default: 
+								
+									
+						//}
 				}
 				else{
-						switch(observedBase){
-						case BaseUtils.G:
+					//	switch(observedBase){
+						if(BaseUtils.basesAreEqual(observedBase, BaseUtils.G)){
+							likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) * ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * (1.0-OVER_CONVERSION_RATE) ) : pOfBase1 * (error/3.0);
+							likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) *  ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * (1.0-OVER_CONVERSION_RATE) ) : pOfBase2 * (error/3.0);
+							if ( VERBOSE ) {
+								//System.out.println("flag6: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
+							}
+							
+						}
+						//case BaseUtils.G:
+						
 						//	if(DETERMINED_CYTOSINE_TYPE_NEGSTRAND){
-								likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) * ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * (1.0-OVER_CONVERSION_RATE) ) : pOfBase1 * (error/3.0);
-								likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) *  ( (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * (1.0-BISULFITE_CONVERSION_RATE) + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * (1.0-OVER_CONVERSION_RATE) ) : pOfBase2 * (error/3.0);
-								if ( VERBOSE ) {
-									//System.out.println("flag6: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
-								}
+								
 					//		}
 					//		else{
 					//			likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) * ((1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + UNDETERMINED_CYTOSINE_TYPE_C_METHY) : pOfBase1 * (error/3.0) * ((1.0-UNDETERMINED_CYTOSINE_TYPE_C_METHY) * (1.0-BISULFITE_CONVERSION_RATE) + CPH_METHYLATION_RATE);
@@ -890,24 +912,30 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 									//System.out.println("flag7: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
 					//			}
 							//}
-							break;
-						case BaseUtils.A:
+							//break;
+						else if(BaseUtils.basesAreEqual(observedBase, BaseUtils.A)){
+							likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) : (g.base1 == BaseUtils.G ? pOfBase1 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * OVER_CONVERSION_RATE) : pOfBase1 * (error/3.0));
+							likelihood += observedBase == g.base2 ? pOfBase1 * (1.0-error) : (g.base2 == BaseUtils.G ? pOfBase2 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * OVER_CONVERSION_RATE) : pOfBase2 * (error/3.0));
+							if ( VERBOSE ) {
+								//System.out.println("flag9: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
+							}
+						}
+						//case BaseUtils.A:
 							
-								likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) : (g.base1 == BaseUtils.G ? pOfBase1 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * OVER_CONVERSION_RATE) : pOfBase1 * (error/3.0));
-								likelihood += observedBase == g.base2 ? pOfBase1 * (1.0-error) : (g.base2 == BaseUtils.G ? pOfBase2 * (error/3.0 + (1.0-DETERMINED_CYTOSINE_TYPE_C_METHY_NEG) * BISULFITE_CONVERSION_RATE + DETERMINED_CYTOSINE_TYPE_C_METHY_NEG * OVER_CONVERSION_RATE) : pOfBase2 * (error/3.0));
-								if ( VERBOSE ) {
-									//System.out.println("flag9: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
-								}
+								
 							
 							
-							break;
-						default: 
+						//	break;
+						else{
 							likelihood += observedBase == g.base1 ? pOfBase1 * (1.0-error) : pOfBase1 * (error/3.0);
 							likelihood += observedBase == g.base2 ? pOfBase2 * (1.0-error) : pOfBase2 * (error/3.0);
 							if ( VERBOSE ) {
 								//System.out.println("flag9: observedBase-" + observedBase + "\t" + "g.base1-" + g.base1 + "\t" + "g.base2-" + g.base2 + "\t" + "likelihood-" + log10(likelihood));
 							}
 						}
+						//default: 
+							
+						//}
 				}
 				 double logLikelihood = log10(likelihood);
 	             gl.log10Likelihoods[g.ordinal()] += logLikelihood;

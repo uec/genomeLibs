@@ -24,7 +24,7 @@ public class CytosineTypeStatus {
 	
 	BisulfiteArgumentCollection BAC = null;
 	
-	int maxCytosineLength = 2;
+	int maxCytosineLength = 1;
 	
 	HashMap<String, Double[]> cytosineListMap = null;
 	
@@ -103,8 +103,9 @@ public class CytosineTypeStatus {
 				tmpDouble[3] = 0.0;
 				cytosineListMap.put(mapElement[0].toUpperCase(), tmpDouble);
 				int tmpLength = mapElement[0].split("-")[0].length();
-				if(tmpLength > maxCytosineLength){
-					maxCytosineLength = tmpLength;
+				int cytosinePos = Integer.parseInt(mapElement[0].split("-")[1]);
+				if(Math.max(tmpLength-cytosinePos, cytosinePos-1) > maxCytosineLength){
+					maxCytosineLength = Math.max(tmpLength-cytosinePos, cytosinePos-1);
 				}
 			}
 		}
@@ -120,8 +121,9 @@ public class CytosineTypeStatus {
 				tmpDouble[3] = 0.0;
 				cytosineListMap.put(mapElement[0].toUpperCase(), tmpDouble);
 				int tmpLength = mapElement[0].split("-")[0].length();
-				if(tmpLength > maxCytosineLength){
-					maxCytosineLength = tmpLength;
+				int cytosinePos = Integer.parseInt(mapElement[0].split("-")[1]);
+				if(Math.max(tmpLength-cytosinePos, cytosinePos-1) > maxCytosineLength){
+					maxCytosineLength = Math.max(tmpLength-cytosinePos, cytosinePos-1);
 				}
 			}
 		}
