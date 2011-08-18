@@ -4,7 +4,7 @@ import org.broadinstitute.sting.utils.BaseUtils;
 
 
 public class BaseUtilsMore {
-
+	//list of IUPAC code used for DNA nuleotide
 	public final static byte A = (byte)'A';
     public final static byte C = (byte)'C';
     public final static byte G = (byte)'G';
@@ -19,10 +19,10 @@ public class BaseUtilsMore {
     public final static byte H = (byte)'H'; //A,C,T
     public final static byte V = (byte)'V'; //A,C,G
 
-    public final static byte N = (byte)'N';
+    public final static byte N = (byte)'N'; //A,C,G,T
     public final static byte D = (byte)'D'; //A,G,T
 	
-	
+	//convert input bases to uppercase
 	static public byte[] toUpperCase(byte[] in)
 	{
 		byte[] out = new byte[in.length];
@@ -38,6 +38,7 @@ public class BaseUtilsMore {
 		return (byte)Character.toUpperCase((char)b);
 	}
 	
+	//find the observe base is matched IUPAC code pattern or not, consider cytosine methylation, so T will be equal to C..
 	static public boolean iupacCodeEqual(byte pattern, byte observe, boolean negStrand){
 		pattern = toUpperCase(pattern);
 		observe = toUpperCase(observe);
@@ -130,82 +131,8 @@ public class BaseUtilsMore {
 		}
 		
 	}
-	/*
-	static public boolean iupacCodeEqualNotConsiderMethyStatus(byte pattern, byte observe){
-		pattern = toUpperCase(pattern);
-		observe = toUpperCase(observe);
-		switch(observe){
-			case 'A':
-				switch(pattern){
-					case 'A':
-					case 'R':
-					case 'W':
-					case 'M':
-					case 'H':
-					case 'V':
-					case 'D':
-					case 'N':
-						return true;
-									
-					default:
-						return false;
-				}
-				
-			case 'C':
-				switch(pattern){
-					case 'C':
-					case 'Y':
-					case 'S':
-					case 'M':
-					case 'H':
-					case 'V':
-					case 'B':
-					case 'N':
-						return true;	
-					default:
-						return false;
-				}
-				
-			case 'G':
-				switch(pattern){
-					case 'G':
-					case 'R':
-					case 'S':
-					case 'K':
-					case 'D':
-					case 'V':
-					case 'B':
-					case 'N':
-						return true;	
-					default:
-						return false;
-				}
-				
-			case 'T':
-				switch(pattern){
-					case 'T':
-					case 'W':
-					case 'K':
-					case 'D':
-					case 'Y':
-					case 'H':
-					case 'B':
-					case 'N':
-						return true;
-							
-				default:
-					return false;
-				}
-				
-			case 'N':
-				return true;
-			default:
-				System.err.println("error! wrong observed base!");
-				return false;
-		}
-		
-	}
-	*/
+	
+//find the observe base is matched IUPAC code pattern or not, but not consider cytosine methylation. this is the one i use
 	static public boolean iupacCodeEqualNotConsiderMethyStatus(byte pattern, byte observe){
 		pattern = toUpperCase(pattern);
 		observe = toUpperCase(observe);
@@ -276,6 +203,7 @@ public class BaseUtilsMore {
 		}
 	}
 	
+	//convert IUPAC code pattern to its complement code (in reverse strand)
 	static public byte iupacCodeComplement(byte base) {
 		base = toUpperCase(base);
 		switch (base) {
@@ -311,6 +239,7 @@ public class BaseUtilsMore {
         }
     }
 	
+	//reverse the read's base order
 	static public byte[] simpleReverse(byte[] bases) {
         byte[] rcbases = new byte[bases.length];
 
