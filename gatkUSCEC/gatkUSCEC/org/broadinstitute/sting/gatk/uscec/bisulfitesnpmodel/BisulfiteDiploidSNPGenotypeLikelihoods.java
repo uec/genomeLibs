@@ -17,6 +17,7 @@ import org.broadinstitute.sting.gatk.walkers.genotyper.DiploidSNPGenotypeLikelih
 import org.broadinstitute.sting.gatk.walkers.genotyper.DiploidSNPGenotypePriors;
 import org.broadinstitute.sting.gatk.walkers.genotyper.PerFragmentPileupElement;
 import org.broadinstitute.sting.utils.BaseUtils;
+import org.broadinstitute.sting.utils.GenomeLoc;
 import org.broadinstitute.sting.utils.QualityUtils;
 import org.broadinstitute.sting.utils.exceptions.UserException;
 import org.broadinstitute.sting.utils.genotype.DiploidGenotype;
@@ -100,9 +101,9 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
 		
 	}
 	
-	public void setPriors(RefMetaDataTracker tracker, ReferenceContext ref, double PCR_error_rate, double novelDbsnpHet, double validateDbsnpHet){
+	public void setPriors(RefMetaDataTracker tracker, ReferenceContext ref, double PCR_error_rate, double novelDbsnpHet, double validateDbsnpHet, GenomeLoc loc){
 		
-		this.priors.setPriors(tracker, ref, HUMAN_HETEROZYGOSITY, PROB_OF_REFERENCE_ERROR, novelDbsnpHet, validateDbsnpHet);
+		this.priors.setPriors(tracker, ref, HUMAN_HETEROZYGOSITY, PROB_OF_REFERENCE_ERROR, novelDbsnpHet, validateDbsnpHet, loc);
         setToZeroBs();
 	}
 	
@@ -566,6 +567,15 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
         ReadBackedPileup pileupNegativeStrand = pileup.getNegativeStrandPileup();
         for(PileupElement p : pileupNegativeStrand )
         	n += add(p, ignoreBadBases, capBaseQualsAtMappingQual, true);
+        if ( VERBOSE ) {
+        	System.out.println("summary:");
+        	for ( DiploidGenotype g : DiploidGenotype.values() ) { System.out.printf("%s\t", g); }
+            System.out.println();
+            for ( DiploidGenotype g : DiploidGenotype.values() ) { System.out.printf("%.2f\t", log10Likelihoods[g.ordinal()]); }
+            System.out.println();
+            for ( DiploidGenotype g : DiploidGenotype.values() ) { System.out.printf("%.2f\t", getPriors()[g.ordinal()]); }
+            System.out.println();
+        }
  
         return n;
     }
@@ -616,7 +626,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
     	
         byte qual = p.getQual();
         if ( qual > SAMUtils.MAX_PHRED_SCORE )
-            throw new UserException.MalformedBAM(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
+            throw new UserException.MalformedBam(p.getRead(), String.format("the maximum allowed quality score is %d, but a quality of %d was observed in read %s.  Perhaps your BAM incorrectly encodes the quality scores in Sanger format; see http://en.wikipedia.org/wiki/FASTQ_format for more details", SAMUtils.MAX_PHRED_SCORE, qual, p.getRead().getReadName()));
         if ( capBaseQualsAtMappingQual )
             qual = (byte)Math.min((int)p.getQual(), p.getMappingQual());
         

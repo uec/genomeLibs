@@ -440,11 +440,32 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             sum.nCallsMade++;
             if(autoEstimateC){
             	if(secondIteration){
-            		writer.add(value.vc, value.refBase);
+            		if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CYTOSINES){
+            			if(value.cts.isC)
+            				writer.add(value.vc, value.refBase);
+            		}
+            		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CPG){
+            			if(value.cts.isCpg)
+            				writer.add(value.vc, value.refBase);
+            		}
+            		else{
+            			writer.add(value.vc, value.refBase);
+            		}
+            		
             	}
             }
             else{
-            	writer.add(value.vc, value.refBase);
+            	if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CYTOSINES){
+        			if(value.cts.isC)
+        				writer.add(value.vc, value.refBase);
+        		}
+        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CPG){
+        			if(value.cts.isCpg)
+        				writer.add(value.vc, value.refBase);
+        		}
+        		else{
+        			writer.add(value.vc, value.refBase);
+        		}
             }
             
         } catch (IllegalArgumentException e) {
