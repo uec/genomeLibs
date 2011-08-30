@@ -1,6 +1,7 @@
 package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 
 
+import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +11,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+
+import net.sf.samtools.SAMFileWriter;
+import net.sf.samtools.SAMFileWriterFactory;
 
 import org.broad.tribble.util.variantcontext.Genotype;
 import org.broad.tribble.util.variantcontext.VariantContext;
@@ -48,6 +52,8 @@ import org.broadinstitute.sting.gatk.walkers.genotyper.UnifiedGenotyper.UGStatis
 import org.broadinstitute.sting.utils.GenomeLoc;
 import org.broadinstitute.sting.utils.SampleUtils;
 import org.broadinstitute.sting.utils.baq.BAQ;
+import org.broadinstitute.sting.utils.pileup.PileupElement;
+import org.broadinstitute.sting.utils.pileup.ReadBackedPileup;
 import org.broadinstitute.sting.utils.vcf.VCFUtils;
 
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BaseUtilsMore.*;
@@ -71,6 +77,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean secondIteration = false;
     
     protected TcgaVCFWriter writer = null;
+    
+    protected SAMFileWriter samWriter = null;
 
     private BisulfiteGenotyperEngine BG_engine = null;
     
@@ -221,6 +229,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if(autoEstimateC){
         	if(secondIteration){
         		writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        		if(BAC.orad){
+            		File outputBamFile = new File(BAC.fnorad);
+            		SAMFileWriterFactory samFileWriterFactory = new SAMFileWriterFactory();
+            		samFileWriterFactory.setCreateIndex(true);
+            		samWriter = samFileWriterFactory.makeBAMWriter(getToolkit().getSAMFileHeader(), false, outputBamFile);
+            	}
         	}
         	else{
         		
@@ -228,6 +242,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
         else{
         	writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        	if(BAC.orad){
+        		File outputBamFile = new File(BAC.fnorad);
+        		SAMFileWriterFactory samFileWriterFactory = new SAMFileWriterFactory();
+        		samFileWriterFactory.setCreateIndex(true);
+        		samWriter = samFileWriterFactory.makeBAMWriter(getToolkit().getSAMFileHeader(), false, outputBamFile);
+        	}
         }
         //in the first iteration, initiate CytosineTypeStatus
         if(!secondIteration)
@@ -293,6 +313,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
         else{
         	cts = new CytosineTypeStatus(BAC);
+        	if(BAC.orad)
+        		downsamplingBamFile(rawContext);
+
         }
 
         
@@ -410,6 +433,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if ( value.vc == null)
             return sum;
 
+        //System.out.println(value.vc.getStart());
+        
         try {
             // actually making a call
             sum.nCallsMade++;
@@ -440,6 +465,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         		}
         		else{
         			writer.add(value.vc, value.refBase);
+        			
         		}
             }
             
@@ -555,6 +581,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 					value[2] = 0.0;
 				summary.cytosineListMap.put(cytosineType, value);
         }
+        
+        samWriter.close();
     }
     
     //receive cytosine statistics status from main program
@@ -642,5 +670,46 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	this.writer = writer;
 
     }
+    
+    public void downsamplingBamFile(AlignmentContext rawContext){
+    	if(rawContext.hasReads()){
+			String tag = "Xi";
+			Integer coverageMarked = 0;
+			int covergaeLimit = getToolkit().getArguments().downsampleCoverage;
+			ReadBackedPileup downsampledPileup = rawContext.getBasePileup().getDownsampledPileup(covergaeLimit);
+			for ( PileupElement p : rawContext.getBasePileup() ) {
+				if(p.getRead().getIntegerAttribute(tag) != null){
+					if(p.getRead().getIntegerAttribute(tag) == 2)
+						System.out.println("loc: " + rawContext.getLocation().getStart() + " tag: " + p.getRead().getIntegerAttribute(tag));
+					if(p.getRead().getIntegerAttribute(tag) == 1)
+						coverageMarked++;
+				}
+					
+			}
+			//System.out.println("loc: " + rawContext.getLocation().getStart() + " coverageMarked: " + coverageMarked);
+			for ( PileupElement p : downsampledPileup ) {
+				//System.out.println(p.toString());
+				if(coverageMarked >= covergaeLimit)
+					break;
+				if(p.getRead().getIntegerAttribute(tag) == null){
+					samWriter.addAlignment(p.getRead());
+    				p.getRead().setAttribute(tag, 1);
+    				coverageMarked++;
+				}
+				
+					
+			}
+			for ( PileupElement p : rawContext.getBasePileup() ) {
+				if(p.getRead().getIntegerAttribute(tag) == null)
+					p.getRead().setAttribute(tag, 2);
+			}
+			
+		}
+
+    }
+    
+  //  public boolean isReduceByInterval() {
+   //     return true;
+   // }
 
 }

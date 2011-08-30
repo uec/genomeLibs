@@ -91,7 +91,7 @@ public class BisSNP extends CommandLineExecutable {
 		return argCollection;
 	}
 
-    
+     
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -129,7 +129,7 @@ public class BisSNP extends CommandLineExecutable {
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "Bis-SNP-0.28";
+        String version = "Bis-SNP-0.29";
 		List<String> header = new ArrayList<String>();
         header.add(String.format("The Bis-SNP v%s, Compiled %s",version, getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (prebuild GATK package could be download here: ftp://ftp.broadinstitute.org/pub/gsa/GenomeAnalysisTK/GenomeAnalysisTK-1.0.5336.tar.bz2)",getVersionNumber()));

@@ -90,6 +90,11 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     @Argument(fullName = "output_genotype", shortName = "out_genotype", doc = "Should we output confident genotypes (i.e. including ref calls),just the variants, just homozygous CpG or just homozygous Cytosines?", required = false)
     public BisulfiteGenotyperEngine.OUTPUT_MODE OutputMode = BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CONFIDENT_SITES;
 	
+    @Argument(fullName = "output_reads_after_downsampling", shortName = "orad", doc = "output Bam file that after downsapling, for performance test only", required = false)
+    public boolean orad = false;
+    
+    @Argument(fullName = "file_name_output_reads_after_downsampling", shortName = "fnorad", doc = "output Bam file that after downsapling, for performance test only", required = false)
+	public String fnorad = null;
 	
 	public BisulfiteArgumentCollection clone() {
 		BisulfiteArgumentCollection bac = new BisulfiteArgumentCollection();
@@ -140,6 +145,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.referenceGenomeErr = referenceGenomeErr;
         bac.heterozygosity = heterozygosity;
     
+        bac.orad = orad;
+        bac.fnorad = fnorad;
+        
         return bac;
     }
 
