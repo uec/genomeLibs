@@ -38,6 +38,7 @@ import org.broadinstitute.sting.utils.exceptions.UserException;
 import org.broadinstitute.sting.utils.help.ApplicationDetails;
 import org.broadinstitute.sting.utils.text.TextFormattingUtils;
 import org.broadinstitute.sting.utils.text.XReadLines;
+import org.broadinstitute.sting.gatk.walkers.coverage.DepthOfCoverageWalker;
 
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteGenotyper;
 
@@ -50,7 +51,7 @@ public class BisSNP extends CommandLineExecutable {
     private static boolean autoEstimateC = false;
 	
 	 //control the output, output to TCGA VCF 
-    @Output(doc="File to which variants should be written",required=true)
+    @Output(doc="File to which variants should be written",required=false)
     protected TcgaVCFWriter writer = null;
  
 
@@ -129,7 +130,7 @@ public class BisSNP extends CommandLineExecutable {
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "Bis-SNP-0.29";
+        String version = "Bis-SNP-0.30";
 		List<String> header = new ArrayList<String>();
         header.add(String.format("The Bis-SNP v%s, Compiled %s",version, getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (prebuild GATK package could be download here: ftp://ftp.broadinstitute.org/pub/gsa/GenomeAnalysisTK/GenomeAnalysisTK-1.0.5336.tar.bz2)",getVersionNumber()));

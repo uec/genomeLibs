@@ -423,6 +423,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 			
 			ReferenceContext tmpRef = new ReferenceContext(ref.getGenomeLocParser(),loc, ref.getWindow(),ref.getBases());
 			 
+		//	ReferenceContext tmpRef = new ReferenceContext(ref.getGenomeLocParser(),loc, loc, ref.getBases());
+			 
 			
 			BisulfiteDiploidSNPGenotypeLikelihoods tmpGL = new BisulfiteDiploidSNPGenotypeLikelihoods(tracker, tmpRef, (BisulfiteDiploidSNPGenotypePriors)priors, BAC, tmpMethy.clone());
 			

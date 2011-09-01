@@ -68,7 +68,7 @@ import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGeno
 @Reference(window=@Window(start=-200,stop=200))
 @By(DataSource.REFERENCE)
 @Downsample(by=DownsampleType.NONE)
-public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext, BisulfiteGenotyper.BGStatistics> implements TreeReducible<BisulfiteGenotyper.BGStatistics> {
+public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext, BisulfiteGenotyper.ContextCondition> implements TreeReducible<BisulfiteGenotyper.ContextCondition> {
 
 
     @ArgumentCollection private static BisulfiteArgumentCollection BAC = new BisulfiteArgumentCollection();
@@ -88,7 +88,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     /**
      * Inner class for collecting output statistics
      */
-    public static class BGStatistics {
+    public static class ContextCondition {
         /** The total number of passes examined -- i.e., the number of map calls */
         long nBasesVisited = 0;
 
@@ -329,14 +329,14 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     /**
      * Initiate statistics object.
      */
-    public BGStatistics reduceInit() { 
-    	BGStatistics initiated = new BGStatistics();
+    public ContextCondition reduceInit() { 
+    	ContextCondition initiated = new ContextCondition();
     	initiated.makeOtherCytosineMap();
     	return initiated; 
     	
     }
 
-    public BGStatistics treeReduce(BGStatistics lhs, BGStatistics rhs) {
+    public ContextCondition treeReduce(ContextCondition lhs, ContextCondition rhs) {
         lhs.nBasesCallable += rhs.nBasesCallable;
         lhs.nBasesCalledConfidently += rhs.nBasesCalledConfidently;
         lhs.nBasesVisited += rhs.nBasesVisited;
@@ -380,7 +380,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     /**
      * calculate statistics number in each reduce steps.
      */
-    public BGStatistics reduce(BisulfiteVariantCallContext value, BGStatistics sum) {
+    public ContextCondition reduce(BisulfiteVariantCallContext value, ContextCondition sum) {
     	// the base vistited
         sum.nBasesVisited++;
 
@@ -476,7 +476,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         return sum;
     }
 
-    public void onTraversalDone(BGStatistics sum) {
+    public void onTraversalDone(ContextCondition sum) {
         logger.info(String.format("Visited bases                                %d", sum.nBasesVisited));
         logger.info(String.format("Callable bases                               %d", sum.nBasesCallable));
         logger.info(String.format("Confidently called bases                     %d", sum.nBasesCalledConfidently));
