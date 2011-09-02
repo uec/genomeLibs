@@ -53,44 +53,56 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	
 	private GenotypePriors genotypePriors;
 	
+	private ContextCondition summary = null;
+	
 	public NDRdetectWalker() {
 		// TODO Auto-generated constructor stub
+		
 	}
 
 	 public static class ContextCondition {
-		 	long nBasesVisited = 0;
+		 	long nWindowsVisited = 0;
 
 	        /** The number of bases that were potentially callable -- i.e., those not at excessive coverage or masked with N */
-	        long nBasesCallable = 0;
+	     //   long nBasesCallable = 0;
 
 	        /** The number of bases called confidently (according to user threshold), either ref or other */
-	        long nBasesCalledConfidently = 0;
+	      //  long nBasesCalledConfidently = 0;
 
 	        /** The number of bases for which calls were emitted */
-	        long nCallsMade = 0;
+	   //     long nCallsMade = 0;
 	        
 	        /** The average sequence depth inside window */
-	        long aveSeqDepthWind = 0;
+	        double sumGchCTDepthWind = 0;
 	     
 	        /** The number of Gch bases called confidently (according to user threshold), either ref or other */
-	        long nGchBasesCalledConfidently = 0;
+	        long sumGchNumInWindCalledConfidently = 0;
 	        
 	        /** The number of Hcg bases called confidently (according to user threshold), either ref or other */
-	        long nHcgBasesCalledConfidently = 0;
+	  //      long nHcgBasesCalledConfidently = 0;
 	        
 	        /** The number of Wcg bases called confidently (according to user threshold), either ref or other */
-	        long nWcgBasesCalledConfidently = 0;
+	  //      long nWcgBasesCalledConfidently = 0;
 	        
 	        /** The sum of methylation value of Gch bases called confidently (according to user threshold), either ref or other */
-	        double sumMethyGchBasesCalledConfidently = 0;
+	     //   double sumMethyGchBasesCalledConfidently = 0;
 	        
 	        /** The sum of methylation value of Hcg bases called confidently (according to user threshold), either ref or other */
-	        double sumMethyHcgBasesCalledConfidently = 0;
+	 //       double sumMethyHcgBasesCalledConfidently = 0;
 	        
 	        /** The sum of methylation value of Wcg bases called confidently (according to user threshold), either ref or other */
-	        double sumMethyWcgBasesCalledConfidently = 0;
+	 //       double sumMethyWcgBasesCalledConfidently = 0;
 	        
+	        /** The number of windows called confidently (according to user threshold), contained enough confidantly GCH and enough seq depth */
+	        long nWindowsCalledConfidently = 0;
 	        
+	        /** The sum of methylation value of windows called confidently (according to user threshold), contained enough confidantly GCH and enough seq depth */
+	        double sumMethyWindowsCalledConfidently = 0;
+	        
+	        double percentConfidantWindowOfAll() { return (double)nWindowsCalledConfidently/nWindowsVisited;}
+	        double percentMethyConfidantWindowOfAll() { return (double)sumMethyWindowsCalledConfidently/(nWindowsCalledConfidently);}
+	        double percentGchCTDepthConfidantWindowOfAll() { return (double)sumGchCTDepthWind/(nWindowsCalledConfidently);}
+	        double percentGchNumInConfidantWindowOfAll() { return (double)sumGchNumInWindCalledConfidently/(nWindowsCalledConfidently);}
 	        
 	 }
 	 
@@ -99,6 +111,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 		 genotypePriors = new BisulfiteDiploidSNPGenotypePriors();
 		 File fn = new File(NAC.bedFile);
 		 writer = new BedWriter(fn);
+		 summary = new ContextCondition();
 	 }
 	
 	@Override
@@ -137,7 +150,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 		if ( value == null )
             return window;
 		if(!window.isEmpty()){
-			if(value.getLoc().discontinuousP(window.getFirst().getLoc())){
+			if(!value.getLoc().onSameContig(window.getFirst().getLoc())){
 				window.clear();
 				window.addLast(value);
 				return window;
@@ -156,10 +169,12 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 			window.removeFirst();
 			window.addLast(value);
 		}
-		
+		summary.nWindowsVisited++;
 		double averageGchMethy = getValueFromWindow(window);
 		//GenomeLoc locMidInWind = window.get(NAC.nucPosWindow/2).getLocation();
 		if(!Double.isNaN(averageGchMethy)){
+			summary.nWindowsCalledConfidently++;
+			summary.sumMethyWindowsCalledConfidently += averageGchMethy;
 			writer.add(window.getFirst().getLoc().getContig(), window.getFirst().getLoc().getStart(), window.getLast().getLoc().getStart(), averageGchMethy);
 			System.out.println(window.getFirst().getLoc().getStart() + "\t" + averageGchMethy);
 		}
@@ -182,6 +197,12 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	}
 	
 	public void onTraversalDone(LinkedList<NDRCallContext> sum) {
+		logger.info(String.format("Visited windows                                %d", summary.nWindowsVisited));
+		logger.info(String.format("Confidantly called windows                                %d", summary.nWindowsCalledConfidently));
+		logger.info(String.format("Percentage of confidant called windows                                %.2f", summary.percentConfidantWindowOfAll()));
+		logger.info(String.format("Average methylation in confidant called windows                                %.2f", summary.percentMethyConfidantWindowOfAll()));
+		logger.info(String.format("Average GCH seq depth in confidant called windows                                %.2f", summary.percentGchCTDepthConfidantWindowOfAll()));
+		logger.info(String.format("Average GCH number in confidant called windows                                %.2f", summary.percentGchNumInConfidantWindowOfAll()));
 		writer.close();
 	}
 
@@ -189,7 +210,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 		double averageGchMethy = Double.NaN;
 		double sumGchMethy = 0;
 		int numValidGch = 0;
-		//int sumGchSeqDepth = 0;
+		int sumGchCTDepth = 0;
 		Iterator<NDRCallContext> itContext = window.iterator();
 		while(itContext.hasNext()){
 			NDRCallContext tmpContext = itContext.next();
@@ -234,13 +255,18 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 			}
 			if((numC + numT) >= NAC.minCTDepth){
 				numValidGch++;
+				sumGchCTDepth += (numC + numT);
 				sumGchMethy += (double)numC/(double)(numC + numT);
 			//	System.out.println("loc: " + tmpContext.getLoc().getStart() + "\tGchMethy: " + (double)numC/(double)(numC + numT) + "\tnumC: " + numC + "\tnumT: " + numT);
 			}
 		}
 		
-		if(numValidGch >= NAC.minGchNum)
+		if(numValidGch >= NAC.minGchNum){
+			summary.sumGchNumInWindCalledConfidently += numValidGch;
+			summary.sumGchCTDepthWind += sumGchCTDepth/(double)numValidGch;
 			averageGchMethy = sumGchMethy/(double)numValidGch;
+		}
+			
 		//System.out.println("numValidGch: " + numValidGch + "\tsumGchMethy: " + sumGchMethy + "\taverageGchMethy: " + averageGchMethy);
 		
 		return averageGchMethy;
