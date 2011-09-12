@@ -455,13 +455,16 @@ public class FeatAlignerEachfeat extends FeatAligner {
 		{
 			double[][] dataFull = MatUtils.nanMeanMats(fw, rev);
 			System.err.println("Making matlab for " + dataFull.length + " rows (numFeats=" + this.numFeats());
-			if (includeCoords)
+			if (this.numFeats()>0)
 			{
-				matlabCsv(pw, dataFull, this.featCoords, this.numFeats(), 0, '0');
-			}
-			else
-			{
-				MatUtils.matlabCsv(pw, dataFull, this.numFeats(), 0);
+				if (includeCoords)
+				{
+					matlabCsv(pw, dataFull, this.featCoords, this.numFeats(), 0, '0');
+				}
+				else
+				{
+					MatUtils.matlabCsv(pw, dataFull, this.numFeats(), 0);
+				}
 			}
 		}
 	}

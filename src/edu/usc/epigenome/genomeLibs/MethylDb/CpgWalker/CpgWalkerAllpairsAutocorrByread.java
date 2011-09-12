@@ -12,8 +12,15 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 //import com.mallardsoft.tuple.Tuple;
 
 import java.util.Collection;
+import java.util.Iterator;
+
+import org.biojava.bio.seq.StrandedFeature;
+import org.usckeck.genome.ChromFeatures;
 
 import edu.usc.epigenome.genomeLibs.MatUtils;
+import edu.usc.epigenome.genomeLibs.FeatAligners.AlignmentRelCoords;
+import edu.usc.epigenome.genomeLibs.FeatAligners.FeatAlignerEachfeat;
+import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRangeWithRefpoint;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 import edu.usc.epigenome.genomeLibs.MethylDb.CpgRead;
 
@@ -31,6 +38,8 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	
 	protected boolean useOnlyCG = true;
 	
+	
+	// By dist version
 	protected int[] nMM;
 	protected int[] nMU;
 	protected int[] nUM;
@@ -38,6 +47,14 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected int[] nM;
 	protected int[] nU;
 	
+	// Feat alignment version
+    protected FeatAlignerEachfeat aligner = null;
+    protected ChromFeatures feats = null;
+    protected boolean featsCompletelyPreloaded = false;
+    protected String prevChr = null;
+    protected boolean firstMeth = false;
+    protected boolean secondMeth = false;
+   
 	
 	public CpgWalkerAllpairsAutocorrByread(CpgWalkerParams inWalkParams, boolean inSamestrandOnly, boolean inOppstrandOnly,int inReadType) {
 		super(inWalkParams, inSamestrandOnly, inOppstrandOnly);
@@ -72,8 +89,70 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		init();
 	}
 	
+	public void enableFeatAlignment(String gfffn, int featWindSize, boolean censor, int downscaleCols, boolean inFirstMeth, boolean inSecondMeth)
+	{
+		try
+		{
+			feats = new ChromFeatures(gfffn, true);
+			int nFeats = feats.num_features();
+			this.firstMeth = inFirstMeth;
+			this.secondMeth = inSecondMeth;
+			
+			// Initialize the aligner. Preset all feats to zero
+			this.aligner = new FeatAlignerEachfeat(featWindSize,censor, nFeats,downscaleCols);
+			System.err.println("Built aligner with " + aligner.numFeats() + " feats");
+		}
+		catch (Exception e)
+		{
+			System.err.printf("Could not read element file %s. Quitting. \n%s\n", gfffn, e.toString());
+			e.printStackTrace();
+			System.exit(1);
+		}		
+	}
 
+	
+	
+    /**
+	 * @return the aligner
+	 */
+	public FeatAlignerEachfeat getAligner() {
+		return aligner;
+	}
 
+	/* (non-Javadoc)
+	 * @see edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker.CpgWalker#alertNewChrom()
+	 */
+	@Override
+	protected void alertNewChrom() {
+		// TODO Auto-generated method stub
+		super.alertNewChrom();
+		
+// ONLY WORKS SINGLE THREADED
+    		if (prevChr != null) feats.unload_coord_filtered_features();
+    		if (feats != null)
+    		{
+    			int chrNum = feats.chrom_from_public_str(this.curChr);
+    			feats.preload_coord_filtered_features(chrNum);
+    		}
+    		prevChr = this.curChr;
+    		
+//    	else
+//    	{
+//    		// Multi threads, load it up all at once so they won't have to fight over it.
+//    		synchronized(feats)
+//    		{
+//    			if (!featsCompletelyPreloaded)
+//    			{
+//    				System.err.println("Multi-threads, preloading coord filt featured (got lock)");
+//    				feats.preload_coord_filtered_features();
+//    				featsCompletelyPreloaded = true;
+//    			}
+//    		}
+//    	}	
+    		
+	}
+
+    
 	/**
 	 * This makes it reducible for map-reduce
 	 * 
@@ -122,6 +201,10 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 			out.nM[i] = a.nM[i] + b.nM[i];
 			out.nU[i] = a.nU[i] + b.nU[i];
 		}
+		
+		// Reduce the feats
+		out.aligner = a.aligner.mergeInAlignments(b.aligner, false);
+		//aAligner.mergeInAlignments(bAligner, false)
 
 		
 		System.err.printf("Result has Autocorr(%d)\n", out.totalCount());
@@ -161,6 +244,8 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		return Math.abs(b.chromPos - a.chromPos) - 1;
 	}
 
+	
+	
 	@Override
 	protected void recordPair(Cpg a, Cpg b)
 	{
@@ -172,6 +257,18 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 		
 		Collection<CpgRead> aCgReads = a.getReads().values();
 		Collection<CpgRead> bCgReads = b.getReads().values();
+	
+		
+		// Check if we hit any feats
+		AlignmentRelCoords pairAlignments = null;
+		int midpoint = Math.round( ((float)a.chromPos + (float)b.chromPos)/2);
+		if (feats != null)
+		{
+			pairAlignments = new AlignmentRelCoords(this.curChr, midpoint, false);
+			pairAlignments.addAlignmentPoints(feats, aligner.flankSize);	
+			//System.err.printf("Found %d pairAlignments (%d bp from midpoint %d)\n",pairAlignments.numAlignmentPoints(),aligner.flankSize,midpoint);
+		}
+		
 
 		//System.err.println("Comparing CpG (A): " + a.toString());
 
@@ -220,6 +317,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 
 //							System.err.printf("\tRecording %d,%d dist=%d\tameth=%s\tbmeth=%s\n", a.chromPos,b.chromPos,dist,aMeth,bMeth);
 
+							// Add to Dist arrays
 							if (dist<nM.length)
 							{
 
@@ -243,6 +341,29 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 								}							
 							}
 
+							// Add to feat aligner.
+							// Check if we're the right kind
+							if ((aMeth == this.firstMeth) && (bMeth == this.secondMeth))
+							{
+								if (pairAlignments != null)
+								{
+									Iterator<GenomicRangeWithRefpoint> it = pairAlignments.getAlignmentPoints();
+									double score = 1.0;
+									if (it != null)
+									{
+										while (it.hasNext())
+										{
+											GenomicRangeWithRefpoint ap = it.next();
+											aligner.addAlignmentPos(
+													midpoint,
+													//												(read.getStrand() == StrandedFeature.NEGATIVE) ? Double.NaN : mLevel,
+													//														(read.getStrand() == StrandedFeature.NEGATIVE) ? mLevel: Double.NaN,
+													score, Double.NaN,
+													"", ap.getChrom(), ap.getRefPoint(), ap.getStrand(), 0);
+										}
+									}
+								}
+							}
 						}
 					}
 				}

@@ -1,5 +1,6 @@
 package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 
+import edu.usc.epigenome.genomeLibs.IupacPatterns;
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 
 public class CpgWalkerAllpairsAutocorrByreadWcontext extends
@@ -9,6 +10,7 @@ public class CpgWalkerAllpairsAutocorrByreadWcontext extends
 	protected String toContext = null;
 	private int numPre = 0;
 	private int numPost = 0;
+	IupacPatterns patternMap = new IupacPatterns();
 	
 	public CpgWalkerAllpairsAutocorrByreadWcontext(
 			CpgWalkerParams inWalkParams, boolean inSamestrandOnly,
@@ -19,6 +21,8 @@ public class CpgWalkerAllpairsAutocorrByreadWcontext extends
 		
 		fromContext = inFromContext;
 		toContext = inToContext;
+		patternMap.register(fromContext);
+		patternMap.register(toContext);
 		
 		if (fromContext.length() == 2)
 		{
@@ -36,12 +40,18 @@ public class CpgWalkerAllpairsAutocorrByreadWcontext extends
 	protected void recordPair(Cpg a, Cpg b) {
 		
 		
-		String ac = a.context(numPre, numPost);
-		String bc = b.context(numPre, numPost);
 		
-		if (ac.equals(this.fromContext) && bc.equals(this.toContext))
+		String ac = patternMap.firstMatch(a.context(numPre, numPost));
+		String bc = patternMap.firstMatch(b.context(numPre, numPost));
+		
+		if ((ac==null) || (bc==null))
 		{
-			//System.err.printf("%s,%s context match (%s,%s)\n",a.chromPos, b.chromPos, ac, bc);
+//			System.err.printf("%s,%s context MISSING (%s,%s) should be (%s,%s)\n",
+//					a.chromPos, b.chromPos, ac, bc, fromContext, toContext);
+		}
+		else if (ac.equals(this.fromContext) && bc.equals(this.toContext))
+		{
+//			System.err.printf("%s,%s context match (%s,%s)\n",a.chromPos, b.chromPos, ac, bc);
 			super.recordPair(a, b);
 		}
 		else if (ac.equals(this.toContext) && bc.equals(this.fromContext))
@@ -50,11 +60,11 @@ public class CpgWalkerAllpairsAutocorrByreadWcontext extends
 		}
 
 		
-//		else
-//		{
-//			System.err.printf("%s,%s context MISMATCH (%s,%s) should be (%s,%s)\n",
-//					a.chromPos, b.chromPos, ac, bc, fromContext, toContext);
-//		}
+//				else
+//				{
+//					System.err.printf("%s,%s context MISMATCH (%s,%s) should be (%s,%s)\n",
+//							a.chromPos, b.chromPos, ac, bc, fromContext, toContext);
+//				}
 	}
 	
 	
