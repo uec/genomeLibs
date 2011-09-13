@@ -79,6 +79,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     protected TcgaVCFWriter writer = null;
     
     protected SAMFileWriter samWriter = null;
+    
+    private int SAMPLE_READS_MEAN_COVERAGE = 30;
 
     private BisulfiteGenotyperEngine BG_engine = null;
     
@@ -670,8 +672,50 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	this.writer = writer;
 
     }
-    
+    /*
+     * we use different downsampling strategy. e.g. when downsampling 10X, it randomly pick up s*10/r reads.(r is the mean coverage of the sample, we use 30 here for our sample, 
+     * s is the total reads covered in this position) 
+     * it does NOT treat reads like GATK, when reads number more than 10, cut off the reads number to 10, and keep the same when reads number lower than 10. 
+     */
     public void downsamplingBamFile(AlignmentContext rawContext){
+    	if(rawContext.hasReads()){
+			String tag = "Xi";
+			Integer coverageMarked = 0;
+			int covergaeLimit = getToolkit().getArguments().downsampleCoverage;
+			covergaeLimit = (covergaeLimit * rawContext.getBasePileup().size())/SAMPLE_READS_MEAN_COVERAGE;
+			ReadBackedPileup downsampledPileup = rawContext.getBasePileup().getDownsampledPileup(covergaeLimit);
+			for ( PileupElement p : rawContext.getBasePileup() ) {
+				if(p.getRead().getIntegerAttribute(tag) != null){
+					if(p.getRead().getIntegerAttribute(tag) == 2)
+						System.out.println("loc: " + rawContext.getLocation().getStart() + " tag: " + p.getRead().getIntegerAttribute(tag));
+					if(p.getRead().getIntegerAttribute(tag) == 1)
+						coverageMarked++;
+				}
+					
+			}
+			//System.out.println("loc: " + rawContext.getLocation().getStart() + " coverageMarked: " + coverageMarked);
+			for ( PileupElement p : downsampledPileup ) {
+				//System.out.println(p.toString());
+				if(coverageMarked > covergaeLimit)
+					break;
+				if(p.getRead().getIntegerAttribute(tag) == null){
+					samWriter.addAlignment(p.getRead());
+    				p.getRead().setAttribute(tag, 1);
+    				coverageMarked++;
+				}
+				
+					
+			}
+			for ( PileupElement p : rawContext.getBasePileup() ) {
+				if(p.getRead().getIntegerAttribute(tag) == null)
+					p.getRead().setAttribute(tag, 2);
+			}
+			
+		}
+
+    }
+    
+    public void downsamplingBamFileLikeGATK(AlignmentContext rawContext){
     	if(rawContext.hasReads()){
 			String tag = "Xi";
 			Integer coverageMarked = 0;
