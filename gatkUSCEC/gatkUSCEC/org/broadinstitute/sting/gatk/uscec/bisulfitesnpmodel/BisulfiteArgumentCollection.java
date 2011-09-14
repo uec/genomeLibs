@@ -95,6 +95,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     
     @Argument(fullName = "file_name_output_reads_after_downsampling", shortName = "fnorad", doc = "output Bam file that after downsapling, for performance test only", required = false)
 	public String fnorad = null;
+    
+    @Argument(fullName = "output_reads_coverage_after_downsampling", shortName = "orcad", doc = "output Bam file's mean coverage that after downsapling, for performance test only", required = false)
+	public int orcad = 1;
 	
 	public BisulfiteArgumentCollection clone() {
 		BisulfiteArgumentCollection bac = new BisulfiteArgumentCollection();

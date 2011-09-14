@@ -5,6 +5,8 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.TreeSet;
 
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.util.StringUtil;
@@ -455,5 +457,34 @@ public class BisSNPUtils {
 	public static boolean badBase(byte observedBase) {
         return BaseUtils.simpleBaseToBaseIndex(observedBase) == -1;
     }
+	
+	public static ReadBackedPileup getDownsampledPileup(ReadBackedPileup pileup, int desiredCov){
+		if ( pileup.size() <= desiredCov )
+            return pileup;
+
+        // randomly choose numbers corresponding to positions in the reads list
+        Random generator = new Random();
+        TreeSet<Integer> positions = new TreeSet<Integer>();
+        for ( int i = 0; i < desiredCov; /* no update */ ) {
+            if ( positions.add(generator.nextInt(pileup.size())) )
+                i++;
+        }
+		GenomeLoc loc = pileup.getLocation();
+		List<SAMRecord> reads =  new ArrayList<SAMRecord>();;
+		List<Integer> elementOffsets = new ArrayList<Integer>();
+		int i = 0;
+		for ( PileupElement p : pileup ) {
+			if(positions.contains(i)){
+				int elementOffset = p.getOffset();
+				if(elementOffset < 0 || elementOffset > p.getRead().getReadLength()-1)
+					continue;
+				elementOffsets.add(elementOffset);
+				reads.add(p.getRead());
+			}
+				i++;
+		}
+		ReadBackedPileup downsampledPileup = new ReadBackedPileupImpl(loc,reads,elementOffsets);
+		return downsampledPileup;
+	}
 	
 }

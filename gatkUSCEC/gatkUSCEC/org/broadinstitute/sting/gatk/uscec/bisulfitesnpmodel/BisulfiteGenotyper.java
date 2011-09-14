@@ -315,6 +315,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
         else{
         	cts = new CytosineTypeStatus(BAC);
+
         	if(BAC.orad)
         		downsamplingBamFile(rawContext);
 
@@ -681,13 +682,26 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	if(rawContext.hasReads()){
 			String tag = "Xi";
 			Integer coverageMarked = 0;
-			int covergaeLimit = getToolkit().getArguments().downsampleCoverage;
-			covergaeLimit = (covergaeLimit * rawContext.getBasePileup().size())/SAMPLE_READS_MEAN_COVERAGE;
-			ReadBackedPileup downsampledPileup = rawContext.getBasePileup().getDownsampledPileup(covergaeLimit);
+			//int covergaeLimit = getToolkit().getArguments().downsampleCoverage;
+			int covergaeLimit = BAC.orcad;
+			covergaeLimit = Math.max((covergaeLimit * rawContext.getBasePileup().size())/SAMPLE_READS_MEAN_COVERAGE,1);
+			//getToolkit().getArguments().downsampleCoverage = covergaeLimit;
+			//covergaeLimit = (covergaeLimit * rawContext.getBasePileup().size())/SAMPLE_READS_MEAN_COVERAGE;
+			//System.err.println("loc: " + rawContext.getLocation().getStart() + "\tcovergaeLimit: " + covergaeLimit + "\trawContext.getBasePileup().size(): " + rawContext.getBasePileup().size() + "\tdownsampleCoverage: " + getToolkit().getArguments().downsampleCoverage);
+			
+			//ReadBackedPileup downsampledPileup = rawContext.getBasePileup().getDownsampledPileup(covergaeLimit);
+			ReadBackedPileup downsampledPileup = BisSNPUtils.getDownsampledPileup(rawContext.getBasePileup(), covergaeLimit);
+			//if(rawContext.getBasePileup().size() < covergaeLimit){
+			//	downsampledPileup = rawContext.getBasePileup();
+			//}
+			//else{
+			//	downsampledPileup = rawContext.getBasePileup().getDownsampledPileup(covergaeLimit);
+			//}
+			// = rawContext.getBasePileup().getDownsampledPileup(covergaeLimit);
 			for ( PileupElement p : rawContext.getBasePileup() ) {
 				if(p.getRead().getIntegerAttribute(tag) != null){
 					if(p.getRead().getIntegerAttribute(tag) == 2)
-						System.out.println("loc: " + rawContext.getLocation().getStart() + " tag: " + p.getRead().getIntegerAttribute(tag));
+						//System.out.println("loc: " + rawContext.getLocation().getStart() + " tag: " + p.getRead().getIntegerAttribute(tag));
 					if(p.getRead().getIntegerAttribute(tag) == 1)
 						coverageMarked++;
 				}
@@ -696,7 +710,10 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 			//System.out.println("loc: " + rawContext.getLocation().getStart() + " coverageMarked: " + coverageMarked);
 			for ( PileupElement p : downsampledPileup ) {
 				//System.out.println(p.toString());
-				if(coverageMarked > covergaeLimit)
+				if(p.getRead().getIntegerAttribute(tag) != null){
+					//System.out.println("loc: " + rawContext.getLocation().getStart() + " tag: " + p.getRead().getIntegerAttribute(tag));
+				}
+				if(coverageMarked >= covergaeLimit)
 					break;
 				if(p.getRead().getIntegerAttribute(tag) == null){
 					samWriter.addAlignment(p.getRead());
