@@ -9,6 +9,7 @@ public class NDRCallContext {
 	private AlignmentContext context= null;
 	private GenomeLoc loc = null;
 	private boolean flag = false;
+	private double aveMethyInWindow = Double.NaN; //record the average GCH methylation value in the window which end in this genomic position.
 	
 	public NDRCallContext(AlignmentContext context, GenomeLoc loc) {
 		// TODO Auto-generated constructor stub
@@ -48,6 +49,14 @@ public class NDRCallContext {
 	
 	public void setCytosinePatternFlag(boolean cytosinePatternFlag){
 		this.flag = cytosinePatternFlag;
+	}
+	
+	public void setGchMethyInWindow(double aveMethy){
+		this.aveMethyInWindow = aveMethy;
+	}
+	
+	public double getGchMethyInWindow(){
+		return this.aveMethyInWindow;
 	}
 	
 }

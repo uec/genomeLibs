@@ -22,6 +22,9 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 	@Argument(fullName = "bed_output", shortName = "bo", doc = "bed File to which variants should be written", required = true)
     public String bedFile = null;
 	
+	@Argument(fullName = "minimum_gch_methy_for_ndr", shortName = "ndrThreshold", doc = "minimum GCH methylation value criteria to be NDR region", required = false)
+    public double ndrThreshold = 0.4;
+	
 	
 	public NDRargumentCollection clone() {
 		NDRargumentCollection nac = new NDRargumentCollection();
@@ -29,6 +32,7 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 		nac.minGchNum = minGchNum;
 		nac.minCTDepth = minCTDepth;
 		nac.bedFile = bedFile;
+		nac.ndrThreshold = ndrThreshold;
 		
 		return nac;
 	}
