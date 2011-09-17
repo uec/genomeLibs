@@ -45,7 +45,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	@ArgumentCollection private static NDRargumentCollection NAC = new NDRargumentCollection();
 	
 	
-    protected BedWriter writer = null;
+    protected WigWriterImp writer = null;
 	
 	//private NDRdetectionEngine NDRD_engine = null;
 	
@@ -96,6 +96,9 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	        /** The number of windows called confidently (according to user threshold), contained enough confidantly GCH and enough seq depth */
 	        long nWindowsCalledConfidently = 0;
 	        
+	        /** The number of NDR windows called confidently (according to user threshold), contained enough confidantly GCH and enough seq depth */
+	        long nNDRWindowsCalledConfidently = 0;
+	        
 	        /** The sum of methylation value of windows called confidently (according to user threshold), contained enough confidantly GCH and enough seq depth */
 	        double sumMethyWindowsCalledConfidently = 0;
 	        
@@ -110,7 +113,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	//	 NDRD_engine = new NDRdetectionEngine(getToolkit(), NAC, logger);
 		 genotypePriors = new BisulfiteDiploidSNPGenotypePriors();
 		 File fn = new File(NAC.bedFile);
-		 writer = new BedWriter(fn);
+		 writer = new WigWriterImp(fn);
 		 summary = new ContextCondition();
 	 }
 	
@@ -118,7 +121,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	public NDRCallContext map(RefMetaDataTracker tracker, ReferenceContext ref, AlignmentContext context) {
 		// TODO Auto-generated method stub
 		String cytosinePattern = "GCH-2";
-		double methyStatus = 0.01 ;
+		double methyStatus = 0.5 ;
 		BisSNPUtils it = new BisSNPUtils(NAC);
 		AlignmentContext stratifiedContexts = it.getFilteredAndStratifiedContexts(NAC, ref, context);
 		
@@ -155,6 +158,11 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 				window.addLast(value);
 				return window;
 			}
+			else if(value.getLoc().discontinuousP(window.getLast().getLoc())){
+				window.clear();
+				window.addLast(value);
+				return window;
+			}
 		}
 		
 		
@@ -175,7 +183,12 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 		if(!Double.isNaN(averageGchMethy)){
 			summary.nWindowsCalledConfidently++;
 			summary.sumMethyWindowsCalledConfidently += averageGchMethy;
-			writer.add(window.getFirst().getLoc().getContig(), window.getFirst().getLoc().getStart(), window.getLast().getLoc().getStart(), averageGchMethy);
+			window.getLast().setGchMethyInWindow(averageGchMethy);
+			if(averageGchMethy >= NAC.ndrThreshold){
+				summary.nNDRWindowsCalledConfidently++;
+				writer.add(window.getLast().getLoc(), averageGchMethy);
+			}
+			
 			System.out.println(window.getFirst().getLoc().getStart() + "\t" + averageGchMethy);
 		}
 		
@@ -199,6 +212,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	public void onTraversalDone(LinkedList<NDRCallContext> sum) {
 		logger.info(String.format("Visited windows                                %d", summary.nWindowsVisited));
 		logger.info(String.format("Confidantly called windows                                %d", summary.nWindowsCalledConfidently));
+		logger.info(String.format("Confidantly called NDR windows                                %d", summary.nNDRWindowsCalledConfidently));
 		logger.info(String.format("Percentage of confidant called windows                                %.2f", summary.percentConfidantWindowOfAll()));
 		logger.info(String.format("Average methylation in confidant called windows                                %.2f", summary.percentMethyConfidantWindowOfAll()));
 		logger.info(String.format("Average GCH seq depth in confidant called windows                                %.2f", summary.percentGchCTDepthConfidantWindowOfAll()));
