@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use strict;
+use File::Basename;
 # bsmap -a ./s_7_1_sequence.200k.txt -d ~/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa -o s_7_1_sequence.200k.sam -z @ -p 11 -b s_7_2_sequence.200k.txt -s 18 -v 10 -q 2
 
 my $BSMAP = "/home/uec-00/shared/production/software/bsmap/default/bsmap";
@@ -15,8 +16,8 @@ my $read2 = $ARGV[3];
 my $samOutput = "$output" . ".sam";
 
 #hack, not producing correct phreds in bam
-my $read1sanger = $read1 . ".fastq";
-my $read2sanger = $read2 . ".fastq";
+my $read1sanger = basename($read1) . ".fastq";
+my $read2sanger = basename($read2) . ".fastq";
 
 runcmd("$MAQ ill2sanger $read1 $read1sanger");
 runcmd("$MAQ ill2sanger $read2 $read2sanger") if $read2;
