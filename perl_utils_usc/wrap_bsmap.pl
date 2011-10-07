@@ -17,7 +17,7 @@ my $samOutput = "$output" . ".sam";
 
 #hack, not producing correct phreds in bam
 my $read1sanger = basename($read1) . ".fastq";
-my $read2sanger = basename($read2) . ".fastq";
+my $read2sanger = basename($read2) . ".fastq" if $read2;
 
 runcmd("$MAQ ill2sanger $read1 $read1sanger");
 runcmd("$MAQ ill2sanger $read2 $read2sanger") if $read2;
