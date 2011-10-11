@@ -12,6 +12,19 @@ if ( (-f $numberOfFiles) || (@inputFileList == 0) )
     die "$USAGE\n";
 }
 
+if ($numberOfFiles == 1)
+{
+	foreach my $inputFile (@inputFileList)
+	{
+		 my $outputFile = basename($inputFile);
+		 $outputFile =~ s/\.(\w+)$/\.1\.$1/g;
+		 print STDERR "cp $inputFile $outputFile\n";
+		 system("cp $inputFile $outputFile");
+	}
+	exit;
+}
+
+
 foreach my $inputFile (@inputFileList)
 {
 	my $totalFileLength = `wc -l $inputFile`;
@@ -22,6 +35,8 @@ foreach my $inputFile (@inputFileList)
 	my $totalSeqLength = $totalFileLength / 4;
 	my $seqsPerFile = $totalSeqLength / $numberOfFiles;
 	$seqsPerFile =~ s/\.\d+$//;
+	print "length:  $totalFileLength\n";
+	print "spf:  $seqsPerFile\n";
 	open(my $inputHandle, "<$inputFile") || die "can't open input";
 	
 	for my $i (1..$numberOfFiles)
