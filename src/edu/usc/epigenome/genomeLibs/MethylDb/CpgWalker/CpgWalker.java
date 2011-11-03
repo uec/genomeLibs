@@ -251,10 +251,18 @@ public class CpgWalker implements TabularOutput {
 
 		// Remove cpgs from the tail
 		boolean done = false;
-		Cpg[] endCpg;
-		while (!done && ((endCpg = window.peek()) != null))
+		Cpg[] endCpg, secondCpg;
+//		while (!done && ((endCpg = window.peek()) != null))
+//		{
+//			if ((newPos - endCpg[0].chromPos) < this.walkParams.maxScanningWindSize)
+//			{
+//				done = true;
+//			}
+		while (!done && (window.size()>1))
 		{
-			if ((newPos - endCpg[0].chromPos) < this.walkParams.maxScanningWindSize)
+			endCpg = window.get(0);
+			secondCpg = window.get(1);
+			if ((newPos - secondCpg[0].chromPos) < this.walkParams.minScanningWindSize)
 			{
 				done = true;
 			}
@@ -273,10 +281,11 @@ public class CpgWalker implements TabularOutput {
 			}
 		}
 		
-//		System.err.printf("\tChecking %s (id=%d)\n",this.windStr(),this.hashCode());
+//		System.err.printf("\tFixed wind checking %s (id=%d)\n",this.windStr(),this.hashCode());
 		
 		// And process the window
-		if (window.size()>=walkParams.minScanningWindCpgs)
+		if ((window.size()>=walkParams.minScanningWindCpgs) &&
+				((CpgWalker.windEnd(window,false)-CpgWalker.windStart(window,false)) >= walkParams.minScanningWindSize))
 		{
 //			System.err.println("\t\t Sufficient Cpgs: " + window.size());
 //			double mean = this.methSummarizer.getValMean(true);
