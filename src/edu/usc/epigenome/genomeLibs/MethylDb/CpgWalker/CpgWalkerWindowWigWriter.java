@@ -6,6 +6,8 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 import java.io.PrintWriter;
 import java.util.List;
 
+import org.usckeck.genome.ChromFeatures;
+
 import edu.usc.epigenome.genomeLibs.MethylDb.Cpg;
 
 /**
@@ -19,6 +21,7 @@ public class CpgWalkerWindowWigWriter extends CpgWalker {
 	protected PrintWriter wigWriter = null; 
 	protected PrintWriter bedgraphWriter = null; 
 	protected boolean csvMode = false;
+	protected int curChrNum = -1;
 	
 	private static int[][] regionBuffer = new int[10000][2];
 	
@@ -144,6 +147,7 @@ public class CpgWalkerWindowWigWriter extends CpgWalker {
 	@Override
 	protected void alertNewChrom() {
 		super.alertNewChrom();
+		this.curChrNum = (new ChromFeatures()).chrom_from_public_str(this.curChr);
 		System.err.printf("New chrom: %s\n",this.curChr);
 		checkWriter();
 		wigWriter.printf("variableStep chrom=%s\n", this.curChr);
@@ -184,7 +188,7 @@ public class CpgWalkerWindowWigWriter extends CpgWalker {
 			{
 				if (this.csvMode)
 				{
-					bedgraphWriter.printf("%s,%d,%d,%d,%d\n",this.curChr, winds, winde, (int)Math.round(100.0*lastMeth), inWindow.size());
+					bedgraphWriter.printf("%d,%d,%d,%d,%d\n",this.curChrNum, winds, winde, (int)Math.round(100.0*lastMeth), inWindow.size());
 				}
 				else
 				{
