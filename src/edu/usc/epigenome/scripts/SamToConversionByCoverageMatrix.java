@@ -189,17 +189,20 @@ public class SamToConversionByCoverageMatrix {
 						continue record;
 					}
 					
-					// Inverted dups, count only one end
-					if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+					// Inverted dups, count only one end.  Otherwise, check properaly paired depending on parameters.
+					if (samRecord.getReadPairedFlag())
 					{
-						if (samRecord.getSecondOfPairFlag()) continue record;
-						//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
-					}
-					
-					// If it's paired-end, filter on good mate unless otherwise specified
-					if (samRecord.getReadPairedFlag()  && !allowBadMates && !samRecord.getProperPairFlag())
-					{
-						continue record;
+						if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+						{
+							if (samRecord.getSecondOfPairFlag()) continue record;
+							//System.err.printf("Inverted dup %d%s (%s)\n", samRecord.getAlignmentStart(), samRecord.getReadNegativeStrandFlag()?"-":"+", PicardUtils.getReadString(samRecord, true));
+						}
+
+						// If it's paired-end, filter on good mate unless otherwise specified
+						if (!allowBadMates && !samRecord.getProperPairFlag())
+						{
+							continue record;
+						}
 					}
 
 					
@@ -549,8 +552,9 @@ public class SamToConversionByCoverageMatrix {
 		cpg.cReadsNonconversionFilt += cReadsNonconvFilt;
 		cpg.agReads += agReads;
 		
-		cpg.nextBaseGreads += nextBaseGreads;
-		cpg.nextBaseTotalReads += nextBaseTotalReads;
+		int oldNextBaseG = cpg.getContextCounter().getGCount(1);
+		int oldNextBaseTotal = cpg.getContextCounter().getTotalCount(1);
+		cpg.getContextCounter().setNextCountsCompatibilty(oldNextBaseTotal+nextBaseTotalReads, oldNextBaseG + nextBaseGreads);
 	}
 	
 	protected void incrementOppositeCpg(Cpg cpg, char seqChar) 
@@ -648,7 +652,7 @@ public class SamToConversionByCoverageMatrix {
 			{
 				//System.err.printf("\t\tCytosine opp cvg>=5 %s\n",cytosine.toStringExpanded());
 
-				if (cytosine.nextBaseTotalReads >= this.minNextBaseCoverage)
+				if (cytosine.getContextCounter().getTotalCount(1) >= this.minNextBaseCoverage)
 				{
 					//System.err.printf("\t\tCytosine next base cvg>=5 %s\n",cytosine.toStringExpanded());
 
