@@ -5,38 +5,51 @@ use File::Temp qw/ tempfile tempdir /;
 use strict;
 use Getopt::Long;
 
-my $TAG = "BAM2WIG";
-my $IGVTOOLS = "/home/uec-00/shared/production/software/igvtools/igvtools";
-my $CGINTERVALS = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/CpgsAll.hg18.bed";
-my $CGINTERVALS_SEP = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/Cpgs/REPLACECHROM.fa.cpgCoords.bed";
-
-#my @SUFFIXES = qw/GCH HCG readcvg/;
-
-
-my $USAGE = "generateBareWigs.pl minCpgs|0 outputPrefix sampleREPLACECHROM.bam .. or ..\n" . 
-"generateBareWigs.pl minCpgs outputPrefix sample.bam .. or ..";
-my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
-	       "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
-	       "chr19", "chr20", "chr21", "chr22", "chrX");
-#@regions = ("chrY", "chrM");
-#@regions = ("chr2", "chr3", "chr5", "chr13");
-@regions = ("chr11","chr12");
-
-my $classpath = "/home/rcf-40/bberman/Java/uecgatk/bin:/home/rcf-40/bberman/Java/uecgatk/lib/GenomeAnalysisTK.jar:/home/rcf-40/bberman/Java/uecgatk/lib/genomeLibs.jar:/home/rcf-40/bberman/Java/uecgatk/lib/StingUtils.jar:/home/rcf-40/bberman/Java/uecgatk/lib/UscKeck.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/sam-1.26.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/charts4j-1.2.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/apps-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/biojava-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/bytecode.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/commons-math-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-cli.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-collections-2.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-dbcp-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-pool-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/demos-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/jgrapht-jdk1.5.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/junit-4.4.jar:/home/uec-00/shared/production/software/picard/default/picard-tools-1.40.zip";
-
-#my $minCphFrac = 1.01;
 my $doBare = 0;
 my $intervalFile = 0; # If we pass these in , they're done in parallel
 my $doCsv = 0; # For
 my $doOnlyRefCg = 0; # Speeds it up considerably
-GetOptions ('doCsv!' => \$doCsv, 'doOnlyRefCg!'=> \$doOnlyRefCg, 'doBare!' => \$doBare, 'intervalFile=s',\$intervalFile) || die "$USAGE ($doBare)\n";
-
+my $genome = "hg18";
+my $minct = 1;
+my $USAGE = "generateBareWigs.pl minCpgs|0 outputPrefix sampleREPLACECHROM.bam .. or ..\n" . 
+"generateBareWigs.pl minCpgs outputPrefix sample.bam .. or ..";
+GetOptions ('minct=i',\$minct, 'genome=s',\$genome, 'doCsv!' => \$doCsv, 'doOnlyRefCg!'=> \$doOnlyRefCg, 'doBare!' => \$doBare, 'intervalFile=s',\$intervalFile) || die "$USAGE ($doBare)\n";
 print STDERR "doBare=${doBare}\tintervalFile=${intervalFile}\n";
 
 # Input params
 die "$USAGE\n" unless (@ARGV==3);
 my ($mincs, $newname , $bamTemplate) = @ARGV;
 my @MIN_CS_VARIANTS = ($mincs>0) ? ($mincs) : ();
+
+# Constants
+my $genomeToRef = {"hg18" => "hg18_unmasked", "hg19" => "hg19_rCRSchrm" };
+my $genomeToCpgsDir = {"hg18" => "Cpgs", "hg19" => "CpgsHg19" };
+my $genomeRef = $genomeToRef->{$genome};
+die "Can't find genome ref for $genome\n" unless ($genomeRef);
+
+# Constants
+my $TAG = "BAM2WIG";
+my $IGVTOOLS = "/home/uec-00/shared/production/software/igvtools/igvtools";
+my $CGINTERVALS = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/CpgsAll.${genome}.bed";
+my $CGINTERVALS_SEP = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/Cpgs/${genomeRef}/REPLACECHROM.fa.cpgCoords.bed";
+my $refDir = "/home/uec-00/shared/production/genomes/${genomeRef}";
+my $refFn = "${refDir}/${genomeRef}.fa";
+
+
+#my @SUFFIXES = qw/GCH HCG readcvg/;
+
+
+my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
+	       "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
+	       "chr19", "chr20", "chr21", "chr22"); #, "chrX");
+#@regions = ("chr2", "chr3", "chr5", "chr13");
+
+@regions = ("chr11","chr4");
+#my $CGINTERVALS_SEP = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/Cpgs/${genomeRef}/CpgsRef.REPLACECHROM.7M-9M.bed";
+
+my $classpath = "/home/rcf-40/bberman/Java/uecgatk/bin:/home/rcf-40/bberman/Java/uecgatk/lib/GenomeAnalysisTK.jar:/home/rcf-40/bberman/Java/uecgatk/lib/genomeLibs.jar:/home/rcf-40/bberman/Java/uecgatk/lib/StingUtils.jar:/home/rcf-40/bberman/Java/uecgatk/lib/UscKeck.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/sam-1.26.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/charts4j-1.2.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/apps-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/biojava-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/bytecode.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/commons-math-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-cli.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-collections-2.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-dbcp-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-pool-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/demos-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/jgrapht-jdk1.5.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/junit-4.4.jar:/home/uec-00/shared/production/software/picard/default/picard-tools-1.40.zip";
+
+#my $minCphFrac = 1.01;
 
 my $lastChr = "";
 my $lastEnd = 0;
@@ -66,7 +79,9 @@ if ($intervalFile)
 
 #my @MIN_CS_VARIANTS = (10, 50, 100);
 my $nMinCsVariants = scalar(@MIN_CS_VARIANTS);
-my $refFn = "/home/uec-00/bberman/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa";
+
+# special case.  If newname contains a full path filename, remove it
+$newname = basename($newname);
 
 # Go through and check files
 my $sepChrBams = ($bamTemplate =~ /REPLACECHROM/);
@@ -100,23 +115,35 @@ foreach my $region (@regions)
 	$bamFn =~ s/REPLACECHROM/${region}/g if ($sepChrBams);
 	my $prefix = "${newname}-${region}";
 	my $cmd = "export CLASSPATH=${classpath}";
+
+	my $intervalsSec = "--intervals $region"; # -L region because we may use whole-genome BAM
+	if ($doOnlyRefCg)
+	{
+	    my $sepRegions = ($region =~ /^chr/);
+	    my $cgfile = ($sepRegions) ? $CGINTERVALS_SEP : $CGINTERVALS;
+	    $cgfile =~ s/REPLACECHROM/${region}/g if ($sepRegions);
+	    $intervalsSec = "--intervals $cgfile";
+	}
+	my $csvSec = ($doCsv) ? "--csvMode" : "";
+	
+
 	if ($round<$nMinCsVariants)
 	{
-	    $cmd .= " ; java -Xmx7500m org.broadinstitute.sting.gatk.CommandLineGATK -T BisulfiteSeqToCytosineVariableWig -R ${refFn} -I ${bamFn} -nt 1 --minCT 3 --minConv 1 -maxa 0.101 --minCpgs ${mc} --maxWindStretch 10000 --outPrefix ${prefix} --min_mapping_quality_score 30 -et NO_ET -L $region"; # -L region because we may use whole-genome BAM
+	    # If it's over 100 , treat it as a fixed wind
+	    if ($mc > 100)
+	    {
+		$cmd .= " ; java -Xmx7500m org.broadinstitute.sting.gatk.CommandLineGATK -T BisulfiteSeqToCytosineVariableWig -R ${refFn} -I ${bamFn} -nt 1 --minCT ${minct} --minConv 1 -maxa 0.101 --minCpgs 10 --useFixedWind --fixedWindMinLength ${mc} --outPrefix ${prefix} --min_mapping_quality_score 30 -et NO_ET ${intervalsSec} ${csvSec}";
+	    }
+	    else
+	    {
+		$cmd .= " ; java -Xmx7500m org.broadinstitute.sting.gatk.CommandLineGATK -T BisulfiteSeqToCytosineVariableWig -R ${refFn} -I ${bamFn} -nt 1 --minCT ${minct} --minConv 1 -maxa 0.101 --minCpgs ${mc} --maxWindStretch 10000 --outPrefix ${prefix} --min_mapping_quality_score 30 -et NO_ET ${intervalsSec} ${csvSec}";
+	    }
 	}
 	else
 	{
-	    my $intervalsSec = "--intervals $region"; # -L region because we may use whole-genome BAM
-	    if ($doOnlyRefCg)
-	    {
-		my $sepRegions = ($region =~ /^chr/);
-		my $cgfile = ($sepRegions) ? $CGINTERVALS_SEP : $CGINTERVALS;
-		$cgfile =~ s/REPLACECHROM/${region}/g if ($sepRegions);
-		$intervalsSec = "--intervals $cgfile";
-	    }
-	    my $csvSec = ($doCsv) ? "--csvMode" : "";
-
-	    $cmd .= " ; java -Xmx7500m org.broadinstitute.sting.gatk.CommandLineGATK -T BisulfiteSeqToBareWig -R ${refFn} -I ${bamFn} -nt 1 --minCT 3 --minConv 1 -maxa 0.101 --outPrefix ${prefix} --min_mapping_quality_score 30 -et NO_ET ${intervalsSec} ${csvSec}";
+	    # Do one wig and one csv
+	    $cmd .= " ; java -Xmx7500m org.broadinstitute.sting.gatk.CommandLineGATK -T BisulfiteSeqToBareWig -R ${refFn} -I ${bamFn} -nt 1 --minCT ${minct} --minConv 1 -maxa 0.101 --outPrefix ${prefix} --min_mapping_quality_score 30 -et NO_ET ${intervalsSec}";
+	    $cmd .= " ; java -Xmx7500m org.broadinstitute.sting.gatk.CommandLineGATK -T BisulfiteSeqToBareWig -R ${refFn} -I ${bamFn} -nt 1 --minCT ${minct} --minConv 1 -maxa 0.101 --outPrefix ${prefix} --min_mapping_quality_score 30 -et NO_ET ${intervalsSec} -doCsv";
 	}
 	
 	my @dependJobs = ($holdJobId);
@@ -128,7 +155,8 @@ foreach my $region (@regions)
     }
 }
 
-
+if (0)
+{
 # Now go through and concatenate
 my @catJobs = ();
 my @catOuts = ();
@@ -142,12 +170,12 @@ for (my $round = 0; $round <= $endround; $round++)
     if ($round<$nMinCsVariants)
     {
 	$mc = @MIN_CS_VARIANTS[$round];
-	$suffix = "-CG-minc${mc}-maxw10000.variable";
+	$suffix = ($mc<100) ? "-CG-minc${mc}-maxw10000.variable" : "-CG-minwind${mc}.fixed";
 	@extensions = ("wig", "bedGraph");
     }
     else
     {
-	$suffix = ".CG-minct3-minconv1";
+	$suffix = ".CG-minct${minct}-minconv1";
 	@extensions = ($doCsv) ? ("csv") : ("wig");
     }
 
@@ -170,7 +198,7 @@ foreach my $wigfn (@catOuts)
     if ($tdffn =~ /\.wig/)
     {
 	$tdffn =~ s/\.wig/\.tdf/g;
-	my $cmd = "${IGVTOOLS} tile -c -f mean,min,max,median ${wigfn} ${tdffn} hg18";
+	my $cmd = "${IGVTOOLS} tile -c -f mean,min,max,median ${wigfn} ${tdffn} ${genome}";
 	my $curjobid = runCmd(0,$cmd, "${TAG}_igvtools", \@dependJobs);
 	push(@gzipDepends, $curjobid);
     }
@@ -178,6 +206,7 @@ foreach my $wigfn (@catOuts)
     # Don't start the gzip until the tdf is finished, otherwise uncompressed file will disappear
     my $cmd = "gzip ${wigfn}";
     my $curjobid = runCmd(0,$cmd, "${TAG}_gzip", \@gzipDepends);
+}
 }
 
 # Now we're ready to release the hounds
