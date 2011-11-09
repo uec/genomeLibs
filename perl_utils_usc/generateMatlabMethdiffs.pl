@@ -7,7 +7,11 @@ use Getopt::Long;
 
 my $USAGE = "generateBareWigs.pl outputPrefix sample1REPLACECHROM.bam sample1REPLACECHROM.bam .. or ..\n" . 
 "generateBareWigs.pl outputPrefix sample.bam .. or ..";
-#GetOptions ('minct=i',\$minct, 'genome=s',\$genome, 'doCsv!' => \$doCsv, 'doOnlyRefCg!'=> \$doOnlyRefCg, 'doBare!' => \$doBare, 'intervalFile=s',\$intervalFile) || die "$USAGE ($doBare)\n";
+my $genome = "hg18";
+my $resolution = 50;
+my $low = 5.0;
+my $high = 35.0;
+GetOptions ('low=f',\$low, 'high=f',\$high, 'resolution=i',\$resolution, 'genome=s',\$genome) || die "$USAGE\n";
 #print STDERR "doBare=${doBare}\tintervalFile=${intervalFile}\n";
 
 # Input params
@@ -17,8 +21,12 @@ my ($newname , $csvTemplate1, $csvTemplate2) = @ARGV;
 # Constants
 my $MATLAB = "/usr/usc/matlab/2011a/bin/matlab";
 my $TAG = "GTF2MATLABMETHDIFF";
-my $classpath = "/home/rcf-40/bberman/Java/uecgatk/bin:/home/rcf-40/bberman/Java/uecgatk/lib/GenomeAnalysisTK.jar:/home/rcf-40/bberman/Java/uecgatk/lib/genomeLibs.jar:/home/rcf-40/bberman/Java/uecgatk/lib/StingUtils.jar:/home/rcf-40/bberman/Java/uecgatk/lib/UscKeck.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/sam-1.26.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/charts4j-1.2.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/apps-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/biojava-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/bytecode.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/commons-math-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-cli.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-collections-2.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-dbcp-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/commons-pool-1.1.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/demos-live.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/jgrapht-jdk1.5.jar:/home/rcf-40/bberman/svn/genomeLibs/trunk/biojava-live_1.6/junit-4.4.jar:/home/uec-00/shared/production/software/picard/default/picard-tools-1.40.zip";
+my $GL = "/home/rcf-40/bberman/svn/genomeLibs/trunk";
+my $classpath = "/home/rcf-40/bberman/Java/uecgatk/bin:/home/rcf-40/bberman/Java/uecgatk/lib/GenomeAnalysisTK.jar:/home/rcf-40/bberman/Java/uecgatk/lib/genomeLibs.jar:/home/rcf-40/bberman/Java/uecgatk/lib/StingUtils.jar:/home/rcf-40/bberman/Java/uecgatk/lib/UscKeck.jar:${GL}/sam-1.26.jar:${GL}/charts4j-1.2.jar:${GL}/biojava-live_1.6/apps-live.jar:${GL}/biojava-live_1.6/biojava-live.jar:${GL}/biojava-live_1.6/bytecode.jar:${GL}/commons-math-1.1.jar:${GL}/biojava-live_1.6/commons-cli.jar:${GL}/biojava-live_1.6/commons-collections-2.1.jar:${GL}/biojava-live_1.6/commons-dbcp-1.1.jar:${GL}/biojava-live_1.6/commons-pool-1.1.jar:${GL}/biojava-live_1.6/demos-live.jar:${GL}/biojava-live_1.6/jgrapht-jdk1.5.jar:${GL}/biojava-live_1.6/junit-4.4.jar:/home/uec-00/shared/production/software/picard/default/picard-tools-1.40.zip:${GL}/lib/tuple.jar";
 my $matlabpath = "/home/uec-00/bberman/MatlabLibs/usc_matlab:/home/uec-00/bberman/MatlabLibs/insitu_matlab_g5:/home/uec-00/bberman/MatlabLibs/insitu_matlab";
+
+my @FEATGTFS = ("~/tumor/genomic-data-misc/ENCODE/hg19/BroadHMM/BroadHMM-H1-hg19-StrongEnhancer.gtf");
+
 # my $genomeToRef = {"hg18" => "hg18_unmasked", "hg19" => "hg19_rCRSchrm" };
 # my $genomeToCpgsDir = {"hg18" => "Cpgls *.s", "hg19" => "CpgsHg19" };
 # my $genomeRef = $genomeToRef->{$genome};
@@ -26,14 +34,14 @@ my $matlabpath = "/home/uec-00/bberman/MatlabLibs/usc_matlab:/home/uec-00/bberma
 # # Constants
 # my $refDir = "/home/uec-00/shared/production/genomes/${genomeRef}";
 # my $refFn = "${refDir}/${genomeRef}.fa";
-
+my @CLUSTER_SIZES = qw/0 500/;
 
 my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", 
 	       "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
-	       "chr19", "chr20", "chr21", "chr22","chrX");
+	       "chr19", "chr20", "chr21", "chr22", "chrX");
 #@regions = ("chr2", "chr3", "chr5", "chr13");
 
-@regions = ("chr11","chr4");
+@regions = ("chr4","chr11");
 #my $CGINTERVALS_SEP = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/Cpgs/${genomeRef}/CpgsRef.REPLACECHROM.7M-9M.bed";
 
 
@@ -63,6 +71,7 @@ print STDERR "HOlding all jobs on job $holdJobId\n";
 
 
 my @matlabJobs = ();
+my $suffix = "";
 #my @wigPrefixes = ();
 #my @bedgraphPrefixes = ();
 foreach my $region (@regions)
@@ -72,51 +81,86 @@ foreach my $region (@regions)
 #     {
 	my $csvFn1 = ${csvTemplate1};
 	$csvFn1 =~ s/REPLACECHROM/${region}/g if ($sepChrs);
+	my $base1 = basename($csvFn1);
+
 	my $csvFn2 = ${csvTemplate2};
 	$csvFn2 =~ s/REPLACECHROM/${region}/g if ($sepChrs);
+	my $base2 = basename($csvFn2);
 	my $prefix = "${newname}-${region}";
 	my $cmd = "export CLASSPATH=${classpath}; export MATLABPATH=${matlabpath} ; ";
 
-	$cmd .= "echo \"a=\'${csvFn1}\'; b=\'${csvFn2}\'; processWGBSdiffMeth(a,b,\'normal\',\'tumor\',\'${prefix}\',5,35,[],0,50);\" ";
+	my $lowToHighDesc = sprintf("low%.2f-high%.2f",$low,$high);
+	$suffix = "-${lowToHighDesc}";
+	$cmd .= "echo \"a=\'${csvFn1}\'; b=\'${csvFn2}\'; ";
+	$cmd .= " processWGBSdiffMeth(a,b,\'$base1\',\'$base2\',\'${prefix}${suffix}\',$low,$high,[],0,$resolution);\" ";
 	$cmd .= " | ${MATLAB} -nodisplay -nosplash -logfile ${prefix}-logger.txt";
 
+	# It adds stuff on
+	$suffix .= ".${resolution}bpResolution";
+	my $gtfBase = "${newname}-${region}${suffix}";
+	
+
+	# Clustered
+        # My stupid script leaves the last column blank, which doesn't work with IGV.  Also, i'm not sure why but chrX is showing
+	# up as chr24 which becomes chrY.  Fix both
+	my $fixGtfPipe = "perl -ne \'chomp; \@f=split(/\\t/);\$f[0]=~s\/chrY\/chrX\/g;\$f[8]=\"\"; print join(\"\\t\",\@f).\"\\n\";\'"; 
+	foreach my $clusterSize (@CLUSTER_SIZES)
+	{
+	    $cmd .= "; java GtfClusteredWindows ${clusterSize} 0 0 0 none ${gtfBase}.gtf | $fixGtfPipe > ${gtfBase}.clustered${clusterSize}.gtf";
+	}
+
+	# And no need to keep original one
+	$cmd .= "; rm -f ${gtfBase}.gtf ";
+	
 	my @dependJobs = ($holdJobId);
-    
 	my $curjobid = runCmd(0,$cmd, "${TAG}_matlab_r", \@dependJobs);
 	push(@matlabJobs, $curjobid);
 }
 
+# Concatenate
+my @catJobs = ();
+my @catOuts = ();
+if (scalar(@regions)>0)
+{
+    # No need to do concatenate "none" one
+    # foreach my $clusterSize ("none", @CLUSTER_SIZES)
+    foreach my $clusterSize (@CLUSTER_SIZES)
+    {
+	my $extension = "clustered${clusterSize}.gtf";
+	$extension = "gtf" if ($clusterSize eq "none");
+	
+	my ($cmd, $fnout) = concatCmd(\@regions, $newname, $suffix, $extension);
+	my @dependJobs = @matlabJobs;
+	my $curjobid = runCmd(0,$cmd, "${TAG}_concat_clust${clusterSize}", \@dependJobs);
+	push(@catJobs, $curjobid);
+	push(@catOuts, $fnout);
+    }
+}
 
-# # Now go through and concatenate
-# my @catJobs = ();
-# my @catOuts = ();
-# # 0-(nMinCsVariants) variable wig, #nMinCsVariants=bare wig
-# for (my $round = 0; $round <= $endround; $round++)
-# {
-#     print STDERR "\n\nOn Round $round\n";
-#     my $mc = 0;
-#     my $suffix;
-#     my @extensions;
-#     if ($round<$nMinCsVariants)
-#     {
-# 	$mc = @MIN_CS_VARIANTS[$round];
-# 	$suffix = ($mc<100) ? "-CG-minc${mc}-maxw10000.variable" : "-CG-minwind${mc}.fixed";
-# 	@extensions = ("wig", "bedGraph");
-#     }
-#     else
-#     {
-# 	$suffix = ".CG-minct${minct}-minconv1";
-# 	@extensions = ($doCsv) ? ("csv") : ("wig");
-#     }
+# Process each combined one
+my @randOuts = ();
+my @intersectionOuts = ();
+foreach my $catOut (@catOuts)
+{
+    my @dependJobs = @catJobs;
 
-#     foreach my $extension (@extensions)
-#     {
-# 	my ($cmd, $fnout) = concatCmd(\@regions, $newname, $suffix, $extension);
-# 	my @dependJobs = @matlabJobs;
-# 	my $curjobid = runCmd(0,$cmd, "${TAG}_concat_r${round}_e${extension}", \@dependJobs);
-# 	push(@catJobs, $curjobid);
-# 	push(@catOuts, $fnout);
-#     }
+    # And make a randomized control as well
+    my $cmd .= "java edu.usc.epigenome.scripts.RandomizedIntervals -numTrials 1 -genome hg19 $catOut ";
+    my $randOut = $catOut;
+    $randOut =~ s/\.gtf$/.randomizedLocs.trial1.gtf/g;
+    push(@randOuts, $randOut);
+
+    foreach my $fnout ($catOut, $randOut)
+    {
+	my $intersectionOut = $fnout;
+	$intersectionOut =~ s/\.gtf/.csv/g;
+	my $featsSec = join(" ", @FEATGTFS); 
+	$cmd .= "; java GtfFunctionalIntersection -genome hg19 $fnout $featsSec > $intersectionOut";
+	push(@intersectionOuts, $intersectionOut);
+    }
+
+     my $curjobid = runCmd(0,$cmd, "${TAG}_postProcess", \@dependJobs);
+}
 
 # # Now igvtools and gzip
 # foreach my $wigfn (@catOuts)
@@ -139,7 +183,7 @@ foreach my $region (@regions)
 # }
 
 # Now we're ready to release the hounds
-my $nsecs = 1;
+my $nsecs = 7;
 print STDERR "About to start jobs by releasing $holdJobId after a ${nsecs} second break\n";
 sleep($nsecs);
 `qrls $holdJobId`;
@@ -209,7 +253,7 @@ sub runCmd
     print STDERR "${cmd}\n${fullcmd}\n";
 
     my $lineout = "";
-    if (0)
+    if (1)
     {
 	$lineout = `$fullcmd`;
 	chomp $lineout;
