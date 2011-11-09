@@ -9,7 +9,7 @@ import org.biojavax.bio.seq.RichSequence.IOTools;
 import org.biojavax.bio.seq.RichSequenceIterator;
 
 import com.mallardsoft.tuple.Pair;
-import com.mallardsoft.tuple.Tuple;
+
 
 import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 
@@ -244,8 +244,97 @@ public class GoldAssembly {
 		//
 		// Transformed with:
 		// perl -n -e '@a=split(/\s+/); $chr=$a[0]; $l=$a[1]; $l=~s/,//g; print "c_chr_map.put(\"$chr\", new Integer($l));\n";'
-
+		//
+		// For hg19, used the following from the samtools "dict" file
+		// cat ~/genomes/hg19_rCRSchrm/hg19_rCRSchrm.dict | perl -n -e '@a=split(/\s+/); @a = map {s/^.*\://g; $_} @a; $chr=$a[1]; $l=$a[2]; $l=~s/,//g; $chr=lc($chr); print "c_chr_map.put(\"hg19__$chr\", new Integer($l));\n";'
+		
 		// Human
+		c_chr_map.put("hg19__chr1", new Integer(249250621));
+		c_chr_map.put("hg19__chr1_gl000191_random", new Integer(106433));
+		c_chr_map.put("hg19__chr1_gl000192_random", new Integer(547496));
+		c_chr_map.put("hg19__chr2", new Integer(243199373));
+		c_chr_map.put("hg19__chr3", new Integer(198022430));
+		c_chr_map.put("hg19__chr4", new Integer(191154276));
+		c_chr_map.put("hg19__chr4_gl000193_random", new Integer(189789));
+		c_chr_map.put("hg19__chr4_gl000194_random", new Integer(191469));
+		c_chr_map.put("hg19__chr5", new Integer(180915260));
+		c_chr_map.put("hg19__chr6", new Integer(171115067));
+		c_chr_map.put("hg19__chr7", new Integer(159138663));
+		c_chr_map.put("hg19__chr7_gl000195_random", new Integer(182896));
+		c_chr_map.put("hg19__chr8", new Integer(146364022));
+		c_chr_map.put("hg19__chr8_gl000196_random", new Integer(38914));
+		c_chr_map.put("hg19__chr8_gl000197_random", new Integer(37175));
+		c_chr_map.put("hg19__chr9", new Integer(141213431));
+		c_chr_map.put("hg19__chr9_gl000198_random", new Integer(90085));
+		c_chr_map.put("hg19__chr9_gl000199_random", new Integer(169874));
+		c_chr_map.put("hg19__chr9_gl000200_random", new Integer(187035));
+		c_chr_map.put("hg19__chr9_gl000201_random", new Integer(36148));
+		c_chr_map.put("hg19__chr10", new Integer(135534747));
+		c_chr_map.put("hg19__chr11", new Integer(135006516));
+		c_chr_map.put("hg19__chr11_gl000202_random", new Integer(40103));
+		c_chr_map.put("hg19__chr12", new Integer(133851895));
+		c_chr_map.put("hg19__chr13", new Integer(115169878));
+		c_chr_map.put("hg19__chr14", new Integer(107349540));
+		c_chr_map.put("hg19__chr15", new Integer(102531392));
+		c_chr_map.put("hg19__chr16", new Integer(90354753));
+		c_chr_map.put("hg19__chr17", new Integer(81195210));
+		c_chr_map.put("hg19__chr17_gl000203_random", new Integer(37498));
+		c_chr_map.put("hg19__chr17_gl000204_random", new Integer(81310));
+		c_chr_map.put("hg19__chr17_gl000205_random", new Integer(174588));
+		c_chr_map.put("hg19__chr17_gl000206_random", new Integer(41001));
+		c_chr_map.put("hg19__chr18", new Integer(78077248));
+		c_chr_map.put("hg19__chr18_gl000207_random", new Integer(4262));
+		c_chr_map.put("hg19__chr19", new Integer(59128983));
+		c_chr_map.put("hg19__chr19_gl000208_random", new Integer(92689));
+		c_chr_map.put("hg19__chr19_gl000209_random", new Integer(159169));
+		c_chr_map.put("hg19__chr20", new Integer(63025520));
+		c_chr_map.put("hg19__chr21", new Integer(48129895));
+		c_chr_map.put("hg19__chr21_gl000210_random", new Integer(27682));
+		c_chr_map.put("hg19__chr22", new Integer(51304566));
+		c_chr_map.put("hg19__chrx", new Integer(155270560));
+		c_chr_map.put("hg19__chry", new Integer(59373566));
+		c_chr_map.put("hg19__chrm", new Integer(16569));
+		c_chr_map.put("hg19__chrun_gl000211", new Integer(166566));
+		c_chr_map.put("hg19__chrun_gl000212", new Integer(186858));
+		c_chr_map.put("hg19__chrun_gl000213", new Integer(164239));
+		c_chr_map.put("hg19__chrun_gl000214", new Integer(137718));
+		c_chr_map.put("hg19__chrun_gl000215", new Integer(172545));
+		c_chr_map.put("hg19__chrun_gl000216", new Integer(172294));
+		c_chr_map.put("hg19__chrun_gl000217", new Integer(172149));
+		c_chr_map.put("hg19__chrun_gl000218", new Integer(161147));
+		c_chr_map.put("hg19__chrun_gl000219", new Integer(179198));
+		c_chr_map.put("hg19__chrun_gl000220", new Integer(161802));
+		c_chr_map.put("hg19__chrun_gl000221", new Integer(155397));
+		c_chr_map.put("hg19__chrun_gl000222", new Integer(186861));
+		c_chr_map.put("hg19__chrun_gl000223", new Integer(180455));
+		c_chr_map.put("hg19__chrun_gl000224", new Integer(179693));
+		c_chr_map.put("hg19__chrun_gl000225", new Integer(211173));
+		c_chr_map.put("hg19__chrun_gl000226", new Integer(15008));
+		c_chr_map.put("hg19__chrun_gl000227", new Integer(128374));
+		c_chr_map.put("hg19__chrun_gl000228", new Integer(129120));
+		c_chr_map.put("hg19__chrun_gl000229", new Integer(19913));
+		c_chr_map.put("hg19__chrun_gl000230", new Integer(43691));
+		c_chr_map.put("hg19__chrun_gl000231", new Integer(27386));
+		c_chr_map.put("hg19__chrun_gl000232", new Integer(40652));
+		c_chr_map.put("hg19__chrun_gl000233", new Integer(45941));
+		c_chr_map.put("hg19__chrun_gl000234", new Integer(40531));
+		c_chr_map.put("hg19__chrun_gl000235", new Integer(34474));
+		c_chr_map.put("hg19__chrun_gl000236", new Integer(41934));
+		c_chr_map.put("hg19__chrun_gl000237", new Integer(45867));
+		c_chr_map.put("hg19__chrun_gl000238", new Integer(39939));
+		c_chr_map.put("hg19__chrun_gl000239", new Integer(33824));
+		c_chr_map.put("hg19__chrun_gl000240", new Integer(41933));
+		c_chr_map.put("hg19__chrun_gl000241", new Integer(42152));
+		c_chr_map.put("hg19__chrun_gl000242", new Integer(43523));
+		c_chr_map.put("hg19__chrun_gl000243", new Integer(43341));
+		c_chr_map.put("hg19__chrun_gl000244", new Integer(39929));
+		c_chr_map.put("hg19__chrun_gl000245", new Integer(36651));
+		c_chr_map.put("hg19__chrun_gl000246", new Integer(38154));
+		c_chr_map.put("hg19__chrun_gl000247", new Integer(36422));
+		c_chr_map.put("hg19__chrun_gl000248", new Integer(39786));
+		c_chr_map.put("hg19__chrun_gl000249", new Integer(38502));
+		GoldAssembly.initializeGlobalOffsets("hg19");
+		
 		c_chr_map.put("hg18__chr1", new Integer(247249719));
 		c_chr_map.put("hg18__chr1_random", new Integer(1663265));
 		c_chr_map.put("hg18__chr2", new Integer(242951149));
