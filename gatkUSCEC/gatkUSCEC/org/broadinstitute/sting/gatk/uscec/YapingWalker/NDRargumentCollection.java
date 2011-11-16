@@ -19,8 +19,8 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 	@Argument(fullName = "minimum_CT_depth_for_gch_in_window", shortName = "mcd", doc = "minimum CT reads depth for GCH inside window", required = false)
     public int minCTDepth = 5;
 	
-	@Argument(fullName = "bed_output", shortName = "bo", doc = "bed File to which variants should be written", required = true)
-    public String bedFile = null;
+	@Argument(fullName = "wig_output", shortName = "wo", doc = "wig File to which variants should be written", required = true)
+    public String wigFile = null;
 	
 	@Argument(fullName = "minimum_gch_methy_for_ndr", shortName = "ndrThreshold", doc = "minimum GCH methylation value criteria to be NDR region", required = false)
     public double ndrThreshold = 0.4;
@@ -31,7 +31,7 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 		nac.nucPosWindow = nucPosWindow;
 		nac.minGchNum = minGchNum;
 		nac.minCTDepth = minCTDepth;
-		nac.bedFile = bedFile;
+		nac.wigFile = wigFile;
 		nac.ndrThreshold = ndrThreshold;
 		
 		return nac;

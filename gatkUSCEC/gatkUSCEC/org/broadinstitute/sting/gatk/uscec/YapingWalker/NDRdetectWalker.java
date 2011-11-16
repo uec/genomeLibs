@@ -112,7 +112,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,LinkedList<NDRCa
 	 public void initialize() {
 	//	 NDRD_engine = new NDRdetectionEngine(getToolkit(), NAC, logger);
 		 genotypePriors = new BisulfiteDiploidSNPGenotypePriors();
-		 File fn = new File(NAC.bedFile);
+		 File fn = new File(NAC.wigFile);
 		 writer = new WigWriterImp(fn);
 		 summary = new ContextCondition();
 	 }
