@@ -36,4 +36,12 @@ public class BisulfiteSnpUtil {
 		
 		return out; 
 	}
+	
+	public static boolean isThymine(int pos, String refStr)
+	{
+		char refC = refStr.charAt(pos);
+		
+		return (refC == 'T'); 
+	}
+	
 }

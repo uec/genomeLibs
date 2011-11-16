@@ -36,7 +36,7 @@ public class BisulfiteCountCovariatesWalker extends CountCovariatesWalker {
 
 
 	/**
-	 * @Overide
+	 * 
      * Update the mismatch / total_base counts for a given class of loci.
      *
      * @param counter The CountedData to be updated
@@ -46,13 +46,25 @@ public class BisulfiteCountCovariatesWalker extends CountCovariatesWalker {
 	protected static void updateMismatchCounts(CountedData counter, final AlignmentContext context, final byte refBase) {
         for( PileupElement p : context.getBasePileup() ) {
             final byte readBase = p.getBase();
+            final byte readBaseQual = p.getQual();
             final int readBaseIndex = BaseUtils.simpleBaseToBaseIndex(readBase);
             final int refBaseIndex  = BaseUtils.simpleBaseToBaseIndex(refBase);
             try{
             	if( readBaseIndex != -1 && refBaseIndex != -1 ) {
-                    if( readBaseIndex != refBaseIndex && !(BisulfiteSnpUtil.isCytosine(refBase,false) && BisulfiteSnpUtil.isCytosine(readBase,true))) {
+                    //if( readBaseIndex != refBaseIndex && !(BisulfiteSnpUtil.isCytosine(refBase,false) && BisulfiteSnpUtil.isCytosine(readBase,true))) {
                         //counter.novelCountsMM++;
-                    	increaseNovelCountsMM(counter,1);
+            		if( readBaseIndex != refBaseIndex ){
+            			if((BisulfiteSnpUtil.isCytosine(refBase,false) && BisulfiteSnpUtil.isCytosine(readBase,true))){
+            				if(readBaseQual <= 5){
+            					increaseNovelCountsMM(counter,1);
+            				}
+            				else{
+            					continue;
+            				}
+            			}
+            			else{
+            				increaseNovelCountsMM(counter,1);
+            			}
                     }
                     increaseNovelCountsBases(counter,1);
             	}
@@ -68,7 +80,7 @@ public class BisulfiteCountCovariatesWalker extends CountCovariatesWalker {
     }
 
     /**
-     * @Overide
+     * 
      * Major workhorse routine for this walker.
      * Loop through the list of requested covariates and pick out the value from the read, offset, and reference
      * Using the list of covariate values as a key, pick out the RecalDatum and increment,
@@ -98,9 +110,10 @@ public class BisulfiteCountCovariatesWalker extends CountCovariatesWalker {
 	        // Need the bases to determine whether or not we have a mismatch
 	        final byte base = gatkRead.getReadBases()[offset];
 	        final long curMismatches = datum.getNumMismatches();
+	        final byte baseQual =  gatkRead.getBaseQualities()[offset];
 
 	        // Add one to the number of observations and potentially one to the number of mismatches
-	        datum.incrementBaseCounts( base, refBase );
+	        datum.incrementBaseCounts( base, refBase, baseQual );
 	        increaseCountedBases(counter,1);
 			increaseNovelCountsBases(counter,1);
 			increaseNovelCountsMM(counter,(datum.getNumMismatches() - curMismatches));
