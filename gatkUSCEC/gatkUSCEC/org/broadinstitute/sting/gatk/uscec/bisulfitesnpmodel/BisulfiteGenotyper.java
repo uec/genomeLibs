@@ -451,6 +451,11 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             			if(value.cts.isCpg)
             				writer.add(value.vc, value.refBase);
             		}
+            		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY){ // only output variants
+            			if(value.vc.isVariant()){
+            				writer.add(value.vc, value.refBase);
+            			}
+            		}
             		else{
             			writer.add(value.vc, value.refBase);
             		}
@@ -465,6 +470,11 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CPG){
         			if(value.cts.isCpg)
         				writer.add(value.vc, value.refBase);
+        		}
+        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY){
+        			if(value.vc.isVariant()){
+        				writer.add(value.vc, value.refBase);
+        			}
         		}
         		else{
         			writer.add(value.vc, value.refBase);
@@ -584,8 +594,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 					value[2] = 0.0;
 				summary.cytosineListMap.put(cytosineType, value);
         }
-        
-        samWriter.close();
+        if(BAC.orad){
+        	samWriter.close();
+        }
     }
     
     //receive cytosine statistics status from main program
