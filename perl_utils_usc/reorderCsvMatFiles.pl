@@ -3,7 +3,7 @@
 use strict;
 
 $::DELIM = ",";
-$::DEFAULT_VAL = "null";
+$::DEFAULT_VAL = "NaN";
 
 my $USAGE = "reorderCsvMatFiles.pl numHeaderCols file1.csv file2.csv ...";
 die "$USAGE\n" unless (@ARGV>=2);
@@ -26,9 +26,9 @@ foreach my $fn (@fns)
 	my @f = split(/$::DELIM/,$line);
 	@f[0..($numHeads-1)] = map(&standardChrFld, @f[0..($numHeads-1)]);
 	my $id = fldsToId(\@f, $numHeads);
+	print STDERR "\tID=$id\n";
 	next LINE if ($id =~ /^\s*$/);
 	
-	# print STDERR "\tID=$id\n";
 	$ids->{$id}++;
 	$thisIds->{$id}++;
 
@@ -172,9 +172,9 @@ sub standardChrFld
     {
 	$outFld = $1;
 
-    $outFld =~ s/M/23/gi;
-    $outFld =~ s/X/24/gi;
-    $outFld =~ s/Y/26/gi;
+	$outFld =~ s/M/25/gi;
+	$outFld =~ s/X/23/gi;
+	$outFld =~ s/Y/24/gi;
     }
 
 	
