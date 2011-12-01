@@ -87,7 +87,7 @@ foreach my $fn (@fns)
     close(F);
 
     # Now output in correct order
-    my $outfn = $fn . ".ordered";
+    my $outfn = $fn . ".ordered.csv";
     die "Can't write to $outfn\n" unless (open(F,">$outfn"));
     print F $headerLine ."\n";
     foreach my $id (@orderedIds)
@@ -137,6 +137,7 @@ sub standardHeadFld
 		else
 		{
 			$outFld = $1;
+			print STDERR "LEGAL TCGA fomat: $outFld\n";
 		}
 	}
 
@@ -154,7 +155,7 @@ sub betterLine
 	# Special case, TCGA slide file
 	if (($oldFlds[14] eq "TOP") || ($oldFlds[14] eq "BOTTOM"))
 	{
-		print STDERR sprintf("%s: Comparing %d to %d\n",$oldFlds[0],$oldFlds[13],$newFlds[13]);
+		#print STDERR sprintf("%s: Comparing %d to %d\n",$oldFlds[0],$oldFlds[13],$newFlds[13]);
 		
 		# Use the lower of the two
 		$lineToUse = ($oldFlds[13] <= $newFlds[13]) ? $oldLine : $newLine;
@@ -170,11 +171,12 @@ sub standardChrFld
     if ($fld =~ /^chr(.*)$/)
     {
 	$outFld = $1;
-    }
 
     $outFld =~ s/M/23/gi;
     $outFld =~ s/X/24/gi;
     $outFld =~ s/Y/26/gi;
+    }
+
 	
     return $outFld;
 }
