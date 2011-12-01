@@ -452,7 +452,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             				writer.add(value.vc, value.refBase);
             		}
             		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY){ // only output variants
-            			if(value.vc.isVariant()){
+            			if(value.isVariant()){
+            				writer.add(value.vc, value.refBase);
+            			}
+            		}
+            		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_HET_SNPS_ONLY){ // only output variants
+            			if(value.isHetSnp()){
             				writer.add(value.vc, value.refBase);
             			}
             		}
@@ -472,7 +477,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         				writer.add(value.vc, value.refBase);
         		}
         		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY){
-        			if(value.vc.isVariant()){
+        			if(value.isVariant()){
+        				writer.add(value.vc, value.refBase);
+        			}
+        		}
+        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_HET_SNPS_ONLY){ // only output variants
+        			if(value.isHetSnp()){
         				writer.add(value.vc, value.refBase);
         			}
         		}

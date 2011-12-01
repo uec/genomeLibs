@@ -40,4 +40,19 @@ public class BisulfiteVariantCallContext{
         this.refBase = ref;
     }
 
+    public boolean isVariant() {
+        if(this.vc.hasGenotypes()){
+        	//System.err.println(this.vc.getGenotype(0).toString());
+        	return (!this.vc.getGenotype(0).isHomRef()) && this.confidentlyCalled;
+        }
+        return false;
+    }
+    
+    public boolean isHetSnp() {
+    	 if(this.vc.hasGenotypes()){
+         	return (this.vc.getGenotype(0).isHet()) && this.confidentlyCalled;
+         }
+         return false;
+    }
+    
 }

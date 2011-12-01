@@ -87,7 +87,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "tcga_format_vcf", shortName = "tcga", doc = "output TCGA specific VCF format or not, not used yet, in test", required = false)
     public boolean tcga = false;
 	
-    @Argument(fullName = "output_genotype", shortName = "out_genotype", doc = "Should we output confident genotypes (i.e. including ref calls),just the variants, just homozygous CpG or just homozygous Cytosines?", required = false)
+    @Argument(fullName = "output_genotype", shortName = "out_genotype", doc = "Should we output confident genotypes (i.e. including ref calls),just the variants, just homozygous CpG or just homozygous Cytosines?[EMIT_VARIANTS_ONLY,EMIT_ALL_CONFIDENT_SITES,EMIT_ALL_SITES,EMIT_ALL_CPG, EMIT_ALL_CYTOSINES,EMIT_HET_SNPS_ONLY]", required = false)
     public BisulfiteGenotyperEngine.OUTPUT_MODE OutputMode = BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CONFIDENT_SITES;
 	
     @Argument(fullName = "output_reads_after_downsampling", shortName = "orad", doc = "output Bam file that after downsapling, for performance test only", required = false)

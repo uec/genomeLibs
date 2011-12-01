@@ -307,7 +307,7 @@ public class BisulfiteGenotyperEngine{
 	}
 	
 	protected boolean passesEmitThreshold(double conf, int bestAFguess) {
-        return (BAC.OutputMode == OUTPUT_MODE.EMIT_ALL_CONFIDENT_SITES || BAC.OutputMode == OUTPUT_MODE.EMIT_ALL_CYTOSINES || BAC.OutputMode == OUTPUT_MODE.EMIT_ALL_CPG || bestAFguess != 0) && conf >= Math.min(BAC.STANDARD_CONFIDENCE_FOR_CALLING, BAC.STANDARD_CONFIDENCE_FOR_EMITTING);
+        return (BAC.OutputMode != OUTPUT_MODE.EMIT_ALL_SITES || bestAFguess != 0) && conf >= Math.min(BAC.STANDARD_CONFIDENCE_FOR_CALLING, BAC.STANDARD_CONFIDENCE_FOR_EMITTING);
     }
 	
 	
@@ -653,11 +653,12 @@ public class BisulfiteGenotyperEngine{
     }
     
     public enum OUTPUT_MODE {
-        EMIT_VARIANTS_ONLY,
+        EMIT_VARIANTS_ONLY, //only confident variants
         EMIT_ALL_CONFIDENT_SITES,
         EMIT_ALL_SITES,
-        EMIT_ALL_CPG,
-        EMIT_ALL_CYTOSINES
+        EMIT_ALL_CPG, //only confident cpgs
+        EMIT_ALL_CYTOSINES, //only confident cytosines
+        EMIT_HET_SNPS_ONLY //only confident heterozygous snps
     }
     
 }
