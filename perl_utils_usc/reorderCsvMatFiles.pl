@@ -26,8 +26,8 @@ foreach my $fn (@fns)
 	my @f = split(/$::DELIM/,$line);
 	@f[0..($numHeads-1)] = map(&standardChrFld, @f[0..($numHeads-1)]);
 	my $id = fldsToId(\@f, $numHeads);
-	print STDERR "\tID=$id\n";
 	next LINE if ($id =~ /^\s*$/);
+#	print STDERR "\tID=$id\n";
 	
 	$ids->{$id}++;
 	$thisIds->{$id}++;
