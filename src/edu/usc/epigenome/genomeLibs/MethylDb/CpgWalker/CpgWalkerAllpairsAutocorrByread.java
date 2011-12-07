@@ -11,7 +11,9 @@ package edu.usc.epigenome.genomeLibs.MethylDb.CpgWalker;
 //import com.mallardsoft.tuple.Quadruple;
 //import com.mallardsoft.tuple.Tuple;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 
 import org.biojava.bio.seq.StrandedFeature;
@@ -37,6 +39,7 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 	protected int readType = ANY_READ;
 	
 	protected boolean useOnlyCG = true;
+	protected final static boolean useOnlyOneDifferentRead = true; // I found that having a wild imbalance between the number of reads considered in SAME_READ and DIFFERENT_READ could skew results.
 	
 	
 	// By dist version
@@ -280,8 +283,17 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 			{
 				int aReadId = aCgRead.readId;
 				boolean aMeth = aCgRead.meth(true);
+				
+				// I found that having a wild imbalance between the number of reads checked for SAME_READ (1) and DIFFERENT_READ (many) could
+				// cause a skew in the number of pairs because SAME_READ was undersampling in regions of low CpG content.  So to equalize,
+				// we can choose to only take one random DIFFERENT read.
+				if (useOnlyOneDifferentRead)
+				{
+					// Randomly permute so we don't introduce some bias by selecting the first one.
+					Collections.shuffle(new ArrayList<CpgRead>(bCgReads));
+				}
 
-				for (CpgRead bCgRead : bCgReads)
+				B_READS: for (CpgRead bCgRead : bCgReads)
 				{
 					boolean bCg = bCgRead.validCg( (this.walkParams.methylParams==null) || this.walkParams.methylParams.getUseNonconversionFilter());
 					//if (!bCg) System.err.println("Got uncounted cytosine (B): " + b.toString() + "\n\t" +  bCgRead.toString());  // COMMENT OUT
@@ -364,7 +376,13 @@ public class CpgWalkerAllpairsAutocorrByread extends CpgWalkerAllpairs {
 									}
 								}
 							}
-						}
+							
+							// If we are using only a single different read, we are done with the B reads
+							if (useOnlyOneDifferentRead  && !identicalRead)
+							{
+								break B_READS;
+							}
+						}  // End: if (include)
 					}
 				}
 			}
