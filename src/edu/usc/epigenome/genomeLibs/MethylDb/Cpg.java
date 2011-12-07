@@ -8,10 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.commons.math.distribution.BinomialDistribution;
-import org.apache.commons.math.distribution.DistributionFactory;
 import org.biojava.bio.seq.StrandedFeature;
-import org.broadinstitute.sting.utils.BaseUtils;
 
 import edu.usc.epigenome.genomeLibs.GatkBaseUtils;
 import edu.usc.epigenome.genomeLibs.MatUtils;
