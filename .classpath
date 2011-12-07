@@ -2,25 +2,71 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/biojava-live.jar" sourcepath="biojava-live_1.6/src">
-		<attributes>
-			<attribute name="javadoc_location" value="http://www.biojava.org/docs/api16/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/bytecode.jar"/>
-	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/commons-cli.jar"/>
-	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/commons-collections-2.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/commons-dbcp-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="biojava-live_1.6/commons-pool-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="commons-math-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="jfreechar-1.0.9-libs/jcommon-1.0.12.jar"/>
-	<classpathentry exported="true" kind="lib" path="jfreechar-1.0.9-libs/jfreechart-1.0.9.jar"/>
-	<classpathentry exported="true" kind="lib" path="UscKeck.jar" sourcepath="/ChIP"/>
-	<classpathentry exported="true" kind="lib" path="charts4j-1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="junit-4.4.jar"/>
-	<classpathentry kind="lib" path="heatMap.jar" sourcepath="/heatMap"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/picard"/>
-	<classpathentry kind="lib" path="tuple.jar"/>
-	<classpathentry kind="lib" path="/Volumes/EpigenomeMacPro1/Users/benb/Documents/research/Java/mysql-connector-java-5.0.4-bin.jar"/>
+	<classpathentry kind="lib" path="lib/BaiToText.jar"/>
+	<classpathentry kind="lib" path="lib/BamToBfq.jar"/>
+	<classpathentry kind="lib" path="lib/batik-anim.jar"/>
+	<classpathentry kind="lib" path="lib/batik-css.jar"/>
+	<classpathentry kind="lib" path="lib/batik-dom.jar"/>
+	<classpathentry kind="lib" path="lib/batik-ext.jar"/>
+	<classpathentry kind="lib" path="lib/batik-parser.jar"/>
+	<classpathentry kind="lib" path="lib/batik-svg-dom.jar"/>
+	<classpathentry kind="lib" path="lib/batik-util.jar"/>
+	<classpathentry kind="lib" path="lib/batik-xml.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-alignment-3-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-alignment-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-core-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-genome-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-phylo-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-protmod-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-structure-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-structure-gui-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/biojava3-ws-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/BuildBamIndex.jar"/>
+	<classpathentry kind="lib" path="lib/CalculateHsMetrics.jar"/>
+	<classpathentry kind="lib" path="lib/CleanSam.jar"/>
+	<classpathentry kind="lib" path="lib/CollectAlignmentSummaryMetrics.jar"/>
+	<classpathentry kind="lib" path="lib/CollectGcBiasMetrics.jar"/>
+	<classpathentry kind="lib" path="lib/CollectInsertSizeMetrics.jar"/>
+	<classpathentry kind="lib" path="lib/CompareSAMs.jar"/>
+	<classpathentry kind="lib" path="lib/CreateSequenceDictionary.jar"/>
+	<classpathentry kind="lib" path="lib/EstimateLibraryComplexity.jar"/>
+	<classpathentry kind="lib" path="lib/FastqToSam.jar"/>
+	<classpathentry kind="lib" path="lib/FixMateInformation.jar"/>
+	<classpathentry kind="lib" path="lib/GenomeAnalysisTK.jar"/>
+	<classpathentry kind="lib" path="lib/MarkDuplicates.jar"/>
+	<classpathentry kind="lib" path="lib/MeanQualityByCycle.jar"/>
+	<classpathentry kind="lib" path="lib/MergeBamAlignment.jar"/>
+	<classpathentry kind="lib" path="lib/MergeSamFiles.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.12-bin.jar"/>
+	<classpathentry kind="lib" path="lib/NormalizeFasta.jar"/>
+	<classpathentry kind="lib" path="lib/picard-1.26.jar"/>
+	<classpathentry kind="lib" path="lib/QualityScoreDistribution.jar"/>
+	<classpathentry kind="lib" path="lib/ReplaceSamHeader.jar"/>
+	<classpathentry kind="lib" path="lib/RevertSam.jar"/>
+	<classpathentry kind="lib" path="lib/sam-1.26.jar"/>
+	<classpathentry kind="lib" path="lib/SamFormatConverter.jar"/>
+	<classpathentry kind="lib" path="lib/SamToFastq.jar"/>
+	<classpathentry kind="lib" path="lib/SortSam.jar"/>
+	<classpathentry kind="lib" path="lib/StingUtils.jar"/>
+	<classpathentry kind="lib" path="lib/tuple.jar"/>
+	<classpathentry kind="lib" path="lib/ValidateSamFile.jar"/>
+	<classpathentry kind="lib" path="lib/ViewSam.jar"/>
+	<classpathentry kind="lib" path="lib/biojava-live.jar"/>
+	<classpathentry kind="lib" path="lib/UscKeck.jar"/>
+	<classpathentry kind="lib" path="lib/commons-math-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-collections-2.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-math-2.2.jar"/>
+	<classpathentry kind="lib" path="lib/jfreechart-1.0.9.jar"/>
+	<classpathentry kind="lib" path="lib/gnujaxp.jar"/>
+	<classpathentry kind="lib" path="lib/itext-2.0.6.jar"/>
+	<classpathentry kind="lib" path="lib/jcommon-1.0.12.jar"/>
+	<classpathentry kind="lib" path="lib/jfreechart-1.0.9-experimental.jar"/>
+	<classpathentry kind="lib" path="lib/jfreechart-1.0.9-swt.jar"/>
+	<classpathentry kind="lib" path="lib/junit.jar"/>
+	<classpathentry kind="lib" path="lib/servlet.jar"/>
+	<classpathentry kind="lib" path="lib/swtgraphics2d.jar"/>
+	<classpathentry kind="lib" path="lib/charts4j-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/heatMap.jar"/>
+	<classpathentry kind="lib" path="lib/AnalyzeCovariates.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
