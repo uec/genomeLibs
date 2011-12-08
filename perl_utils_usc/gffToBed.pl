@@ -28,6 +28,7 @@ foreach my $f (@files)
     {
 	  
 	next if ($line =~ /track/);
+#	print STDERR "Notrack: $line\n";
 	  $elCount++;
 	chomp $line;
 
@@ -41,19 +42,23 @@ foreach my $f (@files)
 
 	$score = 50 if ($score eq '.'); # Illegal in bed
 
-
+	
 	if ( ($s >= $last_s) && ($s <= $last_e))
 	{
 	    # Wig files can't have this either.
 	    print STDERR "Start of next ($s) is less than end of prev ($last_e). fixing\n";
 	    $s = $last_e + 1;
+#	    print STDERR "NOT SET TO FIX.  CHANGE SCRIPT TO FIX. Start of next ($s) is less than end of prev ($last_e). fixing\n";
+
 	}
 
-	    my $out = join("\t",$c,$s,$e,"el${elCount}",int($score));
+	# Output is only valid if $e>=($s+1).
+	my $out = "";
+	if ($e>=($s+1))
+	{
+#	    $out = join("\t",$c,$s,$e,"el${elCount}",int($score));
+	    $out = join("\t",$c,$s,$e);
 	    print OUTF $out."\n";
-
-
-
 
 	    $last_e = $e;
 	    $last_c = $c;
@@ -68,6 +73,7 @@ foreach my $f (@files)
 # 	else
 # 	{
 # 	}
+	}
 
     }
 
