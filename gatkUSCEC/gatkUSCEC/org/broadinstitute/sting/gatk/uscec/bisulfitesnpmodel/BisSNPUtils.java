@@ -43,6 +43,10 @@ public class BisSNPUtils {
 	private double FLAT_METHY_STATUS = 0.5;
 	private NDRargumentCollection NAC;
 	
+	public BisSNPUtils(){
+		this.NAC = new NDRargumentCollection();
+	}
+	
 	public BisSNPUtils(NDRargumentCollection NAC){
 		this.NAC = NAC;
 	}
@@ -74,6 +78,18 @@ public class BisSNPUtils {
 	public boolean isCph(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
 			BisulfiteArgumentCollection bac, double methyStatus){
 		return checkCytosineStatus("CH-1", pileup, tracker, ref, priors, bac, methyStatus);
+		
+	}
+	
+	public boolean isCytosine(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
+			BisulfiteArgumentCollection bac, double methyStatus){
+		return checkCytosineStatus("C-1", pileup, tracker, ref, priors, bac, methyStatus);
+		
+	}
+	
+	public boolean isCytosineType(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
+			BisulfiteArgumentCollection bac, double methyStatus, String cytosineTypeToCheck){ //should be "CH-1" style..
+		return checkCytosineStatus(cytosineTypeToCheck, pileup, tracker, ref, priors, bac, methyStatus);
 		
 	}
 	
@@ -352,7 +368,7 @@ public class BisSNPUtils {
         return rawContext;
     }
 
-	 private boolean filterPileupBisulfite(AlignmentContext stratifiedContexts, BadBaseFilterBisulfite badBaseFilter, BisulfiteArgumentCollection BAC) {
+	protected boolean filterPileupBisulfite(AlignmentContext stratifiedContexts, BadBaseFilterBisulfite badBaseFilter, BisulfiteArgumentCollection BAC) {
 	        	int numDeletions = 0, pileupSize = 0;
 
 	        	if(!stratifiedContexts.hasBasePileup())
