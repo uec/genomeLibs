@@ -21,6 +21,7 @@ import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteGenotyperE
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteGenotyperEngine.OUTPUT_MODE;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BisulfiteSNPGenotypeLikelihoodsCalculationModel.methyStatus;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel;
+import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypePriors;
 import org.broadinstitute.sting.utils.BaseUtils;
 import org.broadinstitute.sting.utils.GenomeLoc;
 import org.broadinstitute.sting.utils.exceptions.ReviewedStingException;
@@ -42,54 +43,57 @@ public class BisSNPUtils {
 	
 	private double FLAT_METHY_STATUS = 0.5;
 	private NDRargumentCollection NAC;
+	private BisulfiteDiploidSNPGenotypePriors genotypePriors;
+	private BisulfiteArgumentCollection BAC;
 	
-	public BisSNPUtils(){
+	public BisSNPUtils(BisulfiteArgumentCollection BAC){
 		this.NAC = new NDRargumentCollection();
+		this.genotypePriors = (BisulfiteDiploidSNPGenotypePriors)BisulfiteGenotyperEngine.createGenotypePriors(BAC);
 	}
 	
 	public BisSNPUtils(NDRargumentCollection NAC){
 		this.NAC = NAC;
+		this.genotypePriors = (BisulfiteDiploidSNPGenotypePriors)BisulfiteGenotyperEngine.createGenotypePriors(NAC);
 	}
 	
-	public boolean isGch(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
-			BisulfiteArgumentCollection bac, double methyStatus){
-		return checkCytosineStatus("GCH-1", pileup, tracker, ref, priors, bac, methyStatus);
+	public boolean isGch(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, double methyStatus){
+		return checkCytosineStatus("GCH-1", pileup, tracker, ref, genotypePriors, BAC, methyStatus);
 		
 	}
 	
 	public boolean isHcg(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
 			BisulfiteArgumentCollection bac, double methyStatus){
-		return checkCytosineStatus("HCG-2", pileup, tracker, ref, priors, bac, methyStatus);
+		return checkCytosineStatus("HCG-2", pileup, tracker, ref, genotypePriors, BAC, methyStatus);
 		
 	}
 	
 	public boolean isWcg(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
 			BisulfiteArgumentCollection bac, double methyStatus){
-		return checkCytosineStatus("WCG-2", pileup, tracker, ref, priors, bac, methyStatus);
+		return checkCytosineStatus("WCG-2", pileup, tracker, ref, genotypePriors, BAC, methyStatus);
 		
 	}
 	
 	public boolean isCpg(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
 			BisulfiteArgumentCollection bac, double methyStatus){
-		return checkCytosineStatus("CG-1", pileup, tracker, ref, priors, bac, methyStatus);
+		return checkCytosineStatus("CG-1", pileup, tracker, ref, genotypePriors, BAC, methyStatus);
 		
 	}
 	
 	public boolean isCph(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
 			BisulfiteArgumentCollection bac, double methyStatus){
-		return checkCytosineStatus("CH-1", pileup, tracker, ref, priors, bac, methyStatus);
+		return checkCytosineStatus("CH-1", pileup, tracker, ref, genotypePriors, BAC, methyStatus);
 		
 	}
 	
 	public boolean isCytosine(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
 			BisulfiteArgumentCollection bac, double methyStatus){
-		return checkCytosineStatus("C-1", pileup, tracker, ref, priors, bac, methyStatus);
+		return checkCytosineStatus("C-1", pileup, tracker, ref, genotypePriors, BAC, methyStatus);
 		
 	}
 	
 	public boolean isCytosineType(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, BisulfiteDiploidSNPGenotypePriors priors, 
 			BisulfiteArgumentCollection bac, double methyStatus, String cytosineTypeToCheck){ //should be "CH-1" style..
-		return checkCytosineStatus(cytosineTypeToCheck, pileup, tracker, ref, priors, bac, methyStatus);
+		return checkCytosineStatus(cytosineTypeToCheck, pileup, tracker, ref, genotypePriors, BAC, methyStatus);
 		
 	}
 	
