@@ -26,6 +26,8 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     // --------------------------------------------------------------------------------------------------------------
     public static double HETEROZYGOSITY = 1e-3;
     
+    public static double TRANSITION_VS_TRANSVERSION = 2.0;
+    
     public static double DBSNP_VALIDATE_HETEROZYGOSITY = 0.1;
     public static double DBSNP_NOVAL_HETEROZYGOSITY = 0.02;
     
@@ -74,11 +76,11 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     }
     
     //set prior for each locus
-    public void setPriors(RefMetaDataTracker tracker, ReferenceContext ref, double heterozygosity, double probOfTriStateGenotype, double novelDbsnpHet, double validateDbsnpHet, GenomeLoc loc) {
+    public void setPriors(RefMetaDataTracker tracker, ReferenceContext ref, double heterozygosity, double probOfTriStateGenotype, double novelDbsnpHet, double validateDbsnpHet, GenomeLoc loc, double tiVsTv) {
     	
     	DBSNP_NOVAL_HETEROZYGOSITY = novelDbsnpHet;
     	DBSNP_VALIDATE_HETEROZYGOSITY = validateDbsnpHet;
-    	
+    	TRANSITION_VS_TRANSVERSION = tiVsTv;
         byte refBase = ref.getBase();
         
         Collection<VariantContext> contexts = tracker.getVariantContexts(ref, DbSNPHelper.STANDARD_DBSNP_TRACK_NAME, null, loc, true, false);
@@ -200,8 +202,11 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
         for ( DiploidGenotype g : DiploidGenotype.values() ) {
             double POfG = 1;
 
-            final double transitionRate = 2.0/3.0;
-            final double transversionRate = 1.0/6.0;
+            //final double transitionRate = 2.0/3.0;
+            //final double transversionRate = 1.0/6.0;
+            
+            final double transversionRate = 1.0/(TRANSITION_VS_TRANSVERSION + 1);
+            final double transitionRate = transversionRate * TRANSITION_VS_TRANSVERSION;
            
             if(BaseUtils.basesAreEqual(ref, BaseUtils.A)){								//**ref = A
             	if(BaseUtils.basesAreEqual(g.base1, BaseUtils.A)){

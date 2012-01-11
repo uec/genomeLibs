@@ -17,6 +17,7 @@ import net.sf.samtools.SAMFileWriterFactory;
 
 import org.broad.tribble.util.variantcontext.Genotype;
 import org.broad.tribble.util.variantcontext.VariantContext;
+import org.broad.tribble.vcf.SortingVCFWriter;
 import org.broad.tribble.vcf.VCFConstants;
 import org.broad.tribble.vcf.VCFFilterHeaderLine;
 import org.broad.tribble.vcf.VCFHeader;
@@ -77,6 +78,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean secondIteration = false;
     
     protected TcgaVCFWriter writer = null;
+    
+    protected TcgaVCFWriter additionalWriterForDefaultTcgaMode = null;
     
     protected SAMFileWriter samWriter = null;
     
@@ -207,7 +210,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
      *
      **/
     public void initialize() {
-       
+    	
         Set<String> samples = new TreeSet<String>();
         //sometimes, BAM file also provided sample name, and it is different from user provided in the argument, then there will be an error~
         if ( BAC.ASSUME_SINGLE_SAMPLE != null ){
@@ -221,6 +224,11 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }    
         else{
         	samples = SampleUtils.getSAMFileSamples(getToolkit().getSAMFileHeader());
+        	System.out.println("samples provided: " + samples.toString());
+        	if(samples.isEmpty()){
+        		System.err.println("No sample name provided, program will automately provide the bam file header: " + getToolkit().sampleCount());
+        		
+        	}
         }
             
         
@@ -231,6 +239,13 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if(autoEstimateC){
         	if(secondIteration){
         		writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        		if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
+        			File outputAdditionalVcfFile = new File(BAC.vfn2);
+        			additionalWriterForDefaultTcgaMode = new TcgaVCFWriter(outputAdditionalVcfFile, true);
+        			
+        			additionalWriterForDefaultTcgaMode.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        		}
+        			
         		if(BAC.orad){
             		File outputBamFile = new File(BAC.fnorad);
             		SAMFileWriterFactory samFileWriterFactory = new SAMFileWriterFactory();
@@ -244,6 +259,13 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
         else{
         	writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        	if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
+    			File outputAdditionalVcfFile = new File(BAC.vfn2);
+    			additionalWriterForDefaultTcgaMode = new TcgaVCFWriter(outputAdditionalVcfFile, true);
+    			
+    			additionalWriterForDefaultTcgaMode.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+    		}
+        	
         	if(BAC.orad){
         		File outputBamFile = new File(BAC.fnorad);
         		SAMFileWriterFactory samFileWriterFactory = new SAMFileWriterFactory();
@@ -461,6 +483,15 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             				writer.add(value.vc, value.refBase);
             			}
             		}
+            		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){ // only output variants
+            			if(value.cts.isCpg){
+            				writer.add(value.vc, value.refBase);
+            			}
+            			if(value.isVariant()){
+            				additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+            			}
+            			
+            		}
             		else{
             			writer.add(value.vc, value.refBase);
             		}
@@ -485,6 +516,16 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			if(value.isHetSnp()){
         				writer.add(value.vc, value.refBase);
         			}
+        		}
+        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){ 
+        			if(value.cts.isCpg){
+        				writer.add(value.vc, value.refBase);
+        			}
+        			if(value.isVariant()){
+        				
+        				additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+        			}
+        			
         		}
         		else{
         			writer.add(value.vc, value.refBase);
@@ -606,6 +647,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         }
         if(BAC.orad){
         	samWriter.close();
+        }
+        if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
+        	//additionalWriterForDefaultTcgaMode.close();
         }
     }
     

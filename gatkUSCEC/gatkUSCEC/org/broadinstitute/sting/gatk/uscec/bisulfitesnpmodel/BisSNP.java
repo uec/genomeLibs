@@ -85,6 +85,7 @@ public class BisSNP extends CommandLineExecutable {
 		return analysisName;
 	}
 
+	
 
 	@Override
 	protected GATKArgumentCollection getArgumentCollection() {
@@ -117,7 +118,6 @@ public class BisSNP extends CommandLineExecutable {
 	//set up Writer information. if writer is not initiat here, then there will be some wired close stream problem.
 	public void setupInfo(){
 		if(walker instanceof BisulfiteGenotyper){
-			
 
 			if(argCollection.numberOfThreads == 1){
 				((BisulfiteGenotyper) walker).setWriter(writer);
@@ -130,7 +130,7 @@ public class BisSNP extends CommandLineExecutable {
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "Bis-SNP-0.30";
+        String version = "Bis-SNP-0.32";
 		List<String> header = new ArrayList<String>();
         header.add(String.format("The Bis-SNP v%s, Compiled %s",version, getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (prebuild GATK package could be download here: ftp://ftp.broadinstitute.org/pub/gsa/GenomeAnalysisTK/GenomeAnalysisTK-1.0.5336.tar.bz2)",getVersionNumber()));
@@ -210,10 +210,11 @@ public class BisSNP extends CommandLineExecutable {
                     loadArgumentsIntoObject(filter);
                     bisulfiteArgumentSources.add(filter);
                 }
-                if(walker instanceof BisulfiteGenotyper){      			
-        				((BisulfiteGenotyper) walker).setWriter(writer);
+                setupInfo();
+                //if(walker instanceof BisulfiteGenotyper){      			
+        				//((BisulfiteGenotyper) walker).setWriter(writer);
 
-        		}
+        		//}
                 
                 engine.execute();
                 if(walker instanceof BisulfiteGenotyper){

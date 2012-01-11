@@ -62,8 +62,7 @@ public class BisulfiteDiploidSNPGenotypeLikelihoods implements Cloneable  {
      * set prior calculated
      */
 	public void setPriors(RefMetaDataTracker tracker, ReferenceContext ref, double heterozygousity, double novelDbsnpHet, double validateDbsnpHet, GenomeLoc loc){
-		
-		this.priors.setPriors(tracker, ref, heterozygousity, PROB_OF_REFERENCE_ERROR, novelDbsnpHet, validateDbsnpHet, loc);
+		this.priors.setPriors(tracker, ref, heterozygousity, PROB_OF_REFERENCE_ERROR, novelDbsnpHet, validateDbsnpHet, loc, BAC.tiVsTv);
         setToZeroBs();
 	}
 	
