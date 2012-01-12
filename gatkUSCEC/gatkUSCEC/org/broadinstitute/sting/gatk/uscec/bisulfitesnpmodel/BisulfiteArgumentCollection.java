@@ -102,6 +102,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
   //  @Argument(fullName = "vcf_file_name", shortName = "vfn", doc = "output Vcf file", required = true)
 //	public String vfn = null;
     
+    @Argument(fullName = "vcf_file_name_1", shortName = "vfn1", doc = "output Vcf file, when used for [DEFAULT_FOR_TCGA] output mode, it is used to store all SNP sites. While the original vcf file is to store all CpG sites", required = true)
+	public String vfn1 = null;
+    
     @Argument(fullName = "vcf_file_name_2", shortName = "vfn2", doc = "output Vcf file 2, only used for [DEFAULT_FOR_TCGA] output mode, it is used to store all SNP sites. While the original vcf file is to store all CpG sites", required = false)
 	public String vfn2 = null;
 	
@@ -113,6 +116,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     
     @Argument(fullName = "output_reads_coverage_after_downsampling", shortName = "orcad", doc = "output Bam file's mean coverage that after downsapling, for performance test only", required = false)
 	public int orcad = 1;
+    
+    @Argument(fullName = "file_name_output_bed_reads_detail", shortName = "fnobrd", doc = "output Bed file that contain each position in reads information, for test only", required = false)
+	public String fnobrd = null;
 	
 	public BisulfiteArgumentCollection clone() {
 		BisulfiteArgumentCollection bac = new BisulfiteArgumentCollection();
@@ -168,6 +174,8 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.orad = orad;
         bac.fnorad = fnorad;
         bac.vfn2 = vfn2;
+        bac.fnobrd = fnobrd;
+        bac.vfn1 = vfn1;
         
         return bac;
     }

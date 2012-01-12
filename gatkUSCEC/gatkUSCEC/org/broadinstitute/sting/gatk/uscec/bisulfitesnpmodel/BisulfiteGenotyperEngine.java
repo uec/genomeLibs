@@ -140,7 +140,7 @@ public class BisulfiteGenotyperEngine{
      */
     public BisulfiteVariantCallContext calculateLikelihoodsAndGenotypes(RefMetaDataTracker tracker, ReferenceContext refContext, AlignmentContext rawContext) {
         Map<String, StratifiedAlignmentContext> stratifiedContexts = getFilteredAndStratifiedContexts(BAC, refContext, rawContext);
-        Map<String, BiallelicGenotypeLikelihoods> GLs = new HashMap<String, BiallelicGenotypeLikelihoods>();
+        Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs = new HashMap<String, BisulfiteBiallelicGenotypeLikelihoods>();
         VariantContext vc = calculateLikelihoods(tracker, refContext, stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType.COMPLETE, null, GLs);
         
         if ( vc == null )
@@ -157,7 +157,7 @@ public class BisulfiteGenotyperEngine{
 	
 
 
-    protected VariantContext calculateLikelihoods(RefMetaDataTracker tracker, ReferenceContext refContext, Map<String, StratifiedAlignmentContext> stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType type, Allele alternateAlleleToUse, Map<String, BiallelicGenotypeLikelihoods> GLs) {
+    protected VariantContext calculateLikelihoods(RefMetaDataTracker tracker, ReferenceContext refContext, Map<String, StratifiedAlignmentContext> stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType type, Allele alternateAlleleToUse, Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs) {
 		if ( stratifiedContexts == null ){
 			 return null;
 		}
@@ -171,7 +171,7 @@ public class BisulfiteGenotyperEngine{
         BisulfiteSNPGenotypeLikelihoodsCalculationModel bglcm = (BisulfiteSNPGenotypeLikelihoodsCalculationModel) bglcms.get();
         bglcm.initialize(ctss.get(), BAC, autoEstimateC, secondIteration);
         
-        Allele refAllele = bglcm.getLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
+        Allele refAllele = bglcm.getBsLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
        
         if (refAllele != null)
             return createVariantContextFromLikelihoods(refContext, refAllele, GLs);
@@ -189,13 +189,13 @@ public class BisulfiteGenotyperEngine{
     }
 	
 
-	protected BisulfiteVariantCallContext calculateGenotypes(RefMetaDataTracker tracker, ReferenceContext refContext, AlignmentContext rawContext, Map<String, StratifiedAlignmentContext> stratifiedContexts, Map<String, BiallelicGenotypeLikelihoods> GLs, VariantContext vc) {
+	protected BisulfiteVariantCallContext calculateGenotypes(RefMetaDataTracker tracker, ReferenceContext refContext, AlignmentContext rawContext, Map<String, StratifiedAlignmentContext> stratifiedContexts, Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs, VariantContext vc) {
 		// initialize the data for this thread if that hasn't been done yet
         if ( bglcms.get() == null ) {
             return null;
         }
         log10AlleleFrequencyPosteriors.set(new double[3]);
-        for ( BiallelicGenotypeLikelihoods GL : GLs.values() ) {
+        for ( BisulfiteBiallelicGenotypeLikelihoods GL : GLs.values() ) {
         	assignAFPosteriors(GL.getLikelihoods(),log10AlleleFrequencyPosteriors.get());
         	int bestAFguess = MathUtils.maxElementIndex(log10AlleleFrequencyPosteriors.get());
             int secondAFguess = MathUtils.minElementIndex(log10AlleleFrequencyPosteriors.get());
@@ -251,7 +251,7 @@ public class BisulfiteGenotyperEngine{
 
             double cytosineMethyLevel = 0;
             
-           Integer[] cytosineStat = bglcms.get().getCytosineStatus();
+           Integer[] cytosineStat = GL.getCytosineStatus();
             if(BAC.ASSUME_SINGLE_SAMPLE != null){
             	 if(passesCallThreshold(logRatio)){
             		 
@@ -608,7 +608,7 @@ public class BisulfiteGenotyperEngine{
               }
     }
 	
-    private VariantContext createVariantContextFromLikelihoods(ReferenceContext refContext, Allele refAllele, Map<String, BiallelicGenotypeLikelihoods> GLs) {
+    private VariantContext createVariantContextFromLikelihoods(ReferenceContext refContext, Allele refAllele, Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs) {
         
         List<Allele> noCall = new ArrayList<Allele>();
         noCall.add(Allele.NO_CALL);
@@ -618,7 +618,7 @@ public class BisulfiteGenotyperEngine{
         boolean addedAltAllele = false;
 
         HashMap<String, Genotype> genotypes = new HashMap<String, Genotype>();
-        for ( BiallelicGenotypeLikelihoods GL : GLs.values() ) {
+        for ( BisulfiteBiallelicGenotypeLikelihoods GL : GLs.values() ) {
             if ( !addedAltAllele ) {
                 addedAltAllele = true;              
                 alleles.add(GL.getAlleleA());

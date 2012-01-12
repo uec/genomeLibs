@@ -39,6 +39,16 @@ public class NonRefDependSNPGenotypeLikelihoodsCalculationModel extends
 		return null;
 	}
 	
+	public Allele getBsLikelihoods(RefMetaDataTracker tracker,
+			ReferenceContext ref,
+			Map<String, StratifiedAlignmentContext> contexts,
+			StratifiedContextType contextType, GenotypePriors priors,
+			Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs,
+			Allele alternateAlleleToUse) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	public void initialize(CytosineTypeStatus cts, BisulfiteArgumentCollection BAC, boolean autoEstimateC, boolean secondIteration){
 
 	}

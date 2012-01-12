@@ -12,6 +12,7 @@ import java.util.ResourceBundle;
 import net.sf.picard.filter.SamRecordFilter;
 
 import org.broad.tribble.TribbleException;
+import org.broad.tribble.vcf.SortingVCFWriter;
 import org.broad.tribble.vcf.VCFWriter;
 import org.broadinstitute.sting.commandline.Argument;
 import org.broadinstitute.sting.commandline.ArgumentCollection;
@@ -51,8 +52,8 @@ public class BisSNP extends CommandLineExecutable {
     private static boolean autoEstimateC = false;
 	
 	 //control the output, output to TCGA VCF 
-    @Output(doc="File to which variants should be written",required=false)
-    protected TcgaVCFWriter writer = null;
+    //@Output(doc="File to which variants should be written",required=false)
+   // protected SortingVCFWriter writer = null;
  
 
 	private final Collection<Object> bisulfiteArgumentSources = new ArrayList<Object>();
@@ -120,17 +121,17 @@ public class BisSNP extends CommandLineExecutable {
 		if(walker instanceof BisulfiteGenotyper){
 
 			if(argCollection.numberOfThreads == 1){
-				((BisulfiteGenotyper) walker).setWriter(writer);
+			//	((BisulfiteGenotyper) walker).setWriter(writer);
 
 			}
 			else{
-				((BisulfiteGenotyper) walker).setWriter(writer);
+			//	((BisulfiteGenotyper) walker).setWriter(writer);
 			}
 		}
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "Bis-SNP-0.32";
+        String version = "Bis-SNP-0.33";
 		List<String> header = new ArrayList<String>();
         header.add(String.format("The Bis-SNP v%s, Compiled %s",version, getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (prebuild GATK package could be download here: ftp://ftp.broadinstitute.org/pub/gsa/GenomeAnalysisTK/GenomeAnalysisTK-1.0.5336.tar.bz2)",getVersionNumber()));

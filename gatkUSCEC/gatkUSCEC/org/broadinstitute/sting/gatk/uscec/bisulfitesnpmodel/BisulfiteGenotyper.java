@@ -57,6 +57,8 @@ import org.broadinstitute.sting.utils.pileup.PileupElement;
 import org.broadinstitute.sting.utils.pileup.ReadBackedPileup;
 import org.broadinstitute.sting.utils.vcf.VCFUtils;
 
+import org.broadinstitute.sting.gatk.uscec.YapingWalker.readsWriterImp;
+import org.broadinstitute.sting.gatk.uscec.YapingWalker.verboseWriter;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BaseUtilsMore.*;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel;
 
@@ -79,9 +81,15 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     
     protected TcgaVCFWriter writer = null;
     
+    protected SortingTcgaVCFWriter multiThreadWriter = null;
+    
     protected TcgaVCFWriter additionalWriterForDefaultTcgaMode = null;
     
-    protected SAMFileWriter samWriter = null;
+    protected SortingTcgaVCFWriter multiAdditionalWriterForDefaultTcgaMode = null;
+    
+    protected readsWriterImp readsWriter = null; //only works with single core right now
+    
+    protected SAMFileWriter samWriter = null; //only works with single core right now
     
     private int SAMPLE_READS_MEAN_COVERAGE = 30;
 
@@ -238,12 +246,24 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         // initialize the header
         if(autoEstimateC){
         	if(secondIteration){
-        		writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        		File outputVcfFile = new File(BAC.vfn1);
+    			writer = new TcgaVCFWriter(outputVcfFile, false);
+    			
+    			writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+    			
+    			if(getToolkit().getArguments().numberOfThreads > 1){
+    				multiThreadWriter = new SortingTcgaVCFWriter(writer,10000000);
+    			}
+    			
         		if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
         			File outputAdditionalVcfFile = new File(BAC.vfn2);
-        			additionalWriterForDefaultTcgaMode = new TcgaVCFWriter(outputAdditionalVcfFile, true);
+        			additionalWriterForDefaultTcgaMode = new TcgaVCFWriter(outputAdditionalVcfFile, false);
         			
         			additionalWriterForDefaultTcgaMode.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        			if(getToolkit().getArguments().numberOfThreads > 1){
+        				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,10000000);
+        			}
+        			
         		}
         			
         		if(BAC.orad){
@@ -252,18 +272,36 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             		samFileWriterFactory.setCreateIndex(true);
             		samWriter = samFileWriterFactory.makeBAMWriter(getToolkit().getSAMFileHeader(), false, outputBamFile);
             	}
+        		if(BAC.fnobrd != null){
+        			File outputReadsDetailFile = new File(BAC.fnobrd);
+        			readsWriter = new readsWriterImp(outputReadsDetailFile);
+
+        		}
+        		
         	}
         	else{
         		
         	}
         }
         else{
-        	writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+        	File outputVcfFile = new File(BAC.vfn1);
+			writer = new TcgaVCFWriter(outputVcfFile, false);
+			
+			writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+			
+			if(getToolkit().getArguments().numberOfThreads > 1){
+				multiThreadWriter = new SortingTcgaVCFWriter(writer,10000000);
+			}
+			
         	if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
     			File outputAdditionalVcfFile = new File(BAC.vfn2);
-    			additionalWriterForDefaultTcgaMode = new TcgaVCFWriter(outputAdditionalVcfFile, true);
+    			additionalWriterForDefaultTcgaMode = new TcgaVCFWriter(outputAdditionalVcfFile, false);
     			
     			additionalWriterForDefaultTcgaMode.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+    			
+    			if(getToolkit().getArguments().numberOfThreads > 1){
+    				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,10000000);
+    			}
     		}
         	
         	if(BAC.orad){
@@ -272,6 +310,11 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         		samFileWriterFactory.setCreateIndex(true);
         		samWriter = samFileWriterFactory.makeBAMWriter(getToolkit().getSAMFileHeader(), false, outputBamFile);
         	}
+        	if(BAC.fnobrd != null){
+    			File outputReadsDetailFile = new File(BAC.fnobrd);
+    			readsWriter = new readsWriterImp(outputReadsDetailFile);
+
+    		}
         }
         //in the first iteration, initiate CytosineTypeStatus
         if(!secondIteration)
@@ -347,6 +390,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         BG_engine.setAutoParameters(autoEstimateC, secondIteration);
         BG_engine.setCytosineTypeStatus(cts);
 
+        if(BAC.fnobrd != null && (autoEstimateC && secondIteration)){
+        	readsDetailReport(rawContext);
+        }
         //calculation LikelihoodsAndGenotypes for this loci
     	return BG_engine.calculateLikelihoodsAndGenotypes(tracker, refContext, rawContext);
     }
@@ -437,6 +483,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
       //  sum.sumMethyGchBasesCalledConfidently += value.cts.isGch ? value.cts.gchMethyLevel : 0;
       //  sum.sumMethyGcgBasesCalledConfidently += value.cts.isGcg ? value.cts.gcgMethyLevel : 0;
       //  sum.sumMethyHcgBasesCalledConfidently += value.cts.isHcg ? value.cts.hcgMethyLevel : 0;
+       // if(value.cts.isCpg){
+       // 	System.err.println(value.vc.getChr() + "\t" + value.vc.getStart() + "\t" + sum.sumMethyCpgBasesCalledConfidently + "\t" + sum.nCpgBasesCalledConfidently + "\t" + value.cts.cpgMethyLevel);
+      //  }
         
         //other cytosine provided.
         if(!BAC.forceOtherCytosine.isEmpty() || !BAC.autoEstimateOtherCytosine.isEmpty()){
@@ -466,69 +515,148 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             if(autoEstimateC){
             	if(secondIteration){ //in auto estimate mode, don't output in the first iteration
             		if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CYTOSINES){ // only output homozygous cytosine
-            			if(value.cts.isC)
-            				writer.add(value.vc, value.refBase);
+            			if(value.cts.isC){
+            				if(getToolkit().getArguments().numberOfThreads > 1){
+                				multiThreadWriter.add(value.vc, value.refBase);
+                			}
+                			else{
+                				writer.add(value.vc, value.refBase);
+                			}
+            			}
+            				
             		}
             		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CPG){ // only output homozygous cpg
-            			if(value.cts.isCpg)
-            				writer.add(value.vc, value.refBase);
+            			if(value.cts.isCpg){
+            				if(getToolkit().getArguments().numberOfThreads > 1){
+                				multiThreadWriter.add(value.vc, value.refBase);
+                			}
+                			else{
+                				writer.add(value.vc, value.refBase);
+                			}
+            			}
+            				
             		}
             		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY){ // only output variants
             			if(value.isVariant()){
-            				writer.add(value.vc, value.refBase);
+            				if(getToolkit().getArguments().numberOfThreads > 1){
+                				multiThreadWriter.add(value.vc, value.refBase);
+                			}
+                			else{
+                				writer.add(value.vc, value.refBase);
+                			}
             			}
             		}
             		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_HET_SNPS_ONLY){ // only output variants
             			if(value.isHetSnp()){
-            				writer.add(value.vc, value.refBase);
+            				if(getToolkit().getArguments().numberOfThreads > 1){
+                				multiThreadWriter.add(value.vc, value.refBase);
+                			}
+                			else{
+                				writer.add(value.vc, value.refBase);
+                			}
             			}
             		}
             		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){ // only output variants
             			if(value.cts.isCpg){
-            				writer.add(value.vc, value.refBase);
+            				if(getToolkit().getArguments().numberOfThreads > 1){
+                				multiThreadWriter.add(value.vc, value.refBase);
+                			}
+                			else{
+                				writer.add(value.vc, value.refBase);
+                			}
             			}
             			if(value.isVariant()){
-            				additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+            				if(getToolkit().getArguments().numberOfThreads > 1){
+                				multiAdditionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+                			}
+            				else{
+            					additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+            				}
             			}
             			
             		}
             		else{
-            			writer.add(value.vc, value.refBase);
+            			if(getToolkit().getArguments().numberOfThreads > 1){
+            				multiThreadWriter.add(value.vc, value.refBase);
+            			}
+            			else{
+            				writer.add(value.vc, value.refBase);
+            			}
+            			
             		}
             		
             	}
             }
             else{
-            	if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CYTOSINES){
-        			if(value.cts.isC)
-        				writer.add(value.vc, value.refBase);
+            	if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CYTOSINES){ // only output homozygous cytosine
+        			if(value.cts.isC){
+        				if(getToolkit().getArguments().numberOfThreads > 1){
+            				multiThreadWriter.add(value.vc, value.refBase);
+            			}
+            			else{
+            				writer.add(value.vc, value.refBase);
+            			}
+        			}
+        				
         		}
-        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CPG){
-        			if(value.cts.isCpg)
-        				writer.add(value.vc, value.refBase);
+        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CPG){ // only output homozygous cpg
+        			if(value.cts.isCpg){
+        				if(getToolkit().getArguments().numberOfThreads > 1){
+            				multiThreadWriter.add(value.vc, value.refBase);
+            			}
+            			else{
+            				writer.add(value.vc, value.refBase);
+            			}
+        			}
+        				
         		}
-        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY){
+        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_VARIANTS_ONLY){ // only output variants
         			if(value.isVariant()){
-        				writer.add(value.vc, value.refBase);
+        				if(getToolkit().getArguments().numberOfThreads > 1){
+            				multiThreadWriter.add(value.vc, value.refBase);
+            			}
+            			else{
+            				writer.add(value.vc, value.refBase);
+            			}
         			}
         		}
         		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_HET_SNPS_ONLY){ // only output variants
         			if(value.isHetSnp()){
-        				writer.add(value.vc, value.refBase);
+        				if(getToolkit().getArguments().numberOfThreads > 1){
+            				multiThreadWriter.add(value.vc, value.refBase);
+            			}
+            			else{
+            				writer.add(value.vc, value.refBase);
+            			}
         			}
         		}
-        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){ 
+        		else if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){ // only output variants
         			if(value.cts.isCpg){
-        				writer.add(value.vc, value.refBase);
+        				if(getToolkit().getArguments().numberOfThreads > 1){
+            				multiThreadWriter.add(value.vc, value.refBase);
+            			}
+            			else{
+            				writer.add(value.vc, value.refBase);
+            			}
         			}
         			if(value.isVariant()){
         				
-        				additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+        				if(getToolkit().getArguments().numberOfThreads > 1){
+            				multiAdditionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+            			}
+        				else{
+        					additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+        				}
         			}
         			
         		}
         		else{
-        			writer.add(value.vc, value.refBase);
+        			if(getToolkit().getArguments().numberOfThreads > 1){
+        				multiThreadWriter.add(value.vc, value.refBase);
+        			}
+        			else{
+        				writer.add(value.vc, value.refBase);
+        			}
         			
         		}
             }
@@ -556,6 +684,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         logger.info(String.format("%% number of Cytosine loci       %d", sum.nCytosineBasesCalledConfidently));
         logger.info(String.format("%% number of CpG loci       %d", sum.nCpgBasesCalledConfidently));
         logger.info(String.format("%% number of CpH loci       %d", sum.nCphBasesCalledConfidently));
+     //   logger.info(String.format("%% sum of Cytosine methy       %3.3f", sum.sumMethyCytosineBasesCalledConfidently));
+    //    logger.info(String.format("%% sum of CpG methy       %3.3f", sum.sumMethyCpgBasesCalledConfidently));
+     //   logger.info(String.format("%% sum of CpH methy       %3.3f", sum.sumMethyCphBasesCalledConfidently));
        // logger.info(String.format("%% number of CHH loci       %d", sum.nChhBasesCalledConfidently));
        // logger.info(String.format("%% number of CHG loci       %d", sum.nChgBasesCalledConfidently));
         if(BAC.sequencingMode == MethylSNPModel.GM){
@@ -651,6 +782,14 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
         	//additionalWriterForDefaultTcgaMode.close();
         }
+        if(getToolkit().getArguments().numberOfThreads > 1 && (autoEstimateC && secondIteration)){
+        	 multiThreadWriter.close();
+        	 if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
+     			multiAdditionalWriterForDefaultTcgaMode.close();
+     		 }
+ 			
+        }
+       
     }
     
     //receive cytosine statistics status from main program
@@ -830,6 +969,25 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 					p.getRead().setAttribute(tag, 2);
 			}
 			
+		}
+
+    }
+    
+    public void readsDetailReport(AlignmentContext rawContext){
+    	if(rawContext.hasReads()){
+			
+			for ( PileupElement p : rawContext.getBasePileup() ) {
+				char strand;
+				if(p.getRead().getReadNegativeStrandFlag()){
+					strand = '-';
+				}
+				else{
+					strand = '+';
+				}
+				readsWriter.add(rawContext.getContig(), rawContext.getLocation().getStart(), p.getBase(), p.getQual(), strand, p.getRead().getReadName());
+	
+			}
+
 		}
 
     }
