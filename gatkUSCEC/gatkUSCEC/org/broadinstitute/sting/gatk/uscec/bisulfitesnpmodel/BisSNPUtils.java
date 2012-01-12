@@ -48,12 +48,12 @@ public class BisSNPUtils {
 	
 	public BisSNPUtils(BisulfiteArgumentCollection BAC){
 		this.NAC = new NDRargumentCollection();
-		this.genotypePriors = (BisulfiteDiploidSNPGenotypePriors)BisulfiteGenotyperEngine.createGenotypePriors(BAC);
+		this.genotypePriors = new BisulfiteDiploidSNPGenotypePriors();
 	}
 	
 	public BisSNPUtils(NDRargumentCollection NAC){
 		this.NAC = NAC;
-		this.genotypePriors = (BisulfiteDiploidSNPGenotypePriors)BisulfiteGenotyperEngine.createGenotypePriors(NAC);
+		this.genotypePriors = new BisulfiteDiploidSNPGenotypePriors();
 	}
 	
 	public boolean isGch(ReadBackedPileup pileup, RefMetaDataTracker tracker,ReferenceContext ref, double methyStatus){

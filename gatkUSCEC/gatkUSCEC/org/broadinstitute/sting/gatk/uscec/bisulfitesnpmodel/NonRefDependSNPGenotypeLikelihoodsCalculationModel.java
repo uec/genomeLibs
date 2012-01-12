@@ -42,7 +42,7 @@ public class NonRefDependSNPGenotypeLikelihoodsCalculationModel extends
 	public Allele getBsLikelihoods(RefMetaDataTracker tracker,
 			ReferenceContext ref,
 			Map<String, StratifiedAlignmentContext> contexts,
-			StratifiedContextType contextType, GenotypePriors priors,
+			StratifiedContextType contextType,
 			Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs,
 			Allele alternateAlleleToUse) {
 		// TODO Auto-generated method stub

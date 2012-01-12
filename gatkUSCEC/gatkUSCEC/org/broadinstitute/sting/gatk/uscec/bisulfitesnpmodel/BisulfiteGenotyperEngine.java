@@ -80,7 +80,7 @@ public class BisulfiteGenotyperEngine{
     private ThreadLocal<double[]> log10AlleleFrequencyPosteriors = new ThreadLocal<double[]>();
 
     // the priors object
-    private GenotypePriors genotypePriors;
+ //   private GenotypePriors genotypePriors;
 
     // samples in input
     private Set<String> samples = new TreeSet<String>();
@@ -115,7 +115,7 @@ public class BisulfiteGenotyperEngine{
 	protected void initialize(GenomeAnalysisEngine toolkit, BisulfiteArgumentCollection BAC, Logger logger, int numSamples) {
         this.BAC = BAC.clone();
         this.logger = logger;
-        genotypePriors = BisulfiteGenotyperEngine.createGenotypePriors(BAC);
+     //   genotypePriors = BisulfiteGenotyperEngine.createGenotypePriors(BAC);
         filter.add(LOW_QUAL_FILTER_NAME);
 
         try {
@@ -150,10 +150,10 @@ public class BisulfiteGenotyperEngine{
         
         return vcc;
     }
-	
-	protected static GenotypePriors createGenotypePriors(BisulfiteArgumentCollection BAC) {
-        return new BisulfiteDiploidSNPGenotypePriors();
-    }
+	//
+	//protected static GenotypePriors createGenotypePriors(BisulfiteArgumentCollection BAC) {
+   //     return new BisulfiteDiploidSNPGenotypePriors();
+   // }
 	
 
 
@@ -171,7 +171,7 @@ public class BisulfiteGenotyperEngine{
         BisulfiteSNPGenotypeLikelihoodsCalculationModel bglcm = (BisulfiteSNPGenotypeLikelihoodsCalculationModel) bglcms.get();
         bglcm.initialize(ctss.get(), BAC, autoEstimateC, secondIteration);
         
-        Allele refAllele = bglcm.getBsLikelihoods(tracker, refContext, stratifiedContexts, type, genotypePriors, GLs, alternateAlleleToUse);
+        Allele refAllele = bglcm.getBsLikelihoods(tracker, refContext, stratifiedContexts, type, GLs, alternateAlleleToUse);
        
         if (refAllele != null)
             return createVariantContextFromLikelihoods(refContext, refAllele, GLs);
@@ -221,7 +221,7 @@ public class BisulfiteGenotyperEngine{
                 	sum += normalizedPosteriors[j];
                     
                double PofF = Math.min(sum, 1.0);
-                return estimateReferenceConfidence(stratifiedContexts, genotypePriors.getHeterozygosity(), true, 1.0 - PofF);
+                return estimateReferenceConfidence(stratifiedContexts, BAC.heterozygosity, true, 1.0 - PofF);
             }
             
             HashMap<String, Genotype> genotypes = new HashMap<String, Genotype>();

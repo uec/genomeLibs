@@ -43,14 +43,14 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	protected Byte bestAllele = null;
 	protected Byte alternateAllele = null;
 	protected long testLoc;
-	protected static Integer numCNegStrand = 0;
-	protected static Integer numTNegStrand = 0;
-	protected static Integer numCPosStrand = 0;
-	protected static Integer numTPosStrand = 0;
+	protected int numCNegStrand = 0;
+	protected int numTNegStrand = 0;
+	protected int numCPosStrand = 0;
+	protected int numTPosStrand = 0;
 	private CytosineTypeStatus cts = null;
 	
-	private static boolean autoEstimateC = false;
-    private static boolean secondIteration = false;
+	private boolean autoEstimateC = false;
+    private boolean secondIteration = false;
     private double FALT_METHY_STATUS = 0.5;
 	
 
@@ -82,11 +82,10 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 	public Allele getBsLikelihoods(RefMetaDataTracker tracker,
 			ReferenceContext ref,
 			Map<String, StratifiedAlignmentContext> contexts,
-			StratifiedContextType contextType, GenotypePriors priors,
+			StratifiedContextType contextType,
 			Map<String, BisulfiteBiallelicGenotypeLikelihoods> GLs,
 			Allele alternateAlleleToUse) {
-		if ( !(priors instanceof BisulfiteDiploidSNPGenotypePriors) )
-            throw new StingException("Only Bisulfite diploid-based SNP priors are supported in the BSSNP GL model");
+		
 
 		byte refBase = ref.getBase();
 		
@@ -192,8 +191,8 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 			cytosineStatus[1] = numCPosStrand;
 			cytosineStatus[2] = numTNegStrand;
 			cytosineStatus[3] = numTPosStrand;
-            
-            BisulfiteDiploidSNPGenotypeLikelihoods GL = checkCytosineStatus(pileup, cts, BAC.cTypeThreshold, tracker, ref, (BisulfiteDiploidSNPGenotypePriors)priors);
+			BisulfiteDiploidSNPGenotypePriors priors = new BisulfiteDiploidSNPGenotypePriors();
+            BisulfiteDiploidSNPGenotypeLikelihoods GL = checkCytosineStatus(pileup, cts, BAC.cTypeThreshold, tracker, ref, priors);
             
             if(GL == null)
             	return refAllele;

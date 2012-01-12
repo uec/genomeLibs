@@ -33,7 +33,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     
     protected static double BISULFITE_CONVERSION_RATE = 0; 
     protected static double OVER_CONVERSION_RATE = 0;
-    protected static double CYTOSINE_METHYLATION_RATE = 0;
+    //protected static double CYTOSINE_METHYLATION_RATE = 0;
 
     private final static double[] flatPriors = new double[DiploidGenotype.values().length];
 
@@ -115,7 +115,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
      * @param h
      * @return
      */
-    public static double heterozygosity2HomRefProbability(double h) {
+    public double heterozygosity2HomRefProbability(double h) {
         if (MathUtils.isNegative(h)) {
             throw new RuntimeException(String.format("Heterozygous value is bad %f", h));
         }
@@ -128,7 +128,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
         return v;
     }
 
-    public static double heterozygosity2HetProbability(double h) {
+    public double heterozygosity2HetProbability(double h) {
         if (MathUtils.isNegative(h)) {
             throw new RuntimeException(String.format("Heterozygous value is bad %f", h));
         }
@@ -136,7 +136,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
         return h;
     }
 
-    public static double heterozygosity2HomVarProbability(double h) {
+    public double heterozygosity2HomVarProbability(double h) {
         if (MathUtils.isNegative(h)) {
             throw new RuntimeException(String.format("Heterozygous value is bad %f", h));
         }
@@ -147,7 +147,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
     /**
     *check if the base is transition or transversion relative to reference base
     */
-    public static boolean isTransition(byte base, byte ref) {
+    public boolean isTransition(byte base, byte ref) {
         boolean transition;
     	switch(ref){
         	case BaseUtils.A: transition = base == BaseUtils.G ? true : false; break;
@@ -182,7 +182,7 @@ public class BisulfiteDiploidSNPGenotypePriors implements GenotypePriors {
      * @param pRefError
      */
 
-    public static double[] getReferencePolarizedPriors(byte ref, double heterozyosity, double pRefError) {
+    public double[] getReferencePolarizedPriors(byte ref, double heterozyosity, double pRefError) {
         if ( ! MathUtils.isBounded(pRefError, 0.0, 0.01) ) {
             throw new RuntimeException(String.format("BUG: p Reference error is out of bounds (0.0 - 0.01) is allow range %f", pRefError));
         }
