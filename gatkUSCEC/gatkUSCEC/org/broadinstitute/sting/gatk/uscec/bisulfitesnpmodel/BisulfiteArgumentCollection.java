@@ -122,6 +122,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     
     @Argument(fullName = "file_name_output_verbose_detail", shortName = "fnovd", doc = "output file that contain verbose information, for test only", required = false)
 	public String fnovd = null;
+    
+    @Argument(fullName = "output_verbose_detail", shortName = "ovd", doc = "output_verbose_detail, for performance test only", required = false)
+    public boolean ovd = false;
 	
 	public BisulfiteArgumentCollection clone() {
 		BisulfiteArgumentCollection bac = new BisulfiteArgumentCollection();
@@ -180,6 +183,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.fnobrd = fnobrd;
         bac.vfn1 = vfn1;
         bac.fnovd = fnovd;
+        bac.ovd = ovd;
         
         return bac;
     }

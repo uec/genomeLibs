@@ -427,6 +427,9 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
 			}
 			ReadBackedPileup tmpPileup = new ReadBackedPileupImpl(loc,reads,elementOffsets);
 			
+			if( !ref.getWindow().containsP(loc) )
+				continue;
+			
 			ReferenceContext tmpRef = new ReferenceContext(ref.getGenomeLocParser(),loc, ref.getWindow(),ref.getBases());
 			 
 		//	ReferenceContext tmpRef = new ReferenceContext(ref.getGenomeLocParser(),loc, loc, ref.getBases());

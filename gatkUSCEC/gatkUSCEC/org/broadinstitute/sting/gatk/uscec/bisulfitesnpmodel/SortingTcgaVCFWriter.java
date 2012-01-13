@@ -1,10 +1,9 @@
 package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 
-import org.broad.tribble.vcf.SortingVCFWriter;
-import org.broad.tribble.vcf.VCFHeader;
-import org.broad.tribble.vcf.VCFWriter;
 
-public class SortingTcgaVCFWriter extends SortingVCFWriter {
+import org.broadinstitute.sting.gatk.uscec.writer.SortingVCFWriterOwn;
+
+public class SortingTcgaVCFWriter extends SortingVCFWriterOwn {
 
 	protected TcgaVCFWriter tcgaInnerWriter = null;
 	public SortingTcgaVCFWriter(TcgaVCFWriter innerWriter,
@@ -24,5 +23,7 @@ public class SortingTcgaVCFWriter extends SortingVCFWriter {
 	public TcgaVCFWriter getInnerWriter(){
 		return this.tcgaInnerWriter;
 	}
+	
+
 	
 }

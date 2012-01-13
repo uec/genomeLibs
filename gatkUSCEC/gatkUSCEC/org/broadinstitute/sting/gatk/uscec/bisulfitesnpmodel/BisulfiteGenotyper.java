@@ -79,6 +79,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
     
+    private static int MAXIMUM_CACHE_FOR_OUTPUT_VCF = 300000000;
+    
     protected TcgaVCFWriter writer = null;
     
     protected SortingTcgaVCFWriter multiThreadWriter = null;
@@ -254,10 +256,13 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     			writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
     			
     			if(getToolkit().getArguments().numberOfThreads > 1){
-    				multiThreadWriter = new SortingTcgaVCFWriter(writer,200000000);
-    				File outputVerboseFile = new File(BAC.fnovd);
-    				verboseWriter = new TcgaVCFWriter(outputVerboseFile, false);
-    				verboseWriter.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+    				multiThreadWriter = new SortingTcgaVCFWriter(writer,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+    				if(BAC.ovd){
+    					File outputVerboseFile = new File(BAC.fnovd);
+        				verboseWriter = new TcgaVCFWriter(outputVerboseFile, false);
+        				verboseWriter.writeHeader(new VCFHeader(getHeaderInfo(), samples));
+    				}
+    				
     			}
     			
         		if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
@@ -266,7 +271,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			
         			additionalWriterForDefaultTcgaMode.writeHeader(new VCFHeader(getHeaderInfo(), samples));
         			if(getToolkit().getArguments().numberOfThreads > 1){
-        				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,200000000);
+        				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
         			}
         			
         		}
@@ -295,7 +300,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 			writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
 			
 			if(getToolkit().getArguments().numberOfThreads > 1){
-				multiThreadWriter = new SortingTcgaVCFWriter(writer,200000000);
+				multiThreadWriter = new SortingTcgaVCFWriter(writer,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
 			}
 			
         	if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
@@ -305,7 +310,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     			additionalWriterForDefaultTcgaMode.writeHeader(new VCFHeader(getHeaderInfo(), samples));
     			
     			if(getToolkit().getArguments().numberOfThreads > 1){
-    				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,200000000);
+    				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
     			}
     		}
         	
@@ -583,7 +588,10 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             		else{
             			if(getToolkit().getArguments().numberOfThreads > 1){
             				multiThreadWriter.add(value.vc, value.refBase);
-            				verboseWriter.add(value.vc, value.refBase);
+            				if(BAC.ovd){
+            					verboseWriter.add(value.vc, value.refBase);
+            				}
+            				
             			}
             			else{
             				writer.add(value.vc, value.refBase);

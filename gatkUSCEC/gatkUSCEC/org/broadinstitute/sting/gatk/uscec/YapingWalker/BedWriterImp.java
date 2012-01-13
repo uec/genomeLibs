@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.broad.tribble.util.variantcontext.VariantContext;
 import org.broadinstitute.sting.utils.GenomeLoc;
 
 public class BedWriterImp extends FormatWriter {
@@ -50,5 +51,16 @@ public class BedWriterImp extends FormatWriter {
 		// TODO Auto-generated method stub
 
 	}
+	
+	
+	private static class bedRecord {
+        public VariantContext vc;
+        public byte refBase;
+
+        public bedRecord(VariantContext vc, byte refBase) {
+            this.vc = vc;
+            this.refBase = refBase;
+        }
+    }
 
 }
