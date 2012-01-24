@@ -62,6 +62,23 @@ import org.broadinstitute.sting.gatk.uscec.YapingWalker.verboseWriter;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BaseUtilsMore.*;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel;
 
+/*
+ * Bis-SNP/BisSNP: It is a genotyping and methylation calling in bisulfite treated 
+ * massively parallel sequencing (Bisulfite-seq and NOMe-seq) on Illumina platform
+ * Copyright (C) <2011>  <Yaping Liu: lyping1986@gmail.com>
+
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 /**
  * A Bisulfite genotyper. Works for single-sample data right now. 
@@ -79,7 +96,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
     
-    private static int MAXIMUM_CACHE_FOR_OUTPUT_VCF = 300000000;
+    private static int MAXIMUM_CACHE_FOR_OUTPUT_VCF = 2000000;
     
     protected TcgaVCFWriter writer = null;
     

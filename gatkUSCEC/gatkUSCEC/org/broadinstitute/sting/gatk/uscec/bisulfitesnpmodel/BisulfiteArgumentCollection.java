@@ -5,6 +5,24 @@ import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGeno
 import org.broadinstitute.sting.gatk.walkers.genotyper.UnifiedArgumentCollection;
 import org.broadinstitute.sting.gatk.walkers.genotyper.UnifiedGenotyperEngine;
 
+/*
+ * Bis-SNP/BisSNP: It is a genotyping and methylation calling in bisulfite treated 
+ * massively parallel sequencing (Bisulfite-seq and NOMe-seq) on Illumina platform
+ * Copyright (C) <2011>  <Yaping Liu: lyping1986@gmail.com>
+
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "sequencing_mode", shortName = "sm", doc = "Bisulfite mode: BM, GNOMe-seq mode: GM, Normal sequencing mode: NM", required = false)
     public NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel sequencingMode = NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel.BM;
@@ -87,7 +105,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "novelDbsnpHet", shortName = "ndh", doc = "heterozygous SNP rate when the loci is discovered as SNP in dbSNP and but not validated, the default value is human genome", required = false)
     public double novelDbsnpHet = 0.02;
 	
-	@Argument(fullName = "reference_genome_error", shortName = "rge", doc = "reference genome error, the default value is human genome, in hg17, it is less than 1e-4; in SOAPsnp, it is 1e-5; in GATK it is 1e-6. so is it because hg18 error rate is 1e-5, and hg19 is 1e-6? can't find any reference about it..", required = false)
+	@Argument(fullName = "reference_genome_error", shortName = "rge", doc = "Reference genome error, the default value is human genome, in hg16 it is 99.99% accurate,  in hg17/hg18/hg19, it is less than 1e-4 (USCS genome browser described); We define it here default for human genome assembly(hg18,h19) to be 1e-6 as GATK did ", required = false)
     public double referenceGenomeErr = 1e-6;
 	
 	@Argument(fullName = "ti_vs_tv", shortName = "tvt", doc = "Transition rate vs. Transversion rate, in human genome, the default is 2", required = false)
@@ -102,7 +120,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
   //  @Argument(fullName = "vcf_file_name", shortName = "vfn", doc = "output Vcf file", required = true)
 //	public String vfn = null;
     
-    @Argument(fullName = "vcf_file_name_1", shortName = "vfn1", doc = "output Vcf file, when used for [DEFAULT_FOR_TCGA] output mode, it is used to store all SNP sites. While the original vcf file is to store all CpG sites", required = true)
+    @Argument(fullName = "vcf_file_name_1", shortName = "vfn1", doc = "output Vcf file, when used for [DEFAULT_FOR_TCGA] output mode, it is used to store all CpG sites. While the original vcf file is to store all CpG sites", required = true)
 	public String vfn1 = null;
     
     @Argument(fullName = "vcf_file_name_2", shortName = "vfn2", doc = "output Vcf file 2, only used for [DEFAULT_FOR_TCGA] output mode, it is used to store all SNP sites. While the original vcf file is to store all CpG sites", required = false)
@@ -111,10 +129,10 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     @Argument(fullName = "output_reads_after_downsampling", shortName = "orad", doc = "output Bam file that after downsapling, for performance test only", required = false)
     public boolean orad = false;
     
-    @Argument(fullName = "file_name_output_reads_after_downsampling", shortName = "fnorad", doc = "output Bam file that after downsapling, for performance test only", required = false)
+    @Argument(fullName = "file_name_output_reads_after_downsampling", shortName = "fnorad", doc = "output Bam file's name that after downsapling, for performance test only", required = false)
 	public String fnorad = null;
     
-    @Argument(fullName = "output_reads_coverage_after_downsampling", shortName = "orcad", doc = "output Bam file's mean coverage that after downsapling, for performance test only", required = false)
+    @Argument(fullName = "output_reads_coverage_after_downsampling", shortName = "orcad", doc = "define output Bam file's mean coverage that after downsapling, for performance test only", required = false)
 	public int orcad = 1;
     
     @Argument(fullName = "file_name_output_bed_reads_detail", shortName = "fnobrd", doc = "output Bed file that contain each position in reads information, for test only", required = false)

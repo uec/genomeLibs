@@ -34,6 +34,24 @@ import org.broadinstitute.sting.utils.sam.GATKSAMRecord;
 import org.broadinstitute.sting.utils.sam.GATKSAMRecordFilter;
 
 /*
+ * Bis-SNP/BisSNP: It is a genotyping and methylation calling in bisulfite treated 
+ * massively parallel sequencing (Bisulfite-seq and NOMe-seq) on Illumina platform
+ * Copyright (C) <2011>  <Yaping Liu: lyping1986@gmail.com>
+
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
  * provide easy access for some function inside BisSNP.
  *  e.g. judge if it is a type of cytosine pattern(HCG-2, or GCH-1) from the given pileup and corresponding reference seq, dbSNP. 
  * should provide methylation value, otherwise will use flat methylation value; and also likelihood ratio criteria, bisulfite conversion rate
