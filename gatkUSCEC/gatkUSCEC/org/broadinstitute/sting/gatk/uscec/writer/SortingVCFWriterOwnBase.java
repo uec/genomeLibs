@@ -35,7 +35,7 @@ public abstract class SortingVCFWriterOwnBase implements VCFWriter {
 	     */
 	    public SortingVCFWriterOwnBase(VCFWriter innerWriter, boolean takeOwnershipOfInner) {
 	        this.innerWriter = innerWriter;
-	        this.queue = new PriorityBlockingQueue<VCFRecord>(1000, new VariantContextComparator());
+	        this.queue = new PriorityBlockingQueue<VCFRecord>(1000000, new VariantContextComparator());
 	        this.mostUpstreamWritableLoc = BEFORE_MOST_UPSTREAM_LOC;
 	        this.finishedChromosomes = new TreeSet<String>();
 	        this.takeOwnershipOfInner = takeOwnershipOfInner;
@@ -106,7 +106,9 @@ public abstract class SortingVCFWriterOwnBase implements VCFWriter {
 	            // No need to wait, waiting for nothing, or before what we're waiting for:
 	            if (emitUnsafe || mostUpstreamWritableLoc == null || firstRec.vc.getStart() <= mostUpstreamWritableLoc) {
 	                queue.poll();
-	                innerWriter.add(firstRec.vc, firstRec.refBase);
+	                synchronized(innerWriter){
+	                	innerWriter.add(firstRec.vc, firstRec.refBase);
+	                }
 	            }
 	            else {
 	                break;

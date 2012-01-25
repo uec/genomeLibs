@@ -1,5 +1,7 @@
 package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 
+import java.lang.reflect.Field;
+
 import org.broadinstitute.sting.commandline.Argument;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGenotypeLikelihoodsCalculationModel;
 import org.broadinstitute.sting.gatk.walkers.genotyper.UnifiedArgumentCollection;
@@ -205,5 +207,19 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         
         return bac;
     }
+	
+	@Override
+	public String toString() {
+		String cls = new String();
+		//int i = 0;
+		for (Field f : this.getClass().getDeclaredFields()){
+			cls = cls.concat("\n");
+			cls = cls.concat(f.toString());
+			//i++;
+		}
+		return cls;
+		
+		
+	}
 
 }

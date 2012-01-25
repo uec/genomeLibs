@@ -80,7 +80,8 @@ public class BisSNP extends CommandLineExecutable {
     @ArgumentCollection
     private GATKArgumentCollection argCollection = new GATKArgumentCollection();
     
-
+    private static String argCommandline = "";
+    
 	//to record it is in second iteration or not
 	private static boolean secondIteration = false;
 	
@@ -118,6 +119,10 @@ public class BisSNP extends CommandLineExecutable {
 		// TODO Auto-generated method stub
 		try {
 			BisSNP instance = new BisSNP();
+	        for (String str : args) {
+	        	argCommandline = argCommandline + str + " ";
+	        }
+			//System.err.println(output);
 			start(instance, args);
 			secondIteration = true;
 			if(autoEstimateC & secondIteration){ 
@@ -182,7 +187,7 @@ public class BisSNP extends CommandLineExecutable {
         		bisulfiteArgumentSources.add(this);
         		
                  walker = (BisulfiteGenotyper) engine.getWalkerByName(getAnalysisName());
-        		((BisulfiteGenotyper) walker).setAutoParameters(autoEstimateC, secondIteration);
+        		((BisulfiteGenotyper) walker).setAutoParameters(autoEstimateC, secondIteration, argCommandline);
         		setupInfo();
         		engine.setWalker(walker);
                 walker.setToolkit(engine);
@@ -208,7 +213,7 @@ public class BisSNP extends CommandLineExecutable {
         		walker = engine.getWalkerByName(getAnalysisName());
         		if(walker instanceof BisulfiteGenotyper){
         			
-        			((BisulfiteGenotyper) walker).setAutoParameters(autoEstimateC, secondIteration);
+        			((BisulfiteGenotyper) walker).setAutoParameters(autoEstimateC, secondIteration, argCommandline);
         		}
 	
         		engine.setArguments(getArgumentCollection());

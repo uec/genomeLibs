@@ -116,6 +116,8 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
     private BisulfiteGenotyperEngine BG_engine = null;
     
+    private String argCommandline = "";
+    
     //to record cytosine pattern methylation status estimated in the first iteration
     CytosineTypeStatus summary = null;
 
@@ -386,6 +388,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if ( BAC.STANDARD_CONFIDENCE_FOR_EMITTING < BAC.STANDARD_CONFIDENCE_FOR_CALLING )
             headerInfo.add(new VCFFilterHeaderLine(UnifiedGenotyperEngine.LOW_QUAL_FILTER_NAME, "Low quality"));
      
+     // Program commandLine fields
+        headerInfo.add(new VCFHeaderLine(BisulfiteVCFConstants.PROGRAM_ARGS, argCommandline));
+        
         return headerInfo;
     }
 
@@ -891,9 +896,10 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     	
     }
     
-    public void setAutoParameters(boolean autoEstimateC, boolean secondIteration){
+    public void setAutoParameters(boolean autoEstimateC, boolean secondIteration, String argCommandline){
     	this.autoEstimateC = autoEstimateC;
     	this.secondIteration = secondIteration;
+    	this.argCommandline = argCommandline;
     }
     
     public CytosineTypeStatus getCytosineMethyStatus() {
