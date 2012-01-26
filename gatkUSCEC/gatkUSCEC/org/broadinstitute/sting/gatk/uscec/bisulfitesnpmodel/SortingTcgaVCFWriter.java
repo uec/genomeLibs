@@ -41,6 +41,8 @@ public class SortingTcgaVCFWriter extends SortingVCFWriterOwn {
 		return this.tcgaInnerWriter;
 	}
 	
-
+	public void writerFlush(){
+		this.tcgaInnerWriter.writeFlush();
+	}
 	
 }

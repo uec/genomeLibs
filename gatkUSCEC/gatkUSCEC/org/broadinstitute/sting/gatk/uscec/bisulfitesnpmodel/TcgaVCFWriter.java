@@ -129,4 +129,15 @@ public class TcgaVCFWriter extends StandardVCFWriter {
 	public void setRefSource(String ref){
     	this.ref = ref;
     }
+	
+	public void writeFlush(){
+		
+		try {
+			mWriter.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			throw new TribbleException("IOException writing the VCF flush to " + e);
+		}
+		
+	}
 }

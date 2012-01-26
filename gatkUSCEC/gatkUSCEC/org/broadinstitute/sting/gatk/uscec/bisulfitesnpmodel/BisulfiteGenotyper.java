@@ -96,7 +96,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     private static boolean autoEstimateC = false;
     private static boolean secondIteration = false;
     
-    private static int MAXIMUM_CACHE_FOR_OUTPUT_VCF = 2000000;
+    private static int MAXIMUM_CACHE_FOR_OUTPUT_VCF = 3000000;
+    
+    private static long COUNT_CACHE_FOR_OUTPUT_VCF = 0;
     
     protected TcgaVCFWriter writer = null;
     
@@ -241,7 +243,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
      *
      **/
     public void initialize() {
-    	
+
         Set<String> samples = new TreeSet<String>();
         //sometimes, BAM file also provided sample name, and it is different from user provided in the argument, then there will be an error~
         if ( BAC.ASSUME_SINGLE_SAMPLE != null ){
@@ -550,6 +552,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             			if(value.cts.isC){
             				if(getToolkit().getArguments().numberOfThreads > 1){
                 				multiThreadWriter.add(value.vc, value.refBase);
+                				COUNT_CACHE_FOR_OUTPUT_VCF++;
+                				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+                					//writer.writeFlush();
+                					//System.err.println("flush");
+                			//		synchronized(multiThreadWriter){
+                						multiThreadWriter.writerFlush();
+                			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+                			//		}
+                					System.gc();
+                					
+                				}
                 			}
                 			else{
                 				writer.add(value.vc, value.refBase);
@@ -561,6 +574,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             			if(value.cts.isCpg){
             				if(getToolkit().getArguments().numberOfThreads > 1){
                 				multiThreadWriter.add(value.vc, value.refBase);
+                				COUNT_CACHE_FOR_OUTPUT_VCF++;
+                				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+                					//writer.writeFlush();
+                					//System.err.println("flush");
+                			//		synchronized(multiThreadWriter){
+                						multiThreadWriter.writerFlush();
+                			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+                			//		}
+                					System.gc();
+                					
+                				}
                 			}
                 			else{
                 				writer.add(value.vc, value.refBase);
@@ -572,6 +596,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             			if(value.isVariant()){
             				if(getToolkit().getArguments().numberOfThreads > 1){
                 				multiThreadWriter.add(value.vc, value.refBase);
+                				COUNT_CACHE_FOR_OUTPUT_VCF++;
+                				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+                					//writer.writeFlush();
+                					//System.err.println("flush");
+                			//		synchronized(multiThreadWriter){
+                						multiThreadWriter.writerFlush();
+                			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+                			//		}
+                					System.gc();
+                					
+                				}
                 			}
                 			else{
                 				writer.add(value.vc, value.refBase);
@@ -582,6 +617,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             			if(value.isHetSnp()){
             				if(getToolkit().getArguments().numberOfThreads > 1){
                 				multiThreadWriter.add(value.vc, value.refBase);
+                				COUNT_CACHE_FOR_OUTPUT_VCF++;
+                				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+                					//writer.writeFlush();
+                					//System.err.println("flush");
+                			//		synchronized(multiThreadWriter){
+                						multiThreadWriter.writerFlush();
+                			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+                			//		}
+                					System.gc();
+                					
+                				}
                 			}
                 			else{
                 				writer.add(value.vc, value.refBase);
@@ -592,6 +638,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             			if(value.cts.isCpg){
             				if(getToolkit().getArguments().numberOfThreads > 1){
                 				multiThreadWriter.add(value.vc, value.refBase);
+                				COUNT_CACHE_FOR_OUTPUT_VCF++;
+                				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+                					//writer.writeFlush();
+                					//System.err.println("flush");
+                			//		synchronized(multiThreadWriter){
+                						multiThreadWriter.writerFlush();
+                			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+                			//		}
+                					System.gc();
+                					
+                				}
                 			}
                 			else{
                 				writer.add(value.vc, value.refBase);
@@ -600,6 +657,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             			if(value.isVariant()){
             				if(getToolkit().getArguments().numberOfThreads > 1){
                 				multiAdditionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+                				COUNT_CACHE_FOR_OUTPUT_VCF++;
+                				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+                					//writer.writeFlush();
+                					//System.err.println("flush");
+                			//		synchronized(multiThreadWriter){
+                					multiAdditionalWriterForDefaultTcgaMode.writerFlush();
+                			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+                			//		}
+                					System.gc();
+                					
+                				}
                 			}
             				else{
             					additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
@@ -610,6 +678,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             		else{
             			if(getToolkit().getArguments().numberOfThreads > 1){
             				multiThreadWriter.add(value.vc, value.refBase);
+            				COUNT_CACHE_FOR_OUTPUT_VCF++;
+            				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+            					//writer.writeFlush();
+            					//System.err.println("flush");
+            			//		synchronized(multiThreadWriter){
+            						multiThreadWriter.writerFlush();
+            			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+            			//		}
+            					System.gc();
+            					
+            				}
             				if(BAC.ovd){
             					verboseWriter.add(value.vc, value.refBase);
             				}
@@ -628,10 +707,22 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			if(value.cts.isC){
         				if(getToolkit().getArguments().numberOfThreads > 1){
             				multiThreadWriter.add(value.vc, value.refBase);
+            				COUNT_CACHE_FOR_OUTPUT_VCF++;
+            				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+            					//writer.writeFlush();
+            					//System.err.println("flush");
+            			//		synchronized(multiThreadWriter){
+            						multiThreadWriter.writerFlush();
+            			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+            			//		}
+            					System.gc();
+            					
+            				}
             			}
             			else{
             				writer.add(value.vc, value.refBase);
             			}
+        				
         			}
         				
         		}
@@ -639,6 +730,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			if(value.cts.isCpg){
         				if(getToolkit().getArguments().numberOfThreads > 1){
             				multiThreadWriter.add(value.vc, value.refBase);
+            				COUNT_CACHE_FOR_OUTPUT_VCF++;
+            				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+            					//writer.writeFlush();
+            					//System.err.println("flush");
+            			//		synchronized(multiThreadWriter){
+            						multiThreadWriter.writerFlush();
+            			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+            			//		}
+            					System.gc();
+            					
+            				}
             			}
             			else{
             				writer.add(value.vc, value.refBase);
@@ -650,6 +752,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			if(value.isVariant()){
         				if(getToolkit().getArguments().numberOfThreads > 1){
             				multiThreadWriter.add(value.vc, value.refBase);
+            				COUNT_CACHE_FOR_OUTPUT_VCF++;
+            				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+            					//writer.writeFlush();
+            					//System.err.println("flush");
+            			//		synchronized(multiThreadWriter){
+            						multiThreadWriter.writerFlush();
+            			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+            			//		}
+            					System.gc();
+            					
+            				}
             			}
             			else{
             				writer.add(value.vc, value.refBase);
@@ -660,6 +773,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			if(value.isHetSnp()){
         				if(getToolkit().getArguments().numberOfThreads > 1){
             				multiThreadWriter.add(value.vc, value.refBase);
+            				COUNT_CACHE_FOR_OUTPUT_VCF++;
+            				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+            					//writer.writeFlush();
+            					//System.err.println("flush");
+            			//		synchronized(multiThreadWriter){
+            						multiThreadWriter.writerFlush();
+            			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+            			//		}
+            					System.gc();
+            					
+            				}
             			}
             			else{
             				writer.add(value.vc, value.refBase);
@@ -670,6 +794,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			if(value.cts.isCpg){
         				if(getToolkit().getArguments().numberOfThreads > 1){
             				multiThreadWriter.add(value.vc, value.refBase);
+            				COUNT_CACHE_FOR_OUTPUT_VCF++;
+            				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+            					//writer.writeFlush();
+            					//System.err.println("flush");
+            			//		synchronized(multiThreadWriter){
+            						multiThreadWriter.writerFlush();
+            			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+            			//		}
+            					System.gc();
+            					
+            				}
             			}
             			else{
             				writer.add(value.vc, value.refBase);
@@ -679,6 +814,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         				
         				if(getToolkit().getArguments().numberOfThreads > 1){
             				multiAdditionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
+            				COUNT_CACHE_FOR_OUTPUT_VCF++;
+            				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+            					//writer.writeFlush();
+            					//System.err.println("flush");
+            			//		synchronized(multiThreadWriter){
+            					multiAdditionalWriterForDefaultTcgaMode.writerFlush();
+            			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+            			//		}
+            					System.gc();
+            					
+            				}
             			}
         				else{
         					additionalWriterForDefaultTcgaMode.add(value.vc, value.refBase);
@@ -689,6 +835,17 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         		else{
         			if(getToolkit().getArguments().numberOfThreads > 1){
         				multiThreadWriter.add(value.vc, value.refBase);
+        				COUNT_CACHE_FOR_OUTPUT_VCF++;
+        				if(COUNT_CACHE_FOR_OUTPUT_VCF % MAXIMUM_CACHE_FOR_OUTPUT_VCF ==0 ){
+        					//writer.writeFlush();
+        					//System.err.println("flush");
+        			//		synchronized(multiThreadWriter){
+        						multiThreadWriter.writerFlush();
+        			//			COUNT_CACHE_FOR_OUTPUT_VCF=0;
+        			//		}
+        					System.gc();
+        					
+        				}
         			}
         			else{
         				writer.add(value.vc, value.refBase);
@@ -818,7 +975,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
         	//additionalWriterForDefaultTcgaMode.close();
         }
-        if(getToolkit().getArguments().numberOfThreads > 1 && (autoEstimateC && secondIteration)){
+        if(getToolkit().getArguments().numberOfThreads > 1 && ((autoEstimateC && secondIteration) || (!autoEstimateC && !secondIteration))){
         	 multiThreadWriter.close();
         	 //verboseWriter.close();
         	 if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
