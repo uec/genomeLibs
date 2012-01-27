@@ -317,7 +317,7 @@ public class BisulfiteGenotyperEngine{
             } 
             VariantContext vcCall = new VariantContext("BG_call", loc.getContig(), loc.getStart(), endLoc,
                     myAlleles, genotypes, logRatio/10.0, passesCallThreshold(logRatio) ? null : filter, attributes);
-            BisulfiteVariantCallContext call = new BisulfiteVariantCallContext(vcCall, passesCallThreshold(logRatio), ctss.get(), passesEmitThreshold(logRatio));
+            BisulfiteVariantCallContext call = new BisulfiteVariantCallContext(vcCall, rawContext,  passesCallThreshold(logRatio), ctss.get(), passesEmitThreshold(logRatio));
             call.setRefBase(refContext.getBase());
             return call;
         }

@@ -67,9 +67,9 @@ public abstract class FormatWriterBase {
     }
 
 
-    public abstract void add(Object o);
+    public abstract void add(genomeObject obj);
     
     
-    public abstract void addHeader();
+    public abstract void addHeader(Object o);
     
 }

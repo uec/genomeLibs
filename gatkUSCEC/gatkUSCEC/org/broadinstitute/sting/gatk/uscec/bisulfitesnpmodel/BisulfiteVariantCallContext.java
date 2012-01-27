@@ -1,6 +1,7 @@
 package org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel;
 
 import org.broad.tribble.util.variantcontext.VariantContext;
+import org.broadinstitute.sting.gatk.contexts.AlignmentContext;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.CytosineTypeStatus;
 
 /*
@@ -26,20 +27,23 @@ public class BisulfiteVariantCallContext{
 	public VariantContext vc = null;
     public byte refBase;
     public CytosineTypeStatus cts = null;
+    public AlignmentContext rawContext = null;
 
     // Was the site called confidently, either reference or variant?
     public boolean confidentlyCalled = false;
     public boolean emited = false;
 
-    public BisulfiteVariantCallContext(VariantContext vc, boolean confidentlyCalledP, CytosineTypeStatus cts, boolean emited) {
+    public BisulfiteVariantCallContext(VariantContext vc, AlignmentContext rawContext, boolean confidentlyCalledP, CytosineTypeStatus cts, boolean emited) {
         this.vc = vc;
+        this.rawContext = rawContext;
         this.confidentlyCalled = confidentlyCalledP;
         this.cts = cts;
         this.emited = emited;
     }
 
-    public BisulfiteVariantCallContext(VariantContext vc, byte ref, boolean confidentlyCalledP, CytosineTypeStatus cts, boolean emited) {
+    public BisulfiteVariantCallContext(VariantContext vc, AlignmentContext rawContext, byte ref, boolean confidentlyCalledP, CytosineTypeStatus cts, boolean emited) {
         this.vc = vc;
+        this.rawContext = rawContext;
         this.refBase = ref;
         this.confidentlyCalled = confidentlyCalledP;
         this.cts = cts;

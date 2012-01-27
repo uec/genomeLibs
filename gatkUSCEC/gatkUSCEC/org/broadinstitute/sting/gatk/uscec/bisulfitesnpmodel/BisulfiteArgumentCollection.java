@@ -137,8 +137,8 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     @Argument(fullName = "output_reads_coverage_after_downsampling", shortName = "orcad", doc = "define output Bam file's mean coverage that after downsapling, for performance test only", required = false)
 	public int orcad = 1;
     
-    @Argument(fullName = "file_name_output_bed_reads_detail", shortName = "fnobrd", doc = "output Bed file that contain each position in reads information, for test only", required = false)
-	public String fnobrd = null;
+    @Argument(fullName = "file_name_output_cpg_reads_detail", shortName = "fnocrd", doc = "output CpG reads bed file that contain each CpG's position in reads information, for test only", required = false)
+	public String fnocrd = null;
     
     @Argument(fullName = "file_name_output_verbose_detail", shortName = "fnovd", doc = "output file that contain verbose information, for test only", required = false)
 	public String fnovd = null;
@@ -200,7 +200,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.orad = orad;
         bac.fnorad = fnorad;
         bac.vfn2 = vfn2;
-        bac.fnobrd = fnobrd;
+        bac.fnocrd = fnocrd;
         bac.vfn1 = vfn1;
         bac.fnovd = fnovd;
         bac.ovd = ovd;

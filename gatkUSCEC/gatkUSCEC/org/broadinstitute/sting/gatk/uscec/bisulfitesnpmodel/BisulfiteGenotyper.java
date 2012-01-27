@@ -55,12 +55,15 @@ import org.broadinstitute.sting.utils.SampleUtils;
 import org.broadinstitute.sting.utils.baq.BAQ;
 import org.broadinstitute.sting.utils.pileup.PileupElement;
 import org.broadinstitute.sting.utils.pileup.ReadBackedPileup;
+import org.broadinstitute.sting.utils.sam.GATKSAMRecord;
 import org.broadinstitute.sting.utils.vcf.VCFUtils;
 
-import org.broadinstitute.sting.gatk.uscec.YapingWalker.readsWriterImp;
 import org.broadinstitute.sting.gatk.uscec.YapingWalker.verboseWriter;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.BaseUtilsMore.*;
 import org.broadinstitute.sting.gatk.uscec.bisulfitesnpmodel.NonRefDependSNPGenotypeLikelihoodsCalculationModel.MethylSNPModel;
+import org.broadinstitute.sting.gatk.uscec.writer.SortingCpgReadsWriter;
+import org.broadinstitute.sting.gatk.uscec.writer.cpgReads;
+import org.broadinstitute.sting.gatk.uscec.writer.cpgReadsWriterImp;
 
 /*
  * Bis-SNP/BisSNP: It is a genotyping and methylation calling in bisulfite treated 
@@ -108,7 +111,9 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     
     protected SortingTcgaVCFWriter multiAdditionalWriterForDefaultTcgaMode = null;
     
-    protected readsWriterImp readsWriter = null; //only works with single core right now
+    protected cpgReadsWriterImp readsWriter = null; //only works with single core right now
+    
+    protected SortingCpgReadsWriter multiThreadCpgReadsWriter = null;
     
     protected TcgaVCFWriter verboseWriter = null;
     
@@ -303,10 +308,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
             		samFileWriterFactory.setCreateIndex(true);
             		samWriter = samFileWriterFactory.makeBAMWriter(getToolkit().getSAMFileHeader(), false, outputBamFile);
             	}
-        		if(BAC.fnobrd != null){
-        			File outputReadsDetailFile = new File(BAC.fnobrd);
-        			readsWriter = new readsWriterImp(outputReadsDetailFile);
-
+        		if(BAC.fnocrd != null){
+        			File outputReadsDetailFile = new File(BAC.fnocrd);
+        			readsWriter = new cpgReadsWriterImp(outputReadsDetailFile);
+        			if(getToolkit().getArguments().numberOfThreads > 1){
+        				multiThreadCpgReadsWriter = new SortingCpgReadsWriter(readsWriter,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+        			}
         		}
         		
         	}
@@ -341,10 +348,12 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         		samFileWriterFactory.setCreateIndex(true);
         		samWriter = samFileWriterFactory.makeBAMWriter(getToolkit().getSAMFileHeader(), false, outputBamFile);
         	}
-        	if(BAC.fnobrd != null){
-    			File outputReadsDetailFile = new File(BAC.fnobrd);
-    			readsWriter = new readsWriterImp(outputReadsDetailFile);
-
+        	if(BAC.fnocrd != null){
+    			File outputReadsDetailFile = new File(BAC.fnocrd);
+    			readsWriter = new cpgReadsWriterImp(outputReadsDetailFile);
+    			if(getToolkit().getArguments().numberOfThreads > 1){
+    				multiThreadCpgReadsWriter = new SortingCpgReadsWriter(readsWriter,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+    			}
     		}
         }
         //in the first iteration, initiate CytosineTypeStatus
@@ -424,9 +433,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         BG_engine.setAutoParameters(autoEstimateC, secondIteration);
         BG_engine.setCytosineTypeStatus(cts);
 
-        if(BAC.fnobrd != null && (autoEstimateC && secondIteration)){
-        	readsDetailReport(rawContext);
-        }
+        
         //calculation LikelihoodsAndGenotypes for this loci
     	return BG_engine.calculateLikelihoodsAndGenotypes(tracker, refContext, rawContext);
     }
@@ -546,8 +553,22 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         try {
             // actually making a call
             sum.nCallsMade++;
+            if(value.cts.isCpg){
+    			if(BAC.fnocrd != null && ((autoEstimateC && secondIteration) || (!autoEstimateC && !secondIteration))){
+    	        	if(value.cts.cytosineListMap.get("CG-1")[0] > value.cts.cytosineListMap.get("CG-1")[1]){
+    	        		readsDetailReport(value.rawContext, true, getToolkit().getArguments().numberOfThreads > 1);
+    	        	}
+    	        	else{
+    	        		readsDetailReport(value.rawContext, false, getToolkit().getArguments().numberOfThreads > 1);
+    	        	}
+    				
+    	        	
+    	        }
+    		}
             if(autoEstimateC){
             	if(secondIteration){ //in auto estimate mode, don't output in the first iteration
+            		
+            		
             		if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CYTOSINES){ // only output homozygous cytosine
             			if(value.cts.isC){
             				if(getToolkit().getArguments().numberOfThreads > 1){
@@ -983,6 +1004,19 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
      		 }
  			
         }
+        
+        if(BAC.fnocrd != null){
+
+			if((autoEstimateC && secondIteration) || (!autoEstimateC && !secondIteration)){
+				if(getToolkit().getArguments().numberOfThreads > 1){
+					multiThreadCpgReadsWriter.close();
+				}
+				else{
+					readsWriter.close();
+				}
+				
+			}
+		}
        
     }
     
@@ -1168,18 +1202,74 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
     }
     
-    public void readsDetailReport(AlignmentContext rawContext){
+    public void readsDetailReport(AlignmentContext rawContext, boolean posStrand, boolean multiThread){
     	if(rawContext.hasReads()){
 			
 			for ( PileupElement p : rawContext.getBasePileup() ) {
+				if(!((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset())){
+					continue;
+				}
+				
 				char strand;
+				
 				if(p.getRead().getReadNegativeStrandFlag()){
 					strand = '-';
+					if(!posStrand){
+						char methyStatus;
+						
+						if(p.getBase()==BaseUtilsMore.G){
+							methyStatus = 'm';
+							cpgReads cr = new cpgReads(rawContext.getContig(), rawContext.getLocation().getStart(), methyStatus, p.getQual(), strand, p.getRead().getReadName());
+							if(multiThread){
+								multiThreadCpgReadsWriter.add(cr);
+							}
+							else{
+								readsWriter.add(cr);
+							}
+							
+						}
+						else if(p.getBase()==BaseUtilsMore.A){
+							methyStatus = 'u';
+							cpgReads cr = new cpgReads(rawContext.getContig(), rawContext.getLocation().getStart(), methyStatus, p.getQual(), strand, p.getRead().getReadName());
+							if(multiThread){
+								multiThreadCpgReadsWriter.add(cr);
+							}
+							else{
+								readsWriter.add(cr);
+							}
+						}
+
+						
+					}
 				}
 				else{
 					strand = '+';
+					if(posStrand){
+						char methyStatus;
+						if(p.getBase()==BaseUtilsMore.C){
+							methyStatus = 'm';
+							cpgReads cr = new cpgReads(rawContext.getContig(), rawContext.getLocation().getStart(), methyStatus, p.getQual(), strand, p.getRead().getReadName());
+							if(multiThread){
+								multiThreadCpgReadsWriter.add(cr);
+							}
+							else{
+								readsWriter.add(cr);
+							}
+						}
+						else if(p.getBase()==BaseUtilsMore.T){
+							methyStatus = 'u';
+							cpgReads cr = new cpgReads(rawContext.getContig(), rawContext.getLocation().getStart(), methyStatus, p.getQual(), strand, p.getRead().getReadName());
+							if(multiThread){
+								multiThreadCpgReadsWriter.add(cr);
+							}
+							else{
+								readsWriter.add(cr);
+							}
+						}
+
+					}
 				}
-				readsWriter.add(rawContext.getContig(), rawContext.getLocation().getStart(), p.getBase(), p.getQual(), strand, p.getRead().getReadName());
+				
 	
 			}
 
