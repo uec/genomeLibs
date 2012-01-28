@@ -22,6 +22,11 @@ public abstract class SortingVCFWriterOwnBase implements VCFWriter {
 
     // The locus until which we are permitted to write out (inclusive)
     protected Integer mostUpstreamWritableLoc;
+    protected String cachedCurrentChr = null;
+    
+    protected boolean enableDiscreteLoci = false;
+    
+    
     protected static final int BEFORE_MOST_UPSTREAM_LOC = 0; // No real locus index is <= 0
 
     // The set of chromosomes already passed over and to which it is forbidden to return
@@ -73,8 +78,8 @@ public abstract class SortingVCFWriterOwnBase implements VCFWriter {
 
     protected void noteCurrentRecord(VariantContext vc) {
         // did the user break the contract by giving a record too late?
-        if (mostUpstreamWritableLoc != null && vc.getStart() < mostUpstreamWritableLoc) // went too far back, since may have already written anything that is <= mostUpstreamWritableLoc
-            throw new IllegalArgumentException("Permitted to write any record upstream of position " + mostUpstreamWritableLoc + ", but a record at " + vc.getChr() + ":" + vc.getStart() + " was just added.");
+        if (mostUpstreamWritableLoc != null && (cachedCurrentChr != null && cachedCurrentChr.equalsIgnoreCase(vc.getChr()) && vc.getStart() < mostUpstreamWritableLoc) && !enableDiscreteLoci) // went too far back, since may have already written anything that is <= mostUpstreamWritableLoc
+            throw new IllegalArgumentException("Permitted to write any record upstream of position : " + cachedCurrentChr + ": " + mostUpstreamWritableLoc + ", but a record at " + vc.getChr() + ":" + vc.getStart() + " was just added.");
     }
 
     /**
@@ -87,12 +92,16 @@ public abstract class SortingVCFWriterOwnBase implements VCFWriter {
         /* Note that the code below does not prevent the successive add()-ing of: (chr1, 10), (chr20, 200), (chr15, 100)
            since there is no implicit ordering of chromosomes:
          */
+    	if(cachedCurrentChr == null){
+    		cachedCurrentChr = vc.getChr();
+    	}
         VCFRecord firstRec = queue.peek();
         if (firstRec != null && !vc.getChr().equals(firstRec.vc.getChr())) { // if we hit a new contig, flush the queue
-            if (finishedChromosomes.contains(vc.getChr()))
+            if (finishedChromosomes.contains(vc.getChr()) && !enableDiscreteLoci)
                 throw new IllegalArgumentException("Added a record at " + vc.getChr() + ":" + vc.getStart() + ", but already finished with chromosome" + vc.getChr());
 
             finishedChromosomes.add(firstRec.vc.getChr());
+            cachedCurrentChr = vc.getChr();
             stopWaitingToSort();
         }
 
@@ -107,7 +116,7 @@ public abstract class SortingVCFWriterOwnBase implements VCFWriter {
             VCFRecord firstRec = queue.peek();
 
             // No need to wait, waiting for nothing, or before what we're waiting for:
-            if (emitUnsafe || mostUpstreamWritableLoc == null || firstRec.vc.getStart() <= mostUpstreamWritableLoc) {
+            if (emitUnsafe || mostUpstreamWritableLoc == null || firstRec.vc.getStart() <= mostUpstreamWritableLoc || !cachedCurrentChr.equalsIgnoreCase(firstRec.vc.getChr()) || enableDiscreteLoci) {
                 queue.poll();
                 innerWriter.add(firstRec.vc, firstRec.refBase);
             }
@@ -128,7 +137,9 @@ public abstract class SortingVCFWriterOwnBase implements VCFWriter {
 
     private static class VariantContextComparator implements Comparator<VCFRecord> {
         public int compare(VCFRecord r1, VCFRecord r2) {
-            return r1.vc.getStart() - r2.vc.getStart();
+            if(r1.vc.getChr().equalsIgnoreCase(r2.vc.getChr()))
+            	return 0;
+        	return r1.vc.getStart() - r2.vc.getStart();
         }
     }
 

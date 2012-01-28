@@ -283,6 +283,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     			
     			if(getToolkit().getArguments().numberOfThreads > 1){
     				multiThreadWriter = new SortingTcgaVCFWriter(writer,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+    				multiThreadWriter.enableDiscreteLoci(BAC.lnc);
     				if(BAC.ovd){
     					File outputVerboseFile = new File(BAC.fnovd);
         				verboseWriter = new TcgaVCFWriter(outputVerboseFile, false);
@@ -298,6 +299,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			additionalWriterForDefaultTcgaMode.writeHeader(new VCFHeader(getHeaderInfo(), samples));
         			if(getToolkit().getArguments().numberOfThreads > 1){
         				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+        				multiAdditionalWriterForDefaultTcgaMode.enableDiscreteLoci(BAC.lnc);
         			}
         			
         		}
@@ -313,6 +315,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         			readsWriter = new cpgReadsWriterImp(outputReadsDetailFile);
         			if(getToolkit().getArguments().numberOfThreads > 1){
         				multiThreadCpgReadsWriter = new SortingCpgReadsWriter(readsWriter,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+        				//multiThreadCpgReadsWriter.enableDiscreteLoci(BAC.lnc);
         			}
         		}
         		
@@ -329,6 +332,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 			
 			if(getToolkit().getArguments().numberOfThreads > 1){
 				multiThreadWriter = new SortingTcgaVCFWriter(writer,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+				multiThreadWriter.enableDiscreteLoci(BAC.lnc);
 			}
 			
         	if(BAC.OutputMode == BisulfiteGenotyperEngine.OUTPUT_MODE.DEFAULT_FOR_TCGA){
@@ -339,6 +343,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     			
     			if(getToolkit().getArguments().numberOfThreads > 1){
     				multiAdditionalWriterForDefaultTcgaMode = new SortingTcgaVCFWriter(additionalWriterForDefaultTcgaMode,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+    				multiAdditionalWriterForDefaultTcgaMode.enableDiscreteLoci(BAC.lnc);
     			}
     		}
         	
@@ -353,6 +358,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     			readsWriter = new cpgReadsWriterImp(outputReadsDetailFile);
     			if(getToolkit().getArguments().numberOfThreads > 1){
     				multiThreadCpgReadsWriter = new SortingCpgReadsWriter(readsWriter,MAXIMUM_CACHE_FOR_OUTPUT_VCF);
+    				//multiThreadCpgReadsWriter.enableDiscreteLoci(BAC.lnc);
     			}
     		}
         }

@@ -31,5 +31,9 @@ public class SortingVCFWriterOwn extends SortingVCFWriterOwnBase {
         int mostUpstreamWritableIndex = vc.getStart() - maxCachingStartDistance;
         this.mostUpstreamWritableLoc = Math.max(BEFORE_MOST_UPSTREAM_LOC, mostUpstreamWritableIndex);
     }
+    
+    public void enableDiscreteLoci(boolean enableDiscreteLoci) {
+    	this.enableDiscreteLoci = enableDiscreteLoci;
+    }
 
 }

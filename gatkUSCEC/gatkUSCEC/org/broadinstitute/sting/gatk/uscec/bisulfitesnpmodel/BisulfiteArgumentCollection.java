@@ -145,6 +145,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
     
     @Argument(fullName = "output_verbose_detail", shortName = "ovd", doc = "output_verbose_detail, for performance test only", required = false)
     public boolean ovd = false;
+    
+    @Argument(fullName = "locus_not_continuous", shortName = "lnc", doc = "locu to look at is not continuous, if the distance is too large, it will make some trouble in multithread VCF writer, just enable this option in performance test only", required = false)
+    public boolean lnc = false;
 	
 	public BisulfiteArgumentCollection clone() {
 		BisulfiteArgumentCollection bac = new BisulfiteArgumentCollection();
@@ -204,6 +207,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.vfn1 = vfn1;
         bac.fnovd = fnovd;
         bac.ovd = ovd;
+        bac.lnc = lnc;
         
         return bac;
     }
