@@ -164,11 +164,20 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         /** The number of Gch bases called confidently (according to user threshold), either ref or other */
         long nGchBasesCalledConfidently = 0;
         
+        /** The number of Gch bases called confidently (according to user threshold), either ref or other */
+        long nHchBasesCalledConfidently = 0;
+        
+        /** The number of Gch bases called confidently (according to user threshold), either ref or other */
+        long nWchBasesCalledConfidently = 0;
+        
         /** The number of Gcg bases called confidently (according to user threshold), either ref or other */
         long nGcgBasesCalledConfidently = 0;
         
         /** The number of Hcg bases called confidently (according to user threshold), either ref or other */
         long nHcgBasesCalledConfidently = 0;
+        
+        /** The number of Wcg bases called confidently (according to user threshold), either ref or other */
+        long nWcgBasesCalledConfidently = 0;
         
         
         /** The sum of methylation value of Cytosine bases called confidently (according to user threshold), either ref or other */
@@ -188,11 +197,20 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         /** The sum of methylation value of Gch bases called confidently (according to user threshold), either ref or other */
         double sumMethyGchBasesCalledConfidently = 0;
         
+        /** The sum of methylation value of Gch bases called confidently (according to user threshold), either ref or other */
+        double sumMethyHchBasesCalledConfidently = 0;
+        
+        /** The sum of methylation value of Gch bases called confidently (according to user threshold), either ref or other */
+        double sumMethyWchBasesCalledConfidently = 0;
+        
         /** The sum of methylation value of Gcg bases called confidently (according to user threshold), either ref or other */
         double sumMethyGcgBasesCalledConfidently = 0;
         
         /** The sum of methylation value of Hcg bases called confidently (according to user threshold), either ref or other */
         double sumMethyHcgBasesCalledConfidently = 0;
+        
+        /** The sum of methylation value of Wcg bases called confidently (according to user threshold), either ref or other */
+        double sumMethyWcgBasesCalledConfidently = 0;
 
         double percentCallableOfAll()    { return (100.0 * nBasesCallable) / (nBasesVisited-nExtendedEvents); }
         double percentCalledOfAll()      { return (100.0 * nBasesCalledConfidently) / (nBasesVisited-nExtendedEvents); }
@@ -202,9 +220,13 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
        // double percentMethyLevelOfChh() { return (sumMethyChhBasesCalledConfidently) / (double)(nChhBasesCalledConfidently); }
        // double percentMethyLevelOfChg() { return (sumMethyChgBasesCalledConfidently) / (double)(nChgBasesCalledConfidently); }
         double percentMethyLevelOfCph() { return (sumMethyCphBasesCalledConfidently) / (double)(nCphBasesCalledConfidently); }
+        
         double percentMethyLevelOfGch() { return (sumMethyGchBasesCalledConfidently) / (double)(nGchBasesCalledConfidently); }
+        double percentMethyLevelOfHch() { return (sumMethyHchBasesCalledConfidently) / (double)(nHchBasesCalledConfidently); }
+        double percentMethyLevelOfWch() { return (sumMethyWchBasesCalledConfidently) / (double)(nWchBasesCalledConfidently); }
         double percentMethyLevelOfGcg() { return (sumMethyGcgBasesCalledConfidently) / (double)(nGcgBasesCalledConfidently); }
         double percentMethyLevelOfHcg() { return (sumMethyHcgBasesCalledConfidently) / (double)(nHcgBasesCalledConfidently); }
+        double percentMethyLevelOfWcg() { return (sumMethyWcgBasesCalledConfidently) / (double)(nWcgBasesCalledConfidently); }
         
         //record other kind of cytosine statistics status user provided
         HashMap<String, Double[]> otherCytosine = new HashMap<String, Double[]>();//value[0]: number of cytosine; value[1]: sumMethyLevel;
@@ -278,7 +300,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         	if(secondIteration){
         		File outputVcfFile = new File(BAC.vfn1);
     			writer = new TcgaVCFWriter(outputVcfFile, false);
-    			
+    			writer.setRefSource(getToolkit().getArguments().referenceFile.toString());
     			writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
     			
     			if(getToolkit().getArguments().numberOfThreads > 1){
@@ -327,7 +349,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         else{
         	File outputVcfFile = new File(BAC.vfn1);
 			writer = new TcgaVCFWriter(outputVcfFile, false);
-			
+			writer.setRefSource(getToolkit().getArguments().referenceFile.toString());
 			writer.writeHeader(new VCFHeader(getHeaderInfo(), samples));
 			
 			if(getToolkit().getArguments().numberOfThreads > 1){
@@ -460,22 +482,36 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         lhs.nBasesVisited += rhs.nBasesVisited;
         lhs.nCallsMade += rhs.nCallsMade;
         lhs.nCytosineBasesCalledConfidently += rhs.nCytosineBasesCalledConfidently;
-        lhs.nCpgBasesCalledConfidently += rhs.nCpgBasesCalledConfidently;
-       // lhs.nChhBasesCalledConfidently += rhs.nChhBasesCalledConfidently;
-       // lhs.nChgBasesCalledConfidently += rhs.nChgBasesCalledConfidently;
-        lhs.nCphBasesCalledConfidently += rhs.nCphBasesCalledConfidently;
-        lhs.nGchBasesCalledConfidently += rhs.nGchBasesCalledConfidently;
-        lhs.nGcgBasesCalledConfidently += rhs.nGcgBasesCalledConfidently;
-        lhs.nHcgBasesCalledConfidently += rhs.nHcgBasesCalledConfidently;
+        if(BAC.sequencingMode == MethylSNPModel.BM){
+        	lhs.nCpgBasesCalledConfidently += rhs.nCpgBasesCalledConfidently;
+            // lhs.nChhBasesCalledConfidently += rhs.nChhBasesCalledConfidently;
+            // lhs.nChgBasesCalledConfidently += rhs.nChgBasesCalledConfidently;
+             lhs.nCphBasesCalledConfidently += rhs.nCphBasesCalledConfidently;
+             lhs.sumMethyCpgBasesCalledConfidently += rhs.sumMethyCpgBasesCalledConfidently;
+             // lhs.sumMethyChgBasesCalledConfidently += rhs.sumMethyChgBasesCalledConfidently;
+             // lhs.sumMethyChhBasesCalledConfidently += rhs.sumMethyChhBasesCalledConfidently;
+              lhs.sumMethyCphBasesCalledConfidently += rhs.sumMethyCphBasesCalledConfidently;
+        }
+        else if(BAC.sequencingMode == MethylSNPModel.GM){
+        	lhs.nGchBasesCalledConfidently += rhs.nGchBasesCalledConfidently;
+        	lhs.nHchBasesCalledConfidently += rhs.nHchBasesCalledConfidently;
+        	lhs.nWchBasesCalledConfidently += rhs.nWchBasesCalledConfidently;
+            lhs.nGcgBasesCalledConfidently += rhs.nGcgBasesCalledConfidently;
+            lhs.nHcgBasesCalledConfidently += rhs.nHcgBasesCalledConfidently;
+            lhs.nWcgBasesCalledConfidently += rhs.nWcgBasesCalledConfidently;
+            lhs.sumMethyGchBasesCalledConfidently += rhs.sumMethyGchBasesCalledConfidently;
+            lhs.sumMethyHchBasesCalledConfidently += rhs.sumMethyHchBasesCalledConfidently;
+            lhs.sumMethyWchBasesCalledConfidently += rhs.sumMethyWchBasesCalledConfidently;
+            lhs.sumMethyGcgBasesCalledConfidently += rhs.sumMethyGcgBasesCalledConfidently;
+            lhs.sumMethyHcgBasesCalledConfidently += rhs.sumMethyHcgBasesCalledConfidently;
+            lhs.sumMethyWcgBasesCalledConfidently += rhs.sumMethyWcgBasesCalledConfidently;
+        }
+        
+        
         
         lhs.sumMethyCytosineBasesCalledConfidently += rhs.sumMethyCytosineBasesCalledConfidently;
-        lhs.sumMethyCpgBasesCalledConfidently += rhs.sumMethyCpgBasesCalledConfidently;
-       // lhs.sumMethyChgBasesCalledConfidently += rhs.sumMethyChgBasesCalledConfidently;
-       // lhs.sumMethyChhBasesCalledConfidently += rhs.sumMethyChhBasesCalledConfidently;
-        lhs.sumMethyCphBasesCalledConfidently += rhs.sumMethyCphBasesCalledConfidently;
-        lhs.sumMethyGchBasesCalledConfidently += rhs.sumMethyGchBasesCalledConfidently;
-        lhs.sumMethyGcgBasesCalledConfidently += rhs.sumMethyGcgBasesCalledConfidently;
-        lhs.sumMethyHcgBasesCalledConfidently += rhs.sumMethyHcgBasesCalledConfidently;
+        
+        
         if(!rhs.otherCytosine.isEmpty()){
         	for(String key : rhs.otherCytosine.keySet()){
             	Double[] rhsValue = rhs.otherCytosine.get(key);
@@ -514,22 +550,37 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         
      // the cytosine base was confidently callable
         sum.nCytosineBasesCalledConfidently += value.cts.isC ? 1 : 0;
-        sum.nCpgBasesCalledConfidently += value.cts.isCpg ? 1 : 0;
-        //sum.nChgBasesCalledConfidently += value.cts.isChg ? 1 : 0;
-       // sum.nChhBasesCalledConfidently += value.cts.isChh ? 1 : 0;
-        sum.nCphBasesCalledConfidently += value.cts.isCph ? 1 : 0;
-       // sum.nGchBasesCalledConfidently += value.cts.isGch ? 1 : 0;
-      //  sum.nGcgBasesCalledConfidently += value.cts.isGcg ? 1 : 0;
-      //  sum.nHcgBasesCalledConfidently += value.cts.isHcg ? 1 : 0;
+        
+        if(BAC.sequencingMode == MethylSNPModel.BM){
+        	sum.nCpgBasesCalledConfidently += value.cts.isCpg ? 1 : 0;
+            //sum.nChgBasesCalledConfidently += value.cts.isChg ? 1 : 0;
+           // sum.nChhBasesCalledConfidently += value.cts.isChh ? 1 : 0;
+            sum.nCphBasesCalledConfidently += value.cts.isCph ? 1 : 0;
+            sum.sumMethyCpgBasesCalledConfidently += value.cts.isCpg ? value.cts.cpgMethyLevel : 0;
+            //sum.sumMethyChgBasesCalledConfidently += value.cts.isChg ? value.cts.chgMethyLevel : 0;
+           // sum.sumMethyChhBasesCalledConfidently += value.cts.isChh ? value.cts.chhMethyLevel : 0;
+            sum.sumMethyCphBasesCalledConfidently += value.cts.isCph ? value.cts.cphMethyLevel : 0;
+        }
+        else if(BAC.sequencingMode == MethylSNPModel.GM){
+        	  sum.nGchBasesCalledConfidently += value.cts.isGch ? 1 : 0;
+        	  sum.nHchBasesCalledConfidently += value.cts.isHch ? 1 : 0;
+        	  sum.nWchBasesCalledConfidently += value.cts.isWch ? 1 : 0;
+              sum.nGcgBasesCalledConfidently += value.cts.isGcg ? 1 : 0;
+              sum.nHcgBasesCalledConfidently += value.cts.isHcg ? 1 : 0;
+              sum.nWcgBasesCalledConfidently += value.cts.isWcg ? 1 : 0;
+              sum.sumMethyGchBasesCalledConfidently += value.cts.isGch ? value.cts.gchMethyLevel : 0;
+              sum.sumMethyHchBasesCalledConfidently += value.cts.isHch ? value.cts.hchMethyLevel : 0;
+              sum.sumMethyWchBasesCalledConfidently += value.cts.isWch ? value.cts.wchMethyLevel : 0;
+              sum.sumMethyGcgBasesCalledConfidently += value.cts.isGcg ? value.cts.gcgMethyLevel : 0;
+              sum.sumMethyHcgBasesCalledConfidently += value.cts.isHcg ? value.cts.hcgMethyLevel : 0;
+              sum.sumMethyWcgBasesCalledConfidently += value.cts.isWcg ? value.cts.wcgMethyLevel : 0;
+        }
+        
+      
 
         sum.sumMethyCytosineBasesCalledConfidently += value.cts.isC ? value.cts.cytosineMethyLevel : 0;
-        sum.sumMethyCpgBasesCalledConfidently += value.cts.isCpg ? value.cts.cpgMethyLevel : 0;
-        //sum.sumMethyChgBasesCalledConfidently += value.cts.isChg ? value.cts.chgMethyLevel : 0;
-       // sum.sumMethyChhBasesCalledConfidently += value.cts.isChh ? value.cts.chhMethyLevel : 0;
-        sum.sumMethyCphBasesCalledConfidently += value.cts.isCph ? value.cts.cphMethyLevel : 0;
-      //  sum.sumMethyGchBasesCalledConfidently += value.cts.isGch ? value.cts.gchMethyLevel : 0;
-      //  sum.sumMethyGcgBasesCalledConfidently += value.cts.isGcg ? value.cts.gcgMethyLevel : 0;
-      //  sum.sumMethyHcgBasesCalledConfidently += value.cts.isHcg ? value.cts.hcgMethyLevel : 0;
+        
+      
        // if(value.cts.isCpg){
        // 	System.err.println(value.vc.getChr() + "\t" + value.vc.getStart() + "\t" + sum.sumMethyCpgBasesCalledConfidently + "\t" + sum.nCpgBasesCalledConfidently + "\t" + value.cts.cpgMethyLevel);
       //  }
@@ -897,25 +948,41 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
         logger.info(String.format("%% confidently called bases of callable loci  %3.3f", sum.percentCalledOfCallable()));
         logger.info(String.format("Actual calls made                            %d", sum.nCallsMade));
         logger.info(String.format("%% Methylation level of Cytosine loci       %3.3f", sum.percentMethyLevelOfC()));
-        logger.info(String.format("%% Methylation level of CpG loci       %3.3f", sum.percentMethyLevelOfCpg()));
-        logger.info(String.format("%% Methylation level of CpH loci       %3.3f", sum.percentMethyLevelOfCph()));
+        
         //logger.info(String.format("%% Methylation level of CHH loci       %3.3f", sum.percentMethyLevelOfChh()));
        // logger.info(String.format("%% Methylation level of CHG loci       %3.3f", sum.percentMethyLevelOfChg()));
         logger.info(String.format("%% number of Cytosine loci       %d", sum.nCytosineBasesCalledConfidently));
-        logger.info(String.format("%% number of CpG loci       %d", sum.nCpgBasesCalledConfidently));
-        logger.info(String.format("%% number of CpH loci       %d", sum.nCphBasesCalledConfidently));
+        if(BAC.sequencingMode == MethylSNPModel.BM){
+        	logger.info(String.format("%% Methylation level of CpG loci       %3.3f", sum.percentMethyLevelOfCpg()));
+        	logger.info(String.format("%% number of CpG loci       %d", sum.nCpgBasesCalledConfidently));
+            logger.info(String.format("%% Methylation level of CpH loci       %3.3f", sum.percentMethyLevelOfCph()));
+        	
+            logger.info(String.format("%% number of CpH loci       %d", sum.nCphBasesCalledConfidently));
+        }
+        
      //   logger.info(String.format("%% sum of Cytosine methy       %3.3f", sum.sumMethyCytosineBasesCalledConfidently));
     //    logger.info(String.format("%% sum of CpG methy       %3.3f", sum.sumMethyCpgBasesCalledConfidently));
      //   logger.info(String.format("%% sum of CpH methy       %3.3f", sum.sumMethyCphBasesCalledConfidently));
        // logger.info(String.format("%% number of CHH loci       %d", sum.nChhBasesCalledConfidently));
        // logger.info(String.format("%% number of CHG loci       %d", sum.nChgBasesCalledConfidently));
-        if(BAC.sequencingMode == MethylSNPModel.GM){
+        else if(BAC.sequencingMode == MethylSNPModel.GM){
         	logger.info(String.format("%% Methylation level of GCH loci       %3.3f", sum.percentMethyLevelOfGch()));
-            logger.info(String.format("%% Methylation level of GCG loci       %3.3f", sum.percentMethyLevelOfGcg()));
+        	logger.info(String.format("%% number of GCH loci       %d", sum.nGchBasesCalledConfidently));
+        	logger.info(String.format("%% Methylation level of HCH loci       %3.3f", sum.percentMethyLevelOfHch()));
+        	logger.info(String.format("%% number of HCH loci       %d", sum.nHchBasesCalledConfidently));
+        	logger.info(String.format("%% Methylation level of WCH loci       %3.3f", sum.percentMethyLevelOfWch()));
+        	logger.info(String.format("%% number of WCH loci       %d", sum.nWchBasesCalledConfidently));
+        	
+        	logger.info(String.format("%% Methylation level of WCG loci       %3.3f", sum.percentMethyLevelOfWcg()));
+            logger.info(String.format("%% number of WCG loci       %d", sum.nWcgBasesCalledConfidently));
             logger.info(String.format("%% Methylation level of HCG loci       %3.3f", sum.percentMethyLevelOfHcg()));
-            logger.info(String.format("%% number of GCH loci       %d", sum.nGchBasesCalledConfidently));
             logger.info(String.format("%% number of HCG loci       %d", sum.nHcgBasesCalledConfidently));
+            logger.info(String.format("%% Methylation level of GCG loci       %3.3f", sum.percentMethyLevelOfGcg()));
             logger.info(String.format("%% number of GCG loci       %d", sum.nGcgBasesCalledConfidently));
+            
+            
+            
+            
         }
         if(!BAC.forceOtherCytosine.isEmpty() || !BAC.autoEstimateOtherCytosine.isEmpty()){
         	for(String key : sum.otherCytosine.keySet()){
@@ -929,13 +996,22 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 		}
         
         summary.cytosineMethyLevel = Double.isNaN(sum.percentMethyLevelOfC()) ? 0 : sum.percentMethyLevelOfC();
-        summary.cpgMethyLevel = Double.isNaN(sum.percentMethyLevelOfCpg()) ? 0 : sum.percentMethyLevelOfCpg();
-        summary.cphMethyLevel = Double.isNaN(sum.percentMethyLevelOfCph()) ? 0 : sum.percentMethyLevelOfCph();
-       // summary.chhMethyLevel = Double.isNaN(sum.percentMethyLevelOfChh()) ? 0 : sum.percentMethyLevelOfChh();
-      //  summary.chgMethyLevel = Double.isNaN(sum.percentMethyLevelOfChg()) ? 0 : sum.percentMethyLevelOfChg();
-        summary.gchMethyLevel = Double.isNaN(sum.percentMethyLevelOfGch()) ? 0 : sum.percentMethyLevelOfGch();
-        summary.gcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfGcg()) ? 0 : sum.percentMethyLevelOfGcg();
-        summary.hcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfHcg()) ? 0 : sum.percentMethyLevelOfHcg();
+        if(BAC.sequencingMode == MethylSNPModel.BM){
+        	summary.cpgMethyLevel = Double.isNaN(sum.percentMethyLevelOfCpg()) ? 0 : sum.percentMethyLevelOfCpg();
+            summary.cphMethyLevel = Double.isNaN(sum.percentMethyLevelOfCph()) ? 0 : sum.percentMethyLevelOfCph();
+           // summary.chhMethyLevel = Double.isNaN(sum.percentMethyLevelOfChh()) ? 0 : sum.percentMethyLevelOfChh();
+          //  summary.chgMethyLevel = Double.isNaN(sum.percentMethyLevelOfChg()) ? 0 : sum.percentMethyLevelOfChg();
+        }
+        else if(BAC.sequencingMode == MethylSNPModel.GM){
+        	summary.gchMethyLevel = Double.isNaN(sum.percentMethyLevelOfGch()) ? 0 : sum.percentMethyLevelOfGch();
+        	summary.hchMethyLevel = Double.isNaN(sum.percentMethyLevelOfHch()) ? 0 : sum.percentMethyLevelOfHch();
+        	summary.wchMethyLevel = Double.isNaN(sum.percentMethyLevelOfWch()) ? 0 : sum.percentMethyLevelOfWch();
+            summary.gcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfGcg()) ? 0 : sum.percentMethyLevelOfGcg();
+            summary.hcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfHcg()) ? 0 : sum.percentMethyLevelOfHcg();
+            summary.wcgMethyLevel = Double.isNaN(sum.percentMethyLevelOfWcg()) ? 0 : sum.percentMethyLevelOfWcg();
+        }
+        
+        
         
         
         //copy cytosine statistics status for 2nd iteration to use
@@ -946,6 +1022,7 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 					value[2] = summary.cytosineMethyLevel;
 				
 				}
+				
 				else if(tmpKey[0].equalsIgnoreCase("CG")){
 					value[2] = BAC.autoEstimateCpg ? summary.cpgMethyLevel : BAC.forceCpg;
 					
@@ -963,12 +1040,24 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 					value[2] = BAC.autoEstimateGch ? summary.gchMethyLevel : BAC.forceGch;
 					
 				}
+				else if(tmpKey[0].equalsIgnoreCase("HCH")){
+					value[2] = BAC.autoEstimateHch ? summary.hchMethyLevel : BAC.forceHch;
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("WCH")){
+					value[2] = BAC.autoEstimateWch ? summary.wchMethyLevel : BAC.forceWch;
+					
+				}
 				else if(tmpKey[0].equalsIgnoreCase("GCG")){
 					value[2] = BAC.autoEstimateGcg ? summary.gcgMethyLevel : BAC.forceGcg;
 					
 				}
 				else if(tmpKey[0].equalsIgnoreCase("HCG")){
 					value[2] = BAC.autoEstimateHcg ? summary.hcgMethyLevel : BAC.forceHcg;
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("WCG")){
+					value[2] = BAC.autoEstimateWcg ? summary.wcgMethyLevel : BAC.forceWcg;
 					
 				}
 				else{
@@ -1030,15 +1119,21 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
     public void setCytosineMethyStatus(CytosineTypeStatus sumCytosine) {
     	
     	summary = sumCytosine.clone();
-    	
-    	BAC.forceCpg = BAC.autoEstimateCpg ? sumCytosine.cpgMethyLevel : BAC.forceCpg;
-    	//BAC.forceChg = BAC.autoEstimateChg ? sumCytosine.chgMethyLevel : BAC.forceChg;
-    	//BAC.forceChh = BAC.autoEstimateChh ? sumCytosine.chhMethyLevel : BAC.forceChh;
-    	BAC.forceCph = BAC.autoEstimateCph ? sumCytosine.cphMethyLevel : BAC.forceCph;
-    	BAC.forceGch = BAC.autoEstimateGch ? sumCytosine.gchMethyLevel : BAC.forceGch;
-    	BAC.forceGcg = BAC.autoEstimateGcg ? sumCytosine.gcgMethyLevel : BAC.forceGcg;
-    	BAC.forceHcg = BAC.autoEstimateHcg ? sumCytosine.hcgMethyLevel : BAC.forceHcg;
-    	
+    	if(BAC.sequencingMode == MethylSNPModel.BM){
+    		BAC.forceCpg = BAC.autoEstimateCpg ? sumCytosine.cpgMethyLevel : BAC.forceCpg;
+        	//BAC.forceChg = BAC.autoEstimateChg ? sumCytosine.chgMethyLevel : BAC.forceChg;
+        	//BAC.forceChh = BAC.autoEstimateChh ? sumCytosine.chhMethyLevel : BAC.forceChh;
+        	BAC.forceCph = BAC.autoEstimateCph ? sumCytosine.cphMethyLevel : BAC.forceCph;
+		}
+		else if(BAC.sequencingMode == MethylSNPModel.GM){
+			BAC.forceGch = BAC.autoEstimateGch ? sumCytosine.gchMethyLevel : BAC.forceGch;
+			BAC.forceHch = BAC.autoEstimateHch ? sumCytosine.hchMethyLevel : BAC.forceHch;
+			BAC.forceWch = BAC.autoEstimateWch ? sumCytosine.wchMethyLevel : BAC.forceWch;
+	    	BAC.forceGcg = BAC.autoEstimateGcg ? sumCytosine.gcgMethyLevel : BAC.forceGcg;
+	    	BAC.forceHcg = BAC.autoEstimateHcg ? sumCytosine.hcgMethyLevel : BAC.forceHcg;
+	    	BAC.forceWcg = BAC.autoEstimateWcg ? sumCytosine.wcgMethyLevel : BAC.forceWcg;
+		}
+
     	for(String cytosineType : summary.cytosineListMap.keySet()){
 			String[] tmpKey = cytosineType.split("-");
 			Double[] value = summary.cytosineListMap.get(cytosineType);
@@ -1063,12 +1158,24 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 					value[2] = BAC.autoEstimateGch ? sumCytosine.gchMethyLevel : BAC.forceGch;
 					
 				}
+				else if(tmpKey[0].equalsIgnoreCase("HCH")){
+					value[2] = BAC.autoEstimateHch ? sumCytosine.hchMethyLevel : BAC.forceHch;
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("WCH")){
+					value[2] = BAC.autoEstimateWch ? sumCytosine.wchMethyLevel : BAC.forceWch;
+					
+				}
 				else if(tmpKey[0].equalsIgnoreCase("GCG")){
 					value[2] = BAC.autoEstimateGcg ? sumCytosine.gcgMethyLevel : BAC.forceGcg;
 					
 				}
 				else if(tmpKey[0].equalsIgnoreCase("HCG")){
 					value[2] = BAC.autoEstimateHcg ? sumCytosine.hcgMethyLevel : BAC.forceHcg;
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("WCG")){
+					value[2] = BAC.autoEstimateWcg ? sumCytosine.wcgMethyLevel : BAC.forceWcg;
 					
 				}
 				else{
@@ -1283,6 +1390,11 @@ public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext,
 
     }
     
+    public static BisulfiteArgumentCollection getBAC(){
+    	return BAC;
+    }
+    
+
   //  public boolean isReduceByInterval() {
    //     return true;
    // }

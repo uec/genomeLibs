@@ -660,7 +660,7 @@ public class BisulfiteSNPGenotypeLikelihoodsCalculationModel extends
             if(countMatchedOnFwd >= tmpKey[0].length()){
 				value[3] = 1.0;
 				value[0] = adjacentCytosineSeqLikelihood;
-				if(adjacentCytosineSeqLikelihood > maxRatio){
+				if(adjacentCytosineSeqLikelihood > maxRatio){ 
 					maxRatio = adjacentCytosineSeqLikelihood;
 					cytosineMethyStatus[0] = value[2];
 					try {

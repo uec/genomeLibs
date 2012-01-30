@@ -32,8 +32,8 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "paired_end_mode", shortName = "pem", doc = "work in paired end mode", required = false)
     public boolean pairedEndMode = false;
 	
-	@Argument(fullName = "bisulfite_conversion_only_on_one_strand", shortName = "bcm", doc = "true: Illumina protocol which is often used, only bisulfite conversion strand is kept ;false: Steven jacobson Lab protocol, which both of two strands are kept", required = false)
-    public boolean bisulfiteConversionMode = true;
+	@Argument(fullName = "bisulfite_conversion_only_on_one_strand", shortName = "bcm", doc = "true: Illumina protocol which is often used, only bisulfite conversion strand is kept (Lister protocol, sequence 2 forward strands only); false: Cokus protocol, sequence all 4 bisulfite converted strands", required = false)
+    public boolean bisulfiteConversionModeOnestrand = true;
 	
 	@Argument(fullName = "auto_estimate_cpg_methylation", shortName = "aecpg", doc = "the first run would be to run auto_estimate_cpg methylation status", required = false)
     public boolean autoEstimateCpg = true;
@@ -50,11 +50,20 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "auto_estimate_gch_methylation", shortName = "aegch", doc = "the first run would be to run auto_estimate_gch methylation status", required = false)
     public boolean autoEstimateGch = true;
 	
+	@Argument(fullName = "auto_estimate_hch_methylation", shortName = "aehch", doc = "the first run would be to run auto_estimate_hch methylation status", required = false)
+    public boolean autoEstimateHch = true;
+	
+	@Argument(fullName = "auto_estimate_wch_methylation", shortName = "aewch", doc = "the first run would be to run auto_estimate_wch methylation status", required = false)
+    public boolean autoEstimateWch = true;
+	
 	@Argument(fullName = "auto_estimate_gcg_methylation", shortName = "aegcg", doc = "the first run would be to run auto_estimate_gcg methylation status", required = false)
     public boolean autoEstimateGcg = true;
 	
 	@Argument(fullName = "auto_estimate_hcg_methylation", shortName = "aehcg", doc = "the first run would be to run auto_estimate_hcg methylation status", required = false)
     public boolean autoEstimateHcg = true;
+	
+	@Argument(fullName = "auto_estimate_wcg_methylation", shortName = "aewcg", doc = "the first run would be to run auto_estimate_wcg methylation status", required = false)
+    public boolean autoEstimateWcg = true;
 	
 	@Argument(fullName = "auto_estimate_other_cytosine_methylation", shortName = "aeoc", doc = "the first run would be to run auto_estimate_other_cytosine_methylation status, you need to provide cytosine type by such format: -aoec GCAA-2:0.5;GGGCA-4:0.5 ((GCAA is ctosine type, 2 means cytosine is in 2nd base, 0.5 means intial methylation status))", required = false)
     //example: "GCAA-2:0.5;GGGCA-4:0.5";
@@ -75,11 +84,20 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	@Argument(fullName = "force_gch_methylation", shortName = "fgch", doc = "force the gch methylation status", required = false)
     public double forceGch = 0.50;
 	
+	@Argument(fullName = "force_hch_methylation", shortName = "fhch", doc = "force the hch methylation status", required = false)
+    public double forceHch = 0.50;
+	
+	@Argument(fullName = "force_wch_methylation", shortName = "fwch", doc = "force the wch methylation status", required = false)
+    public double forceWch = 0.50;
+	
 	@Argument(fullName = "force_gcg_methylation", shortName = "fgcg", doc = "force the gcg methylation status", required = false)
     public double forceGcg = 0.50;
 	
 	@Argument(fullName = "force_hcg_methylation", shortName = "fhcg", doc = "force the hcg methylation status", required = false)
     public double forceHcg = 0.50;
+	
+	@Argument(fullName = "force_wcg_methylation", shortName = "fwcg", doc = "force the wcg methylation status", required = false)
+    public double forceWcg = 0.50;
 	
 	@Argument(fullName = "force_other_cytosine_methylation", shortName = "foc", doc = "force the other_cytosine_methylation status, you need to provide cytosine type by such format: -aoec GCAA-2:0.75;GGGCA-3:0.33 (GCAA is ctosine type, 2 means cytosine is in 2nd base, 0.75 means methylation level)", required = false)
     //example String forceOtherCytosine = "GCAA-2:0.75;GGGCA-4:0.33";
@@ -109,6 +127,9 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
 	
 	@Argument(fullName = "reference_genome_error", shortName = "rge", doc = "Reference genome error, the default value is human genome, in hg16 it is 99.99% accurate,  in hg17/hg18/hg19, it is less than 1e-4 (USCS genome browser described); We define it here default for human genome assembly(hg18,h19) to be 1e-6 as GATK did ", required = false)
     public double referenceGenomeErr = 1e-6;
+	
+	@Argument(fullName = "reference_genome_version", shortName = "rgv", doc = "Reference genome assembly version, the default value is hg18 ", required = false)
+    public String referenceGenomeVer = "hg18";
 	
 	@Argument(fullName = "ti_vs_tv", shortName = "tvt", doc = "Transition rate vs. Transversion rate, in human genome, the default is 2", required = false)
     public int tiVsTv = 2;
@@ -171,7 +192,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.ALPHA_DELETION_PROBABILITY = ALPHA_DELETION_PROBABILITY;
         bac.sequencingMode = sequencingMode;
         bac.pairedEndMode = pairedEndMode;
-        bac.bisulfiteConversionMode = bisulfiteConversionMode;
+        bac.bisulfiteConversionModeOnestrand = bisulfiteConversionModeOnestrand;
         bac.autoEstimateChg = autoEstimateChg;
         bac.autoEstimateChh = autoEstimateChh;
         bac.autoEstimateCpg = autoEstimateCpg;
@@ -197,6 +218,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
         bac.validateDbsnpHet = validateDbsnpHet;
         bac.novelDbsnpHet = novelDbsnpHet;
         bac.referenceGenomeErr = referenceGenomeErr;
+        bac.referenceGenomeVer = referenceGenomeVer;
         bac.heterozygosity = heterozygosity;
         bac.tiVsTv = tiVsTv;
         

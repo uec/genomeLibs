@@ -73,6 +73,7 @@ public class BisSNP extends CommandLineExecutable {
     //@Output(doc="File to which variants should be written",required=false)
    // protected SortingVCFWriter writer = null;
  
+	private static String BisVersion = "Bis-SNP-0.38";
 
 	private final Collection<Object> bisulfiteArgumentSources = new ArrayList<Object>();
 	
@@ -154,9 +155,9 @@ public class BisSNP extends CommandLineExecutable {
 	}
 	
 	public static List<String> createApplicationHeader() {
-        String version = "Bis-SNP-0.34";
+
 		List<String> header = new ArrayList<String>();
-        header.add(String.format("The Bis-SNP v%s, Compiled %s",version, getBuildTime()));
+        header.add(String.format("The %s, Compiled %s", getBisSNPVersionNumber(), getBuildTime()));
         header.add(String.format("Based on The Genome Analysis Toolkit (GATK) v%s (prebuild GATK package could be download here: ftp://ftp.broadinstitute.org/pub/gsa/GenomeAnalysisTK/GenomeAnalysisTK-1.0.5336.tar.bz2)",getVersionNumber()));
         header.add("Copyright (c) 2011 USC Epigenome Center");
         header.add("Please view our documentation at http://wiki.epigenome.usc.edu/twiki/bin/view");
@@ -169,6 +170,7 @@ public class BisSNP extends CommandLineExecutable {
         
         return headerInfo.containsKey("org.broadinstitute.sting.gatk.version") ? headerInfo.getString("org.broadinstitute.sting.gatk.version") : "<unknown>";
     }
+	
 
     public static String getBuildTime() {
         ResourceBundle headerInfo = TextFormattingUtils.loadResourceBundle("StingText");
@@ -358,6 +360,9 @@ public class BisSNP extends CommandLineExecutable {
                               new OutputStreamArgumentTypeDescriptor(engine,System.out) );
     }
     
+    public static String getBisSNPVersionNumber(){
+    	return BisVersion;
+    }
     
-    
+   
 }

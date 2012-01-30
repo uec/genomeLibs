@@ -525,4 +525,8 @@ public class BisSNPUtils {
 		return downsampledPileup;
 	}
 	
+	public static String getRefGenomeVersion(){
+		return BisulfiteGenotyper.getBAC().referenceGenomeVer;
+	}
+	
 }

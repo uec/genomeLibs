@@ -213,7 +213,8 @@ public class BisulfiteGenotyperEngine{
             return null;
         }
         log10AlleleFrequencyPosteriors.set(new double[3]);
-        for ( BisulfiteBiallelicGenotypeLikelihoods GL : GLs.values() ) {
+        for ( String sample : GLs.keySet() ) {
+        	BisulfiteBiallelicGenotypeLikelihoods GL = GLs.get(sample);
         	assignAFPosteriors(GL.getLikelihoods(),log10AlleleFrequencyPosteriors.get());
         	int bestAFguess = MathUtils.maxElementIndex(log10AlleleFrequencyPosteriors.get());
             int secondAFguess = MathUtils.minElementIndex(log10AlleleFrequencyPosteriors.get());
@@ -266,6 +267,66 @@ public class BisulfiteGenotyperEngine{
             int endLoc = calculateEndPos(vc.getAlleles(), vc.getReference(), loc);
             
             assignGenotypes(vc,log10AlleleFrequencyPosteriors.get(),bestAFguess, genotypes, logRatio/10.0, GL);
+            
+            if ( bestAFguess != 0 ) {
+                if(genotypes.containsKey(sample)){
+                	if(genotypes.get(sample).isHom() && passesCallThreshold(logRatio)){ //only calculate SB score for Heterozygous SNP and Homozygous loci not pass threshold.. 
+                		
+                	}
+                	else{
+                		// the overall lod
+                        //double overallLog10PofNull = log10AlleleFrequencyPosteriors.get()[0];
+                        double overallLog10PofF = MathUtils.log10sumLog10(log10AlleleFrequencyPosteriors.get(), 1);
+                        
+
+                        // the forward lod
+                        Map<String, BisulfiteBiallelicGenotypeLikelihoods> tmpGLs = new HashMap<String, BisulfiteBiallelicGenotypeLikelihoods>();
+                        VariantContext vcForward = calculateLikelihoods(tracker, refContext, stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType.FORWARD, null, tmpGLs);
+                        for ( int i = 0; i < log10AlleleFrequencyPosteriors.get().length; i++ )
+                        	log10AlleleFrequencyPosteriors.get()[i] = -1.0 * Double.MAX_VALUE;;
+                        
+                        if(tmpGLs.containsKey(sample)){
+                        	assignAFPosteriors(tmpGLs.get(sample).getLikelihoods(),log10AlleleFrequencyPosteriors.get());
+                        }
+                        
+                        //double[] normalizedLog10Posteriors = MathUtils.normalizeFromLog10(log10AlleleFrequencyPosteriors.get(), true);
+                        double forwardLog10PofNull = log10AlleleFrequencyPosteriors.get()[0];
+                        double forwardLog10PofF = MathUtils.log10sumLog10(log10AlleleFrequencyPosteriors.get(), 1);
+                       
+
+                        // the reverse lod
+                        tmpGLs = new HashMap<String, BisulfiteBiallelicGenotypeLikelihoods>();
+                        VariantContext vcReverse = calculateLikelihoods(tracker, refContext, stratifiedContexts, StratifiedAlignmentContext.StratifiedContextType.REVERSE, null, tmpGLs);
+                        
+                        for ( int i = 0; i < log10AlleleFrequencyPosteriors.get().length; i++ )
+                        	log10AlleleFrequencyPosteriors.get()[i] = -1.0 * Double.MAX_VALUE;;
+                        
+                        if(tmpGLs.containsKey(sample)){
+                        	assignAFPosteriors(tmpGLs.get(sample).getLikelihoods(),log10AlleleFrequencyPosteriors.get());
+                        }
+                        
+                        //normalizedLog10Posteriors = MathUtils.normalizeFromLog10(log10AlleleFrequencyPosteriors.get(), true);
+                        double reverseLog10PofNull = log10AlleleFrequencyPosteriors.get()[0];
+                        double reverseLog10PofF = MathUtils.log10sumLog10(log10AlleleFrequencyPosteriors.get(), 1);
+                        
+
+                        double forwardLod = forwardLog10PofF + reverseLog10PofNull - overallLog10PofF;
+                        double reverseLod = reverseLog10PofF + forwardLog10PofNull - overallLog10PofF;
+                        
+
+                        // strand score is max bias between forward and reverse strands
+                        double strandScore = Math.max(forwardLod, reverseLod);
+                        
+                      //  System.err.println(vcForward.getStart() + ": " +  forwardLog10PofF + "\t" + reverseLog10PofNull + "\t" + overallLog10PofF + "\t" + forwardLod + "\t" + reverseLog10PofF + "\t" + forwardLog10PofNull + "\t" + reverseLod + "\t" + strandScore);
+                        // rescale by a factor of 10
+                        strandScore *= 10.0;
+                        //logger.debug(String.format("SLOD=%f", strandScore));
+
+                        attributes.put("SB", Double.valueOf(strandScore));
+                	}
+                }
+  
+            }
 
             double cytosineMethyLevel = 0;
             
@@ -555,6 +616,26 @@ public class BisulfiteGenotyperEngine{
 					}
 					
 				}
+				else if(tmpKey[0].equalsIgnoreCase("HCH")){
+					if(BAC.sequencingMode == MethylSNPModel.GM){
+						ctss.get().isHch = true;
+						ctss.get().hchMethyLevel = cytosineMethyLevel;
+					}
+					else{
+						continue;
+					}
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("WCH")){
+					if(BAC.sequencingMode == MethylSNPModel.GM){
+						ctss.get().isWch = true;
+						ctss.get().wchMethyLevel = cytosineMethyLevel;
+					}
+					else{
+						continue;
+					}
+					
+				}
 				else if(tmpKey[0].equalsIgnoreCase("GCG")){
 					if(BAC.sequencingMode == MethylSNPModel.GM){
 						ctss.get().isGcg = true;
@@ -569,6 +650,16 @@ public class BisulfiteGenotyperEngine{
 					if(BAC.sequencingMode == MethylSNPModel.GM){
 						ctss.get().isHcg = true;
 						ctss.get().hcgMethyLevel = cytosineMethyLevel;
+					}
+					else{
+						continue;
+					}
+					
+				}
+				else if(tmpKey[0].equalsIgnoreCase("WCG")){
+					if(BAC.sequencingMode == MethylSNPModel.GM){
+						ctss.get().isWcg = true;
+						ctss.get().wcgMethyLevel = cytosineMethyLevel;
 					}
 					else{
 						continue;

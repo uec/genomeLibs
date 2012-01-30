@@ -29,16 +29,22 @@ public class CytosineTypeStatus {
 	//boolean isChh = false;
 	//boolean isChg = false;
 	boolean isGch = false;
+	boolean isHch = false;
+	boolean isWch = false;
 	boolean isGcg = false;
 	boolean isHcg = false;
+	boolean isWcg = false;
 	double cytosineMethyLevel = 0;
 	double cpgMethyLevel = 0;
 	double cphMethyLevel = 0;
 	//double chgMethyLevel = 0;
 	//double chhMethyLevel = 0;
 	double gchMethyLevel = 0;
+	double hchMethyLevel = 0;
+	double wchMethyLevel = 0;
 	double gcgMethyLevel = 0;
 	double hcgMethyLevel = 0;
+	double wcgMethyLevel = 0;
 	
 	BisulfiteArgumentCollection BAC = null;
 	
@@ -64,39 +70,55 @@ public class CytosineTypeStatus {
 		tmpDouble[2] = BAC.forceCph;
 		tmpDouble[3] = 0.0;
 		cytosineListMap.put("C-1".toUpperCase(), tmpDouble);
-		tmpDouble = new Double[4];
-		tmpDouble[0] = Double.NEGATIVE_INFINITY;
-		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = BAC.forceCpg;
-		tmpDouble[3] = 0.0;
-		cytosineListMap.put("CG-1".toUpperCase(), tmpDouble);
-		tmpDouble = new Double[4];
-		tmpDouble[0] = Double.NEGATIVE_INFINITY;
-		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = BAC.forceCph;
-		tmpDouble[3] = 0.0;
-		cytosineListMap.put("CH-1".toUpperCase(), tmpDouble);
-		/*
-		tmpDouble = new Double[4];
-		tmpDouble[0] = Double.NEGATIVE_INFINITY;
-		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = BAC.forceChg;
-		tmpDouble[3] = 0.0;
-		cytosineListMap.put("CHG-1".toUpperCase(), tmpDouble);
-		tmpDouble = new Double[4];
-		tmpDouble[0] = Double.NEGATIVE_INFINITY;
-		tmpDouble[1] = Double.NEGATIVE_INFINITY;
-		tmpDouble[2] = BAC.forceChh;
-		tmpDouble[3] = 0.0;
-		cytosineListMap.put("CHH-1".toUpperCase(), tmpDouble);
-		*/
-		if(BAC.sequencingMode == MethylSNPModel.GM){
+		
+		if(BAC.sequencingMode == MethylSNPModel.BM){
+			tmpDouble = new Double[4];
+			tmpDouble[0] = Double.NEGATIVE_INFINITY;
+			tmpDouble[1] = Double.NEGATIVE_INFINITY;
+			tmpDouble[2] = BAC.forceCpg;
+			tmpDouble[3] = 0.0;
+			cytosineListMap.put("CG-1".toUpperCase(), tmpDouble);
+			tmpDouble = new Double[4];
+			tmpDouble[0] = Double.NEGATIVE_INFINITY;
+			tmpDouble[1] = Double.NEGATIVE_INFINITY;
+			tmpDouble[2] = BAC.forceCph;
+			tmpDouble[3] = 0.0;
+			cytosineListMap.put("CH-1".toUpperCase(), tmpDouble);
+			/*
+			tmpDouble = new Double[4];
+			tmpDouble[0] = Double.NEGATIVE_INFINITY;
+			tmpDouble[1] = Double.NEGATIVE_INFINITY;
+			tmpDouble[2] = BAC.forceChg;
+			tmpDouble[3] = 0.0;
+			cytosineListMap.put("CHG-1".toUpperCase(), tmpDouble);
+			tmpDouble = new Double[4];
+			tmpDouble[0] = Double.NEGATIVE_INFINITY;
+			tmpDouble[1] = Double.NEGATIVE_INFINITY;
+			tmpDouble[2] = BAC.forceChh;
+			tmpDouble[3] = 0.0;
+			cytosineListMap.put("CHH-1".toUpperCase(), tmpDouble);
+			*/
+		}
+		
+		else if(BAC.sequencingMode == MethylSNPModel.GM){
 			tmpDouble = new Double[4];
 			tmpDouble[0] = Double.NEGATIVE_INFINITY;
 			tmpDouble[1] = Double.NEGATIVE_INFINITY;
 			tmpDouble[2] = BAC.forceGch;
 			tmpDouble[3] = 0.0;
 			cytosineListMap.put("GCH-2".toUpperCase(), tmpDouble);
+			tmpDouble = new Double[4];
+			tmpDouble[0] = Double.NEGATIVE_INFINITY;
+			tmpDouble[1] = Double.NEGATIVE_INFINITY;
+			tmpDouble[2] = BAC.forceGch;
+			tmpDouble[3] = 0.0;
+			cytosineListMap.put("HCH-2".toUpperCase(), tmpDouble);
+			tmpDouble = new Double[4];
+			tmpDouble[0] = Double.NEGATIVE_INFINITY;
+			tmpDouble[1] = Double.NEGATIVE_INFINITY;
+			tmpDouble[2] = BAC.forceGch;
+			tmpDouble[3] = 0.0;
+			cytosineListMap.put("WCH-2".toUpperCase(), tmpDouble);
 			tmpDouble = new Double[4];
 			tmpDouble[0] = Double.NEGATIVE_INFINITY;
 			tmpDouble[1] = Double.NEGATIVE_INFINITY;
@@ -109,6 +131,12 @@ public class CytosineTypeStatus {
 			tmpDouble[2] = BAC.forceHcg;
 			tmpDouble[3] = 0.0;
 			cytosineListMap.put("HCG-2".toUpperCase(), tmpDouble);
+			tmpDouble = new Double[4];
+			tmpDouble[0] = Double.NEGATIVE_INFINITY;
+			tmpDouble[1] = Double.NEGATIVE_INFINITY;
+			tmpDouble[2] = BAC.forceHcg;
+			tmpDouble[3] = 0.0;
+			cytosineListMap.put("WCG-2".toUpperCase(), tmpDouble);
 		}
 		if(!BAC.autoEstimateOtherCytosine.isEmpty()){
 			String[] tmpArray = BAC.autoEstimateOtherCytosine.split(";");
@@ -155,8 +183,11 @@ public class CytosineTypeStatus {
 		//cts.isChg = this.isChg;
 		//cts.isChh = this.isChh;
 		cts.isGch = this.isGch;
+		cts.isHch = this.isHch;
+		cts.isWch = this.isWch;
 		cts.isGcg = this.isGcg;
 		cts.isHcg = this.isHcg;
+		cts.isWcg = this.isWcg;
 
 		cts.cytosineMethyLevel = this.cytosineMethyLevel;
 		cts.cpgMethyLevel = this.cpgMethyLevel;
@@ -164,8 +195,11 @@ public class CytosineTypeStatus {
 		//cts.chgMethyLevel = this.chgMethyLevel;
 		//cts.chhMethyLevel = this.chhMethyLevel;
 		cts.gchMethyLevel = this.gchMethyLevel;
+		cts.hchMethyLevel = this.hchMethyLevel;
+		cts.wchMethyLevel = this.wchMethyLevel;
 		cts.gcgMethyLevel = this.gcgMethyLevel;
 		cts.hcgMethyLevel = this.hcgMethyLevel;
+		cts.wcgMethyLevel = this.wcgMethyLevel;
 		
 		
 		cts.BAC = this.BAC.clone();

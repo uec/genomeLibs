@@ -40,7 +40,7 @@ public class BisulfiteVCFConstants{
 	    public static final String VCF_HEADER_VERSION_PHASE = "phasing";
 	    public static final String VCF_HEADER_VERSION_GAF = "geneAnno";
 	    public static final String GENOTYPE_LIKELIHOODS_KEY = "GL";
-	    public static final String PROGRAM_ARGS = "Program Args";
+	    public static final String PROGRAM_ARGS = "BisSNP Program Args";
 
 }
 
