@@ -14,22 +14,22 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
     public int nucPosWindow = 147;
 	
 	@Argument(fullName = "nucleosome_linker_window", shortName = "nlw", doc = "define the basic nucleosome linker window size(bp)", required = false)
-    public int nucLinkerWindow = 40;
+    public int nucLinkerWindow = 30;
 	
 	@Argument(fullName = "minimum_number_gch_in_window_has_methy_value", shortName = "mgn", doc = "minimum number of gch in window has methy value", required = false)
-    public int minGchNum = 3;
+    public int minGchNum = 2;
 	
 	@Argument(fullName = "minimum_CT_depth_for_gch_in_window", shortName = "mcd", doc = "minimum CT reads depth for GCH inside window", required = false)
-    public int minCTDepth = 3;
+    public int minCTDepth = 1;
 	
 	@Argument(fullName = "minimum_number_gch_in_linker_window_has_methy_value", shortName = "mgnlw", doc = "minimum number of gch in linker window has methy value", required = false)
     public int minGchNumLinkerWindow = 2;
 	
 	@Argument(fullName = "minimum_CT_depth_for_gch_in_linker_window", shortName = "mcdlw", doc = "minimum CT reads depth for GCH insidelinker  window", required = false)
-    public int minCTDepthLinkerWindow = 3;
+    public int minCTDepthLinkerWindow = 1;
 	
-	@Argument(fullName = "wig_output", shortName = "wo", doc = "wig File to which variants should be written", required = true)
-    public String wigFile = null;
+	@Argument(fullName = "outputFile", shortName = "outFile", doc = "bed File to which variants should be written", required = true)
+    public String outFile = null;
 	
 	@Argument(fullName = "minimum_gch_methy_for_ndr", shortName = "ndrThreshold", doc = "minimum GCH methylation value criteria to be NDR region", required = false)
     public double ndrThreshold = 0.4;
@@ -41,7 +41,13 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
     public boolean statTest = false;
 	
 	@Argument(fullName = "sig_threshold_for_test", shortName = "sigValue", doc = "significance threshold to detect NDR region", required = false)
-    public double sigValue = 0.01;
+    public double sigValue = 0.05;
+	
+	@Argument(fullName = "performance_test_mode", shortName = "ptMode", doc = "enable performance test mode, which will count a bed line owns validate reads as a callable window, and output callable window also (with GCH number and CT reads depth, and average GCH methy level, CG kevele)", required = false)
+    public boolean ptMode = false;
+	
+	@Argument(fullName = "output_callable_window_file", shortName = "ocwf", doc = "bed File name for callable window region in ptMode", required = false)
+    public String ocwf = null;
 	
 	
 	public NDRargumentCollection clone() {
@@ -52,11 +58,14 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 		nac.minCTDepth = minCTDepth;
 		nac.minGchNumLinkerWindow = minGchNumLinkerWindow;
 		nac.minCTDepthLinkerWindow = minCTDepthLinkerWindow;
-		nac.wigFile = wigFile;
+		nac.outFile = outFile;
 		nac.ndrThreshold = ndrThreshold;
 		nac.ndrDiffThreshold = ndrDiffThreshold;
 		nac.statTest = statTest;
 		nac.sigValue = sigValue;
+		
+		nac.ptMode = ptMode;
+		nac.ocwf = ocwf;
 		
 		return nac;
 	}
