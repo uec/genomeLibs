@@ -17,13 +17,13 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
     public int nucLinkerWindow = 30;
 	
 	@Argument(fullName = "minimum_number_gch_in_window_has_methy_value", shortName = "mgn", doc = "minimum number of gch in window has methy value", required = false)
-    public int minGchNum = 2;
+    public int minGchNum = 5;
 	
 	@Argument(fullName = "minimum_CT_depth_for_gch_in_window", shortName = "mcd", doc = "minimum CT reads depth for GCH inside window", required = false)
     public int minCTDepth = 1;
 	
 	@Argument(fullName = "minimum_number_gch_in_linker_window_has_methy_value", shortName = "mgnlw", doc = "minimum number of gch in linker window has methy value", required = false)
-    public int minGchNumLinkerWindow = 2;
+    public int minGchNumLinkerWindow = 3;
 	
 	@Argument(fullName = "minimum_CT_depth_for_gch_in_linker_window", shortName = "mcdlw", doc = "minimum CT reads depth for GCH insidelinker  window", required = false)
     public int minCTDepthLinkerWindow = 1;
@@ -37,11 +37,14 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 	@Argument(fullName = "minimum_gch_methy_diff_for_ndr", shortName = "ndrDiffThreshold", doc = "minimum GCH methylation value differences with adjacent window to be identified as NDR region", required = false)
     public double ndrDiffThreshold = 0.4;
 	
-	@Argument(fullName = "enable_stat_test_for_ndr", shortName = "statTest", doc = "enable KS test rather than hard threshold to detect NDR region", required = false)
+	@Argument(fullName = "enable_stat_test_for_ndr", shortName = "statTest", doc = "enable statitics test rather than hard threshold to detect NDR region", required = false)
     public boolean statTest = false;
 	
+	@Argument(fullName = "enable_ks_test_for_ndr", shortName = "ksTest", doc = "enable KS test rather than hard threshold to detect NDR region, otherwise, it will use Wilcoxon rank sum test", required = false)
+    public boolean ksTest = false;
+	
 	@Argument(fullName = "sig_threshold_for_test", shortName = "sigValue", doc = "significance threshold to detect NDR region", required = false)
-    public double sigValue = 0.05;
+    public double sigValue = 0.01;
 	
 	@Argument(fullName = "performance_test_mode", shortName = "ptMode", doc = "enable performance test mode, which will count a bed line owns validate reads as a callable window, and output callable window also (with GCH number and CT reads depth, and average GCH methy level, CG kevele)", required = false)
     public boolean ptMode = false;
@@ -62,6 +65,7 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 		nac.ndrThreshold = ndrThreshold;
 		nac.ndrDiffThreshold = ndrDiffThreshold;
 		nac.statTest = statTest;
+		nac.ksTest = ksTest;
 		nac.sigValue = sigValue;
 		
 		nac.ptMode = ptMode;
