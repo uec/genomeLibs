@@ -88,7 +88,7 @@ import org.broadinstitute.sting.gatk.uscec.writer.cpgReadsWriterImp;
  */
 
 @BAQMode(QualityMode = BAQ.QualityMode.OVERWRITE_QUALS, ApplicationTime = BAQ.ApplicationTime.ON_INPUT)
-@Reference(window=@Window(start=-200,stop=200))
+@Reference(window=@Window(start=-500,stop=500))
 @By(DataSource.REFERENCE)
 @Downsample(by=DownsampleType.NONE)
 public class BisulfiteGenotyper extends LocusWalker<BisulfiteVariantCallContext, BisulfiteGenotyper.ContextCondition> implements TreeReducible<BisulfiteGenotyper.ContextCondition> {

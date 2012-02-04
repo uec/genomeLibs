@@ -52,6 +52,9 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 	@Argument(fullName = "output_callable_window_file", shortName = "ocwf", doc = "bed File name for callable window region in ptMode", required = false)
     public String ocwf = null;
 	
+	@Argument(fullName = "verbose_mode", shortName = "vm", doc = "enable verbose mode for debug", required = false)
+    public boolean vm = false;
+	
 	
 	public NDRargumentCollection clone() {
 		NDRargumentCollection nac = new NDRargumentCollection();
@@ -71,6 +74,7 @@ public class NDRargumentCollection extends BisulfiteArgumentCollection {
 		nac.ptMode = ptMode;
 		nac.ocwf = ocwf;
 		
+		nac.vm = vm;
 		return nac;
 	}
 

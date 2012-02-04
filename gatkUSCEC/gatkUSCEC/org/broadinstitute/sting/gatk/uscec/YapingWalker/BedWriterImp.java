@@ -45,6 +45,16 @@ public class BedWriterImp extends FormatWriter {
 			e.printStackTrace();
 		}
     }
+	
+	public void add(String contig, long start, long end) {
+    	String bedLine = String.format("%s\t%d\t%d\n",contig, start, end);
+    	try {
+			mWriter.write(bedLine);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
 
 	@Override
 	public void addHeader() {

@@ -143,7 +143,7 @@ public class BisulfiteArgumentCollection extends UnifiedArgumentCollection {
   //  @Argument(fullName = "vcf_file_name", shortName = "vfn", doc = "output Vcf file", required = true)
 //	public String vfn = null;
     
-    @Argument(fullName = "vcf_file_name_1", shortName = "vfn1", doc = "output Vcf file, when used for [DEFAULT_FOR_TCGA] output mode, it is used to store all CpG sites. While the original vcf file is to store all CpG sites", required = true)
+    @Argument(fullName = "vcf_file_name_1", shortName = "vfn1", doc = "output Vcf file, when used for [DEFAULT_FOR_TCGA] output mode, it is used to store all CpG sites. While the original vcf file is to store all CpG sites", required = false)
 	public String vfn1 = null;
     
     @Argument(fullName = "vcf_file_name_2", shortName = "vfn2", doc = "output Vcf file 2, only used for [DEFAULT_FOR_TCGA] output mode, it is used to store all SNP sites. While the original vcf file is to store all CpG sites", required = false)

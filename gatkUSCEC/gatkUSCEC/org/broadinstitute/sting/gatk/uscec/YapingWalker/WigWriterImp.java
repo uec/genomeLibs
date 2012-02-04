@@ -46,7 +46,7 @@ public class WigWriterImp extends FormatWriter {
 			wigLine = String.format("%.2f\n",value);
 		}
 		else{
-			wigLine = String.format("%d %.2f\n",loc.getStart(), value);
+			wigLine = String.format("%d\t%.2f\n",loc.getStart(), value);
 		}
 		 
     	try {

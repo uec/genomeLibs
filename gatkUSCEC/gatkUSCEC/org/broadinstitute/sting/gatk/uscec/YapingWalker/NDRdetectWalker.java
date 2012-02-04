@@ -14,6 +14,8 @@ import jsc.independentsamples.MannWhitneyTest;
 import jsc.independentsamples.SmirnovTest;
 import jsc.tests.H1;
 
+import net.sf.samtools.SAMRecord;
+
 import org.apache.log4j.Logger;
 import org.broadinstitute.sting.commandline.ArgumentCollection;
 import org.broadinstitute.sting.commandline.Output;
@@ -198,7 +200,7 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,windowsObject> i
 	public NDRCallContext map(RefMetaDataTracker tracker, ReferenceContext ref, AlignmentContext context) {
 		// TODO Auto-generated method stub
 		String cytosinePattern = "GCH-2";
-		double methyStatus = 0.5 ;
+		double methyStatus = 0.453;
 		BisSNPUtils it = new BisSNPUtils(NAC);
 		AlignmentContext stratifiedContexts = it.getFilteredAndStratifiedContexts(NAC, ref, context);
 		
@@ -379,12 +381,15 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,windowsObject> i
 		windowsReturnObject objPost = getGchListFromWindow(windows.windowsPost);
 		
 		
-		if(winEndflag && winStartflag && winEndCor == -1){ // window started, but the end, the window end is still not determined
-
-			winEndCor = windows.windowsMid.peekLast().getLoc().getStart();
-		}
+		//something wrong here, callable window are not so many. 
 		
 		if(objMid.numValidGch >= NAC.minGchNum){
+			
+			if(winEndflag && winStartflag && winEndCor == -1){ // window started, but the end, the window end is still not determined
+
+				winEndCor = windows.windowsMid.peekLast().getLoc().getStart();
+			}
+			
 			int[] num = validateGch(windows.windowsMid.peekLast());
 			int numC = 0;
 			int numT = 0;
@@ -709,7 +714,47 @@ public class NDRdetectWalker extends LocusWalker<NDRCallContext,windowsObject> i
 		int numC = 0;
 		int numT = 0;
 		for( PileupElement p : ncc.getRealContext().getBasePileup()){
-			boolean negStrand = p.getRead().getReadNegativeStrandFlag();
+			SAMRecord samRecord = p.getRead();
+        	int offset = p.getOffset();
+        	if(offset < 0)//is deletion
+        		continue;
+        	if(NAC.pairedEndMode){
+        		try {
+					samRecord = (SAMRecord) p.getRead().clone();
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            	boolean Paired = samRecord.getReadPairedFlag();	
+	        	boolean secondOfPair = samRecord.getSecondOfPairFlag();
+
+	        	if (samRecord.getNotPrimaryAlignmentFlag())
+				{
+					continue;
+				}
+				
+				// Inverted dups, count only one end
+				if (samRecord.getAlignmentStart() == samRecord.getMateAlignmentStart() && samRecord.getReadNegativeStrandFlag() == samRecord.getMateNegativeStrandFlag())
+				{
+					if (samRecord.getSecondOfPairFlag()) continue;
+   				}
+	        	if (Paired  && !NAC.USE_BADLY_MATED_READS && !samRecord.getProperPairFlag())
+				{
+					continue;
+				}
+	        	
+	        	
+	        	if(secondOfPair){	        		
+		        	samRecord.setReadNegativeStrandFlag(!samRecord.getReadNegativeStrandFlag());        		
+	        	}
+	        	
+        	}
+			
+        	boolean negStrand = samRecord.getReadNegativeStrandFlag();
+		//	int alignmentS = samRecord.getAlignmentStart();
+		//	int	onRefCoord = (negStrand) ? samRecord.getUnclippedEnd() : alignmentS;
+			
+			
 			if(((GATKSAMRecord)p.getRead()).isGoodBase(p.getOffset())){
 				if(negStrand){
 					if(p.getBase()==BaseUtils.G){

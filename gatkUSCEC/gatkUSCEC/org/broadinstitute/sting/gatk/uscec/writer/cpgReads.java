@@ -1,5 +1,7 @@
 package org.broadinstitute.sting.gatk.uscec.writer;
 
+import java.util.zip.CRC32;
+
 public class cpgReads implements genomeObject {
 
 	private String chr;
@@ -8,6 +10,7 @@ public class cpgReads implements genomeObject {
 	private byte baseQ;
 	private char strand;
 	private String readID;
+	private CRC32 encrypt;
 	
 	
 	public cpgReads(String chr, int genomeLoc, char methyStatus, byte baseQ, char strand, String readID){
@@ -17,6 +20,8 @@ public class cpgReads implements genomeObject {
 		this.baseQ = baseQ;
 		this.strand = strand;
 		this.readID = readID;
+		this.encrypt = new CRC32();
+		encrypt.update(readID.getBytes());
 	}
 	
 	
@@ -34,6 +39,10 @@ public class cpgReads implements genomeObject {
 	
 	public String getReadID(){
 		return this.readID;
+	}
+	
+	public long getEncryptID(){	
+		return this.encrypt.getValue();
 	}
 	
 	@Override
