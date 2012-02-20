@@ -36,7 +36,8 @@ my ($matchedbed) = makeMatchedElTempFile($inbed, $distUpstream);
 my ($bmean, $bmedian) = getCounts($inbam, $matchedbed, $minMapq);
 
 my $ratio = $amean/$bmean;
-print sprintf("RatioOfMeans=%0.3f\tbam=%s\tbed=%s\tdistUpstream=%d\n",$ratio,$inbam,$inbed,$distUpstream);
+print sprintf("RatioOfMeans=%0.3f\tamean=%0.3f\tbmean=%0.3f\tamedian=%0.3f\tbmedian=%0.3f\tbam=%s\tbed=%s\tdistUpstream=%d\n",
+	$ratio,$amean, $bmean, $amedian, $bmedian, $inbam,$inbed,$distUpstream);
 
 # Clean up
 unlink($matchedbed);
