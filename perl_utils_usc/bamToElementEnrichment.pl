@@ -4,18 +4,18 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use strict;
 use Getopt::Long;
+use File::Spec;
 
+my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
+my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
+my $uecgatk = "/home/uec-00/shared/production/software/uecgatk/default/uecgatk.pl";
 my $USAGE = "bamToElementEnrichment.pl [-distUpstream 1000] file.bam elements.bed ...";
 my $TEMPPREFIX = "MATCHEDBED";
-#my $SAMTOOLS = "/Users/benb/bin/samtools";
-#my $COVERAGE = "/Users/benb/bin/BEDTools-Version-2.15.0/bin/bedtools coverage";
-my $MEMPERJOB = "3995";
-my $REF_FN_MAP = { "hg18" => "~/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa",
-	"hg19" => "~/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa" };
-my $jarpath = "~/Java";
-my $classpath = "${jarpath}/uecgatk/bin:${jarpath}/uecgatk/lib/GenomeAnalysisTK.jar:${jarpath}/uecgatk/lib/tuple.jar:${jarpath}/uecgatk/lib/commons-math-2.2.jar:" .
-	"${jarpath}/uecgatk/lib/genomeLibs.jar:${jarpath}/uecgatk/lib/StingUtils.jar:${jarpath}/uecgatk/lib/UscKeck.jar";
+my @REFS = ( "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
+	   "/home/uec-00/shared/production/genomes/encode_hg19_mf/female.hg19.fa", 
+	   "/home/uec-00/shared/production//genomes/hg18_unmasked/hg18_unmasked.plusContam.fa");
 
+my $bedhg18 = "/home/rcf-40/bberman/tumor/genomic-data-misc/CGIs/Takai_Jones_from_Fei_122007.fixed.hg18.PROMOTERONLY.oriented.bed";
 
 my $distUpstream = 1000;
 my $minMapq = 20;
@@ -25,88 +25,77 @@ GetOptions ('distUpstream=i', \$distUpstream, 'minq=i'=>\$minMapq) || die "$USAG
 die "$USAGE\n" unless (@ARGV==2);
 my ($inbam, $inbed) = @ARGV;
 
-# Get reference.
-my $refFn = getRefFn($inbam);
 
-# Run gatk counter on main file.
-my ($amean, $amedian) = getCounts($inbam, $inbed, $minMapq);
+if (calculateRatio($inbam, $inbed, $minMapq) == 0)
+{
+	my $basebam = basename($inbam);
+	my $workdir = $basebam . time();
 
-# Run gatk counter on matched bed file
-my ($matchedbed) = makeMatchedElTempFile($inbed, $distUpstream);
-my ($bmean, $bmedian) = getCounts($inbam, $matchedbed, $minMapq);
+	#mkdir($workdir);
+	#chdir($workdir);
+	#system("$JAVA -Xmx10g -jar $PICARD/SortSam.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT INPUT=$inbam OUTPUT=$basebam\.coordsort.bam SORT_ORDER=coordinate");
+	#system("cp $basebam\.coordsort.bai $basebam\.coordsort.bam.bai");
+	#calculateRatio("$basebam\.coordsort.bam", $inbed, $minMapq);
+}
 
-my $ratio = $amean/$bmean;
-print sprintf("RatioOfMeans=%0.3f\tamean=%0.3f\tbmean=%0.3f\tamedian=%0.3f\tbmedian=%0.3f\tbam=%s\tbed=%s\tdistUpstream=%d\n",
-	$ratio,$amean, $bmean, $amedian, $bmedian, $inbam,$inbed,$distUpstream);
+exit;
 
-# Clean up
-unlink($matchedbed);
+
+sub calculateRatio
+{
+	my ($bam, $bed, $minMapq) = @_;
+	for my $ref (@REFS)
+	{
+
+		$bed = $bedhg18 if($ref =~ /hg18/);
+		# Run gatk counter on main file.
+		my ($amean, $astdv) = getCounts($bam, $bed, $minMapq, $ref);
+		if($amean)
+		{
+
+			# Run gatk counter on matched bed file
+			my ($matchedbed) = makeMatchedElTempFile($bed, $distUpstream);
+			my ($bmean, $bstdv) = getCounts($bam, $matchedbed, $minMapq, $ref);
+;
+			my $ratio = $amean/$bmean;
+			print sprintf("RatioOfMeans=%0.3f\tamean=%0.3f\tbmean=%0.3f\tastdv=%0.3f\tbstdv=%0.3f\tbam=%s\tbed=%s\tref=%s\tdistUpstream=%d\n",
+				$ratio,$amean, $bmean, $astdv, $bstdv, File::Spec->rel2abs($inbam),$bed,$ref,$distUpstream);
+
+			# Clean up
+			unlink($matchedbed);
+			return 1;
+		}
+	}
+	return 0;
+}
 
 
 # - - - - Functions
 
-sub getRefFn
-{
-	my ($bam) = @_;
-	my $genome = "hg19";
-	if ($bam =~ /hg18/i)
-	{
-		$genome = "hg18";
-	}
-	elsif ($bam =~ /hg19/i)
-	{
-		$genome = "hg19";
-	}
-	else
-	{
-		print STDERR "Can't figure out reference genome from BAM filename: $bam\n";
-		die;
-	}
-	
-	return $REF_FN_MAP->{$genome};
-}
-
 sub getCounts
 {
-	my ($bam, $bed, $minMapq) = @_;
-	my $cmd  = "";
-	
-	$cmd .= "export CLASSPATH=${classpath}";
-	#$cmd .= "${SAMTOOLS} depth -Q ${minMapq} -b ${bed} ${bam}";
-	my $cpus = 1;
-	$cmd .= " ; java -Xmx${MEMPERJOB}m org.broadinstitute.sting.gatk.CommandLineGATK -T CoverageDepth -R ${refFn} -I ${bam} --intervals ${bed} -et NO_ET -nt ${cpus}"; # 
-	
-#	$cmd .= "${COVERAGE} -abam ${bam} -b ${bed} -hist | grep all";
-
+	my ($bam, $bed, $minMapq,$ref) = @_;
+	my $cmd  = "$uecgatk -T CoverageDepth -R ${ref} -I ${bam} --intervals ${bed} -et NO_ET";
 	print STDERR "${cmd}...\n";
 	my $out = `$cmd`;
 	
-	my $median = 0;
+	my $stdv = 0;
 	my $mean = 0;
-	LINE: foreach my $line (split(/\n/,$out))
+	foreach my $line (split(/\n/,$out))
 	{
-#		my ($chrom, $depth, $count, $total, @rest) = split(/\t/,$line);
-#		$seenSoFar += $count;
-#		my $fracSoFar = $seenSoFar / $total;
-#		
-#		print STDERR sprintf("depth=%d, count=%d, fracSoFar=%0.1f\n",$depth,$count, $fracSoFar*100);
-#		$median = $depth;
-#
-#		last LINE if ($fracSoFar > 0.5);
-
 		if ($line =~ /mean=(.*)$/)
 		{ 
 			$mean = $1;
 		}
-		elsif ($line =~ /50\.0 percentile=(.*)$/)
+		elsif ($line =~ /std dev=(.*)$/)
 		{
-			$median = $1;
+			$stdv = $1;
 		}
 	}
 
 	
-	print STDERR "median=$median, mean=$mean ($bam)\n";
-	return ($mean,$median);
+	print STDERR "stdv=$stdv, mean=$mean ($bam)\n";
+	return ($mean,$stdv);
 }
 
 sub makeMatchedElTempFile
@@ -138,7 +127,7 @@ sub makeMatchedElTempFile
     		$f[1] = $f[2] - $size;
     		$posStrand++;
     	}
-    	print $fh join("\t",@f)."\n";
+    	print $fh join("\t",@f)."\n" if ($f[1] > 0 && $f[2] > 0);
     	
     }
    	print STDERR sprintf("Saw %d pos strand and %d neg strand\n",$posStrand,$negStrand);
@@ -150,5 +139,4 @@ sub makeMatchedElTempFile
 	
 	return $newoutbed;
 }
-
 
