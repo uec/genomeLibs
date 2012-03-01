@@ -42,6 +42,11 @@ while (my $line = <INF>)
     
     my $rawsamp = $f[$aliquotFileCol-1];
     my $outsamp = idToSample($rawsamp, $useDnaType);
+    # Chek if we want the non DNA type one
+    if ($useDnaType && !$samples->{$outsamp})
+    {
+    	$outsamp = idToSample($rawsamp, 0);
+    }
 
     my $ncols = scalar(@f);
 #    print STDERR sprintf("Found %d cols\n",$ncols);
@@ -60,17 +65,17 @@ while (my $line = <INF>)
     else
     {
 #	print STDERR "Checking samp ${rawsamp}/${outsamp}\n";
-	if ($samples->{$outsamp})
-	{
-	    print OUTF join(",",map { $a=$_; $a=~s/\"/__/g; ($a=~/\,/) ? "\"$a\"" : "$a"} @f[0..$maxcols-1]).",";
-	    print OUTF join(",", map {$_} 1..($maxcols-$ncols))."," if ($maxcols>$ncols);
-	    print OUTF join(",",$samples->{$outsamp});
-	    print OUTF  "\n";
-	}
-	else
-	{	
-		print STDERR "Couldn't find sample $outsamp\n";
-	}
+		if ($samples->{$outsamp})
+		{
+		    print OUTF join(",",map { $a=$_; $a=~s/\"/__/g; ($a=~/\,/) ? "\"$a\"" : "$a"} @f[0..$maxcols-1]).",";
+		    print OUTF join(",", map {$_} 1..($maxcols-$ncols))."," if ($maxcols>$ncols);
+		    print OUTF join(",",$samples->{$outsamp});
+		    print OUTF  "\n";
+		}
+		else
+		{	
+			print STDERR "Couldn't find sample $outsamp\n";
+		}
     }
 }
 close(INF);
@@ -125,17 +130,18 @@ sub idToSample
 	$sample =~ s/^WU\-GBM/TCGA/g;
 	$sample =~ s/^GBM/TCGA/g;
 
+    my $outsample = 0;
 	if ($useDnaType && ($sample =~ /(TCGA-\w\w+-\w\w\w\w+-\w\w\w+)/))
 	{
-		$sample = $1;
+		$outsample = $1;
 	}
-    elsif ($sample =~ /(TCGA-\w\w+-\w\w\w\w+)/)
-    {
-		$sample = $1;
-    }
-
-#	print STDERR sprintf("%s --> %s\n", $id, $sample);
-    return $sample;
+	elsif ($sample =~ /(TCGA-\w\w+-\w\w\w\w+)/)
+	    {
+			$outsample = $1;
+	    }
+	
+	print STDERR sprintf("%s --> %s\n", $id, $outsample);
+    return $outsample;
 }
 
 
