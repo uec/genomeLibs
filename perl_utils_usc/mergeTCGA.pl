@@ -126,9 +126,10 @@ sub idToSample
     my ($id, $useDnaType) = @_;
     my $sample = $id;
 
-	# Special cases
+	# Special cases from GBM MAF file.
 	$sample =~ s/^WU\-GBM/TCGA/g;
 	$sample =~ s/^GBM/TCGA/g;
+	$sample =~ s/\-Tumor$//g;
 
     my $outsample = 0;
 	if ($useDnaType && ($sample =~ /(TCGA-\w\w+-\w\w\w\w+-\w\w\w+)/))
