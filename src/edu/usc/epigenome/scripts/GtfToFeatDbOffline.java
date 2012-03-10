@@ -38,6 +38,8 @@ public class GtfToFeatDbOffline {
 	
 	@Option(name="-tablePrefix",usage="Prefix for DB table (default " + FeatDbQuerier.DEFAULT_TABLE_PREFIX + ")")
     protected String tablePrefix = FeatDbQuerier.DEFAULT_TABLE_PREFIX;
+	@Option(name="-featTypeMaxlen",usage="maximum varchar len")
+    protected int featTypeMaxlen = 100;
 	@Option(name="-cpgMethTableFormat",usage="If used, this creates tables of the MethylCGRich format , one for each feature type and chrom (default false)")
     protected boolean cpgMethTableFormat = false;
 	@Option(name="-methTableUseMidpoint",usage="Makes a single entry at the midpoint of each element (default is to put one for start point and one for end)")
@@ -100,7 +102,7 @@ public class GtfToFeatDbOffline {
 		for (String fn : arguments)
 		{
 			String fnShort = (new File(fn)).getName();
-			String featType = fnShort.substring(0,Math.min(39, fnShort.length()));
+			String featType = fnShort.substring(0,Math.min(featTypeMaxlen-1, fnShort.length()));
 			Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).severe(String.format("On feat %d/%d: %s\n", ++onFeat, nF,featType));
 			
 			ChromFeatures feats = new ChromFeatures(fn, true);
