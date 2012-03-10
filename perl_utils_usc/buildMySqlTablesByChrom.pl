@@ -14,7 +14,7 @@ my $pipe = 0;
 my $pipePrefix = 0;
 my $clobberTable = 1;
 my $db = "cr";
-GetOptions ('clobberTable!'=>\$clobberTable, 'pipeConverterScript=s'=>\$pipe, 'pipePrefix=s'=>\$pipePrefix, 'templateFile=s' => \$templateFn, 'replaceStr=s' => \$replaceStr) || die "$USAGE\n";
+GetOptions ('db=s'=>\$db, 'clobberTable!'=>\$clobberTable, 'pipeConverterScript=s'=>\$pipe, 'pipePrefix=s'=>\$pipePrefix, 'templateFile=s' => \$templateFn, 'replaceStr=s' => \$replaceStr) || die "$USAGE\n";
 
 print STDERR "clobber=$clobberTable\targv=" . scalar(@ARGV) . "\n";
 die "$USAGE\n" unless ((!$clobberTable || $templateFn) && (@ARGV>0));
