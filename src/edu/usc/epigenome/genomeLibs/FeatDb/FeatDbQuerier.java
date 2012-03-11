@@ -15,7 +15,7 @@ import edu.usc.epigenome.genomeLibs.GenomicRange.GenomicRange;
 public class FeatDbQuerier {
 
 	public final static String DEFAULT_TABLE_PREFIX = "features_";
-	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/cr?user=benb";
+	public final static String DEFAULT_CONN_STR = "jdbc:mysql://localhost/feats?user=benb";
 	
 	public final static String connStr = DEFAULT_CONN_STR;
 	protected int featNum = 0;
@@ -23,12 +23,21 @@ public class FeatDbQuerier {
 	protected String tablePrefix = DEFAULT_TABLE_PREFIX;
 	
 	public boolean outputSymbolInsteadOfRefseq = false;
+	public boolean featTypeIntersection = false;
 	
 	// Ranges
 	protected Set<GenomicRange> rangeFilters = new HashSet<GenomicRange>(1);
 	protected Set<String> featFilters = new HashSet<String>(1);
 
 	
+	public void addFeatFilters(List<String> featTypes)
+	{
+		for (String featType : featTypes)
+		{
+			this.addFeatFilter(featType);
+		}
+	}
+
 	public void addFeatFilter(String featType)
 	{
 		featFilters.add(featType);
@@ -36,7 +45,7 @@ public class FeatDbQuerier {
 	
 	public void addRangeFilter(String chrom)
 	{
-		GenomicRange gr = GenomicRange.fullChromRange(chrom, "hg18");
+		GenomicRange gr = GenomicRange.fullChromRange(chrom, "hg19");
 		this.addRangeFilter(gr);
 	}
 	
@@ -223,18 +232,7 @@ public class FeatDbQuerier {
 						prep.setInt(curInd++, gr.getEnd());
 					}
 
-					//   OLD WAY.  FOR SOME REASON I THOUGHT THIS WAS BETTER?
-					//				// This is the best way to pick anything that OVERLAPS the range.
-					//				// Notice than CONTAINED WITHIN the range would be a different query
-					//				String clause = String.format("(!(%schromPosStart<? AND %schromPosEnd<?) AND !(%schromPosStart>? AND %schromPosEnd>?))", asSec, asSec,asSec,asSec);
-					//				grClauses.add(clause);
-					//				if (prep!=null)
-					//				{
-					//					prep.setInt(curInd++, gr.getStart());
-					//					prep.setInt(curInd++, gr.getStart());
-					//					prep.setInt(curInd++, gr.getEnd());
-					//					prep.setInt(curInd++, gr.getEnd());
-					//				}
+
 				}
 			}
 			
@@ -245,21 +243,55 @@ public class FeatDbQuerier {
 			}
 		}
 		
+
 		// feat filters
 		if (this.featFilters.size()>0)
 		{
-			List<String> fClauses = new ArrayList<String>(this.featFilters.size());
-			for (String featFilter : this.featFilters)
+			// If it's an intersection, we can only have two features.
+			if (this.featTypeIntersection && (this.featFilters.size()>1))
 			{
-				String clause = String.format("(feat%d.featType = ?)", this.getFeatNum());
-				fClauses.add(clause);
-				if (prep!=null)
+				if (this.featFilters.size()>2)
 				{
-					prep.setString(curInd++, featFilter);
+					System.err.println("FeatDbQuerier can have a max of 2 feat filters if INTERSECTION is chosen");
+					System.exit(1);
 				}
+				
+				List<String> fClauses = new ArrayList<String>(this.featFilters.size());
+				int i = 0;
+				for (String featFilter : this.featFilters)
+				{
+					String clause = String.format("(feat%d.featType = ?)", i);
+					fClauses.add(clause);
+					if (prep!=null)
+					{
+						prep.setString(curInd++, featFilter);
+					}
+					i++;
+				}
+				ListUtils.setDelim(" AND "); // Notice that it's an INTERSECTION of feat filters
+				String featTypeSec = ListUtils.excelLine(fClauses.toArray(new String[1]));
+				
+				// Any amount of overlap is ok for this.
+				String intersectSec = "NOT ( (feat0.chromPosEnd < feat1.chromPosStart) OR (feat1.chromPosEnd < feat0.chromPosStart) )";
+				
+				clauses.add(String.format("(%s) AND (%s)",featTypeSec,intersectSec));
 			}
-			ListUtils.setDelim(" OR "); // Notice that it's an UNION of feat filters
-			clauses.add("(" + ListUtils.excelLine(fClauses.toArray(new String[1])) + ")");
+			else
+			{
+				// Union
+				List<String> fClauses = new ArrayList<String>(this.featFilters.size());
+				for (String featFilter : this.featFilters)
+				{
+					String clause = String.format("(feat%d.featType = ?)", this.getFeatNum());
+					fClauses.add(clause);
+					if (prep!=null)
+					{
+						prep.setString(curInd++, featFilter);
+					}
+				}
+				ListUtils.setDelim(" OR "); // Notice that it's an UNION of feat filters
+				clauses.add("(" + ListUtils.excelLine(fClauses.toArray(new String[1])) + ")");
+			}
 		}
 
 		
@@ -283,6 +315,10 @@ public class FeatDbQuerier {
 		}
 		public String sql = null;
 		public int newCurInd = 0;
+	}
+
+	public void clearRangeFilters() {
+		this.rangeFilters = new HashSet<GenomicRange>(1);
 	}
 	
 

@@ -245,10 +245,30 @@ public class FeatIterator implements Iterator<GFFRecord> {
 	throws Exception
 	{
 		String table = params.getTable();
-		String sql = String.format("select * from %s feat0 WHERE ", table);
+		
+		String fromSec = "";
+		if (params.featTypeIntersection)
+		{
+			List<String> fClauses = new ArrayList<String>(params.featFilters.size());
+			int i = 0;
+			for (String featFilter : params.featFilters)
+			{
+				String clause = String.format("%s feat%d", table, i);
+				fClauses.add(clause);
+				i++;
+			}
+			ListUtils.setDelim(", ");
+			fromSec = ListUtils.excelLine(fClauses);
+		}
+		else
+		{
+			fromSec = String.format("%s feat%d", table, 0);
+		}
+		
+		String sql = String.format("select feat0.* FROM %s WHERE ", fromSec);
 		FeatDbQuerier.HelperOutput output = params.sqlWhereSecHelper(prep, "feat0");
 		sql += output.sql;
-		sql += " ORDER BY chromPosStart ;";
+		sql += " ORDER BY feat0.chromPosStart ;";
 		return sql;
 	}
 	
