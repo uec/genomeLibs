@@ -9,7 +9,7 @@ use File::Spec;
 my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
 my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
 my $uecgatk = "/home/uec-00/shared/production/software/uecgatk/default/uecgatk.pl";
-my $USAGE = "bamToElementEnrichment.pl [-distUpstream 1000] file.bam elements.bed ...";
+my $USAGE = "bamToElementEnrichment.pl [-distUpstream 1000] file.bam elements.bed output.txt";
 my $TEMPPREFIX = "MATCHEDBED";
 my @REFS = ( "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
 	   "/home/uec-00/shared/production/genomes/encode_hg19_mf/female.hg19.fa", 
@@ -22,8 +22,8 @@ my $minMapq = 20;
 GetOptions ('distUpstream=i', \$distUpstream, 'minq=i'=>\$minMapq) || die "$USAGE\n";
 
 # Input params
-die "$USAGE\n" unless (@ARGV==2);
-my ($inbam, $inbed) = @ARGV;
+die "$USAGE\n" unless (@ARGV==3);
+my ($inbam, $inbed,$outfile) = @ARGV;
 
 
 if (calculateRatio($inbam, $inbed, $minMapq) == 0)
@@ -58,8 +58,9 @@ sub calculateRatio
 			my ($bmean, $bstdv) = getCounts($bam, $matchedbed, $minMapq, $ref);
 ;
 			my $ratio = $amean/$bmean;
-			print sprintf("RatioOfMeans=%0.3f\tamean=%0.3f\tbmean=%0.3f\tastdv=%0.3f\tbstdv=%0.3f\tbam=%s\tbed=%s\tref=%s\tdistUpstream=%d\n",
-				$ratio,$amean, $bmean, $astdv, $bstdv, File::Spec->rel2abs($inbam),$bed,$ref,$distUpstream);
+			open(OUT,">$outfile");
+			print OUT sprintf("RatioOfMeans=%0.3f\tamean=%0.3f\tbmean=%0.3f\tastdv=%0.3f\tbstdv=%0.3f\tbam=%s\tbed=%s\tref=%s\tdistUpstream=%d\n",$ratio,$amean, $bmean, $astdv, $bstdv, File::Spec->rel2abs($inbam),$bed,$ref,$distUpstream);
+			close OUT;
 
 			# Clean up
 			unlink($matchedbed);
