@@ -47,7 +47,7 @@ my @regions = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "
 	       "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", 
 	       "chr19", "chr20", "chr21", "chr22", "chrX");
 #@regions = ("chr2", "chr3", "chr5", "chr13");
-@regions = ("chr8","chr21","chr22");
+#@regions = ("chr8","chr21","chr22");
 
 
 my $lastChr = "";
@@ -87,17 +87,23 @@ foreach my $region (@regions)
 	$fn =~ s/REPLACECHROM/${region}/g if ($sepChrs);
 	die "Following file does not exist. Quitting\n${fn}\n" unless (-f $fn);
 
-	my $cmd = "matlabCsvCombineCpgs.pl ${fn}";
+	my $outfn = $fn;
+	$outfn =~ s/\.csv$/\.combinedCG\.csv/g;
 
-	my $curjobid = runCmd(0,$cmd, "${TAG}_combineCpGs", \@dependJobs);
-	push(@combineJobs, $curjobid);
+	if (!(-e $outfn))
+	{
+	    my $cmd = "matlabCsvCombineCpgs.pl ${fn}";
+
+	    my $curjobid = runCmd(0,$cmd, "${TAG}_combineCpGs", \@dependJobs,0, 1995);
+	    push(@combineJobs, $curjobid);
+	}
     }
 }
 @csvTemplates = map {s/\.csv$/\.combinedCG\.csv/g; $_} @csvTemplates;
 
 
-# Make a fake one
-my $fakeJobId = runCmd(0, "sleep 2", "${TAG}_FAKE", \@combineJobs);
+# Make a fake one.  Make sure it lasts long enough to exist for the dependencies
+my $fakeJobId = runCmd(0, "sleep 60", "${TAG}_FAKE", \@combineJobs);
 
 
 @dependJobs = ($fakeJobId);
@@ -237,12 +243,17 @@ sub concatCmd
 # Returns jobid
 sub runCmd
 {
-    my ($outputdir, $cmd, $prefix, $dependJobs, $userHold) = @_;
+    my ($outputdir, $cmd, $prefix, $dependJobs, $userHold, $maxmemmb) = @_;
+
+    if (!$maxmemmb)
+    {
+	$maxmemmb = 15995;
+    }
 
 # I am sometimes getting "Could not create the Java virtual machine.", even with 7995mb.
     my ($fh, $file) = tempfile( "${prefix}XXXXXX" , DIR => "/tmp");
     print $fh "#Run on 1 processors on laird\n";
-    print $fh "#PBS -l walltime=30:00:00\n#PBS -l mem=15995mb\n#PBS -l arch=x86_64\n#PBS -q lairdprio\n";
+    print $fh "#PBS -l walltime=30:00:00\n#PBS -l mem=${maxmemmb}mb\n#PBS -l arch=x86_64\n#PBS -q lairdprio\n";
     # PBS can crash with too many afterany on the same line
     print $fh "#PBS -W depend=afterany:" . join(":",@$dependJobs) ."\n" if ($dependJobs && @$dependJobs);
 #     if ($dependJobs)
