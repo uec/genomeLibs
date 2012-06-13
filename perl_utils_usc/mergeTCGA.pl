@@ -27,6 +27,25 @@ my $outfn = basename($alFn);
 $outfn =~ s/\.csv//g;
 $outfn .= ".${title}.csv";
 
+# Get the maximum column number
+die "Can't read from $alFn\n" unless (open(INF,$alFn));
+my $maxAlCols = 0;
+while (my $line = <INF>)
+{
+    chomp $line;
+    my @lines_fixed = split(chr(0xd), $line); # Remove windows linefeeds 
+    $line = $lines_fixed[0];
+
+    my @f = split(/${aliquotDelim}/,$line);
+    @f = split(/,/,$line) if (scalar(@f)==1); # Special catch
+    my $nf = scalar(@f);
+
+    $maxAlCols = $nf if ($nf>$maxAlCols);
+}
+close (INF);
+print STDERR "Found maximum of $maxAlCols cols\n";
+
+
 die "Can't write to $outfn\n" unless (open(OUTF,">$outfn"));
 die "Can't read from $alFn\n" unless (open(INF,$alFn));
 my $seenheader = 0;
@@ -68,7 +87,7 @@ while (my $line = <INF>)
 		if ($samples->{$outsamp})
 		{
 		    print OUTF join(",",map { $a=$_; $a=~s/\"/__/g; ($a=~/\,/) ? "\"$a\"" : "$a"} @f[0..$maxcols-1]).",";
-		    print OUTF join(",", map {$_} 1..($maxcols-$ncols))."," if ($maxcols>$ncols);
+#		    print OUTF join(",", map {$_} 1..($maxcols-$ncols))."," if ($maxcols>$ncols);
 		    print OUTF join(",",$samples->{$outsamp});
 		    print OUTF  "\n";
 		}
@@ -141,7 +160,7 @@ sub idToSample
 			$outsample = $1;
 	    }
 	
-	print STDERR sprintf("%s --> %s\n", $id, $outsample);
+#	print STDERR sprintf("%s --> %s\n", $id, $outsample);
     return $outsample;
 }
 
