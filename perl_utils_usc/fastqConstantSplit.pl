@@ -16,6 +16,13 @@ if ($numberOfFiles == 1)
 {
 	foreach my $inputFile (@inputFileList)
 	{
+		 if($inputFile =~ /bz2$/)
+		 {
+		 	my $unzippedInputFile = basename($inputFile);
+		 	$unzippedInputFile =~ s/\.bz2$//;
+			system("bzip2 -d -k -c $inputFile > $unzippedInputFile") ;
+			$inputFile = $unzippedInputFile;
+		 }
 		 my $outputFile = basename($inputFile);
 		 $outputFile =~ s/\.(\w+)$/\.1\.$1/g;
 		 print STDERR "cp $inputFile $outputFile\n";
@@ -27,6 +34,13 @@ if ($numberOfFiles == 1)
 
 foreach my $inputFile (@inputFileList)
 {
+	if($inputFile =~ /bz2$/)
+	 {
+		my $unzippedInputFile = basename($inputFile);
+		$unzippedInputFile =~ s/\.bz2$//;
+		system("bzip2 -d -k -c $inputFile > $unzippedInputFile") ;
+		$inputFile = $unzippedInputFile;
+	 }
 	my $totalFileLength = `wc -l $inputFile`;
 	$totalFileLength =~ /^\s*(\d+)\s+.+?$/;
 	$totalFileLength = $1;
