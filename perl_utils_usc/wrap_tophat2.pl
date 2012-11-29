@@ -3,7 +3,7 @@ use File::Basename;
 my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 #$ENV{'BOWTIE_INDEXES'} = "/home/uec-00/shared/production/genomes/bowtie/";
 $ENV{'PATH'} .= ":/home/uec-00/shared/production/software/tophat2/default:/home/uec-00/shared/production/software/bowtie2/default";
-$execmd = "tophat2 --solexa1.3-quals " . join(" ", @ARGV);
+$execmd = "tophat2 --solexa1.3-quals --no-coverage-search " . join(" ", @ARGV);
 print "$execmd\n";
 system($execmd);
 $file = scalar(@ARGV) > 4 ? $ARGV[$#ARGV - 1] : $ARGV[$#ARGV];
