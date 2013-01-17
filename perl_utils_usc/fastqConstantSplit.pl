@@ -23,6 +23,15 @@ if ($numberOfFiles == 1)
 			system("bzip2 -d -k -c $inputFile > $unzippedInputFile") ;
 			$inputFile = $unzippedInputFile;
 		 }
+		 if($inputFile =~ /gz$/)
+		 {
+		 	my $unzippedInputFile = basename($inputFile);
+		 	$unzippedInputFile =~ s/\.gz$//;
+			my $cmd = "gzip -d -c $inputFile > $unzippedInputFile";
+			print STDERR $cmd;
+			system($cmd) ;
+			$inputFile = $unzippedInputFile;
+		 }
 		 my $outputFile = basename($inputFile);
 		 $outputFile =~ s/\.(\w+)$/\.1\.$1/g;
 		 print STDERR "cp $inputFile $outputFile\n";
