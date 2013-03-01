@@ -5,6 +5,9 @@ use File::Basename;
 
 my $USAGE = "fastqSplit.pl numberOfFiles seqs1.fastq seqs2.fastq ...";
 
+
+my $seqret = "/home/uec-00/shared/production/software/emboss/default/bin/seqret";
+
 my ($numberOfFiles, @inputFileList) = @ARGV;
 
 if ( (-f $numberOfFiles) || (@inputFileList == 0) )
@@ -30,6 +33,9 @@ if ($numberOfFiles == 1)
 			my $cmd = "gzip -d -c $inputFile > $unzippedInputFile";
 			print STDERR $cmd;
 			system($cmd) ;
+			print("$seqret fastq-sanger::$unzippedInputFile fastq-illumina:$unzippedInputFile\.tmp");
+			system("$seqret fastq-sanger::$unzippedInputFile fastq-illumina:$unzippedInputFile\.tmp");
+			system("mv $unzippedInputFile\.tmp $unzippedInputFile");
 			$inputFile = $unzippedInputFile;
 		 }
 		 my $outputFile = basename($inputFile);
