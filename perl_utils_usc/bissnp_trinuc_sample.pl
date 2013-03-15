@@ -9,7 +9,7 @@ use strict;
 use Getopt::Long;
 my $use_bad_mates;
 
-my $metric_unsorted_cpg = $ARGV[0] || die "need input bam file";
+my $metric_unsorted_cpg = $ARGV[0] || die "specify output txt file";
 my $input = $ARGV[1] || die "need input bam file";
 my $ref = $ARGV[2] || die "need reference genome file";
 my $interval;
@@ -46,6 +46,7 @@ if($ref =~/hg18/){
 }
 elsif($ref =~/hg19/){
 	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.hg19.sort.vcf";
+	$interval = $ARGV[3] || "chr21";
 	
 }
 elsif($ref =~/NC_001416/){
