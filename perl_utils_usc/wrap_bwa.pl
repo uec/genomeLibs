@@ -4,7 +4,7 @@
 my $usage = "wrap_bwa.pl refFa.fa read1.fq [read2.fq] [outfile name]";
 die "$usage\n" unless (@ARGV >= 3);
 
-my $bwa = "/home/uec-00/shared/production/software/bwa/default/bwa";
+my $bwa = "/home/uec-00/shared/production/software/bwa/latest/bwa";
 my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 my $PICARD = "/home/uec-00/shared/production/software/picard/default";
 my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
@@ -26,8 +26,12 @@ die "reference does not exist.\n" if (! -e $refFa);
 # check existence of read sequence files
 die "need read sequence files\n" unless ( -e $read1 );
 
+#check phred of read
+my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQualityScale.pl $read1`;
+$phred = $phred =~ /64/ ? "-I" : "";
+
 #aln end 1
-my $cmd = join(" ", $bwa, "aln", "-I -t 11", $refFa, $read1, "> $read1SA");
+my $cmd = join(" ", $bwa, "aln", $phred, "-t 11", $refFa, $read1, "> $read1SA");
 runcmd($cmd);
 
 die "need read.sai files\n" unless ( -e $read1SA );
@@ -44,7 +48,7 @@ if (@ARGV == 4)
 	$read2SA =~ s/\.fq$//i;
 	$read2SA .= ".sai";
 
-	$cmd = join(" ", $bwa, "aln", "-I -t 11", $refFa, $read2, "> $read2SA");
+	$cmd = join(" ", $bwa, "aln", $phred, "-t 11", $refFa, $read2, "> $read2SA");
 	runcmd($cmd);
 
 	die "need read.sai files\n" unless ( -e $read1SA && -e $read2SA );
@@ -60,8 +64,8 @@ else
 
 
 
-runcmd("$JAVA -Xmx14g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
-runcmd("$JAVA -Xmx14g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
+runcmd("$JAVA -Xmx12g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
+runcmd("$JAVA -Xmx12g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
 
 sub runcmd
 {

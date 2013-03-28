@@ -15,17 +15,26 @@ my $read1 = $ARGV[2] || die "no read1 specified";
 my $read2 = $ARGV[3]; 
 my $samOutput = "$output" . ".sam";
 
-#hack, not producing correct phreds in bam
-my $read1sanger = basename($read1) . ".fastq";
-my $read2sanger = basename($read2) . ".fastq" if $read2;
+#check phred of read
+my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQualityScale.pl $read1`;
 
-runcmd("$MAQ ill2sanger $read1 $read1sanger");
-runcmd("$MAQ ill2sanger $read2 $read2sanger") if $read2;
+my $read1sanger = $read1; 
+my $read2sanger = $read2 if $read2;
+
+
+if($phred =~ /64/)
+{
+	#hack, not producing correct phreds in bam
+	$read1sanger = basename($read1) . ".fastq";
+	$read2sanger = basename($read2) . ".fastq" if $read2;
+	runcmd("$MAQ ill2sanger $read1 $read1sanger");
+	runcmd("$MAQ ill2sanger $read2 $read2sanger") if $read2;
+}
 
 my $cmd = "$BSMAP -a $read1sanger ";
 $cmd .= "-b $read2sanger " if $read2;
 $cmd .= "-d $genome -o $samOutput ";
-$cmd .= "-p 8 -s 16 -v 10 -q 2";
+$cmd .= "-p 12 -s 16 -v 10 -q 2";
 
 
 runcmd($cmd);
