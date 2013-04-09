@@ -22,6 +22,7 @@ foreach my $dir (@ARGV)
     foreach my $laneNum (1..8)
     {
 	my @dirlist = glob("$dir/s_$laneNum*");
+	@dirlist = glob("$dir/*L00$laneNum*") if !@dirlist;
         if($dirlist[0])
         {
         
@@ -36,13 +37,15 @@ foreach my $dir (@ARGV)
 	        }
 	
 	        my $prefix = ($INTERMEDIATE_DIRS) ? "/*s_${laneNum}*/*" : "/*s_${laneNum}*";
+	        my @tmpCnt = glob($prefix);
+	        $prefix = "*L00$laneNum*" if !@tmpCnt;
 	
 	        # FASTQ counts
 	        if ($DOFASTQ)
 	        {
-	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.txt");
+	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.*");
 	            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
-	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*txt");
+	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*");
 	            push(@flds,$contamN); push(@headers,"contamSeqs");
 	            my $contamPolyaN = seqCountFastqFiles($dir."${prefix}.contam.polya.*");
 	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
@@ -55,11 +58,11 @@ foreach my $dir (@ARGV)
 	        # Repeat counts
 	        if ($DOREPEAT)
 	        {
-	            my $gaatgN = patternCountFiles($dir."${prefix}.nocontam.txt", "GAATGGAATG");
+	            my $gaatgN = patternCountFiles($dir."${prefix}.nocontam.*", "GAATGGAATG");
 	            push(@flds,$gaatgN); push(@headers,"GAATGGAATG");
-	            my $tatttN = patternCountFiles($dir."${prefix}.nocontam.txt", "TATTTTATTT");
+	            my $tatttN = patternCountFiles($dir."${prefix}.nocontam.*", "TATTTTATTT");
 	            push(@flds,$tatttN); push(@headers,"TATTTTATTT");
-	            my $cattcN = patternCountFiles($dir."${prefix}.nocontam.txt", "CATTCCATTC");
+	            my $cattcN = patternCountFiles($dir."${prefix}.nocontam.*", "CATTCCATTC");
 	            push(@flds,$cattcN); push(@headers,"CATTCCATTC");
 	        }
 	
