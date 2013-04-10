@@ -38,11 +38,12 @@ foreach my $dir (@ARGV)
 	
 	        my $prefix = ($INTERMEDIATE_DIRS) ? "/*s_${laneNum}*/*" : "/*s_${laneNum}*";
 	        my @tmpCnt = glob($prefix);
-	        $prefix = "*L00$laneNum*" if !@tmpCnt;
+	        $prefix = "/*L00$laneNum*" if !@tmpCnt;
 	
 	        # FASTQ counts
 	        if ($DOFASTQ)
 	        {
+	        	print STDERR "checking fastq...\n";
 	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.*");
 	            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
 	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*");
