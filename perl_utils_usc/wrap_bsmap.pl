@@ -4,6 +4,10 @@ use File::Basename;
 # bsmap -a ./s_7_1_sequence.200k.txt -d ~/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa -o s_7_1_sequence.200k.sam -z @ -p 11 -b s_7_2_sequence.200k.txt -s 18 -v 10 -q 2
 
 my $BSMAP = "/home/uec-00/shared/production/software/bsmap/default/bsmap";
+
+#change to AMD version in case SSE4.2 not supported on this machine.
+$BSMAP = "/home/uec-00/shared/production/software/bsmap/default-amd/bsmap" if `bash -c \"$BSMAP 2>&1\"` =~ /Fatal/s;
+print STDERR "$BSMAP\n";
 my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
 my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
