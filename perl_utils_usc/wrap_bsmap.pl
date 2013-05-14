@@ -20,19 +20,30 @@ my $read2 = $ARGV[3];
 my $samOutput = "$output" . ".sam";
 
 #check phred of read
-my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQualityScale.pl $read1`;
 
 my $read1sanger = $read1; 
 my $read2sanger = $read2 if $read2;
 
+#handle compressed inputs
+runcmd("zcat $read1 >" . basename($read1) . ".nogz.fastq") if($read1 =~ /gz$/);
+runcmd("zcat $read2 >" . basename($read2) . ".nogz.fastq") if($read2 =~ /gz$/);
+$read1 = basename($read1) . ".nogz.fastq" if($read1 =~ /gz$/);
+$read2 = basename($read2) . ".nogz.fastq" if($read2 =~ /gz$/);
 
+my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQualityScale.pl $read1`;
 if($phred =~ /64/)
 {
+	
 	#hack, not producing correct phreds in bam
 	$read1sanger = basename($read1) . ".fastq";
 	$read2sanger = basename($read2) . ".fastq" if $read2;
 	runcmd("$MAQ ill2sanger $read1 $read1sanger");
 	runcmd("$MAQ ill2sanger $read2 $read2sanger") if $read2;
+}
+else
+{
+	$read1sanger = $read1;
+	$read2sanger = $read2;
 }
 
 my $cmd = "$BSMAP -a $read1sanger ";
