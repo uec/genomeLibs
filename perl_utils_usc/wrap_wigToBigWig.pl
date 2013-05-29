@@ -10,5 +10,4 @@ $genome = $ARGV[2] || "hg19";
 $genome = "mm9" if $input =~ /mm9/;
 $genome = "hg18" if $input =~ /hg18/;
 
-
 system("$ucsc/wigToBigWig -clip $input $ucsc/$genome\.chrom.sizes $output");
