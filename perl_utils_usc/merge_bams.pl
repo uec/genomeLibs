@@ -71,7 +71,8 @@ sub addReadGroup
 	my $flowcell;
 	my $lane;
 	my $lib;
-	if($bamIn =~ /^(.+?)_(.+?)_(\d+)_(.+?)\./)
+	my $bamInBase = basename($bamIn);
+	if($bamInBase =~ /^(.+?)_(.+?)_(\d+)_(.+?)\./)
 	{
 		$flowcell = $2;
 		$lane = $3;
