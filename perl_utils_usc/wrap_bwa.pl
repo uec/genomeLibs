@@ -64,8 +64,8 @@ else
 
 
 
-runcmd("$JAVA -Xmx12g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
-runcmd("$JAVA -Xmx12g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
+runcmd("$JAVA -Xmx4g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
+runcmd("$JAVA -Xmx4g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
 
 sub runcmd
 {

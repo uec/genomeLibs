@@ -58,7 +58,7 @@ runcmd("$SAMTOOLS flagstat $output > $output\.flagstat\.metric\.txt");
 
 my $outputdups = $output;
 $outputdups =~ s/bam$/mdups\.bam/;
-runcmd("$JAVA -Xms12g -Xmx12g -jar $PICARD/MarkDuplicates.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups");
+runcmd("$JAVA -Xms5g -Xmx5g -jar $PICARD/MarkDuplicates.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups");
 my $dupbai = $outputdups;
 $dupbai =~ s/bam$/bai/;
 runcmd("mv $dupbai $outputdups\.bai");

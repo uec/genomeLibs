@@ -55,7 +55,7 @@ $cmd .= "-p 12 -s 16 -v 10 -q 2";
 runcmd($cmd);
 
 #samtobamsort
-runcmd("$JAVA -Xmx14g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT=$samOutput OUTPUT=$output SORT_ORDER=coordinate");
+runcmd("$JAVA -Xmx7g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT=$samOutput OUTPUT=$output SORT_ORDER=coordinate");
 
 #samtools sort
 #runcmd("$SAMTOOLS view -b -S -o $output $samOutput");
