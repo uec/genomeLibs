@@ -17,7 +17,6 @@ $progs{CUFFLINKS} = "/home/uec-00/shared/production/software/cufflinks2/default/
 $progs{UEC_GATK} = "/home/uec-00/shared/production/software/uecgatk/default/";
 $progs{BSMAP} = "/home/uec-00/shared/production/software/bsmap/default/";
 
-
 open(OUT, ">$output");
 
 for $app (keys %progs)
