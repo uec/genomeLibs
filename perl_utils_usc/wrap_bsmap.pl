@@ -49,13 +49,13 @@ else
 my $cmd = "$BSMAP -a $read1sanger ";
 $cmd .= "-b $read2sanger " if $read2;
 $cmd .= "-d $genome -o $samOutput ";
-$cmd .= "-p 12 -s 16 -v 10 -q 2";
+$cmd .= "-p 12 -s 16 -v 10 -q 2 -A AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT";
 
 
 runcmd($cmd);
 
 #samtobamsort
-runcmd("$JAVA -Xmx7g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT=$samOutput OUTPUT=$output SORT_ORDER=coordinate");
+runcmd("$JAVA -Xmx7g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT=$samOutput OUTPUT=$output SORT_ORDER=coordinate TMP_DIR=/export/uec-gs1/laird/shared/tmp");
 
 #samtools sort
 #runcmd("$SAMTOOLS view -b -S -o $output $samOutput");

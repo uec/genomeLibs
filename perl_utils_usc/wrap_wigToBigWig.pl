@@ -13,4 +13,5 @@ $genome = "hg18" if $input =~ /hg18/;
 $genome = "rn5" if $input =~ /rn5/;
 $genome = "danRer7" if $input =~ /zv9/i;
 
+
 system("$ucsc/wigToBigWig -clip $input $ucsc/$genome\.chrom.sizes $output");

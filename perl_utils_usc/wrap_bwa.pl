@@ -4,7 +4,7 @@
 my $usage = "wrap_bwa.pl refFa.fa read1.fq [read2.fq] [outfile name]";
 die "$usage\n" unless (@ARGV >= 3);
 
-my $bwa = "/home/uec-00/shared/production/software/bwa/latest/bwa";
+my $bwa = "/home/uec-00/shared/production/software/bwa/default/bwa";
 my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 my $PICARD = "/home/uec-00/shared/production/software/picard/default";
 my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
@@ -31,7 +31,7 @@ my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQua
 $phred = $phred =~ /64/ ? "-I" : "";
 
 #aln end 1
-my $cmd = join(" ", $bwa, "aln", $phred, "-t 11", $refFa, $read1, "> $read1SA");
+my $cmd = join(" ", $bwa, "aln", $phred, "-t 15", $refFa, $read1, "> $read1SA");
 runcmd($cmd);
 
 die "need read.sai files\n" unless ( -e $read1SA );
@@ -48,7 +48,7 @@ if (@ARGV == 4)
 	$read2SA =~ s/\.fq$//i;
 	$read2SA .= ".sai";
 
-	$cmd = join(" ", $bwa, "aln", $phred, "-t 11", $refFa, $read2, "> $read2SA");
+	$cmd = join(" ", $bwa, "aln", $phred, "-t 15", $refFa, $read2, "> $read2SA");
 	runcmd($cmd);
 
 	die "need read.sai files\n" unless ( -e $read1SA && -e $read2SA );
