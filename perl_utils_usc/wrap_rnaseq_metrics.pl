@@ -3,7 +3,7 @@ use File::Basename;
 
 my $input = $ARGV[0] || die "need input bam file";
 my $ref = $ARGV[1] || die "need reference genome file";
-my $output = $ARGV[1] || die "need reference genome file";
+my $output = $ARGV[2] || die "need reference genome file";
 
 my $numcores = `cat /proc/cpuinfo | grep processor -c`;
 chomp $numcores;
