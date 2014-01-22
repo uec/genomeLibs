@@ -24,7 +24,7 @@ die unless $refFlat;
 
 
 #my $cmd .= "$JAVA -jar $PICARD REF_FLAT=$refFlat INPUT=$input OUTPUT=$output REFERENCE_SEQUENCE=$ref STRAND_SPECIFICITY=NONE METRIC_ACCUMULATION_LEVEL=ALL_READS TMP_DIR=/export/uec-gs1/laird/shared/tmp";
-my $cmd .= "$JAVA -jar $PICARD REF_FLAT=$refFlat INPUT=$input OUTPUT=$output REFERENCE_SEQUENCE=$ref STRAND_SPECIFICITY=NONE TMP_DIR=/export/uec-gs1/laird/shared/tmp";
+my $cmd .= "$JAVA -jar $PICARD REF_FLAT=$refFlat INPUT=$input OUTPUT=$output REFERENCE_SEQUENCE=$ref STRAND_SPECIFICITY=NONE VALIDATION_STRINGENCY=SILENT TMP_DIR=/export/uec-gs1/laird/shared/tmp";
 runcmd($cmd);
 
 sub runcmd{
