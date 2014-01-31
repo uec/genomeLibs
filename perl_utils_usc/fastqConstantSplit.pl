@@ -8,6 +8,8 @@ my $seqret = "/home/uec-00/shared/production/software/emboss/default/bin/seqret"
 
 my ($numberOfFiles, @inputFileList) = @ARGV;
 
+open(METRIC, ">inputreads.metric.txt");
+
 if ( (-f $numberOfFiles) || (@inputFileList == 0) )
 {
     die "$USAGE\n";
@@ -64,6 +66,8 @@ foreach my $inputFile (@inputFileList)
 	$seqsPerFile =~ s/\.\d+$//;
 	print "length:  $totalFileLength\n";
 	print "spf:  $seqsPerFile\n";
+	print METRIC "$inputFile\t$totalSeqLength\n";
+
 	open(my $inputHandle, "<$inputFile") || die "can't open input";
 	
 	for my $i (1..$numberOfFiles)
