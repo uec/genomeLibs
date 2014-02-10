@@ -46,7 +46,7 @@ foreach my $dir (@ARGV)
 	        	print STDERR "checking fastq...\n";
 	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.*");
 	            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
-	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*");
+	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*(?!Count)");
 	            push(@flds,$contamN); push(@headers,"contamSeqs");
 	            my $contamPolyaN = seqCountFastqFiles($dir."${prefix}.contam.polya.*");
 	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
