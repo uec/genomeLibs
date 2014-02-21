@@ -14,6 +14,7 @@ my $INTERMEDIATE_DIRS = 0;
 
 # State vars
 my $headersPrinted = 0;
+my $FOUND;
 
 foreach my $dir (@ARGV)
 {
@@ -25,7 +26,7 @@ foreach my $dir (@ARGV)
 	@dirlist = glob("$dir/*L00$laneNum*") if !@dirlist;
         if($dirlist[0])
         {
-        
+       		$FOUND = "true"; 
 	        my @flds = ();
 	        my @headers = ();
 			
@@ -43,10 +44,9 @@ foreach my $dir (@ARGV)
 	        # FASTQ counts
 	        if ($DOFASTQ)
 	        {
-	        	print STDERR "checking fastq...\n";
 	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.*");
 	            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
-	            my $contamN = seqCountFastqFiles($dir."${prefix}.contam.*(?!Count)");
+		    my $contamN = seqCountFastqFiles("$dir${prefix}.contam.polya.* $dir${prefix}.contam.adapters.* $dir${prefix}.contam.adapterTrim.*");
 	            push(@flds,$contamN); push(@headers,"contamSeqs");
 	            my $contamPolyaN = seqCountFastqFiles($dir."${prefix}.contam.polya.*");
 	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
@@ -185,11 +185,74 @@ foreach my $dir (@ARGV)
     }
 }
 
+if(!$FOUND)
+{
+	
+	foreach my $dir (@ARGV)
+	{
+		print STDERR "trying non standard run, (could be external analaysis or merge)\n";
+	        my @flds = ();
+	        my @headers = ();
+			
+	        # GENERAL
+	        if ($PRINTLANEIDS)
+	        {
+	            push(@flds,$dir); push(@headers,"FlowCelln");
+	            push(@flds,0); push(@headers,"laneNum");
+	        }
+	
+	        my $prefix = "/*";
+	
+	        # FASTQ counts
+	        if ($DOFASTQ)
+	        {
+	            my $nocontamN = seqCountFastqFiles($dir."${prefix}.nocontam.*");
+	            push(@flds,$nocontamN); push(@headers,"nocontamSeqs");
+		    my $contamN = seqCountFastqFiles("$dir${prefix}.contam.polya.* $dir${prefix}.contam.adapters.* $dir${prefix}.contam.adapterTrim.*");
+	            push(@flds,$contamN); push(@headers,"contamSeqs");
+	            my $contamPolyaN = seqCountFastqFiles($dir."${prefix}.contam.polya.*");
+	            push(@flds,$contamPolyaN); push(@headers,"contamPolyaSeqs");
+	            my $contamAdaptersN = seqCountFastqFiles($dir."${prefix}.contam.adapters.*");
+	            push(@flds,$contamAdaptersN); push(@headers,"contamAdaptersSeqs");
+	            my $contamAdapterTrimN = seqCountFastqFiles($dir."${prefix}.contam.adapterTrim.*");
+	            push(@flds,$contamAdapterTrimN); push(@headers,"contamAdapterTrimSeqs");            
+	        }
+	
+	        # Repeat counts
+	        if ($DOREPEAT)
+	        {
+	            my $gaatgN = patternCountFiles($dir."${prefix}.nocontam.*", "GAATGGAATG");
+	            push(@flds,$gaatgN); push(@headers,"GAATGGAATG");
+	            my $tatttN = patternCountFiles($dir."${prefix}.nocontam.*", "TATTTTATTT");
+	            push(@flds,$tatttN); push(@headers,"TATTTTATTT");
+	            my $cattcN = patternCountFiles($dir."${prefix}.nocontam.*", "CATTCCATTC");
+	            push(@flds,$cattcN); push(@headers,"CATTCCATTC");
+	        }
+		
+	        # Now print
+	        if (!$headersPrinted && (grep {$_} @headers))
+	        {
+	            print join(",",@headers)."\n";
+	            $headersPrinted = 1;
+	        }
+	
+	        # First two are ids
+	        if (scalar(grep {$_} @flds) > 2)
+	        {
+	            print join(",",@flds)."\n" ;
+	        }
+	
+		
+	}	
+
+}
+
 
 
 sub seqCountFastqFiles
 {
     my ($globPat) = @_;
+    print STDERR "counting lines of files matching $globPat\n";
     return (lineCountFiles($globPat)/4);
 }
 
@@ -362,3 +425,4 @@ sub conversionFrac
         return $conv;
     }
 }
+
