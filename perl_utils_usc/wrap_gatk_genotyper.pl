@@ -52,8 +52,9 @@ if($ref =~/hg18/){
 }
 elsif($ref =~/male.hg19/){
 	$dbsnp="/home/uec-00/shared/production/genomic-data-misc/dbsnp/dbsnp_138.hg19.vcf";
-	$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/1000G_phase1.indels.hg19.sort.vcf";
-	$indel_2 = "/home/uec-00/shared/production/software/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg19.sites.sort.vcf";
+	$indel_1 = "/auto/uec-00/shared/production/genomic-data-misc/indels/Mills_and_1000G_gold_standard.indels.hg19.vcf";
+	#$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/1000G_phase1.indels.hg19.sort.vcf";
+	#$indel_2 = "/home/uec-00/shared/production/software/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg19.sites.sort.vcf";
 	$interval = "/home/uec-00/shared/publicationData/bissnp2011/whole_genome_interval_list.hg19.bed";
 }	
 elsif($ref =~/hg19/){
@@ -82,18 +83,48 @@ else{
 	die "not support this reference genome file yet";
 }
 
-my $vcf = gatksnp($input);
+my $indelBam = indelRA($input);
+my $vcf = gatksnp($indelBam);
 my $vcfMetrics = gatksnpVariantEval($vcf);
+
+
+sub indelRA
+{
+        my $inputBam = shift @_;
+        my $outputBam = $inputBam . ".realn.bam";
+        my $outputIV = $inputBam . ".intervals";
+        my $cmd .= "$JAVA -jar $GATKSNP -R $ref ";
+        $cmd .= "-T RealignerTargetCreator ";
+        $cmd .= "-I $inputBam ";
+        $cmd .= "-o $outputIV ";
+        $cmd .= "-known $indel_1 ";
+        $cmd .= "-known $indel_2 " if $indel_2 && $ref !~/mm9/;
+        $cmd .= "-nt $numcores ";
+        runcmd($cmd);
+
+        my $cmd .= "$JAVA -jar $GATKSNP -R $ref ";
+        $cmd .= "-T IndelRealigner ";
+        $cmd .= "-targetIntervals $inputBam\.intervals ";
+        $cmd .= "-I $inputBam ";
+        $cmd .= "-o $outputBam ";
+        $cmd .= "-compress 0 ";
+        $cmd .= "-known $indel_1 ";
+        $cmd .= "-known $indel_2 " if $indel_2 && $ref !~/mm9/;
+        runcmd($cmd);
+        return $outputBam;
+}
 
 sub gatksnp{
 	my $inputBam = shift @_;
-	my $outputVCF = $inputBam . ".snps.raw.vcf";
+	my $outputVCF = $input . ".snps.raw.vcf";
 	my $cmd .= "$JAVA -jar $GATKSNP -R $ref ";
 	$cmd .= "-I $inputBam ";									
-	$cmd .= "-D $dbsnp -T UnifiedGenotyper -o $outputVCF ";
-	$cmd .= "-stand_call_conf $confidance -stand_emit_conf 0 -nt $numcores ";
+	$cmd .= "-T HaplotypeCaller ";
+	$cmd .= "--dbsnp $dbsnp ";
+	$cmd .= "-o $outputVCF -U ALLOW_N_CIGAR_READS ";
+	$cmd .= "-stand_call_conf $confidance -stand_emit_conf 0 -nct $numcores ";
 	#$cmd .= "-mmq $minMapQ -mbq $minBaseQ -out_mode EMIT_VARIANTS_ONLY\n";
-	$cmd .= "-mbq $minBaseQ -out_mode EMIT_VARIANTS_ONLY\n";
+	#$cmd .= "-mbq $minBaseQ -out_mode EMIT_VARIANTS_ONLY\n";
 	runcmd($cmd);
 	return $outputVCF;
 }
@@ -107,24 +138,6 @@ sub gatksnpVariantEval{
 	$cmd .= "-nt $numcores";
 	runcmd($cmd);
 	return $outputTxt;
-}
-
-sub vcf_sort{
-	my $cmd .= "perl $VCFTOOLS --k 1 --c 2 ";
-	$cmd .= "--tmp ".dirname($vcf_unsorted_cpg);
-	$cmd .= " $vcf_unsorted_cpg ";
-	$cmd .= "$ref";
-	$cmd .= ".fai ";
-	$cmd .= "> $vcf_sorted_cpg \n";
-	$cmd .= "perl $VCFTOOLS --k 1 --c 2 ";
-	$cmd .= "--tmp ".dirname($vcf_unsorted_snp)." ";
-	$cmd .= "$vcf_unsorted_snp ";
-	$cmd .= "$ref";
-	$cmd .= ".fai ";
-	$cmd .= "> $vcf_sorted_snp \n";
-	
-	system($cmd)== 0 || die "system call to vcf_sort() failed: $?\n" ;;
-	print "$cmd\n";
 }
 
 sub runcmd{
