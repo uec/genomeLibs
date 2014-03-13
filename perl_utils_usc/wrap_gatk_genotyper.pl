@@ -84,7 +84,8 @@ else{
 }
 
 my $indelBam = indelRA($input);
-my $vcf = gatksnp($indelBam);
+my $recalBam = recalRA($indelBam);
+my $vcf = gatksnp($recalBam);
 my $vcfMetrics = gatksnpVariantEval($vcf);
 
 
@@ -113,6 +114,31 @@ sub indelRA
         runcmd($cmd);
         return $outputBam;
 }
+
+sub recalRA
+{
+        my $inputBam = shift @_;
+        my $outputBam = $inputBam . ".recal.bam";
+        my $outputTable = $outputBam . ".recal_table";
+        my $cmd .= "$JAVA -jar $GATKSNP -R $ref ";
+        $cmd .= "-T BaseRecalibrator ";
+        $cmd .= "-I $inputBam ";
+        $cmd .= "-o $outputTable ";
+        $cmd .= "-knownSites $dbsnp ";
+        $cmd .= "-knownSites $indel_1 ";
+        $cmd .= "-nct $numcores ";
+        runcmd($cmd);
+
+        my $cmd .= "$JAVA -jar $GATKSNP -R $ref ";
+        $cmd .= "-T PrintReads ";
+        $cmd .= "-I $inputBam ";
+        $cmd .= "-o $outputBam ";
+        $cmd .= "-BQSR $outputTable ";
+        runcmd($cmd);
+        return $outputBam;
+}
+
+
 
 sub gatksnp{
 	my $inputBam = shift @_;
