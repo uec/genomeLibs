@@ -14,7 +14,8 @@ my $minMapQ = 30;
 my $minBaseQ = 5;
 
 my $ram = 1.3 * $numcores;
-my $ram = int($ram);
+$ram = int($ram);
+$ram = 20;
 my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
 my $GATKSNP = "/home/uec-00/shared/production/software/GATK2/default/GenomeAnalysisTK.jar";
