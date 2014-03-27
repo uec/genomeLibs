@@ -15,7 +15,8 @@ my $minBaseQ = 5;
 
 my $ram = 1.3 * $numcores;
 $ram = int($ram);
-$ram = 20;
+$ram = 20 if $ram > 20;
+
 my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
 my $GATKSNP = "/home/uec-00/shared/production/software/GATK2/default/GenomeAnalysisTK.jar";
@@ -102,6 +103,7 @@ sub indelRA
         $cmd .= "-known $indel_1 ";
         $cmd .= "-known $indel_2 " if $indel_2 && $ref !~/mm9/;
         $cmd .= "-nt $numcores ";
+        $cmd .= "-U ALLOW_N_CIGAR_READS ";
         runcmd($cmd);
 
         my $cmd .= "$JAVA -jar $GATKSNP -R $ref ";
@@ -112,6 +114,7 @@ sub indelRA
         $cmd .= "-compress 0 ";
         $cmd .= "-known $indel_1 ";
         $cmd .= "-known $indel_2 " if $indel_2 && $ref !~/mm9/;
+        $cmd .= "-U ALLOW_N_CIGAR_READS ";
         runcmd($cmd);
         return $outputBam;
 }
@@ -128,6 +131,7 @@ sub recalRA
         $cmd .= "-knownSites $dbsnp ";
         $cmd .= "-knownSites $indel_1 ";
         $cmd .= "-nct $numcores ";
+        $cmd .= "-U ALLOW_N_CIGAR_READS ";
         runcmd($cmd);
 
         my $cmd .= "$JAVA -jar $GATKSNP -R $ref ";
@@ -135,6 +139,7 @@ sub recalRA
         $cmd .= "-I $inputBam ";
         $cmd .= "-o $outputBam ";
         $cmd .= "-BQSR $outputTable ";
+        $cmd .= "-U ALLOW_N_CIGAR_READS ";
         runcmd($cmd);
         return $outputBam;
 }
