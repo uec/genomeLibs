@@ -13,9 +13,11 @@ my $USAGE = "bamToElementEnrichment.pl [-distUpstream 1000] file.bam elements.be
 my $TEMPPREFIX = "MATCHEDBED";
 my @REFS = ( "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
 	   "/home/uec-00/shared/production/genomes/encode_hg19_mf/female.hg19.fa", 
-	   "/home/uec-00/shared/production//genomes/hg18_unmasked/hg18_unmasked.plusContam.fa");
+	   "/home/uec-00/shared/production//genomes/hg18_unmasked/hg18_unmasked.plusContam.fa",
+	   "/home/uec-00/shared/production/genomes/mm10/mm10.fa");
 
 my $bedhg18 = "/home/rcf-40/bberman/tumor/genomic-data-misc/CGIs/Takai_Jones_from_Fei_122007.fixed.hg18.PROMOTERONLY.oriented.bed";
+my $mm10bed = "/home/uec-00/shared/production/genomic-data-misc/CpG_islands/mm10cpgisland.bed";
 
 my $distUpstream = 1000;
 my $minMapq = 20;
@@ -48,6 +50,7 @@ sub calculateRatio
 	{
 
 		$bed = $bedhg18 if($ref =~ /hg18/);
+		$bed = $mm10bed if($ref =~ /mm10/);
 		# Run gatk counter on main file.
 		my ($amean, $astdv) = getCounts($bam, $bed, $minMapq, $ref);
 		if($amean)
@@ -56,9 +59,8 @@ sub calculateRatio
 			# Run gatk counter on matched bed file
 			my ($matchedbed) = makeMatchedElTempFile($bed, $distUpstream);
 			my ($bmean, $bstdv) = getCounts($bam, $matchedbed, $minMapq, $ref);
-;
 			my $ratio = $amean/$bmean;
-			open(OUT,">$outfile");
+			open(OUT,"> $outfile");
 			print OUT sprintf("RatioOfMeans=%0.3f\tamean=%0.3f\tbmean=%0.3f\tastdv=%0.3f\tbstdv=%0.3f\tbam=%s\tbed=%s\tref=%s\tdistUpstream=%d\n",$ratio,$amean, $bmean, $astdv, $bstdv, File::Spec->rel2abs($inbam),$bed,$ref,$distUpstream);
 			close OUT;
 
@@ -76,7 +78,7 @@ sub calculateRatio
 sub getCounts
 {
 	my ($bam, $bed, $minMapq,$ref) = @_;
-	my $cmd  = "$uecgatk -T CoverageDepth -R ${ref} -I ${bam} --intervals ${bed} -et NO_ET";
+	my $cmd  = "$uecgatk -T CoverageDepth -R ${ref} -I ${bam} --intervals ${bed} ";
 	print STDERR "${cmd}...\n";
 	my $out = `$cmd`;
 	
