@@ -14,9 +14,11 @@ my $TEMPPREFIX = "MATCHEDBED";
 my @REFS = ( "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
 	   "/home/uec-00/shared/production/genomes/encode_hg19_mf/female.hg19.fa", 
 	   "/home/uec-00/shared/production//genomes/hg18_unmasked/hg18_unmasked.plusContam.fa",
+	   "/home/uec-00/shared/production//genomes/mm9_unmasked/mm9_unmasked.a",
 	   "/home/uec-00/shared/production/genomes/mm10/mm10.fa");
 
 my $bedhg18 = "/home/rcf-40/bberman/tumor/genomic-data-misc/CGIs/Takai_Jones_from_Fei_122007.fixed.hg18.PROMOTERONLY.oriented.bed";
+my $mm9bed = "/home/uec-00/shared/production/genomic-data-misc/CpG_islands/mm9cpgisland.bed";
 my $mm10bed = "/home/uec-00/shared/production/genomic-data-misc/CpG_islands/mm10cpgisland.bed";
 
 my $distUpstream = 1000;
@@ -51,6 +53,7 @@ sub calculateRatio
 
 		$bed = $bedhg18 if($ref =~ /hg18/);
 		$bed = $mm10bed if($ref =~ /mm10/);
+		$bed = $mm9bed if($ref =~ /mm9/);
 		# Run gatk counter on main file.
 		my ($amean, $astdv) = getCounts($bam, $bed, $minMapq, $ref);
 		if($amean)
