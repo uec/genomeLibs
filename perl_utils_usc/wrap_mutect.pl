@@ -40,14 +40,14 @@ elsif($ref =~/male.hg19/){
 	$cosmic = "/auto/uec-00/shared/production/genomic-data-misc/COSMIC/b37_cosmic_v54_120711.fixed.vcf";
 	$dbsnp="/home/uec-00/shared/production/genomic-data-misc/dbsnp/dbsnp_138.hg19.vcf";
         $indel_1 = "/auto/uec-00/shared/production/genomic-data-misc/indels/Mills_and_1000G_gold_standard.indels.hg19.vcf";
-}
+}	
 elsif($ref =~/hg19/){
 	$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/1000G_phase1.indels.hg19.sort.vcf";
         $indel_2 = "/home/uec-00/shared/production/software/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg19.sites.sort.vcf";
 	$dbsnp = "/home/uec-00/shared/production/genomic-data-misc/dbsnp/dbsnp_135.hg19.sort.vcf";
 	$interval = "/auto/uec-00/shared/production/genomic-data-misc/agilentSureSelect/S04380110_Regions.bed" unless $interval;
 	$cosmic = "/auto/uec-00/shared/production/genomic-data-misc/COSMIC/b37_cosmic_v54_120711.fixed.vcf";
-}
+}	
 elsif($ref =~/37/ ){
 	$dbsnp = "/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.b37.vcf";
 	$interval = "/auto/uec-00/shared/production/genomic-data-misc/agilentSureSelect/S04380110_Regions.bed" unless $interval;

@@ -10,3 +10,7 @@ chomp @files;
 @del  = grep !/unmapped/, @del;
 print("$_\n") for @del;
 system("rm $_") for @del;
+
+
+
+

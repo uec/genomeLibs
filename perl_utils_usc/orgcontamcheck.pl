@@ -14,7 +14,8 @@ $lines = $sampleSize * 4;
 
 my $inputBase = basename($input);
 
-runcmd("head -n $lines $input > $inputBase\.sampled.txt");
+runcmd("head -n $lines $input > $inputBase\.sampled.txt") unless ($input =~ /gz$/);
+runcmd("zcat $input | head -n $lines > $inputBase\.sampled.txt") if($input =~ /gz$/);
 
 for my $genome ( @ARGV )
 {

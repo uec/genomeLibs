@@ -7,4 +7,3 @@ $ENV{'PATH'} .= "/home/uec-00/shared/production/software/cufflinks/default:/home
 $execmd = "/home/uec-00/shared/production/software/cufflinks/default/cuffcompare " . join(" ", @ARGV);
 print "$execmd\n";
 system($execmd);
-

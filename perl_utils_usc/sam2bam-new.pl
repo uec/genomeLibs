@@ -38,8 +38,8 @@ if(scalar(@ARGV) > 2)
 	my $mergedFileName = $samFn;
 	$mergedFileName = basename($mergedFileName);
 	$mergedFileName =~ s/\.sam$/\.merged\.sam/;
-	print STDERR "cat $mergeFileString | grep -v \@SQ > $mergedFileName\n";
-	system("cat $mergeFileString |grep -v \@SQ> $mergedFileName");
+	print STDERR "cat $mergeFileString | grep -Ev '^\@' > $mergedFileName\n";
+	system("cat $mergeFileString | grep -Ev '^\@' > $mergedFileName");
 	$samFn = $mergedFileName;	
 }
 

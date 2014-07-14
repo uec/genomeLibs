@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 use Getopt::Long;
 
-my $USAGE = "cat input.sam | samToTagalign.pl --minBamMapQual 20 > out.tagAlign";
+my $USAGE = "cat input.sam | samToBed.pl --minBamMapQual 20 > out.tagAlign";
 my $minBamMapQual = 0;
 GetOptions ('minBamMapQual=i' => \$minBamMapQual) || die "$USAGE\n";
 
@@ -41,8 +41,6 @@ LINE: while (my $line = <STDIN>)
 
 	next if ($mapq<$minBamMapQual);
 
-	$line =~ /ZS:Z:([\-\+]+)/;
-	my $zs = $1;
 
 	print STDOUT join("\t",
 			  $chr,
@@ -51,8 +49,6 @@ LINE: while (my $line = <STDIN>)
 			  $seq,
 			  int(1000*$mapq/255), # 255 is max BAM quality scale (phred scaled)
 			  $strand);
-#		print STDOUT "\t.. $zs";
 	print STDOUT "\n";
 }
-
 

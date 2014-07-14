@@ -9,7 +9,7 @@ use strict;
 use Getopt::Long;
 my $use_bad_mates;
 
-my $metric_unsorted_cpg = $ARGV[0] || die "specify output txt file";
+my $metric_unsorted_cpg = $ARGV[0] || die "need input bam file";
 my $input = $ARGV[1] || die "need input bam file";
 my $ref = $ARGV[2] || die "need reference genome file";
 my $interval;
@@ -88,7 +88,7 @@ sub bissnp{
 		}
 	}
 	$header .= "$c_str";
-	$header .= "-badMate " if $use_bad_mates;
+	$header .= "-toCoverage 99999999 " if ($interval eq "chrM" || $use_bad_mates);
 	$header .= "-stand_call_conf $confidance -stand_emit_conf 0 -dt NONE -bsRate $bisulfiteRate -nt $numcores ";
 	$header .= "-minConv 1 -vcfCache 1000000 ";
 	$header .= "-mmq $minMapQ ";

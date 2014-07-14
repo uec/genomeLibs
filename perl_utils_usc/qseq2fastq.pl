@@ -6,7 +6,7 @@ for $qseq (@ARGV)
 	open(IN,"<$qseq");
 	while(<IN>)
 	{
-		@fields = split(/\t/);
+		my @fields = split(/\t/);
 		die "$qseq contains weird number of columns\n" if $#fields != 10;
 		if($fields[10] > 0)
 		{
@@ -17,5 +17,6 @@ for $qseq (@ARGV)
 			print "\@$read\n$seq\n\+$read\n$qual\n";
 		}
 	}
+	close(IN);
 }
 

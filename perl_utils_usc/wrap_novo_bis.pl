@@ -32,11 +32,11 @@ die "reference does not exist.\n" if (! -e $refNovo);
 die "need read sequence files\n" unless ( -e $read1 );
 
 #aln end 1
-my $cmd = "$novo -d $refNovo -f $read1 $read2 -F ILMFQ -b 4 -o SAM > $outfileSAM";
+my $cmd = "$novo -d $refNovo -f $read1 $read2 -F ILMFQ -b 2 -o SAM -k -t 150 -e 10000 -a -H > $outfileSAM";
 runcmd($cmd);
 
-runcmd("$JAVA -Xmx14g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
-runcmd("$JAVA -Xmx14g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
+runcmd("$JAVA -Xmx12g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
+runcmd("$JAVA -Xmx12g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
 
 sub runcmd
 {

@@ -71,12 +71,12 @@ system "${SAMDIR}/samtools index ${curIn} ${curOut}";
 # sort with picard (no point on making a nodups file seperately, but do it for now)
 $curIn = "${mapFnBase}.bam";
 $curOut = "${mapFnBase}.picard.sorted.bam";
-system "$JAVA -Xmx14g -jar $PICARDDIR/SortSam.jar INPUT=$curIn OUTPUT=$curOut SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=3000000";
+system "$JAVA -Xmx13g -jar $PICARDDIR/SortSam.jar INPUT=$curIn OUTPUT=$curOut SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=3000000";
 
 # mark dups with picard (no point on making a nodups file seperately, but do it for now)
 $curIn = $curOut;
 $curOut = "${mapFnBase}.picard.nodups.bam";
-system "$JAVA -Xmx14g -jar $PICARDDIR/MarkDuplicates.jar INPUT=$curIn OUTPUT=$curOut METRICS_FILE=met.txt MAX_RECORDS_IN_RAM=3000000";
+system "$JAVA -Xmx13g -jar $PICARDDIR/MarkDuplicates.jar INPUT=$curIn OUTPUT=$curOut METRICS_FILE=met.txt MAX_RECORDS_IN_RAM=3000000";
 
 #replace original bam with dup-marked, sorted, bam
 $curIn = $curOut;

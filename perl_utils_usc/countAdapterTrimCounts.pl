@@ -20,5 +20,5 @@ open(OUT,">$output") || die "output error";
 for $i (0..$#counts)
 {
 	my $count = $counts[$i] || 0;
-	print OUT "adapterTrimCount $i $count\n";
+	print OUT "adapterTrimCount,$i,$count\n";
 }

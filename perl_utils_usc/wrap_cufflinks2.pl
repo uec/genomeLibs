@@ -11,5 +11,5 @@ system($execmd);
 
 $file = basename($file);
 system("mv transcripts.gtf " . $file. ".cufflinks_transcripts.gtf");
-system("mv transcripts.expr " . $file. ".cufflinks_transcripts.expr");
-system("mv genes.expr " . $file. ".cufflinks_genes.expr");
+system("mv isoforms.fpkm_tracking " . $file. ".cufflinks_isoforms.expr");
+system("mv genes.fpkm_tracking " . $file. ".cufflinks_genes.expr");

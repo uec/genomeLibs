@@ -3,9 +3,10 @@ use strict;
 
 my $numcores = `cat /proc/cpuinfo | grep processor -c`;
 chomp $numcores;
-$numcores = $numcores / 2 - 1;
+#$numcores = $numcores / 2 - 1;
 
-my $ram = 4 * $numcores;
+#my $ram = 4 * $numcores;
+my $ram = 12;
 
 my $input = $ARGV[0] || die "need input file";
 my $bissnp = "/home/uec-00/shared/production/software/bissnp/bissnp-default.jar";
@@ -16,7 +17,7 @@ my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java -Xmx$r
 
 
 
-my $cmd = "$JAVA -jar $bissnp -aecm -R $ref -T BisulfiteGenotyper -I $input -D $vcf -vfn1 $input.cpg.raw.vcf -vfn2 $input.snp.raw.vcf -stand_call_conf 30 -stand_emit_conf 0 -L $interval -out_modes DEFAULT_FOR_TCGA -single_sample normal_test -nt $numcores -rgv hg19 -mbq 0 -mmq 30";
+my $cmd = "$JAVA -jar $bissnp -R $ref -T BisulfiteGenotyper -I $input -D $vcf -vfn1 $input.cpg.raw.vcf -vfn2 $input.snp.raw.vcf -stand_call_conf 20 -stand_emit_conf 0 -L $interval -out_modes DEFAULT_FOR_TCGA -nt $numcores -rgv hg19 -mbq 0 -mmq 30";
 
 runcmd("$cmd");
 

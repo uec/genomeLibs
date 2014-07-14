@@ -44,7 +44,7 @@ else
 		}
 	}
 
-	runcmd("$JAVA -Xmx12g -jar $PICARD/MergeSamFiles.jar $cmd");
+	runcmd("$JAVA -Xmx4g -jar $PICARD/MergeSamFiles.jar $cmd");
 	my $bai = $output;
 	$bai =~ s/bam$/bai/;
 	runcmd("mv $bai $output.bai");
@@ -58,7 +58,7 @@ runcmd("$SAMTOOLS flagstat $output > $output\.flagstat\.metric\.txt");
 
 my $outputdups = $output;
 $outputdups =~ s/bam$/mdups\.bam/;
-runcmd("$JAVA -Xms5g -Xmx5g -jar $PICARD/MarkDuplicates.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups");
+runcmd("$JAVA -Xms7g -Xmx7g -jar $PICARD/MarkDuplicates.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups");
 my $dupbai = $outputdups;
 $dupbai =~ s/bam$/bai/;
 runcmd("mv $dupbai $outputdups\.bai");
@@ -71,7 +71,8 @@ sub addReadGroup
 	my $flowcell;
 	my $lane;
 	my $lib;
-	my $bamInBase = basename($bamIn);
+	my $bamInBase = basename($bamIn);;
+
 	if($bamInBase =~ /^(.+?)_(.+?)_(\d+)_(.+?)\./)
 	{
 		$flowcell = $2;

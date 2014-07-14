@@ -52,6 +52,7 @@ if (@ARGV == 4)
 	runcmd($cmd);
 
 	die "need read.sai files\n" unless ( -e $read1SA && -e $read2SA );
+	#my $alignCMD = join(" ", $bwa, "sampe -A", $refFa, $read1SA, $read2SA, $read1, $read2, "> $outfileSAM");
 	my $alignCMD = join(" ", $bwa, "sampe", $refFa, $read1SA, $read2SA, $read1, $read2, "> $outfileSAM");
 	runcmd($alignCMD);
 }

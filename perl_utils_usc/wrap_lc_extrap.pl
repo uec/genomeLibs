@@ -8,7 +8,7 @@ $inputFile = $ARGV[0] || die "specifiy input BAM file";
 $outputFile = $ARGV[1] || die "specifiy output TXT file";
 $inputFile =~ /^(.+)\.bam$/ || die "specficy outout";
 
-$cmd = "$lc_extrap -v -s 10000000 -bam $inputFile > $outputFile ";
+$cmd = "$lc_extrap -v -s 10000000 -e 3000000000 -bam $inputFile > $outputFile ";
 print "$cmd\n";
 system("$cmd");
 

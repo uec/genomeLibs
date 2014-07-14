@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 use Getopt::Long;
 use File::Basename;
 
