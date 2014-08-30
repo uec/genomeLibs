@@ -352,9 +352,10 @@ sub bissnp{
 		$header .= "-out_modes EMIT_VARIANT_AND_CYTOSINES -sm GM ";
 	}
 	$header .= "-toCoverage 99999 -minConv 0 " if $RRBS;
+	$header .= "-minConv 1 " unless $RRBS;
 	print STDERR "using bissnp RBBS options\n " if $RRBS;
 	$header .= "-stand_call_conf $confidance -stand_emit_conf 0 -dt NONE -bsRate $bisulfiteRate -loc -1 -nt $numcores ";
-	$header .= "-minConv 1 -vcfCache 1000000 ";
+	$header .= "-vcfCache 1000000 ";
 	$header .= "-mmq $minMapQ ";
 	$header .= "-mbq $minBaseQ\n";
 	
