@@ -2,10 +2,10 @@
 use File::Basename;
 
 #$ENV{'BOWTIE_INDEXES'} = "/home/uec-00/shared/production/genomes/bowtie/";
-$ENV{'PATH'} .= "/home/uec-00/shared/production/software/cufflinks2/default:/home/uec-00/shared/production/software/tophat2/default:/home/uec-00/shared/production/software/bowtie2/default";
+$ENV{'PATH'} .= "$SOFTWAREROOT/cufflinks2/default:$SOFTWAREROOT/tophat2/default:$SOFTWAREROOT/bowtie2/default";
 $file = $ARGV[$#ARGV];
 
-$execmd = "/home/uec-00/shared/production/software/cufflinks2/default/cufflinks " . join(" ", @ARGV);
+$execmd = "$SOFTWAREROOT/cufflinks2/default/cufflinks " . join(" ", @ARGV);
 print "$execmd\n";
 system($execmd);
 

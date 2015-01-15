@@ -1,12 +1,16 @@
 #!/usr/bin/perl
+use strict;
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
-$ucsc = "/auto/uec-00/shared/production/software/UCSC_Browser_Tools/default";
+my $ucsc = "$SOFTWAREROOT/UCSC_Browser_Tools/default";
 
-$input = $ARGV[0] || die "specifiy wig file";
+my $input = $ARGV[0] || die "specifiy wig file";
 $input =~ /wig/i || die "specifiy wig file";
-$output = $ARGV[1] || die "specifiy output file";
+my $output = $ARGV[1] || die "specifiy output file";
 
-$genome = $ARGV[2] || "hg19";
+my $genome = $ARGV[2] || "hg19";
 $genome = "mm9" if $input =~ /mm9/;
 $genome = "mm10" if $input =~ /mm10/;
 $genome = "hg18" if $input =~ /hg18/;

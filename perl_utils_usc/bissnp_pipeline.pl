@@ -9,6 +9,8 @@
 
 use Getopt::Long;
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
 my $skip_indel_align = "";
 my $skip_mdups = "";
@@ -53,19 +55,15 @@ my $minBaseQ = 5;
 
 my $ram = 1.3 * $numcores;
 my $ram = int($ram);
-my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
-my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
-my $BISSNP = "/home/uec-00/shared/production/software/bissnp/bissnp-default.jar";
-my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java -Xmx$ram" . "G";
-my $IGVTOOLS = "/home/uec-00/shared/production/software/igvtools/default/igvtools toTDF";
-my $WIG2BW = "/home/uec-00/shared/production/software/UCSC_Browser_Tools/default/wigToBigWig";
-my $CHROMSIZE="/home/uec-00/shared/production/software/UCSC_Browser_Tools/default/hg19.chrom.sizes";
+my $IGVTOOLS = "$SOFTWAREROOT/igvtools/default/igvtools toTDF";
+my $WIG2BW = "$SOFTWAREROOT/UCSC_Browser_Tools/default/wigToBigWig";
+my $CHROMSIZE="$SOFTWAREROOT/UCSC_Browser_Tools/default/hg19.chrom.sizes";
 
-my $VCFTOOLS = "/home/uec-00/shared/production/software/bissnp/sortByRefAndCor.pl";
-my $VCF2BED = "/home/uec-00/shared/production/software/bissnp/vcf2bed6plus2.pl";
-my $VCF2WIG = "/home/uec-00/shared/production/software/bissnp/vcf2wig.pl";
-my $VCF2COV = "/home/uec-00/shared/production/software/bissnp/vcf2wig_ct_coverage.pl";
-my $VCF2RAWCOV = "/home/uec-00/shared/production/software/bissnp/vcf2wig_raw_coverage.pl";
+my $VCFTOOLS = "$SOFTWAREROOT/bissnp/sortByRefAndCor.pl";
+my $VCF2BED = "$SOFTWAREROOT/bissnp/vcf2bed6plus2.pl";
+my $VCF2WIG = "$SOFTWAREROOT/bissnp/vcf2wig.pl";
+my $VCF2COV = "$SOFTWAREROOT/bissnp/vcf2wig_ct_coverage.pl";
+my $VCF2RAWCOV = "$SOFTWAREROOT/bissnp/vcf2wig_raw_coverage.pl";
 
 
 
@@ -77,39 +75,39 @@ my $interval;
 
 ## define required file by provided reference genome
 if($ref =~/hg18/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.hg18.sort.vcf";
-	$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/1000G_phase1.indels.hg18.sort.vcf";
-	$indel_2 = "/home/uec-00/shared/production/software/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg18.sites.sort.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/dbsnp_135.hg18.sort.vcf";
+	$indel_1 = "$SOFTWAREROOT/bissnp/genomic_data/1000G_phase1.indels.hg18.sort.vcf";
+	$indel_2 = "$SOFTWAREROOT/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg18.sites.sort.vcf";
 	#$ref="/home/uec-00/shared/production/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa";
-	$interval = "/home/uec-00/shared/publicationData/bissnp2011/whole_genome_interval_list.hg18.bed";
-	$CHROMSIZE="/home/uec-00/shared/production/software/UCSC_Browser_Tools/default/hg18.chrom.sizes";
+	$interval = "$PUBLICATIONDATA/bissnp2011/whole_genome_interval_list.hg18.bed";
+	$CHROMSIZE="$SOFTWAREROOT/UCSC_Browser_Tools/default/hg18.chrom.sizes";
 }elsif($ref =~/hg19/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.hg19.sort.vcf";
-	$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/1000G_phase1.indels.hg19.sort.vcf";
-	$indel_2 = "/home/uec-00/shared/production/software/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg19.sites.sort.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/dbsnp_135.hg19.sort.vcf";
+	$indel_1 = "$SOFTWAREROOT/bissnp/genomic_data/1000G_phase1.indels.hg19.sort.vcf";
+	$indel_2 = "$SOFTWAREROOT/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg19.sites.sort.vcf";
 	#$ref="/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa";
-	$interval = "/home/uec-00/shared/publicationData/bissnp2011/whole_genome_interval_list.hg19.bed";
+	$interval = "$PUBLICATIONDATA/bissnp2011/whole_genome_interval_list.hg19.bed";
 	
 }elsif($ref =~/37/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.b37.vcf";
-	$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/1000G_phase1.indels.b37.sort.vcf";
-	$indel_2 = "/home/uec-00/shared/production/software/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.b37.sites.sort.vcf";
-	#$ref="/home/uec-00/shared/production/software/bissnp/genomic_data/GRCh37-lite.fa";
-	$interval = "/home/uec-00/shared/publicationData/bissnp2011/whole_genome_interval_list.hg19.bed";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/dbsnp_135.b37.vcf";
+	$indel_1 = "$SOFTWAREROOT/bissnp/genomic_data/1000G_phase1.indels.b37.sort.vcf";
+	$indel_2 = "$SOFTWAREROOT/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.b37.sites.sort.vcf";
+	#$ref="$SOFTWAREROOT/bissnp/genomic_data/GRCh37-lite.fa";
+	$interval = "$PUBLICATIONDATA/bissnp2011/whole_genome_interval_list.hg19.bed";
 	$CHROMSIZE="/export/uec-gs1/laird/users/yaping/data/genome_data/genome_interval/GRCh37.chrom.sizes";
 
 }elsif($ref =~/mm9/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/mouse-20111102-snps-all.annotated.mm9.vcf";
-	$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/mouse-20110602-callable-dinox-indels.annot.mm9.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/mouse-20111102-snps-all.annotated.mm9.vcf";
+	$indel_1 = "$SOFTWAREROOT/bissnp/genomic_data/mouse-20110602-callable-dinox-indels.annot.mm9.vcf";
 	#$ref="/home/uec-00/shared/production/genomes/mm9_unmasked/mm9_unmasked.fa";
-	$interval = "/home/uec-00/shared/publicationData/bissnp2011/whole_genome_interval_list.mm9.bed";
-	$CHROMSIZE="/home/uec-00/shared/production/software/UCSC_Browser_Tools/default/mm9.chrom.sizes";
+	$interval = "$PUBLICATIONDATA/bissnp2011/whole_genome_interval_list.mm9.bed";
+	$CHROMSIZE="$SOFTWAREROOT/UCSC_Browser_Tools/default/mm9.chrom.sizes";
 }elsif($ref =~/mm10/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/mgp.v3.snps.rsIDdbSNPv137.mm10.vcf";
-	$indel_1 = "/home/uec-00/shared/production/software/bissnp/genomic_data/mgp.v3.indels.rsIDdbSNPv137.mm10.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/mgp.v3.snps.rsIDdbSNPv137.mm10.vcf";
+	$indel_1 = "$SOFTWAREROOT/bissnp/genomic_data/mgp.v3.indels.rsIDdbSNPv137.mm10.vcf";
 	#$ref="/home/uec-00/shared/production/genomes/mm10/mm10.fa";
-	$interval = "/home/uec-00/shared/publicationData/bissnp2011/whole_genome_interval_list.mm10.bed";
-	$CHROMSIZE="/home/uec-00/shared/production/software/UCSC_Browser_Tools/default/mm10.chrom.sizes";
+	$interval = "$PUBLICATIONDATA/bissnp2011/whole_genome_interval_list.mm10.bed";
+	$CHROMSIZE="$SOFTWAREROOT/UCSC_Browser_Tools/default/mm10.chrom.sizes";
 }
 else{
 	die "not support this reference genome file yet";
@@ -505,11 +503,4 @@ sub vcf2tdf{
 		
 	}
 	
-}
-
-sub runcmd{
-	my $cmd=shift @_;
-	my $module_name=shift @_;
-	system($cmd)== 0 || die "system call to $module_name failed: $?\n" ;
-	print "$cmd\n";
 }

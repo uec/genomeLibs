@@ -6,15 +6,17 @@ use threads;
 use threads::shared;
 use Data::Dumper;
 
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
 #the following should be set according to your system
-my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
-my $BEDTOOLS_PATH = "/auto/uec-00/shared/production/software/bedtools/default/bin";
-my $R = "/home/uec-00/shared/production/software/R/release/R-3-x86_64/bin/R";
-my $SPP = "/auto/uec-00/shared/production/software/SPP/default/run_spp_nodups.R";
-my $IDR = "/auto/uec-00/shared/production/software/SPP/idrCode/batch-consistency-analysis.r";
+my $BEDTOOLS_PATH = "$SOFTWAREROOT/bedtools/default/bin";
+my $R = "$SOFTWAREROOT/R/release/R-3-x86_64/bin/R";
+my $SPP = "$SOFTWAREROOT/SPP/default/run_spp_nodups.R";
+my $IDR = "$SOFTWAREROOT/SPP/idrCode/batch-consistency-analysis.r";
 
 #since we have a single R install shared amongst many people, I've installed the spp libraries locally, so I set R_LIBS
-$ENV{R_LIBS} = "/home/uec-00/shared/production/software/SPP/default/Rlibs";
+$ENV{R_LIBS} = "$SOFTWAREROOT/SPP/default/Rlibs";
 $ENV{PATH} .= ":" .  dirname($SAMTOOLS);
 
 my $MAXMEM_KB_PER_JOB = 6291456;

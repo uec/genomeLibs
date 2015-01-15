@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 use strict;
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
 # bsmap -a ./s_7_1_sequence.200k.txt -d ~/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa -o s_7_1_sequence.200k.sam -z @ -p 11 -b s_7_2_sequence.200k.txt -s 18 -v 10 -q 2
 
-my $BSMAP = "/home/uec-00/shared/production/software/bsmap/default/bsmap";
+my $BSMAP = "$SOFTWAREROOT/bsmap/default/bsmap";
 
 #change to AMD version in case SSE4.2 not supported on this machine.
-$BSMAP = "/home/uec-00/shared/production/software/bsmap/default-amd/bsmap" if `bash -c \"$BSMAP 2>&1\"` =~ /Fatal/s;
+$BSMAP = "$SOFTWAREROOT/bsmap/default-amd/bsmap" if `bash -c \"$BSMAP 2>&1\"` =~ /Fatal/s;
 print STDERR "$BSMAP\n";
-my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
-my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
-my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
-my $MAQ = "/home/uec-00/shared/production/software/maq-0.7.1/maq";
+
 
 my $output = $ARGV[0] || die "no output specified";
 my $genome = $ARGV[1] || die "no genome specified";
@@ -30,7 +30,7 @@ runcmd("zcat $read2 >" . basename($read2) . ".nogz.fastq") if($read2 =~ /gz$/);
 $read1 = basename($read1) . ".nogz.fastq" if($read1 =~ /gz$/);
 $read2 = basename($read2) . ".nogz.fastq" if($read2 =~ /gz$/);
 
-my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQualityScale.pl $read1`;
+my $phred = `$SOFTWAREROOT/perl_utils_usc/testFastqQualityScale.pl $read1`;
 if($phred =~ /64/)
 {
 	
@@ -55,7 +55,7 @@ $cmd .= "-p 12 -s 16 -v 10 -q 2 -A AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGAC
 runcmd($cmd);
 
 #samtobamsort
-runcmd("$JAVA -Xmx7g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT=$samOutput OUTPUT=$output SORT_ORDER=coordinate TMP_DIR=/export/uec-gs1/laird/shared/tmp");
+runcmd("$JAVA -Xmx7g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT=$samOutput OUTPUT=$output SORT_ORDER=coordinate TMP_DIR=$PICARDTMP");
 
 #samtools sort
 #runcmd("$SAMTOOLS view -b -S -o $output $samOutput");
@@ -72,9 +72,4 @@ runcmd("$JAVA -Xmx7g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT INPUT
 #runcmd("$JAVA -Xmx14g -jar $PICARD/MarkDuplicates.jar VALIDATION_STRINGENCY=SILENT MAX_RECORDS_IN_RAM=3000000 INPUT='$output' OUTPUT='$alldups' METRICS_FILE='$alldupsmetrics'");
 #system("mv $alldups $output");
 
-sub runcmd
-{
-        my $cmd = shift @_;
-        print STDERR "$cmd\n";
-        system($cmd);
-}
+

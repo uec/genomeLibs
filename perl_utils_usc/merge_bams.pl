@@ -1,10 +1,9 @@
 #!/usr/bin/perl
 use strict;
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
-my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
-my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
-my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
 my $output = shift @ARGV;
 my $date = `date`; chomp $date;
 my $cmd = "VALIDATION_STRINGENCY=SILENT ASSUME_SORTED=true MERGE_SEQUENCE_DICTIONARIES=true CREATE_INDEX=true USE_THREADING=true MAX_RECORDS_IN_RAM=2000000 OUTPUT='$output' ";
@@ -109,11 +108,4 @@ sub hasReadGroup
 	print "NO, $bam no RG found\n" if($header !~ /^\@RG/m);
 	return 1 if($header =~ /^\@RG/m);
 	return 0;
-}
-
-sub runcmd
-{
-        my $cmd = shift @_;
-        print STDERR "$cmd\n";
-        system($cmd);
 }

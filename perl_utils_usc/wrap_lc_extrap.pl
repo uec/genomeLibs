@@ -1,7 +1,11 @@
 #!/usr/bin/perl
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
 
 #GLOBALS
-$lc_extrap = "/home/uec-00/shared/production/software/AndrewSmithTools/RationalFunctionComplexity/lc_extrap";
+$lc_extrap = "$SOFTWAREROOT/AndrewSmithTools/RationalFunctionComplexity/lc_extrap";
 
 #INPUTS
 $inputFile = $ARGV[0] || die "specifiy input BAM file";
