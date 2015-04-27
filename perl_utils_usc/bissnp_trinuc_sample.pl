@@ -62,6 +62,10 @@ elsif($ref =~/mm9/){
 	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/mouse-20111102-snps-all.annotated.mm9.vcf";
 	$interval = $ARGV[3] || "chr16";
 }
+elsif($ref =~/mm10/){
+	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/mgp.v3.snps.rsIDdbSNPv137.mm10.vcf";
+	$interval = $ARGV[3] || "chr16";
+}
 
 &bissnp();
 &output_tri_file();

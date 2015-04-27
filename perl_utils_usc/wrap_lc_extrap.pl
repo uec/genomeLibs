@@ -5,7 +5,7 @@ use EpigenomeUtils;
 
 
 #GLOBALS
-$lc_extrap = "$SOFTWAREROOT/AndrewSmithTools/RationalFunctionComplexity/lc_extrap";
+$lc_extrap = "$SOFTWAREROOT/AndrewSmithTools/preseq-1.0.2.Linux_x86_64/preseq lc_extrap";
 
 #INPUTS
 $inputFile = $ARGV[0] || die "specifiy input BAM file";
