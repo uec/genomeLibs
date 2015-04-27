@@ -30,7 +30,7 @@ die "reference does not exist.\n" if (! -e $refFa);
 die "need read sequence files\n" unless ( -e $read1 );
 
 #check phred of read
-my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQualityScale.pl $read1`;
+my $phred = `$SOFTWAREROOT/perl_utils_usc/testFastqQualityScale.pl $read1`;
 $phred = $phred =~ /64/ ? "-I" : "";
 
 
@@ -76,6 +76,6 @@ else
 }
 
 
-runcmd("$JAVA -Xmx4g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate TMP_DIR=. INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
-runcmd("$JAVA -Xmx4g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT TMP_DIR=. REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
+runcmd("$JAVA -Xmx4g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate TMP_DIR=$TMP_DIR INPUT=$outfileSAM OUTPUT=$outfile\.sorted.bam");
+runcmd("$JAVA -Xmx4g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT TMP_DIR=$TMP_DIR REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
 

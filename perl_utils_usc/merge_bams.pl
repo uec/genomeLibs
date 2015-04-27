@@ -43,7 +43,7 @@ else
 		}
 	}
 
-	runcmd("$JAVA -Xmx4g -jar $PICARD/MergeSamFiles.jar $cmd");
+	runcmd("$JAVA -Xmx4g -jar $PICARD/MergeSamFiles.jar TMP_DIR=$TMP_DIR $cmd");
 	my $bai = $output;
 	$bai =~ s/bam$/bai/;
 	runcmd("mv $bai $output.bai");
@@ -57,7 +57,7 @@ runcmd("$SAMTOOLS flagstat $output > $output\.flagstat\.metric\.txt");
 
 my $outputdups = $output;
 $outputdups =~ s/bam$/mdups\.bam/;
-runcmd("$JAVA -Xms7g -Xmx7g -jar $PICARD/MarkDuplicates.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups");
+runcmd("$JAVA -Xms7g -Xmx7g -jar $PICARD/MarkDuplicates.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT METRICS_FILE=dupmets.txt READ_NAME_REGEX=null INPUT=$output OUTPUT=$outputdups TMP_DIR=$TMP_DIR");
 my $dupbai = $outputdups;
 $dupbai =~ s/bam$/bai/;
 runcmd("mv $dupbai $outputdups\.bai");
@@ -91,7 +91,7 @@ sub addReadGroup
 		$lib = "UNKNOWN_LIB";
 	}
 
-	runcmd("$JAVA -Xmx4g -jar $PICARD/AddOrReplaceReadGroups.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=1000000 INPUT='$bamIn' OUTPUT='with_rg_$bamOut' RGID='$flowcell\.$lane' RGLB='$lib' RGPL='illumina Hiseq' RGPU='$flowcell\.$lane' RGSM='$lib' RGCN='USC EPIGENOME CENTER' RGDS='from file $bamIn on $date'");
+	runcmd("$JAVA -Xmx4g -jar $PICARD/AddOrReplaceReadGroups.jar CREATE_INDEX=true TMP_DIR=$TMP_DIR VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=1000000 INPUT='$bamIn' OUTPUT='with_rg_$bamOut' RGID='$flowcell\.$lane' RGLB='$lib' RGPL='illumina Hiseq' RGPU='$flowcell\.$lane' RGSM='$lib' RGCN='USC EPIGENOME CENTER' RGDS='from file $bamIn on $date'");
 	#overwrite non-readgroups bams
 	runcmd("mv with_rg_$bamOut $bamOut");
 	my $bai = "with_rg_$bamOut";

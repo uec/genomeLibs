@@ -5,5 +5,5 @@ use EpigenomeUtils;
 
 my $cmd = join(" ", @ARGV);
 
-runcmd("$JAVA -Xmx12g -jar $PICARD/$cmd TMP_DIR=$PICARDTMP");
+runcmd("$JAVA -Xmx12g -jar $PICARD/$cmd TMP_DIR=$TMP_DIR");
 
