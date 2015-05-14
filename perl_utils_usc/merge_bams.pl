@@ -84,14 +84,15 @@ sub addReadGroup
 		$lane = $3;
 		$lib = $4;
 	}
-	else
-	{
-		$flowcell = "ANALYSIS";
-		$lane = "1";
-		$lib = "UNKNOWN_LIB";
-	}
+	  else
+        {
+                $flowcell = "flowcell$date";
+                $lane = "1";
+                $lib = basename($bamIn);
+                $lib =~ s/\W//g;
+        }
 
-	runcmd("$JAVA -Xmx4g -jar $PICARD/AddOrReplaceReadGroups.jar CREATE_INDEX=true TMP_DIR=$TMP_DIR VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=1000000 INPUT='$bamIn' OUTPUT='with_rg_$bamOut' RGID='$flowcell\.$lane' RGLB='$lib' RGPL='illumina Hiseq' RGPU='$flowcell\.$lane' RGSM='$lib' RGCN='USC EPIGENOME CENTER' RGDS='from file $bamIn on $date'");
+    runcmd("$JAVA -Xmx4g -jar $PICARD/AddOrReplaceReadGroups.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=1000000 INPUT='$bamIn' OUTPUT='with_rg_$bamOut' RGID='$flowcell\.$lane' RGLB='$lib' RGPL='illumina' RGPU='$flowcell\.$lane' RGSM='$lib' RGCN='VARI' RGDS='from file $bamIn on $date' TMP_DIR=$TMP_DIR");
 	#overwrite non-readgroups bams
 	runcmd("mv with_rg_$bamOut $bamOut");
 	my $bai = "with_rg_$bamOut";

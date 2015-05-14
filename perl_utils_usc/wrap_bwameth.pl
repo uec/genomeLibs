@@ -11,6 +11,7 @@ $ENV{PATH} .= ":" .  dirname($SAMTOOLS);
 $ENV{PATH} .= ":" .  "$SOFTWAREROOT/bwa/latest";
 
 my $bwameth = "$SOFTWAREROOT/bwameth/default/bwameth.py";
+my $date = `date`; chomp $date;
 
 $refFa = $ARGV[0];
 $read1 = $ARGV[1];
@@ -42,5 +43,10 @@ runcmd($cmd);
 
 
 runcmd("$JAVA -Xmx4g -jar $PICARD/SortSam.jar VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate TMP_DIR=$TMP_DIR INPUT=$outfileBWABam OUTPUT=$outfile\.sorted.bam");
-runcmd("$JAVA -Xmx4g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT TMP_DIR=$TMP_DIR REFERENCE=$refFa INPUT=$outfile\.sorted.bam OUTPUT=$outfile");
+my $flowcell = "flowcell$date";
+my $lane = "1";
+my $lib = basename($outfile);
+$lib =~ s/\W//g;
+runcmd("$JAVA -Xmx4g -jar $PICARD/AddOrReplaceReadGroups.jar CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=1000000 INPUT='$outfile\.sorted.bam' OUTPUT='$outfile\.withrg.bam' RGID='$flowcell\.$lane' RGLB='$lib' RGPL='illumina' RGPU='$flowcell\.$lane' RGSM='$lib' RGCN='VARI' RGDS='from file $outfile on $date' TMP_DIR=$TMP_DIR");
+runcmd("$JAVA -Xmx4g -jar $PICARD/ReorderSam.jar VALIDATION_STRINGENCY=SILENT TMP_DIR=$TMP_DIR REFERENCE=$refFa INPUT=$outfile\.withrg.bam OUTPUT=$outfile");
 
