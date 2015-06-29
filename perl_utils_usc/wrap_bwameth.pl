@@ -38,7 +38,7 @@ $phred = $phred =~ /64/ ? "-I" : "";
 
 
 #bwa MEM
-my $cmd = "$bwameth --threads 23 --prefix $outfileBWA --reference $refFa $read1 $read2";
+my $cmd = "$bwameth --threads 27 --prefix $outfileBWA --reference $refFa $read1 $read2";
 runcmd($cmd);
 
 

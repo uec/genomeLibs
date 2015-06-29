@@ -39,14 +39,14 @@ if($readLength > 70 && $phred !~ /I/)
 {
 	print STDERR "doing BWA MEM since readlength is $readLength\n";
 	#bwa MEM
-	my $cmd = join(" ", $bwa, "mem", "-M -t 23", $refFa, $read1, $read2, "> $outfileSAM");
+	my $cmd = join(" ", $bwa, "mem", "-M -t 27", $refFa, $read1, $read2, "> $outfileSAM");
 	runcmd($cmd);
 }
 else
 {
 	print STDERR "doing BWA align since readlength is $readLength\n";
 	#aln end 1
-	my $cmd = join(" ", $bwa, "aln", $phred, "-t 23", $refFa, $read1, "> $read1SA");
+	my $cmd = join(" ", $bwa, "aln", $phred, "-t 27", $refFa, $read1, "> $read1SA");
 	runcmd($cmd);
 
 	die "need read.sai files\n" unless ( -e $read1SA );
@@ -60,7 +60,7 @@ else
 		$read2SA =~ s/\.fq$//i;
 		$read2SA .= ".sai";
 
-		$cmd = join(" ", $bwa, "aln", $phred, "-t 23", $refFa, $read2, "> $read2SA");
+		$cmd = join(" ", $bwa, "aln", $phred, "-t 27", $refFa, $read2, "> $read2SA");
 		runcmd($cmd);
 
 		die "need read.sai files\n" unless ( -e $read1SA && -e $read2SA );
