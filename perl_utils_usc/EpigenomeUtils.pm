@@ -13,7 +13,7 @@ our $JAVA = "$SOFTWAREROOT/java/default/bin/java";
 our $GATKSNP = "$SOFTWAREROOT/GATK2/default/GenomeAnalysisTK.jar";
 our $MAQ = "$SOFTWAREROOT/maq-0.7.1/maq";
 our $PUBLICATIONDATA = "/home/uec-00/shared/publicationData";
-our $TMP_DIR = "/home/uec-00/tmp";
+our $TMP_DIR = "/secondary/tmp";
 
 sub runcmd
 {
