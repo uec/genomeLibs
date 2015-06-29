@@ -34,7 +34,7 @@ my $phred = `$SOFTWAREROOT/perl_utils_usc/testFastqQualityScale.pl $read1`;
 $phred = $phred =~ /64/ ? "-I" : "";
 
 
-if($readLength > 70 && $phred !~ /I/)
+if($readLength > 80 && $phred !~ /I/)
 
 {
 	print STDERR "doing BWA MEM since readlength is $readLength\n";
