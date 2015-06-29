@@ -2,6 +2,9 @@
 
 use strict;
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
 
 my $USAGE = "fastqSplit.pl numberOfFiles seqs1.fastq seqs2.fastq ...";
 my $seqret = "/home/uec-00/shared/production/software/emboss/default/bin/seqret";
@@ -30,7 +33,7 @@ if ($numberOfFiles == 1)
 		 {
 		 	my $unzippedInputFile = basename($inputFile);
 		 	$unzippedInputFile =~ s/\.gz$//;
-			my $cmd = "gzip -d -c $inputFile > $unzippedInputFile";
+			my $cmd = "$SOFTWAREROOT/pigz/pigz -d -c $inputFile > $unzippedInputFile";
 			print STDERR $cmd;
 			system($cmd) ;
 			#print("$seqret fastq-sanger::$unzippedInputFile fastq-illumina:$unzippedInputFile\.tmp");
