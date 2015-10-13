@@ -1,8 +1,10 @@
 #!/usr/bin/perl
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
 #GLOBALS
-$findpeaks = "/home/uec-00/shared/production/software/VancouverShortR/fp4/FindPeaks.jar";
-$JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
+$findpeaks = "$SOFTWAREROOT/VancouverShortR/fp4/FindPeaks.jar";
 
 #INPUTS
 $inputFile = $ARGV[0] || die "specifiy input BAM file";

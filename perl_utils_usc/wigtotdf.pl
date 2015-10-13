@@ -1,6 +1,10 @@
 #!/usr/bin/perl
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
 #CONSTANTS
-$igvtools = "/home/uec-00/shared/production/software/igvtools/default/igvtools";
+$igvtools = "$SOFTWAREROOT/igvtools/default/igvtools";
 
 
 $input = $ARGV[0] || die "specify input file";

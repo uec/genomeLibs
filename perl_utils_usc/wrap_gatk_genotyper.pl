@@ -52,8 +52,8 @@ if($ref =~/hg18/){
 	$CHROMSIZE="$SOFTWAREROOT/UCSC_Browser_Tools/default/hg18.chrom.sizes";
 }
 elsif($ref =~/male.hg19/){
-	$dbsnp="/home/uec-00/shared/production/genomic-data-misc/dbsnp/dbsnp_138.hg19.vcf";
-	$indel_1 = "/auto/uec-00/shared/production/genomic-data-misc/indels/Mills_and_1000G_gold_standard.indels.hg19.vcf";
+	$dbsnp="$GENOMEROOT/genomic-data-misc/dbsnp/dbsnp_138.hg19.vcf";
+	$indel_1 = "$GENOMEROOT/genomic-data-misc/indels/Mills_and_1000G_gold_standard.indels.hg19.vcf";
 	#$indel_1 = "$SOFTWAREROOT/bissnp/genomic_data/1000G_phase1.indels.hg19.sort.vcf";
 	#$indel_2 = "$SOFTWAREROOT/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg19.sites.sort.vcf";
 	$interval = "$PUBLICATIONDATA/bissnp2011/whole_genome_interval_list.hg19.bed";

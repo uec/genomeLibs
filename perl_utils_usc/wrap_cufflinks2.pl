@@ -1,7 +1,9 @@
 #!/usr/bin/perl
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
-#$ENV{'BOWTIE_INDEXES'} = "/home/uec-00/shared/production/genomes/bowtie/";
+
 $ENV{'PATH'} .= "$SOFTWAREROOT/cufflinks2/default:$SOFTWAREROOT/tophat2/default:$SOFTWAREROOT/bowtie2/default";
 $file = $ARGV[$#ARGV];
 

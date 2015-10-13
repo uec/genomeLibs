@@ -1,11 +1,13 @@
 #!/usr/bin/perl
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
-$ENV{'BOWTIE_INDEXES'} = "/home/uec-00/shared/production/genomes/bowtie/";
-$ENV{'PATH'} .= "/home/uec-00/shared/production/software/cufflinks/default:/home/uec-00/shared/production/software/tophat/default:/home/uec-00/shared/production/software/bowtie/default";
+$ENV{'BOWTIE_INDEXES'} = "$GENOMEROOT/genomes/bowtie/";
+$ENV{'PATH'} .= "$SOFTWAREROOT/cufflinks/default:$SOFTWAREROOT/tophat/default:$SOFTWAREROOT/bowtie/default";
 $file = $ARGV[$#ARGV];
 
-$execmd = "/home/uec-00/shared/production/software/cufflinks/default/cufflinks " . join(" ", @ARGV);
+$execmd = "$SOFTWAREROOT/cufflinks/default/cufflinks " . join(" ", @ARGV);
 print "$execmd\n";
 system($execmd);
 

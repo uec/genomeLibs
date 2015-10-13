@@ -4,6 +4,9 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use strict;
 use Getopt::Long;
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
 my $doBare = 0;
 my $intervalFile = 0; # If we pass these in , they're done in parallel
@@ -29,10 +32,10 @@ die "Can't find genome ref for $genome\n" unless ($genomeRef);
 
 # Constants
 my $TAG = "BAM2WIG";
-my $IGVTOOLS = "/home/uec-00/shared/production/software/igvtools/igvtools";
-my $CGINTERVALS = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/CpgsAll.${genome}.bed";
-my $CGINTERVALS_SEP = "/home/uec-02/bberman/BSseq/tumor/genomic-data-misc/Cpgs/${genomeRef}/REPLACECHROM.fa.cpgCoords.bed";
-my $refDir = "/home/uec-00/shared/production/genomes/${genomeRef}";
+my $IGVTOOLS = "$SOFTWAREROOT/software/igvtools/igvtools";
+my $CGINTERVALS = "$GENOMEROOT/genomic-data-misc/CpgsAll.${genome}.bed";
+my $CGINTERVALS_SEP = "$GENOMEROOT/genomic-data-misc/Cpgs/${genomeRef}/REPLACECHROM.fa.cpgCoords.bed";
+my $refDir = "$GENOMEROOT/genomes/${genomeRef}";
 my $refFn = "${refDir}/${genomeRef}.fa";
 
 

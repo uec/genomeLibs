@@ -1,14 +1,17 @@
 #!/usr/bin/perl
 use File::Basename;
-my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
-$ENV{'BOWTIE_INDEXES'} = "/home/uec-00/shared/production/genomes/bowtie/";
-$ENV{'PATH'} .= ":/home/uec-00/shared/production/software/tophat/default:/home/uec-00/shared/production/software/bowtie/default";
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
+my $SAMTOOLS = "$SOFTWAREROOT/samtools/samtools";
+$ENV{'BOWTIE_INDEXES'} = "$GENOMEROOT/genomes/bowtie/";
+$ENV{'PATH'} .= ":$SOFTWAREROOT/tophat/default:$SOFTWAREROOT/bowtie/default";
 
 $file = scalar(@ARGV) > 4 ? $ARGV[$#ARGV - 1] : $ARGV[$#ARGV];
 $file = basename($file);
 
 #test to find which type of phred scale used.
-my $phred = `/home/uec-00/shared/production/software/perl_utils_usc/testFastqQualityScale.pl $file`;
+my $phred = `$SOFTWAREROOT/perl_utils_usc/testFastqQualityScale.pl $file`;
 $phred = $phred =~ /64/ ? "--solexa1.3-quals" : "";
 $execmd = "tophat $phred " . join(" ", @ARGV);
 

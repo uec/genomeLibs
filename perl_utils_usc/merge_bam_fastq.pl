@@ -1,11 +1,13 @@
 #!/usr/bin/perl
 use Getopt::Long;
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
 #set program locations
-$java = "/home/uec-00/shared/production/software/java/default/bin/java -Xmx13g";
-$picard = "/home/uec-00/shared/production/software/picard/default";
-$samtools = "/home/uec-00/shared/production/software/samtools/samtools";
+$java = "$SOFTWAREROOT/java/default/bin/java -Xmx13g";
+$picard = "$SOFTWAREROOT/picard/default";
+$samtools = "$SOFTWAREROOT/samtools/samtools";
 
 #get cmd options
 GetOptions(     'fastq=s' => \$inputFastq,

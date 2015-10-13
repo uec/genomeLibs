@@ -1,21 +1,24 @@
 #!/usr/bin/perl
 use Cwd 'abs_path';
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
 my $output = shift @ARGV || die "specify output file to write to ";
 
 my %progs;
-$progs{SAMTOOLS} = "/home/uec-00/shared/production/software/samtools/samtools";
-$progs{PICARD} = "/home/uec-00/shared/production/software/picard/default/";
-$progs{JAVA} = "/home/uec-00/shared/production/software/java/default/bin/java";
-$progs{BWA} = "/home/uec-00/shared/production/software/bwa/default/";
-$progs{TOPHAT} = "/home/uec-00/shared/production/software/tophat/default/";
-$progs{TOPHAT2} = "/home/uec-00/shared/production/software/tophat2/default/";
-$progs{BOWTIE} = "/home/uec-00/shared/production/software/bowtie/default/";
-$progs{BOWTIE2} = "/home/uec-00/shared/production/software/bowtie2/default/";
-$progs{CUFFLINKS} = "/home/uec-00/shared/production/software/cufflinks/default/";
-$progs{CUFFLINKS} = "/home/uec-00/shared/production/software/cufflinks2/default/";
-$progs{UEC_GATK} = "/home/uec-00/shared/production/software/uecgatk/default/";
-$progs{BSMAP} = "/home/uec-00/shared/production/software/bsmap/default/";
+$progs{SAMTOOLS} = "$SOFTWAREROOT/software/samtools/samtools";
+$progs{PICARD} = "$SOFTWAREROOT/software/picard/default/";
+$progs{JAVA} = "$SOFTWAREROOT/software/java/default/bin/java";
+$progs{BWA} = "$SOFTWAREROOT/software/bwa/default/";
+$progs{TOPHAT} = "$SOFTWAREROOT/software/tophat/default/";
+$progs{TOPHAT2} = "$SOFTWAREROOT/software/tophat2/default/";
+$progs{BOWTIE} = "$SOFTWAREROOT/software/bowtie/default/";
+$progs{BOWTIE2} = "$SOFTWAREROOT/software/bowtie2/default/";
+$progs{CUFFLINKS} = "$SOFTWAREROOT/software/cufflinks/default/";
+$progs{CUFFLINKS} = "$SOFTWAREROOT/software/cufflinks2/default/";
+$progs{UEC_GATK} = "$SOFTWAREROOT/software/uecgatk/default/";
+$progs{BSMAP} = "$SOFTWAREROOT/software/bsmap/default/";
 
 
 open(OUT, ">$output");

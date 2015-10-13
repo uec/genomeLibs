@@ -5,24 +5,25 @@ use File::Temp qw/ tempfile tempdir /;
 use strict;
 use Getopt::Long;
 use File::Spec;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
-my $PICARD = "/home/uec-00/shared/production/software/picard/default/";
-my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
-my $uecgatk = "/home/uec-00/shared/production/software/uecgatk/default/uecgatk.pl";
+
+my $uecgatk = "$SOFTWAREROOT/uecgatk/default/uecgatk.pl";
 my $USAGE = "bamToElementEnrichment.pl [-distUpstream 1000] file.bam elements.bed output.txt";
 my $TEMPPREFIX = "MATCHEDBED";
-my @REFS = ( "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
-	   "/home/uec-00/shared/production/genomes/encode_hg19_mf/female.hg19.fa", 
-	   "/home/uec-00/shared/production//genomes/hg18_unmasked/hg18_unmasked.plusContam.fa",
-	   "/home/uec-00/shared/production//genomes/mm9_unmasked/mm9_unmasked.a",
-	   "/home/uec-00/shared/production/genomes/mm10/mm10.fa");
+my @REFS = ( "$GENOMEROOT/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
+	   "$GENOMEROOT/genomes/encode_hg19_mf/female.hg19.fa", 
+	   "$GENOMEROOT/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa",
+	   "$GENOMEROOT/genomes/mm9_unmasked/mm9_unmasked.a",
+	   "$GENOMEROOT/mm10/mm10.fa");
 
-my $bedhg18 = "/home/rcf-40/bberman/tumor/genomic-data-misc/CGIs/Takai_Jones_from_Fei_122007.fixed.hg18.PROMOTERONLY.oriented.bed";
-my $mm9bed = "/home/uec-00/shared/production/genomic-data-misc/CpG_islands/mm9cpgisland.bed";
-my $mm10bed = "/home/uec-00/shared/production/genomic-data-misc/CpG_islands/mm10cpgisland.bed";
+my $bedhg18 = "$GENOMEROOT/genomic-data-misc/CGIs/Takai_Jones_from_Fei_122007.fixed.hg18.PROMOTERONLY.oriented.bed";
+my $mm9bed = "$GENOMEROOT/genomic-data-misc/CpG_islands/mm9cpgisland.bed";
+my $mm10bed = "$GENOMEROOT/genomic-data-misc/CpG_islands/mm10cpgisland.bed";
 
 my $distUpstream = 1000;
-my $minMapq = 20;
+my $minMapq = 20; 
 GetOptions ('distUpstream=i', \$distUpstream, 'minq=i'=>\$minMapq) || die "$USAGE\n";
 
 # Input params

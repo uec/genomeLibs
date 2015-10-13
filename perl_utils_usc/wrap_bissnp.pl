@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 use strict;
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
 my $numcores = `cat /proc/cpuinfo | grep processor -c`;
 chomp $numcores;
@@ -9,11 +12,11 @@ chomp $numcores;
 my $ram = 12;
 
 my $input = $ARGV[0] || die "need input file";
-my $bissnp = "/home/uec-00/shared/production/software/bissnp/bissnp-default.jar";
-my $vcf = "/home/uec-00/shared/production/software/bissnp/dbsnp_135.hg19.sort.vcf";
-my $ref = "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa";
-my $interval = "/home/uec-00/shared/production/software/bissnp/wholegenome_interval_list.hg19.bed";
-my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java -Xmx$ram" . "G";
+my $bissnp = "$SOFTWAREROOT/bissnp/bissnp-default.jar";
+my $vcf = "$SOFTWAREROOT/bissnp/dbsnp_135.hg19.sort.vcf";
+my $ref = "GENOMEROOT/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa";
+my $interval = "$SOFTWAREROOT/bissnp/wholegenome_interval_list.hg19.bed";
+my $JAVA = "$SOFTWAREROOT/java/default/bin/java -Xmx$ram" . "G";
 
 
 

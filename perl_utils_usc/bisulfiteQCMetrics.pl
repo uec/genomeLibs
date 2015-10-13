@@ -1,7 +1,11 @@
 #!/usr/bin/env perl
 
 use strict;
-my $samtools = "/home/uec-00/shared/production/software/samtools/samtools";
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
+my $samtools = $SAMTOOLS;
 my $PRINTLANEIDS = 1;
 my $DOFASTQ = 1;
 my $DOREPEAT = 1;

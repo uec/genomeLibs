@@ -1,7 +1,9 @@
 #!/usr/bin/perl
 use strict;
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 
-my $SAMTOOLS = "/home/uec-00/shared/production/software/samtools/samtools";
 my $samtoolArgs = join ' ', @ARGV;
 
 my $cmd = "$SAMTOOLS $samtoolArgs";

@@ -14,7 +14,7 @@ my $ram = 1.3 * $numcores;
 my $ram = int($ram);
 
 
-my $refDir = "/home/uec-00/shared/production/genomic-data-misc/refSeq_2014_01_21";
+my $refDir = "$GENOMEROOT/genomic-data-misc/refSeq_2014_01_21";
 
 ## define required file by provided reference genome
 my $refFlat;

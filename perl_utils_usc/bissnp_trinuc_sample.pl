@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
+
 
 ## author: Yaping Liu  lyping1986@gmail.com 
 ## time: 2013-2-19
@@ -26,8 +30,8 @@ my $minBaseQ = 5;
 #my $ram = 4 * $numcores;
 my $ram = 12;
 
-my $BISSNP = "/home/uec-00/shared/production/software/bissnp/bissnp-default.jar";
-my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java -Xmx$ram" . "G";
+my $BISSNP = "$SOFTWAREROOT/bissnp/bissnp-default.jar";
+my $JAVA = "$SOFTWAREROOT/java/default/bin/java -Xmx$ram" . "G";
 
 
 my $vcf_unsorted_cpg=$input;
@@ -40,12 +44,12 @@ my @characters=("A","C","G","T");
 
 ## define required file by provided reference genome
 if($ref =~/hg18/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.hg18.sort.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/dbsnp_135.hg18.sort.vcf";
 	$interval = $ARGV[3] || "chr21";
 
 }
 elsif($ref =~/hg19/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.hg19.sort.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/dbsnp_135.hg19.sort.vcf";
 	$interval = $ARGV[3] || "chr21";
 	
 }
@@ -55,15 +59,15 @@ elsif($ref =~/NC_001416/){
 	$use_bad_mates = 1;
 }
 elsif($ref =~/37/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/dbsnp_135.b37.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/dbsnp_135.b37.vcf";
 	$interval = $ARGV[3] || "chr21";
 }
 elsif($ref =~/mm9/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/mouse-20111102-snps-all.annotated.mm9.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/mouse-20111102-snps-all.annotated.mm9.vcf";
 	$interval = $ARGV[3] || "chr16";
 }
 elsif($ref =~/mm10/){
-	$dbsnp="/home/uec-00/shared/production/software/bissnp/genomic_data/mgp.v3.snps.rsIDdbSNPv137.mm10.vcf";
+	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/mgp.v3.snps.rsIDdbSNPv137.mm10.vcf";
 	$interval = $ARGV[3] || "chr16";
 }
 

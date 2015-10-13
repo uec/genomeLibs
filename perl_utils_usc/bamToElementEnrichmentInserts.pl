@@ -6,17 +6,16 @@ use strict;
 use Getopt::Long;
 use File::Spec;
 
-my $JAVA = "/home/uec-00/shared/production/software/java/default/bin/java";
-my $uecgatk = "/home/uec-00/shared/production/software/uecgatk/2012-5-30/uecgatk.pl";
+my $uecgatk = "$SOFTWAREROOT/uecgatk/2012-5-30/uecgatk.pl";
 my $USAGE = "bamToElementEnrichmentInserts.pl [-distUpstream 1000] file.bam elements.bed output.txt";
 my $TEMPPREFIX = "MATCHEDBEDINS";
 my $TEMPDIR = ".";
-my @REFS = ( "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
-	   "/home/uec-00/shared/production/genomes/encode_hg19_mf/female.hg19.fa", 
-	   "/home/uec-00/shared/production/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa");
-@REFS = ( "/home/uec-00/shared/production/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa");
+my @REFS = ( "$GENOMEROOT/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa", 
+	   "$GENOMEROOT/genomes/encode_hg19_mf/female.hg19.fa", 
+	   "$GENOMEROOT/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa");
+@REFS = ( "$GENOMEROOT/genomes/hg19_rCRSchrm/hg19_rCRSchrm.fa");
 
-my $bedhg18 = "/home/rcf-40/bberman/tumor/genomic-data-misc/CGIs/Takai_Jones_from_Fei_122007.fixed.hg18.PROMOTERONLY.oriented.bed";
+my $bedhg18 = "$GENOMEROOT/CGIs/Takai_Jones_from_Fei_122007.fixed.hg18.PROMOTERONLY.oriented.bed";
 
 my $distUpstream = 1000;
 my $minMapq = 20;

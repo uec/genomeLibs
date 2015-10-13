@@ -7,7 +7,7 @@ use EpigenomeUtils;
 
 
 my $USAGE = "fastqSplit.pl numberOfFiles seqs1.fastq seqs2.fastq ...";
-my $seqret = "/home/uec-00/shared/production/software/emboss/default/bin/seqret";
+my $seqret = "$SOFTWAREROOT/emboss/default/bin/seqret";
 
 my ($numberOfFiles, @inputFileList) = @ARGV;
 

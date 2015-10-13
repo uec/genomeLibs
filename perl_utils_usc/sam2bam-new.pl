@@ -1,10 +1,11 @@
 #!/usr/bin/env perl
-
 use File::Basename;
+use lib dirname (__FILE__);
+use EpigenomeUtils;
 use strict;
 
 
-my $SAMDIR = "/home/uec-00/shared/production/software/samtools";
+my $SAMDIR = "$SOFTWAREROOT/samtools";
 
 my $samFn = $ARGV[0] || die "no input sam file";
 my $refFa = $ARGV[-1] || die "no input genome";
