@@ -55,6 +55,10 @@ my $minBaseQ = 5;
 
 my $ram = 1.3 * $numcores;
 my $ram = int($ram);
+my $SAMTOOLS = "$SOFTWAREROOT/samtools/samtools";
+my $PICARD = "$SOFTWAREROOT/picard/default/";
+my $BISSNP = "$SOFTWAREROOT/bissnp/bissnp-default.jar";
+my $JAVA = "$SOFTWAREROOT/java/default/bin/java -Xmx$ram" . "G";
 my $IGVTOOLS = "$SOFTWAREROOT/igvtools/default/igvtools toTDF";
 my $WIG2BW = "$SOFTWAREROOT/UCSC_Browser_Tools/default/wigToBigWig";
 my $CHROMSIZE="$SOFTWAREROOT/UCSC_Browser_Tools/default/hg19.chrom.sizes";
@@ -79,7 +83,7 @@ if($ref =~/hg18/){
 	$indel_1 = "$SOFTWAREROOT/bissnp/genomic_data/1000G_phase1.indels.hg18.sort.vcf";
 	$indel_2 = "$SOFTWAREROOT/bissnp/genomic_data/Mills_and_1000G_gold_standard.indels.hg18.sites.sort.vcf";
 	#$ref="/home/uec-00/shared/production/genomes/hg18_unmasked/hg18_unmasked.plusContam.fa";
-	$interval = "$PUBLICATIONDATA/bissnp2011/whole_genome_interval_list.hg18.bed";
+	$interval = "/home/uec-00/shared/publicationData/bissnp2011/whole_genome_interval_list.hg18.bed";
 	$CHROMSIZE="$SOFTWAREROOT/UCSC_Browser_Tools/default/hg18.chrom.sizes";
 }elsif($ref =~/hg19/){
 	$dbsnp="$SOFTWAREROOT/bissnp/genomic_data/dbsnp_135.hg19.sort.vcf";
@@ -504,3 +508,4 @@ sub vcf2tdf{
 	}
 	
 }
+

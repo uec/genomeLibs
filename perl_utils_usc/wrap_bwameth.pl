@@ -9,6 +9,7 @@ die "$usage\n" unless (@ARGV >= 3);
 
 $ENV{PATH} .= ":" .  dirname($SAMTOOLS);
 $ENV{PATH} .= ":" .  "$SOFTWAREROOT/bwa/latest";
+$ENV{PATH} = "$SOFTWAREROOT/python/default/bin:" . $ENV{PATH};
 
 my $bwameth = "$SOFTWAREROOT/bwameth/default/bwameth.py";
 my $date = `date`; chomp $date;
